@@ -139,10 +139,69 @@ export function createOsmBasemapLayer(variant: MapVariant): L.Layer {
     });
   }
 
+  if (variant === 'topo') {
+    // OpenTopoMap - Topographic map with elevation contours & hillshading
+    return L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+      attribution:
+        'Kartendaten: &copy; <a href="https://openstreetmap.org/copyright">OpenStreetMap</a>-Mitwirkende, SRTM | Kartendarstellung: &copy; <a href="http://opentopomap.org">OpenTopoMap</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)',
+      maxZoom: 17,
+    });
+  }
+
   // Default / Normal: Standard OpenStreetMap
   return L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution:
       '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    maxZoom: 19,
+  });
+}
+
+/**
+ * Creates CARTO basemap layer based on selected variant:
+ * - carto_light (Positron): Ultra-clean minimal light map (perfect for colored isochrones & heatmaps)
+ * - carto_dark (Dark Matter): Deep dark gray / black map for dark mode
+ * - carto_voyager: Clean modern map with subtle pastel colors for cities/parks
+ */
+export function createCartoBasemapLayer(variant: MapVariant): L.Layer {
+  const subdomains = 'abcd';
+  const attribution =
+    '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>';
+
+  if (variant === 'carto_dark') {
+    return L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      attribution,
+      subdomains,
+      maxZoom: 20,
+    });
+  }
+
+  if (variant === 'carto_voyager') {
+    return L.tileLayer(
+      'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+      {
+        attribution,
+        subdomains,
+        maxZoom: 20,
+      }
+    );
+  }
+
+  // Default CARTO: Positron (Light)
+  return L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    attribution,
+    subdomains,
+    maxZoom: 20,
+  });
+}
+
+/**
+ * Creates a transparent OpenRailwayMap overlay layer
+ * Covers train lines, S-Bahn, U-Bahn, tram tracks, stations and railway signals
+ */
+export function createRailwayOverlayLayer(): L.TileLayer {
+  return L.tileLayer('https://{s}.tiles.openrailwaymap.org/standard/{z}/{x}/{y}.png', {
+    attribution:
+      'Map data: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors | Map style: &copy; <a href="https://www.openrailwaymap.org">OpenRailwayMap</a>',
     maxZoom: 19,
   });
 }
@@ -153,6 +212,9 @@ export function createOsmBasemapLayer(variant: MapVariant): L.Layer {
 export function createBasemapLayer(platform: BasemapPlatform, variant: MapVariant): L.Layer {
   if (platform === 'google') {
     return createGoogleBasemapLayer(variant);
+  }
+  if (platform === 'carto') {
+    return createCartoBasemapLayer(variant);
   }
   return createOsmBasemapLayer(variant);
 }
