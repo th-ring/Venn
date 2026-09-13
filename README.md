@@ -6,45 +6,45 @@
 [![Vite](https://img.shields.io/badge/Vite-6-646cff.svg?logo=vite&logoColor=white)](https://vitejs.dev/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-38bdf8.svg?logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
 
-**LivingAreaFinder** ist eine interaktive Webanwendung zur gemeinsamen Wohnortsuche für Paare, WGs und Familien. Anhand von **Reisezeit-Isochronen** für unterschiedliche Verkehrsmittel (Öffentlicher Nahverkehr, Pkw, Fahrrad und Fußwege) berechnet die App präzise geometrische Schnittmengen, um ideale Wohngebiete zu finden.
+**LivingAreaFinder** is an interactive web application for finding a shared place to live — built for couples, flatmates, and families. Using **travel-time isochrones** for different modes of transport (public transit, car, bicycle, and walking), the app calculates precise geometric intersections to identify ideal residential areas.
 
 ---
 
-## ✨ Hauptfunktionen
+## ✨ Key Features
 
-- **Multi-Personen-Isochronen**: Berechne zeitgleiche Erreichbarkeits-Polygone für beliebig viele Personen mit individuellen Arbeits- oder Zielorten, Maximalfahrzeiten und Verkehrsmitteln.
-- **Geometrische Schnittmengenberechnung**: Automatische Verschmelzung und Schnittmengen-Kalkulation aller Einzel-Isochronen mittels Turf.js.
-- **Topologisches ÖPNV-Netzmodell**: Vollständige Modellierung des Münchner U- und S-Bahn-Netzes (DELFI / MVV) mit Gehzeiten zur Station, Taktzeiten und Umstiegsbeschränkungen.
-- **Autobahn-Infrastruktur & Auffahrten**: Integrierte OpenStreetMap-Geodaten zu Autobahnkreuzen, Auffahrten und Anschlussstellen zur Pkw-Pendler-Optimierung.
-- **Prioritäts-Heatmap**: Gewichtete Erreichbarkeitsanalyse für U-Bahn-, S-Bahn- und Autobahnzugänge direkt auf der Karte.
-- **Mietpreis-Overlay**: Offizieller Mietspiegel der Landeshauptstadt München (Open Data) mit Wohnlagen- und Richtwert-Visualisierung.
-- **Reversible Zustandsteilung**: Teile deine gesamte Konfiguration (Personen, Adressen, Abfahrtszeiten, Ebenen-Reihenfolge, Filter und Basemaps) nahtlos per URL (`#zone=...`) oder als JSON-Export/Import.
-- **Datenschutz by Design**: 100% Client-Side im Browser ausgeführt. Deine privaten Suchadressen verbleiben ausschließlich im lokalen Speicher (`localStorage`) deines Browsers und werden niemals an Dritte übertragen.
+- **Multi-person isochrones**: Calculate simultaneous reachability polygons for any number of people, each with their own workplace or destination, maximum travel time, and mode of transport.
+- **Geometric intersection engine**: Automatic union and intersection of all individual isochrones using Turf.js.
+- **Topological public-transit network model**: Full model of Munich's U-Bahn and S-Bahn network (DELFI / MVV) including walking times to stations, service frequencies, and transfer constraints.
+- **Motorway infrastructure & junctions**: Integrated OpenStreetMap geodata for motorway interchanges, on-ramps, and exits to optimise car-commute routing.
+- **Priority heatmap**: Weighted accessibility analysis for U-Bahn, S-Bahn, and motorway access points displayed directly on the map.
+- **Rent overlay**: Official rent index (*Mietspiegel*) of the City of Munich (Open Data) with residential-zone and reference-value visualisation.
+- **Reversible state sharing**: Share your entire configuration (people, addresses, departure times, layer order, filters, and basemaps) seamlessly via URL (`#zone=...`) or as a JSON export / import.
+- **Privacy by design**: 100% client-side in the browser. Your private search addresses remain exclusively in your browser's `localStorage` and are never transmitted to third parties.
 
 ---
 
 ## 🚀 Quickstart
 
-### Voraussetzungen
-- Node.js (Version 18 oder neuer)
-- Paketmanager `npm` (oder `bun`)
+### Prerequisites
+- Node.js (version 18 or newer)
+- Package manager `npm` (or `bun`)
 
-### Lokale Installation
+### Local installation
 ```bash
-# 1. Repository klonen
+# 1. Clone the repository
 git clone https://github.com/th-ring/LivingAreaFinder.git
 cd LivingAreaFinder
 
-# 2. Abhängigkeiten installieren
+# 2. Install dependencies
 npm install
 
-# 3. Entwicklungsserver starten
+# 3. Start the development server
 npm run dev
 ```
 
-Die Anwendung ist nun unter `http://localhost:3000` im Browser erreichbar.
+The application is now available at `http://localhost:3000`.
 
-### Produktions-Build
+### Production build
 ```bash
 npm run build
 npm run preview
@@ -52,15 +52,15 @@ npm run preview
 
 ---
 
-## 🔑 Karten & Routing-Provider (BYOK)
+## 🔑 Map & Routing Providers (BYOK)
 
-LivingAreaFinder ist **vollständig ohne Registrierung und ohne API-Keys** nutzbar:
-- **Standard**: Freie OpenStreetMap-Kartenkacheln und das integrierte Offline-ÖPNV-Modell.
-- **Optionale Provider** können im Einstellungs-Menü der App („Bring Your Own Key“) oder via Umgebungsvariablen (`.env`) hinterlegt werden:
-  - **OpenRouteService (HeiGIT)**: Für Pkw-, Rad- und Fußgänger-Isochronen über die Heidelberger Geoinformatik-API ([Kostenloser Key](https://account.heigit.org/manage/key)).
-  - **Google Maps Platform**: Für offizielle Google Maps Kartenlayer (Roadmap, Satellite, Terrain) und die Google Maps Isochrones API ([Google Cloud Console](https://console.cloud.google.com/google/maps-apis)).
+LivingAreaFinder is **fully usable without registration or API keys**:
+- **Default**: Free OpenStreetMap map tiles and the built-in offline public-transit model.
+- **Optional providers** can be configured in the app's settings menu ("Bring Your Own Key") or via environment variables (`.env`):
+  - **OpenRouteService (HeiGIT)**: For car, cycling, and pedestrian isochrones via the Heidelberg Geoinformatics API ([Free key](https://account.heigit.org/manage/key)).
+  - **Google Maps Platform**: For official Google Maps layers (Roadmap, Satellite, Terrain) and the Google Maps Isochrones API ([Google Cloud Console](https://console.cloud.google.com/google/maps-apis)).
 
-Beispiel `.env` (optional, siehe `.env.example`):
+Example `.env` (optional, see `.env.example`):
 ```env
 VITE_GOOGLE_MAPS_API_KEY=""
 VITE_ORS_API_KEY=""
@@ -68,30 +68,30 @@ VITE_ORS_API_KEY=""
 
 ---
 
-## 🛡️ Sicherheit & GitHub-Setup
+## 🛡️ Security & GitHub Setup
 
-- **Secret Scanning & Push Protection**: Wir empfehlen, in den Repository-Einstellungen unter *Settings -> Code security and analysis* das **Secret scanning** sowie die **Push protection** zu aktivieren.
-- **Dependabot**: Eine Konfigurationsdatei (`.github/dependabot.yml`) ist vorkonfiguriert und prüft wöchentlich auf Abhängigkeits- und Sicherheitsaktualisierungen.
-
----
-
-## 🙏 Danksagungen & Drittanbieter-Daten (Acknowledgements)
-
-Dieses Projekt nutzt und verarbeitet Daten sowie Technologien folgender Anbieter:
-
-- **[OpenStreetMap](https://www.openstreetmap.org/)**: Kartendaten und Geokodierung.  
-  *© OpenStreetMap-Mitwirkende, lizenziert unter der [Open Database License (ODbL) 1.0](https://opendatacommons.org/licenses/odbl/).*
-- **[HeiGIT / OpenRouteService](https://openrouteservice.org/)**: Isochronen- und Routing-Berechnungen der Heidelberg Institute for Geoinformation Technology.
-- **[DELFI e.V.](https://www.delfi.de/) & [Münchner Verkehrs- und Tarifverbund (MVV)](https://www.mvv-muenchen.de/)**: Haltestellen- und Netzdaten des öffentlichen Personennahverkehrs.
-- **[Landeshauptstadt München](https://geoportal.muenchen.de/)**: Open Data Geoportal (Mietspiegel und Wohnlagen München).
-- **[CARTO](https://carto.com/)**, **[OpenTopoMap](https://opentopomap.org/)**, **[OpenRailwayMap](https://www.openrailwaymap.org/)**: Zusätzliche Basemap- und Layer-Dienste.
-- **[Leaflet](https://leafletjs.com/)** & **[Turf.js](https://turfjs.org/)**: Open-Source-Bibliotheken für interaktive Karten und räumliche Geometrieberechnungen.
+- **Secret Scanning & Push Protection**: We recommend enabling **Secret scanning** and **Push protection** in the repository settings under *Settings → Code security and analysis*.
+- **Dependabot**: A configuration file (`.github/dependabot.yml`) is pre-configured and checks for dependency and security updates weekly.
 
 ---
 
-## 📄 Lizenz
+## 🙏 Acknowledgements & Third-Party Data
 
-Dieses Projekt ist unter der **Apache License, Version 2.0** lizenziert. Weitere Details findest du in der [LICENSE](LICENSE)- und der [NOTICE](NOTICE)-Datei.
+This project uses and processes data and technologies from the following providers:
+
+- **[OpenStreetMap](https://www.openstreetmap.org/)**: Map data and geocoding.  
+  *© OpenStreetMap contributors, licensed under the [Open Database License (ODbL) 1.0](https://opendatacommons.org/licenses/odbl/).*
+- **[HeiGIT / OpenRouteService](https://openrouteservice.org/)**: Isochrone and routing calculations by the Heidelberg Institute for Geoinformation Technology.
+- **[DELFI e.V.](https://www.delfi.de/) & [Münchner Verkehrs- und Tarifverbund (MVV)](https://www.mvv-muenchen.de/)**: Stop and network data for public transport.
+- **[City of Munich](https://geoportal.muenchen.de/)**: Open Data Geoportal (rent index and residential zones for Munich).
+- **[CARTO](https://carto.com/)**, **[OpenTopoMap](https://opentopomap.org/)**, **[OpenRailwayMap](https://www.openrailwaymap.org/)**: Additional basemap and layer services.
+- **[Leaflet](https://leafletjs.com/)** & **[Turf.js](https://turfjs.org/)**: Open-source libraries for interactive maps and spatial geometry calculations.
+
+---
+
+## 📄 License
+
+This project is licensed under the **Apache License, Version 2.0**. See the [LICENSE](LICENSE) and [NOTICE](NOTICE) files for details.
 
 ```text
 LivingAreaFinder

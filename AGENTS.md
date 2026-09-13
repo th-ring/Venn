@@ -1,54 +1,54 @@
 # AGENTS.md
 
-Richtlinien und Best Practices für Agenten in diesem Repository (`LivingAreaFinder`).
+Guidelines and best practices for agents in this repository (`LivingAreaFinder`).
 
-## 1. Projekt-Kontext
-- **Tech-Stack**: React 19, TypeScript, Vite, Tailwind CSS v4, Leaflet, Turf.js
-- **Paketmanager**: `npm` (oder `bun`)
-- **Wichtige Befehle**:
+## 1. Project Context
+- **Tech stack**: React 19, TypeScript, Vite, Tailwind CSS v4, Leaflet, Turf.js
+- **Package manager**: `npm` (or `bun`)
+- **Key commands**:
   - Build: `npm run build`
-  - Type-Check / Lint: `npm run lint`
-  - Dev-Server: `npm run dev`
+  - Type-check / Lint: `npm run lint`
+  - Dev server: `npm run dev`
 
 ---
 
 ## 2. Git & Commit Workflow
 
-### Strikte Staging-Regel (Targeted Staging)
-- **NIEMALS** `git add .`, `git add -A` oder `git commit -a` ausführen.
-- Es dürfen **ausschließlich** die Dateien gestaged werden, die direkt zur aktuellen Aufgabe gehören (`git add <datei1> <datei2>`).
-- Fremde oder unfertige Zwischenstände anderer Agenten/Aufgaben müssen unberührt im Working Tree bleiben.
+### Strict Staging Rule (Targeted Staging)
+- **NEVER** run `git add .`, `git add -A`, or `git commit -a`.
+- Only stage the files that are **directly related** to the current task (`git add <file1> <file2>`).
+- Unrelated or unfinished work from other agents/tasks must remain untouched in the working tree.
 
-### Quality Gate vor dem Commit
-- Vor jedem Commit muss die Codebasis validiert werden:
-  1. `npm run lint` (TypeScript-Check)
-  2. `npm run build` (Vite-Build)
-- Vor dem Staging immer `git status` prüfen (keine Secrets, `.env` oder temporäre Skripte stagen).
+### Quality Gate Before Committing
+- Before every commit, validate the codebase:
+  1. `npm run lint` (TypeScript check)
+  2. `npm run build` (Vite build)
+- Always run `git status` before staging — do not stage secrets, `.env` files, or temporary scripts.
 
-### Schlanke Commit-Nachrichten (Minimal & Prägnant)
-- **Kein AI-Fluff**: Keine ausschweifenden Erklärungen oder Aufzählungen.
-- **Titel-Format (1. Zeile)**: `<type>(<scope>): <kurze technische Beschreibung>`
-- **Optionaler User-Impact (2. Zeile nach Leerzeile)**:
-  - Bei Änderungen mit Auswirkung auf UI/UX oder Nutzerverhalten: genau **1 kurzer Satz** mit `Impact: <Effekt für den Nutzer>`.
-  - Bei rein internen Aufgaben (Refactoring, Typen, Chores) bleibt der Commit ein reiner Einzeiler.
-- **Typen**: `feat`, `fix`, `refactor`, `perf`, `docs`, `chore`
-- **Beispiele**:
-  - Reiner Einzeiler:
+### Lean Commit Messages (Minimal & Concise)
+- **No AI fluff**: No verbose explanations or bullet-point lists.
+- **Title format (line 1)**: `<type>(<scope>): <short technical description>`
+- **Optional user impact (line 3, after a blank line)**:
+  - For changes that affect the UI/UX or user behaviour: exactly **1 short sentence** using `Impact: <effect for the user>`.
+  - For purely internal work (refactoring, types, chores): keep the commit to a single line.
+- **Types**: `feat`, `fix`, `refactor`, `perf`, `docs`, `chore`
+- **Examples**:
+  - Single-line:
     `refactor(commute): extract person card state logic`
-  - Mit User-Impact:
+  - With user impact:
     ```
     feat(settings): relocate central settings to header button
 
-    Impact: Schafft mehr Platz in der Sidebar; Einstellungen sind nun permanent über den Header erreichbar.
+    Impact: Frees up sidebar space; settings are now permanently accessible via the header.
     ```
 
-### Push-Verhalten
-- Nach erfolgreichem Commit auf den Ziel-Branch pushen (`git push origin <branch>`).
-- Tritt beim Push ein Fehler auf (z. B. Auth-Problem oder Remote-Konflikte), wird der Nutzer sofort informiert.
+### Push Behaviour
+- After a successful commit, push to the target branch (`git push origin <branch>`).
+- If the push fails (e.g. auth issue or remote conflict), notify the user immediately.
 
 ---
 
-## 3. Multi-Agent & Subagent-Koordination
-- **Subagents committen nicht eigenmächtig** im selben Branch, sondern melden ihre modifizierten Dateien an den Lead-Agenten zurück.
-- Wenn Subagents parallel arbeiten, muss ein isolierter Workspace (`Workspace: 'branch'`) genutzt werden.
-- Der Lead-Agent fungiert als Integrator: Er prüft das Gesamtergebnis, führt das Quality Gate aus und erstellt den schlanken Commit.
+## 3. Multi-Agent & Subagent Coordination
+- **Subagents do not commit autonomously** to the same branch; instead they report their modified files back to the lead agent.
+- When subagents work in parallel, an isolated workspace (`Workspace: 'branch'`) must be used.
+- The lead agent acts as integrator: it reviews the combined result, runs the quality gate, and creates the lean commit.
