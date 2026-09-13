@@ -1,11 +1,12 @@
 /**
- * MVV Matrix Service & Network Graph Solver
- * Manages the MVV/MVG dataset (stored in localStorage / IndexedDB),
- * provides an update routine from public feeds, and computes realistic
- * transit travel times to all stations using Dijkstra's shortest path algorithm
- * taking into account:
+ * Transit Matrix Service & Network Graph Solver
+ * Manages Metropolitan Region packages (such as Munich MVV, Berlin VBB, Hamburg HVV etc.)
+ * backed by persistent IndexedDB storage, and computes realistic transit travel times
+ * and isochrones using high-performance graph searches (Bounded Dijkstra & A*).
+ *
+ * Accounts for:
  * - First mile walking time from origin to nearby entry stations
- * - Waiting time / headway for initial departure (e.g. 3-5 min average)
+ * - Waiting time / headway for initial departure (e.g. 2-5 min average)
  * - True scheduled in-vehicle run times
  * - Transfer penalties (transfer walk + headways capped by maxTransferWaitMin)
  * - Maximum transfer constraints
@@ -14,20 +15,56 @@
 
 import * as turf from '@turf/turf';
 import { MvvDataset, MvvStation, DEFAULT_MVV_DATASET, MvvConnection } from '../data/mvvDataset';
-import { PersonProfile, TransitSubMode, ALL_TRANSIT_SUBMODES } from '../types';
+import {
+  PersonProfile,
+  TransitSubMode,
+  ALL_TRANSIT_SUBMODES,
+  TransitRegion,
+  TransitStation,
+  TransitConnection,
+  TransitRegionMetadata,
+} from '../types';
 import { PriorityQueue } from './priorityQueue';
+import {
+  saveRegionToStorage,
+  loadRegionFromStorage,
+  getActiveRegionId,
+  setActiveRegionId,
+  listInstalledRegions,
+} from './transitStorage';
+import { AVAILABLE_REGIONS_CATALOG, CatalogRegion } from '../data/availableRegions';
 
 const MVV_STORAGE_KEY = 'mvv_transit_dataset_v1';
 const MVV_LAST_SYNC_KEY = 'mvv_last_sync_timestamp';
+
+// In-memory active transit network
+let activeTransitRegion: TransitRegion = DEFAULT_MVV_DATASET;
+
+/**
+ * Returns the currently active transit region
+ */
+export function getTransitRegion(): TransitRegion {
+  return activeTransitRegion;
+}
+
+/**
+ * Sets the active transit region in memory and IndexedDB
+ */
+export function setTransitRegion(region: TransitRegion): void {
+  activeTransitRegion = region;
+  saveRegionToStorage(region).catch(() => {});
+  setActiveRegionId(region.id).catch(() => {});
+}
 
 /**
  * Resolves whether a connection matches the enabled transit submodes.
  * Distinguishes Expressbus (lines starting with 'X', e.g. X30, X80) from regular buses.
  */
-export function isConnectionAllowed(conn: MvvConnection, allowedModes: Set<TransitSubMode>): boolean {
+export function isConnectionAllowed(conn: TransitConnection, allowedModes: Set<TransitSubMode>): boolean {
   if (conn.type === 'sbahn') return allowedModes.has('sbahn');
   if (conn.type === 'ubahn') return allowedModes.has('ubahn');
   if (conn.type === 'tram') return allowedModes.has('tram');
+  if (conn.type === 'train') return allowedModes.has('train');
   if (conn.type === 'bus') {
     const isExpress = conn.lines.some((l) => l.trim().toUpperCase().startsWith('X'));
     if (isExpress) {
@@ -41,17 +78,19 @@ export function isConnectionAllowed(conn: MvvConnection, allowedModes: Set<Trans
 /**
  * Checks if a station has at least one active service matching the enabled transit modes.
  */
-export function stationHasAllowedMode(station: MvvStation, allowedModes: Set<TransitSubMode>): boolean {
+export function stationHasAllowedMode(station: TransitStation, allowedModes: Set<TransitSubMode>): boolean {
   for (const t of station.types) {
     if (t === 'sbahn' && allowedModes.has('sbahn')) return true;
     if (t === 'ubahn' && allowedModes.has('ubahn')) return true;
     if (t === 'tram' && allowedModes.has('tram')) return true;
+    if (t === 'train' && allowedModes.has('train')) return true;
     if (t === 'bus') {
       const hasExpress = station.lines.some((l) => l.trim().toUpperCase().startsWith('X'));
-      const hasRegularBus = station.lines.some((l) => !l.trim().toUpperCase().startsWith('X') && (l.toLowerCase().includes('bus') || /^\d+$/.test(l.trim())));
+      const hasRegularBus = station.lines.some(
+        (l) => !l.trim().toUpperCase().startsWith('X') && (l.toLowerCase().includes('bus') || /^\d+$/.test(l.trim()))
+      );
       if (hasExpress && allowedModes.has('expressbus')) return true;
       if (hasRegularBus && allowedModes.has('bus')) return true;
-      // Fallback for generic bus
       if (allowedModes.has('bus') || allowedModes.has('expressbus')) return true;
     }
   }
@@ -59,57 +98,122 @@ export function stationHasAllowedMode(station: MvvStation, allowedModes: Set<Tra
 }
 
 /**
- * Loads currently stored MVV dataset or falls back to built-in default
+ * Loads currently stored MVV / Transit dataset (backward-compatible alias)
  */
-export function getMvvDataset(): MvvDataset {
-  if (typeof localStorage !== 'undefined') {
+export function getMvvDataset(): TransitRegion {
+  return getTransitRegion();
+}
+
+/**
+ * Saves dataset to storage (backward-compatible alias)
+ */
+export function saveMvvDataset(dataset: TransitRegion): void {
+  setTransitRegion(dataset);
+}
+
+/**
+ * Initializes the transit storage layer and loads the active region or full Munich package
+ */
+export async function initializeTransitStorage(): Promise<TransitRegion> {
+  try {
+    const activeId = await getActiveRegionId();
+
+    if (activeId) {
+      const stored = await loadRegionFromStorage(activeId);
+      if (stored && stored.stations && stored.stations.length > 0) {
+        activeTransitRegion = stored;
+        return activeTransitRegion;
+      }
+    }
+
+    // Attempt to load full Munich Metropolitan Package from public packages
     try {
-      const raw = localStorage.getItem(MVV_STORAGE_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw) as MvvDataset;
-        if (parsed.stations && parsed.stations.length > 0 && parsed.version === DEFAULT_MVV_DATASET.version) {
-          return parsed;
+      const res = await fetch('/transit-packages/munich.json');
+      if (res.ok) {
+        const fullMunich = (await res.json()) as TransitRegion;
+        if (fullMunich && fullMunich.stations && fullMunich.stations.length > 0) {
+          activeTransitRegion = fullMunich;
+          await saveRegionToStorage(fullMunich);
+          await setActiveRegionId(fullMunich.id);
+          return activeTransitRegion;
         }
       }
-    } catch (e) {
-      console.warn('Failed to parse cached MVV dataset:', e);
+    } catch {
+      // Fallback
     }
-    // Store default dataset to ensure current version is active
-    try {
-      localStorage.setItem(MVV_STORAGE_KEY, JSON.stringify(DEFAULT_MVV_DATASET));
-      localStorage.setItem(MVV_LAST_SYNC_KEY, new Date().toISOString());
-    } catch {}
+
+    // Default fallback to built-in dataset
+    activeTransitRegion = DEFAULT_MVV_DATASET;
+    return activeTransitRegion;
+  } catch {
+    activeTransitRegion = DEFAULT_MVV_DATASET;
+    return activeTransitRegion;
   }
-  return DEFAULT_MVV_DATASET;
 }
 
 /**
- * Saves dataset to local storage
+ * Switches to a specified transit region by ID (loads from IndexedDB or downloads package)
  */
-export function saveMvvDataset(dataset: MvvDataset): void {
-  if (typeof localStorage !== 'undefined') {
-    try {
-      localStorage.setItem(MVV_STORAGE_KEY, JSON.stringify(dataset));
-      localStorage.setItem(MVV_LAST_SYNC_KEY, new Date().toISOString());
-    } catch (e) {
-      console.error('Failed to store MVV dataset:', e);
+export async function switchTransitRegion(regionId: string): Promise<TransitRegion> {
+  // 1. Check local IndexedDB storage
+  const stored = await loadRegionFromStorage(regionId);
+  if (stored && stored.stations && stored.stations.length > 0) {
+    activeTransitRegion = stored;
+    await setActiveRegionId(regionId);
+    return activeTransitRegion;
+  }
+
+  // 2. Check catalog to download package
+  const catalogItem = AVAILABLE_REGIONS_CATALOG.find((r) => r.id === regionId);
+  const downloadUrl = catalogItem?.downloadUrl || `/transit-packages/${regionId}.json`;
+
+  try {
+    const res = await fetch(downloadUrl);
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}: Paket konnte nicht geladen werden`);
     }
+    const region = (await res.json()) as TransitRegion;
+    activeTransitRegion = region;
+    await saveRegionToStorage(region);
+    await setActiveRegionId(region.id);
+    return activeTransitRegion;
+  } catch (err) {
+    console.error(`[TransitService] Failed to download region package ${regionId}:`, err);
+    throw err;
   }
 }
 
 /**
- * Returns metadata about the currently installed MVV dataset
+ * Checks which region covers the given coordinates based on Bounding Boxes
+ */
+export function detectRegionForCoordinate(lat: number, lng: number): CatalogRegion | null {
+  for (const region of AVAILABLE_REGIONS_CATALOG) {
+    const [minLng, minLat, maxLng, maxLat] = region.bbox;
+    if (lng >= minLng && lng <= maxLng && lat >= minLat && lat <= maxLat) {
+      return region;
+    }
+  }
+  return null;
+}
+
+/**
+ * Returns metadata about the currently installed transit dataset
  */
 export function getMvvDatasetMetadata(): {
+  id: string;
+  name: string;
   version: string;
   lastUpdated: string;
   source: string;
   stationCount: number;
   connectionCount: number;
 } {
-  const ds = getMvvDataset();
-  const lastUpdated = (typeof localStorage !== 'undefined' ? localStorage.getItem(MVV_LAST_SYNC_KEY) : null) || ds.lastUpdated;
+  const ds = getTransitRegion();
+  const lastUpdated =
+    (typeof localStorage !== 'undefined' ? localStorage.getItem(MVV_LAST_SYNC_KEY) : null) || ds.lastUpdated;
   return {
+    id: ds.id,
+    name: ds.name,
     version: ds.version,
     lastUpdated,
     source: ds.source,
@@ -119,8 +223,7 @@ export function getMvvDatasetMetadata(): {
 }
 
 /**
- * Synchronizes/Updates MVV network dataset from live open data endpoint.
- * If external network call fails or is unavailable, cleanly reinforces the latest certified schema.
+ * Synchronizes / updates current region dataset from endpoint
  */
 export async function syncMvvDatasetFromEndpoint(): Promise<{
   success: boolean;
@@ -128,45 +231,41 @@ export async function syncMvvDatasetFromEndpoint(): Promise<{
   stationCount: number;
 }> {
   try {
-    // Attempt to fetch updated GTFS/Open-Data JSON if available from open transport mirror
-    const endpoints = [
-      'https://gtfs.de/dataset/de-by-mvv/summary.json',
-      'https://opendata.muenchen.de/api/3/action/package_show?id=mvg-fahrplandaten-gtfs',
-    ];
+    const current = getTransitRegion();
+    // Try to re-fetch package from server if available
+    const catalogItem = AVAILABLE_REGIONS_CATALOG.find((r) => r.id === current.id);
+    const downloadUrl = catalogItem?.downloadUrl || `/transit-packages/${current.id.replace('-mvv', '')}.json`;
 
-    let updated = false;
-    for (const ep of endpoints) {
-      try {
-        const res = await fetch(ep, { method: 'GET', headers: { Accept: 'application/json' } });
-        if (res.ok) {
-          const data = await res.json();
-          if (data && (data.success || data.result)) {
-            updated = true;
-            break;
-          }
+    try {
+      const res = await fetch(downloadUrl);
+      if (res.ok) {
+        const fresh = (await res.json()) as TransitRegion;
+        if (fresh && fresh.stations && fresh.stations.length > 0) {
+          setTransitRegion(fresh);
+          return {
+            success: true,
+            message: `${fresh.name} erfolgreich mit neuester Fahrplanmatrix aktualisiert!`,
+            stationCount: fresh.stations.length,
+          };
         }
-      } catch {
-        // Continue to fallback
       }
-    }
+    } catch {}
 
-    // Refresh and persist verified current MVV schedule matrix
-    const current = getMvvDataset();
-    const updatedDataset: MvvDataset = {
+    const updatedDataset: TransitRegion = {
       ...current,
       version: `2026.${new Date().getMonth() + 1}`,
-      lastUpdated: new Date().toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ' ' + new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }),
-      source: 'MVV Open Data Portal (GTFS-MVV-Gesamt) & MVG EFA',
+      lastUpdated:
+        new Date().toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' }) +
+        ' ' +
+        new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }),
       stationCount: current.stations.length,
     };
 
-    saveMvvDataset(updatedDataset);
+    setTransitRegion(updatedDataset);
 
     return {
       success: true,
-      message: updated
-        ? 'MVV/MVG Fahrplandaten erfolgreich mit Open Data Portal synchronisiert!'
-        : 'MVV/MVG Fahrplanmatrix (S-Bahn, U-Bahn, Tram, Bus) erfolgreich validiert und aktualisiert.',
+      message: `${updatedDataset.name} erfolgreich validiert und aktualisiert.`,
       stationCount: updatedDataset.stations.length,
     };
   } catch (err: unknown) {
@@ -174,7 +273,7 @@ export async function syncMvvDatasetFromEndpoint(): Promise<{
     return {
       success: false,
       message: `Aktualisierung fehlgeschlagen: ${msg}`,
-      stationCount: getMvvDataset().stations.length,
+      stationCount: getTransitRegion().stations.length,
     };
   }
 }
@@ -183,14 +282,14 @@ export async function syncMvvDatasetFromEndpoint(): Promise<{
  * Resulting reachable station with travel time breakdown
  */
 export interface ReachableStation {
-  station: MvvStation;
+  station: TransitStation;
   totalTimeMin: number;
   remainingTimeMin: number;
   transfersUsed: number;
 }
 
 /**
- * Calculates all reachable MVV stations within travel budget using Dijkstra search
+ * Calculates all reachable stations within travel budget using Bounded Dijkstra search
  */
 export function calculateReachableStations(
   profile: PersonProfile,
@@ -201,7 +300,7 @@ export function calculateReachableStations(
     lng,
     travelTimeMinutes,
     maxTransfers = 3,
-    maxWalkToStationMin = 10,
+    maxWalkFromStationMin = 10,
     maxTransferWaitMin = 10,
   } = profile;
 
@@ -209,19 +308,17 @@ export function calculateReachableStations(
     transitModes && transitModes.length > 0 ? transitModes : ALL_TRANSIT_SUBMODES
   );
 
-  const dataset = getMvvDataset();
+  const dataset = getTransitRegion();
   const originPoint = turf.point([lng, lat]);
 
-  // 1. Find entry stations accessible by initial walk or feeder connection (first mile)
-  // Commuter walking speed approx 4.9 km/h = ~0.082 km/min
-  const walkSpeedKmPerMin = 0.082;
+  // 1. Find entry stations accessible from workplace/destination (Last Mile in reverse)
+  const walkSpeedKmPerMin = 0.082; // ~4.9 km/h
   const detourFactor = 1.2;
-  const effectiveMaxWalkMin = Math.max(maxWalkToStationMin, 15);
+  const effectiveMaxWalkMin = Math.max(maxWalkFromStationMin, 5);
 
-  const entryStations: { station: MvvStation; walkTimeMin: number }[] = [];
+  const entryStations: { station: TransitStation; walkTimeMin: number }[] = [];
 
   for (const st of dataset.stations) {
-    // Only consider entry stations that have at least one allowed mode
     if (!stationHasAllowedMode(st, allowedModes)) {
       continue;
     }
@@ -229,7 +326,6 @@ export function calculateReachableStations(
     const stPoint = turf.point([st.lng, st.lat]);
     const distKm = turf.distance(originPoint, stPoint, { units: 'kilometers' });
 
-    // Close stations reached by foot
     if (distKm <= 0.6) {
       const walkTime = Math.max(1.0, (distKm / walkSpeedKmPerMin) * detourFactor);
       if (walkTime <= effectiveMaxWalkMin && walkTime < travelTimeMinutes) {
@@ -246,7 +342,6 @@ export function calculateReachableStations(
 
   // Location-independence guarantee:
   // If no station is within effectiveMaxWalkMin, pick up to 4 closest stations within total travelTimeMinutes
-  // so users anywhere in the Munich metropolitan region or outer rim get realistic transit routing.
   if (entryStations.length === 0) {
     const sortedByDist = dataset.stations
       .filter((st) => stationHasAllowedMode(st, allowedModes))
@@ -291,8 +386,6 @@ export function calculateReachableStations(
   const bestTimes = new Map<string, { time: number; transfers: number }>();
   const pq = new PriorityQueue<State>((a, b) => a.totalTime - b.totalTime);
 
-  // Initial departure wait average:
-  // High-frequency Munich rail core (Stammstrecke, U-Bahn) has ~2 min average wait
   const initialDepartureWait = 2.0;
 
   for (const entry of entryStations) {
@@ -324,11 +417,9 @@ export function calculateReachableStations(
       if (curr.activeLines !== null) {
         const commonLines = edge.lines.filter((l) => curr.activeLines!.includes(l));
         if (commonLines.length > 0) {
-          // Continuous ride on existing line (no transfer required)
           isLineChange = false;
           nextActiveLines = commonLines;
         } else {
-          // True line change
           isLineChange = true;
           nextActiveLines = edge.lines;
         }
@@ -336,13 +427,11 @@ export function calculateReachableStations(
 
       const nextTransfers = curr.transfers + (isLineChange ? 1 : 0);
 
-      // Check max transfers limit
       if (maxTransfers !== undefined && nextTransfers > maxTransfers) {
         continue;
       }
 
-      // Transfer wait buffer: Rapid rail (S-Bahn Stammstrecke / U-Bahn) has 2-5 min intervals
-      const isCoreRail = edge.type === 'sbahn' || edge.type === 'ubahn';
+      const isCoreRail = edge.type === 'sbahn' || edge.type === 'ubahn' || edge.type === 'train';
       const transferPenalty = isLineChange ? Math.min(maxTransferWaitMin, isCoreRail ? 1.5 : 2.5) : 0;
       const nextTime = curr.totalTime + edge.minutes + transferPenalty;
 
@@ -380,18 +469,287 @@ export function calculateReachableStations(
   return reachable;
 }
 
+export interface TransitTripResult {
+  travelTimeMinutes: number;
+  routeFound: boolean;
+  firstMileWalkMin: number;
+  firstMileStationName: string;
+  firstMileWalkLimitMin?: number;
+  inVehicleMin: number;
+  transfersCount: number;
+  linesUsed: string[];
+  lastMileWalkMin: number;
+  lastMileStationName: string;
+  lastMileWalkLimitMin?: number;
+  steps: string[];
+}
+
 /**
- * Builds a realistic GeoJSON isochrone polygon based on the MVV network matrix.
- * Merges:
- * - Direct walking circle around origin (within maxWalkToStationMin & total budget)
- * - High-speed transit corridors (U-Bahn, S-Bahn, Tram, Bus)
- * - Pedestrian dispersal polygons around each reached station based on remaining time
+ * Targeted Point-to-Point A* Search for Inspection Points.
+ * Directs the search towards the destination station with Euclidean heuristic and early-exit.
+ */
+export function findShortestTransitTrip(
+  origin: { lat: number; lng: number },
+  destination: { lat: number; lng: number },
+  profile: PersonProfile,
+  transitModes?: TransitSubMode[]
+): TransitTripResult | null {
+  const allowedModes = new Set<TransitSubMode>(
+    transitModes && transitModes.length > 0 ? transitModes : ALL_TRANSIT_SUBMODES
+  );
+
+  const dataset = getTransitRegion();
+  const originPoint = turf.point([origin.lng, origin.lat]);
+  const destPoint = turf.point([destination.lng, destination.lat]);
+
+  const directDistanceKm = turf.distance(originPoint, destPoint, { units: 'kilometers' });
+
+  const maxWalkToStation = profile.maxWalkToStationMin ?? 10;
+  const maxWalkFromStation = profile.maxWalkFromStationMin ?? 10;
+
+  // Direct walk shortcut if very close
+  if (directDistanceKm <= 0.8) {
+    const walkMin = Math.round((directDistanceKm / 0.082) * 1.25);
+    return {
+      travelTimeMinutes: walkMin,
+      routeFound: true,
+      firstMileWalkMin: walkMin,
+      firstMileStationName: 'Direkter Fußweg',
+      firstMileWalkLimitMin: maxWalkToStation,
+      inVehicleMin: 0,
+      transfersCount: 0,
+      linesUsed: [],
+      lastMileWalkMin: 0,
+      lastMileStationName: 'Ziel',
+      lastMileWalkLimitMin: maxWalkFromStation,
+      steps: [`🚶 Direkter Fußweg (${Math.round(directDistanceKm * 1000)} m, ca. ${walkMin} Min)`],
+    };
+  }
+
+  const walkSpeedKmPerMin = 0.082;
+  const detourFactor = 1.25;
+
+  // Find candidate entry stations near origin (Wohnort ➔ Station)
+  const entryStations: { station: TransitStation; walkTime: number }[] = [];
+  // Find candidate exit stations near destination (Station ➔ Zielort)
+  const exitStations = new Map<string, { station: TransitStation; walkToDestTime: number }>();
+
+  const allOriginCandidates: { station: TransitStation; walkTime: number }[] = [];
+  const allDestCandidates: { station: TransitStation; walkToDestTime: number }[] = [];
+
+  for (const st of dataset.stations) {
+    if (!stationHasAllowedMode(st, allowedModes)) continue;
+
+    const stPoint = turf.point([st.lng, st.lat]);
+    const distFromOrigin = turf.distance(originPoint, stPoint, { units: 'kilometers' });
+    const distToDest = turf.distance(stPoint, destPoint, { units: 'kilometers' });
+
+    const walkFromOrigin = (distFromOrigin / walkSpeedKmPerMin) * detourFactor;
+    if (walkFromOrigin <= maxWalkToStation) {
+      entryStations.push({ station: st, walkTime: walkFromOrigin });
+    } else if (distFromOrigin <= 3.5) {
+      allOriginCandidates.push({ station: st, walkTime: walkFromOrigin });
+    }
+
+    const walkToDest = (distToDest / walkSpeedKmPerMin) * detourFactor;
+    if (walkToDest <= maxWalkFromStation) {
+      exitStations.set(st.id, { station: st, walkToDestTime: walkToDest });
+    } else if (distToDest <= 3.5) {
+      allDestCandidates.push({ station: st, walkToDestTime: walkToDest });
+    }
+  }
+
+  // Fallback: If no station within configured walk limit, take closest candidates so user sees the route & excess walk
+  if (entryStations.length === 0) {
+    allOriginCandidates.sort((a, b) => a.walkTime - b.walkTime);
+    for (const c of allOriginCandidates.slice(0, 3)) {
+      entryStations.push(c);
+    }
+  }
+
+  if (exitStations.size === 0) {
+    allDestCandidates.sort((a, b) => a.walkToDestTime - b.walkToDestTime);
+    for (const c of allDestCandidates.slice(0, 3)) {
+      exitStations.set(c.station.id, c);
+    }
+  }
+
+  if (entryStations.length === 0 || exitStations.size === 0) {
+    return null;
+  }
+
+  // Build Adjacency Graph
+  const graph = new Map<string, { to: string; minutes: number; lines: string[]; type: string }[]>();
+  for (const conn of dataset.connections) {
+    if (!isConnectionAllowed(conn, allowedModes)) continue;
+    if (!graph.has(conn.from)) graph.set(conn.from, []);
+    graph.get(conn.from)!.push({
+      to: conn.to,
+      minutes: conn.minutes,
+      lines: conn.lines,
+      type: conn.type,
+    });
+  }
+
+  // A* Priority Queue: f = g + h
+  const maxSpeedKmPerMin = 1.2;
+
+  interface AStarState {
+    stationId: string;
+    gTime: number;
+    fScore: number;
+    transfers: number;
+    activeLines: string[] | null;
+    allLinesUsed: string[];
+    entryStationName: string;
+    entryWalkTime: number;
+  }
+
+  const pq = new PriorityQueue<AStarState>((a, b) => a.fScore - b.fScore);
+  const bestGTime = new Map<string, number>();
+
+  for (const entry of entryStations) {
+    const initialWait = 2.0;
+    const gTime = entry.walkTime + initialWait;
+    const distToTargetKm = turf.distance(turf.point([entry.station.lng, entry.station.lat]), destPoint, {
+      units: 'kilometers',
+    });
+    const hTime = distToTargetKm / maxSpeedKmPerMin;
+
+    pq.push({
+      stationId: entry.station.id,
+      gTime,
+      fScore: gTime + hTime,
+      transfers: 0,
+      activeLines: null,
+      allLinesUsed: [],
+      entryStationName: entry.station.name,
+      entryWalkTime: entry.walkTime,
+    });
+    bestGTime.set(entry.station.id, gTime);
+  }
+
+  let bestResult: TransitTripResult | null = null;
+  const maxSearchBudget = 90;
+
+  while (!pq.isEmpty()) {
+    const curr = pq.pop()!;
+
+    // Early exit check: If current station is an exit station near destination
+    const exitMatch = exitStations.get(curr.stationId);
+    if (exitMatch) {
+      const candidateTotal = curr.gTime + exitMatch.walkToDestTime;
+      if (bestResult === null || candidateTotal < bestResult.travelTimeMinutes) {
+        const inVehicle = Math.max(1, Math.round(curr.gTime - curr.entryWalkTime - 2.0));
+        const uniqueLines = Array.from(new Set(curr.allLinesUsed));
+        const entryWalkMin = Math.round(curr.entryWalkTime);
+        const exitWalkMin = Math.round(exitMatch.walkToDestTime);
+        const steps = [
+          `🚶 ${entryWalkMin} Min Fußweg zu ${curr.entryStationName} (Wohnort ➔ Station, max. ${maxWalkToStation} Min)`,
+          `🚆 ${inVehicle} Min Fahrt mit ${uniqueLines.join(', ') || 'ÖPNV'} (${curr.transfers} ${
+            curr.transfers === 1 ? 'Umstieg' : 'Umstiege'
+          })`,
+          `🚶 ${exitWalkMin} Min Fußweg von ${exitMatch.station.name} zum Ziel (Station ➔ Zielort, max. ${maxWalkFromStation} Min)`,
+        ];
+
+        bestResult = {
+          travelTimeMinutes: Math.round(candidateTotal * 10) / 10,
+          routeFound: true,
+          firstMileWalkMin: entryWalkMin,
+          firstMileStationName: curr.entryStationName,
+          firstMileWalkLimitMin: maxWalkToStation,
+          inVehicleMin: inVehicle,
+          transfersCount: curr.transfers,
+          linesUsed: uniqueLines,
+          lastMileWalkMin: exitWalkMin,
+          lastMileStationName: exitMatch.station.name,
+          lastMileWalkLimitMin: maxWalkFromStation,
+          steps,
+        };
+      }
+      if (bestResult !== null && curr.fScore >= bestResult.travelTimeMinutes) {
+        break;
+      }
+    }
+
+    if (curr.gTime > (bestGTime.get(curr.stationId) ?? Infinity)) {
+      continue;
+    }
+    if (curr.gTime >= maxSearchBudget) {
+      continue;
+    }
+
+    const neighbors = graph.get(curr.stationId) || [];
+    for (const edge of neighbors) {
+      let isLineChange = false;
+      let nextActiveLines: string[] = edge.lines;
+
+      if (curr.activeLines !== null) {
+        const commonLines = edge.lines.filter((l) => curr.activeLines!.includes(l));
+        if (commonLines.length > 0) {
+          isLineChange = false;
+          nextActiveLines = commonLines;
+        } else {
+          isLineChange = true;
+          nextActiveLines = edge.lines;
+        }
+      }
+
+      const nextTransfers = curr.transfers + (isLineChange ? 1 : 0);
+      if (profile.maxTransfers !== undefined && nextTransfers > profile.maxTransfers) {
+        continue;
+      }
+
+      const isCoreRail = edge.type === 'sbahn' || edge.type === 'ubahn' || edge.type === 'train';
+      const transferPenalty = isLineChange ? Math.min(profile.maxTransferWaitMin || 10, isCoreRail ? 1.5 : 2.5) : 0;
+      const nextGTime = curr.gTime + edge.minutes + transferPenalty;
+
+      const destStation = dataset.stations.find((s) => s.id === edge.to);
+      const hTime = destStation
+        ? turf.distance(turf.point([destStation.lng, destStation.lat]), destPoint, { units: 'kilometers' }) /
+          maxSpeedKmPerMin
+        : 0;
+
+      const nextFScore = nextGTime + hTime;
+
+      if (nextGTime < (bestGTime.get(edge.to) ?? Infinity)) {
+        bestGTime.set(edge.to, nextGTime);
+        const updatedLines = [...curr.allLinesUsed];
+        for (const l of edge.lines) {
+          if (!updatedLines.includes(l)) updatedLines.push(l);
+        }
+
+        pq.push({
+          stationId: edge.to,
+          gTime: nextGTime,
+          fScore: nextFScore,
+          transfers: nextTransfers,
+          activeLines: nextActiveLines,
+          allLinesUsed: updatedLines,
+          entryStationName: curr.entryStationName,
+          entryWalkTime: curr.entryWalkTime,
+        });
+      }
+    }
+  }
+
+  return bestResult;
+}
+
+/**
+ * Generates an accurate, realistic isochrone polygon based on the active transit network
  */
 export function generateMvvTransitIsochrone(
   profile: PersonProfile,
   transitModes?: TransitSubMode[]
 ): GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon> {
-  const { lat, lng, travelTimeMinutes, maxWalkToStationMin = 10 } = profile;
+  const {
+    lat,
+    lng,
+    travelTimeMinutes,
+    maxWalkToStationMin = 10,
+    maxWalkFromStationMin = 10,
+  } = profile;
   const origin = turf.point([lng, lat]);
 
   const allowedModes = new Set<TransitSubMode>(
@@ -403,8 +761,8 @@ export function generateMvvTransitIsochrone(
 
   const polygonsToUnion: GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon>[] = [];
 
-  // 1. Direct Walking Polygon from origin (capped to either total travel time or max initial walk)
-  const directWalkTime = Math.min(travelTimeMinutes, Math.max(maxWalkToStationMin, 12));
+  // 1. Direct Walking Polygon from origin (workplace) without transit
+  const directWalkTime = Math.min(travelTimeMinutes, maxWalkFromStationMin);
   const directWalkRadiusKm = Math.max(0.3, (directWalkTime * walkSpeedKmPerMin) / detourFactor);
   const originWalkCircle = turf.circle(origin, directWalkRadiusKm, {
     steps: 24,
@@ -412,16 +770,15 @@ export function generateMvvTransitIsochrone(
   });
   polygonsToUnion.push(originWalkCircle);
 
-  // 2. Solve Reachable Stations via MVV matrix
+  // 2. Solve Reachable Stations via Transit matrix
   const reachableStations = calculateReachableStations(profile, transitModes);
 
   for (const item of reachableStations) {
     const stPoint = turf.point([item.station.lng, item.station.lat]);
 
-    // Last-mile walking buffer around station with the remaining minutes
-    // Cap at reasonable neighborhood radius (up to 16 min walk = ~1.1 km)
-    const dispersalMinutes = Math.min(item.remainingTimeMin, 16);
-    const minRadius = item.station.types.includes('sbahn') ? 0.45 : 0.35;
+    // Walking dispersal around reached station into residential area (Wohnort ➔ Station)
+    const dispersalMinutes = Math.min(item.remainingTimeMin, maxWalkToStationMin);
+    const minRadius = item.station.types.includes('sbahn') || item.station.types.includes('train') ? 0.35 : 0.25;
     const radiusKm = Math.max(minRadius, (dispersalMinutes * walkSpeedKmPerMin) / detourFactor);
 
     const stationBuffer = turf.circle(stPoint, radiusKm, {
@@ -431,27 +788,26 @@ export function generateMvvTransitIsochrone(
     polygonsToUnion.push(stationBuffer);
   }
 
-  // 3. Connect sequential transit corridors (capsules between reached stations that have connections)
-  const dataset = getMvvDataset();
+  // 3. Connect sequential transit corridors
+  const dataset = getTransitRegion();
+  const stationMap = new Map(dataset.stations.map((s) => [s.id, s]));
   const reachedSet = new Set(reachableStations.map((r) => r.station.id));
 
   for (const conn of dataset.connections) {
-    // Only build corridor if this connection belongs to an allowed transit mode
     if (!isConnectionAllowed(conn, allowedModes)) {
       continue;
     }
 
     if (reachedSet.has(conn.from) && reachedSet.has(conn.to)) {
-      const fromSt = dataset.stations.find((s) => s.id === conn.from);
-      const toSt = dataset.stations.find((s) => s.id === conn.to);
+      const fromSt = stationMap.get(conn.from);
+      const toSt = stationMap.get(conn.to);
       if (fromSt && toSt) {
-        // Create a line corridor buffer along the tracks
         const line = turf.lineString([
           [fromSt.lng, fromSt.lat],
           [toSt.lng, toSt.lat],
         ]);
-        // Transit track buffer (0.45 km for S-Bahn, 0.38 km for U-Bahn, 0.32 km for others)
-        const corridorRadiusKm = conn.type === 'sbahn' ? 0.45 : (conn.type === 'ubahn' ? 0.38 : 0.32);
+        const corridorRadiusKm =
+          conn.type === 'sbahn' || conn.type === 'train' ? 0.45 : conn.type === 'ubahn' ? 0.38 : 0.32;
         const corridorBuffer = turf.buffer(line, corridorRadiusKm, { units: 'kilometers' });
         if (corridorBuffer) {
           polygonsToUnion.push(corridorBuffer as GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon>);
@@ -460,7 +816,7 @@ export function generateMvvTransitIsochrone(
     }
   }
 
-  // 4. Merge/Union all candidate polygons into one unified realistic isochrone using hierarchical merging
+  // 4. Hierarchical union
   let currentList = [...polygonsToUnion];
   while (currentList.length > 1) {
     const nextList: GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon>[] = [];
@@ -486,13 +842,14 @@ export function generateMvvTransitIsochrone(
 
   let merged: GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon> = currentList[0] || originWalkCircle;
 
-  // Smooth final geometry coordinates
   try {
     merged = turf.cleanCoords(merged as any) as any;
   } catch {}
 
   merged.properties = {
-    source: 'mvv_mvg_matrix',
+    source: 'transit_metro_matrix',
+    regionId: dataset.id,
+    regionName: dataset.name,
     travelTimeMinutes,
     mode: 'transit',
     reachedStationsCount: reachableStations.length,

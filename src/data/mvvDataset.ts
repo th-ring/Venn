@@ -8,37 +8,23 @@
  * - Major MetroBus rings & diagonals: Bus 50, 51, 53, 54, 55, 58/68, 62, ExpressBus X30, X50, X80
  */
 
-export interface MvvStation {
-  id: string;
-  name: string;
-  lat: number;
-  lng: number;
-  lines: string[];
-  types: ('sbahn' | 'ubahn' | 'tram' | 'bus')[];
-}
+import { TransitRegion, TransitStation, TransitConnection } from '../types';
 
-export interface MvvConnection {
-  from: string; // station id
-  to: string;   // station id
-  minutes: number; // travel time in minutes
-  lines: string[];
-  type: 'sbahn' | 'ubahn' | 'tram' | 'bus';
-}
+export type MvvStation = TransitStation;
+export type MvvConnection = TransitConnection;
+export type MvvDataset = TransitRegion;
 
-export interface MvvDataset {
-  version: string;
-  lastUpdated: string;
-  source: string;
-  stationCount: number;
-  stations: MvvStation[];
-  connections: MvvConnection[];
-}
-
-export const DEFAULT_MVV_DATASET: MvvDataset = {
+export const DEFAULT_MVV_DATASET: TransitRegion = {
+  id: 'munich-mvv',
+  name: 'München & Metropolregion (MVV Basis)',
+  bbox: [11.15, 47.90, 11.95, 48.45],
+  isBuiltIn: true,
   version: '2026.4-MunichFullSBahnIntegrated',
   lastUpdated: '2026-09-13',
   source: 'MVV / MVG Open Data Soll-Fahrplan (GTFS-MVV Gesamtraum München)',
   stationCount: 113,
+  connectionCount: 226,
+  downloadSizeApprox: 'Integriert (57 KB)',
   stations: [
     // === 1. S-BAHN STAMMSTRECKE (Core Munich Trunk) ===
     { id: 'pasing', name: 'Pasing Bf.', lat: 48.1500, lng: 11.4617, lines: ['S3', 'S4', 'S6', 'S8', 'Tram 19', 'Bus 56', 'Bus 57'], types: ['sbahn', 'tram', 'bus'] },

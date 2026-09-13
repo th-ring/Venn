@@ -1,0 +1,266 @@
+{
+  "id": "hamburg-hvv",
+  "name": "Hamburg & Metropolregion (HVV)",
+  "version": "2026.3",
+  "lastUpdated": "2026-08-15",
+  "source": "DELFI Bundesfeed & HVV Open Data",
+  "bbox": [
+    9.5,
+    53.3,
+    10.4,
+    53.8
+  ],
+  "stationCount": 54,
+  "connectionCount": 110,
+  "downloadSizeApprox": "38 KB",
+  "isBuiltIn": false,
+  "stations": [
+    {
+      "id": "hh_hbf",
+      "name": "Hamburg Hauptbahnhof",
+      "lat": 53.5531,
+      "lng": 10.0067,
+      "lines": [
+        "S1",
+        "S2",
+        "S3",
+        "S5",
+        "U1",
+        "U2",
+        "U3",
+        "U4"
+      ],
+      "types": [
+        "sbahn",
+        "ubahn"
+      ]
+    },
+    {
+      "id": "hh_dammtor",
+      "name": "Dammtor (Messe/CCH)",
+      "lat": 53.5608,
+      "lng": 9.9897,
+      "lines": [
+        "S2",
+        "S5",
+        "RE"
+      ],
+      "types": [
+        "sbahn",
+        "train"
+      ]
+    },
+    {
+      "id": "hh_altona",
+      "name": "Altona Bf.",
+      "lat": 53.5528,
+      "lng": 9.9351,
+      "lines": [
+        "S1",
+        "S2",
+        "S3",
+        "Bus 15"
+      ],
+      "types": [
+        "sbahn",
+        "bus"
+      ]
+    },
+    {
+      "id": "hh_jungfernstieg",
+      "name": "Jungfernstieg",
+      "lat": 53.5536,
+      "lng": 9.9922,
+      "lines": [
+        "S1",
+        "S3",
+        "U1",
+        "U2",
+        "U4"
+      ],
+      "types": [
+        "sbahn",
+        "ubahn"
+      ]
+    },
+    {
+      "id": "hh_landungsbruecken",
+      "name": "Landungsbrücken",
+      "lat": 53.5458,
+      "lng": 9.9675,
+      "lines": [
+        "S1",
+        "S3",
+        "U3",
+        "Fähre 62"
+      ],
+      "types": [
+        "sbahn",
+        "ubahn"
+      ]
+    },
+    {
+      "id": "hh_airport",
+      "name": "Hamburg Airport (Flughafen)",
+      "lat": 53.6325,
+      "lng": 10.0067,
+      "lines": [
+        "S1"
+      ],
+      "types": [
+        "sbahn"
+      ]
+    },
+    {
+      "id": "hh_harburg",
+      "name": "Harburg Bf.",
+      "lat": 53.4561,
+      "lng": 9.9917,
+      "lines": [
+        "S3",
+        "S5",
+        "RE"
+      ],
+      "types": [
+        "sbahn",
+        "train"
+      ]
+    },
+    {
+      "id": "hh_bergedorf",
+      "name": "Bergedorf Bf.",
+      "lat": 53.4894,
+      "lng": 10.2064,
+      "lines": [
+        "S2",
+        "RE"
+      ],
+      "types": [
+        "sbahn",
+        "train"
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "from": "hh_hbf",
+      "to": "hh_jungfernstieg",
+      "minutes": 2,
+      "lines": [
+        "S1",
+        "S3",
+        "U1"
+      ],
+      "type": "sbahn"
+    },
+    {
+      "from": "hh_jungfernstieg",
+      "to": "hh_hbf",
+      "minutes": 2,
+      "lines": [
+        "S1",
+        "S3",
+        "U1"
+      ],
+      "type": "sbahn"
+    },
+    {
+      "from": "hh_jungfernstieg",
+      "to": "hh_landungsbruecken",
+      "minutes": 4,
+      "lines": [
+        "S1",
+        "S3"
+      ],
+      "type": "sbahn"
+    },
+    {
+      "from": "hh_landungsbruecken",
+      "to": "hh_jungfernstieg",
+      "minutes": 4,
+      "lines": [
+        "S1",
+        "S3"
+      ],
+      "type": "sbahn"
+    },
+    {
+      "from": "hh_landungsbruecken",
+      "to": "hh_altona",
+      "minutes": 5,
+      "lines": [
+        "S1",
+        "S3"
+      ],
+      "type": "sbahn"
+    },
+    {
+      "from": "hh_altona",
+      "to": "hh_landungsbruecken",
+      "minutes": 5,
+      "lines": [
+        "S1",
+        "S3"
+      ],
+      "type": "sbahn"
+    },
+    {
+      "from": "hh_hbf",
+      "to": "hh_airport",
+      "minutes": 25,
+      "lines": [
+        "S1"
+      ],
+      "type": "sbahn"
+    },
+    {
+      "from": "hh_airport",
+      "to": "hh_hbf",
+      "minutes": 25,
+      "lines": [
+        "S1"
+      ],
+      "type": "sbahn"
+    },
+    {
+      "from": "hh_hbf",
+      "to": "hh_harburg",
+      "minutes": 12,
+      "lines": [
+        "S3",
+        "S5"
+      ],
+      "type": "sbahn"
+    },
+    {
+      "from": "hh_harburg",
+      "to": "hh_hbf",
+      "minutes": 12,
+      "lines": [
+        "S3",
+        "S5"
+      ],
+      "type": "sbahn"
+    },
+    {
+      "from": "hh_hbf",
+      "to": "hh_dammtor",
+      "minutes": 2,
+      "lines": [
+        "S2",
+        "S5"
+      ],
+      "type": "sbahn"
+    },
+    {
+      "from": "hh_dammtor",
+      "to": "hh_hbf",
+      "minutes": 2,
+      "lines": [
+        "S2",
+        "S5"
+      ],
+      "type": "sbahn"
+    }
+  ]
+}

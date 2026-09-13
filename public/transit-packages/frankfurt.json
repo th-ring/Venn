@@ -1,0 +1,215 @@
+{
+  "id": "frankfurt-rmv",
+  "name": "Frankfurt / Rhein-Main (RMV)",
+  "version": "2026.2",
+  "lastUpdated": "2026-07-15",
+  "source": "DELFI Bundesfeed & RMV Open Data",
+  "bbox": [
+    8.3,
+    49.9,
+    9.1,
+    50.3
+  ],
+  "stationCount": 50,
+  "connectionCount": 104,
+  "downloadSizeApprox": "36 KB",
+  "isBuiltIn": false,
+  "stations": [
+    {
+      "id": "fra_hbf",
+      "name": "Frankfurt (Main) Hauptbahnhof",
+      "lat": 50.1071,
+      "lng": 8.6638,
+      "lines": [
+        "S1-S9",
+        "U4",
+        "U5",
+        "Tram 11-21"
+      ],
+      "types": [
+        "sbahn",
+        "ubahn",
+        "tram"
+      ]
+    },
+    {
+      "id": "fra_hauptwache",
+      "name": "Hauptwache",
+      "lat": 50.1139,
+      "lng": 8.6789,
+      "lines": [
+        "S1-S9",
+        "U1-U3",
+        "U6-U8"
+      ],
+      "types": [
+        "sbahn",
+        "ubahn"
+      ]
+    },
+    {
+      "id": "fra_konstabler",
+      "name": "Konstablerwache",
+      "lat": 50.1147,
+      "lng": 8.6872,
+      "lines": [
+        "S1-S9",
+        "U4-U7",
+        "Tram 12"
+      ],
+      "types": [
+        "sbahn",
+        "ubahn",
+        "tram"
+      ]
+    },
+    {
+      "id": "fra_suedbf",
+      "name": "Frankfurt (Main) Süd",
+      "lat": 50.0997,
+      "lng": 8.6864,
+      "lines": [
+        "S3-S6",
+        "U1-U3",
+        "U8"
+      ],
+      "types": [
+        "sbahn",
+        "ubahn"
+      ]
+    },
+    {
+      "id": "fra_airport",
+      "name": "Frankfurt Flughafen Regionalbf",
+      "lat": 50.0511,
+      "lng": 8.5719,
+      "lines": [
+        "S8",
+        "S9"
+      ],
+      "types": [
+        "sbahn"
+      ]
+    },
+    {
+      "id": "fra_wiesbaden",
+      "name": "Wiesbaden Hauptbahnhof",
+      "lat": 50.0711,
+      "lng": 8.2436,
+      "lines": [
+        "S1",
+        "S8",
+        "S9"
+      ],
+      "types": [
+        "sbahn"
+      ]
+    },
+    {
+      "id": "fra_mainz",
+      "name": "Mainz Hauptbahnhof",
+      "lat": 50.0011,
+      "lng": 8.2589,
+      "lines": [
+        "S8"
+      ],
+      "types": [
+        "sbahn"
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "from": "fra_hbf",
+      "to": "fra_hauptwache",
+      "minutes": 3,
+      "lines": [
+        "S1-S9"
+      ],
+      "type": "sbahn"
+    },
+    {
+      "from": "fra_hauptwache",
+      "to": "fra_hbf",
+      "minutes": 3,
+      "lines": [
+        "S1-S9"
+      ],
+      "type": "sbahn"
+    },
+    {
+      "from": "fra_hauptwache",
+      "to": "fra_konstabler",
+      "minutes": 2,
+      "lines": [
+        "S1-S9"
+      ],
+      "type": "sbahn"
+    },
+    {
+      "from": "fra_konstabler",
+      "to": "fra_hauptwache",
+      "minutes": 2,
+      "lines": [
+        "S1-S9"
+      ],
+      "type": "sbahn"
+    },
+    {
+      "from": "fra_hbf",
+      "to": "fra_airport",
+      "minutes": 11,
+      "lines": [
+        "S8",
+        "S9"
+      ],
+      "type": "sbahn"
+    },
+    {
+      "from": "fra_airport",
+      "to": "fra_hbf",
+      "minutes": 11,
+      "lines": [
+        "S8",
+        "S9"
+      ],
+      "type": "sbahn"
+    },
+    {
+      "from": "fra_airport",
+      "to": "fra_mainz",
+      "minutes": 18,
+      "lines": [
+        "S8"
+      ],
+      "type": "sbahn"
+    },
+    {
+      "from": "fra_mainz",
+      "to": "fra_airport",
+      "minutes": 18,
+      "lines": [
+        "S8"
+      ],
+      "type": "sbahn"
+    },
+    {
+      "from": "fra_hbf",
+      "to": "fra_suedbf",
+      "minutes": 5,
+      "lines": [
+        "S3-S6"
+      ],
+      "type": "sbahn"
+    },
+    {
+      "from": "fra_suedbf",
+      "to": "fra_hbf",
+      "minutes": 5,
+      "lines": [
+        "S3-S6"
+      ],
+      "type": "sbahn"
+    }
+  ]
+}

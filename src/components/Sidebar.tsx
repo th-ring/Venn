@@ -16,6 +16,7 @@ import {
   Plus,
   Compass,
   Share2,
+  Settings,
   MapPin,
   CheckCircle2,
   AlertCircle,
@@ -45,13 +46,10 @@ interface SidebarProps {
   onChangeSchedule: (updated: Partial<CommuteSchedule>) => void;
   onApplySuggestion: (suggestion: FallbackSuggestion) => void;
   onOpenShareModal: () => void;
+  onOpenSettings?: (tab?: 'basemap' | 'isochrones' | 'mvv' | 'keys' | 'heatmap') => void;
   onRefreshIsochrones?: () => void;
   isMobileOpen: boolean;
   onToggleMobile: () => void;
-  basemap?: BasemapProvider;
-  onBasemapChange?: (provider: BasemapProvider) => void;
-  isApiKeyModalOpen?: boolean;
-  onToggleApiKeyModal?: (open: boolean) => void;
   onlyResidential?: boolean;
   onToggleOnlyResidential?: () => void;
   showOnlyIntersection?: boolean;
@@ -77,13 +75,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onChangeSchedule,
   onApplySuggestion,
   onOpenShareModal,
+  onOpenSettings,
   onRefreshIsochrones,
   isMobileOpen,
   onToggleMobile,
-  basemap,
-  onBasemapChange,
-  isApiKeyModalOpen,
-  onToggleApiKeyModal,
   onlyResidential = false,
   onToggleOnlyResidential,
   showOnlyIntersection,
@@ -123,11 +118,23 @@ export const Sidebar: React.FC<SidebarProps> = ({
             id="btn-open-share"
             type="button"
             onClick={onOpenShareModal}
-            className="p-2 rounded-xl text-slate-600 hover:text-blue-600 hover:bg-blue-50 transition-colors border border-slate-200/80 shadow-2xs"
+            className="p-2 rounded-xl text-slate-600 hover:text-blue-600 hover:bg-blue-50 transition-colors border border-slate-200/80 shadow-2xs cursor-pointer"
             title="Suche als Link teilen"
           >
             <Share2 className="w-4 h-4" />
           </button>
+
+          {onOpenSettings && (
+            <button
+              id="btn-open-settings"
+              type="button"
+              onClick={() => onOpenSettings('basemap')}
+              className="p-2 rounded-xl text-slate-600 hover:text-blue-600 hover:bg-blue-50 transition-colors border border-slate-200/80 shadow-2xs cursor-pointer"
+              title="Zentrale Anwendungseinstellungen (Karten, APIs, ÖPNV, Heatmap)"
+            >
+              <Settings className="w-4 h-4" />
+            </button>
+          )}
 
           {/* Close mobile sidebar button */}
           <button
@@ -159,14 +166,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
         isCalculating={isCalculating || isPending}
         autoUpdate={autoUpdate}
         onToggleAutoUpdate={onToggleAutoUpdate}
-        basemap={basemap}
-        onBasemapChange={onBasemapChange}
-        isApiKeyModalOpen={isApiKeyModalOpen}
-        onToggleApiKeyModal={onToggleApiKeyModal}
-        showOnlyIntersection={showOnlyIntersection}
-        onToggleOnlyIntersection={onToggleOnlyIntersection}
-        showIndividualIsochrones={showIndividualIsochrones}
-        onToggleIndividualIsochrones={onToggleIndividualIsochrones}
       />
 
       {/* Status & Summary Banner with Calculation State Transparency & Wohnbereichs-Filter */}

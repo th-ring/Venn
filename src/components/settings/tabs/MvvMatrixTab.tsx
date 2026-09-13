@@ -1,9 +1,32 @@
-import React from 'react';
-import { TransitSubMode, ALL_TRANSIT_SUBMODES } from '../../../types';
-import { Train, RefreshCw, Loader2, CheckCircle2, Info } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { TransitSubMode, ALL_TRANSIT_SUBMODES, TransitRegionMetadata } from '../../../types';
+import { AVAILABLE_REGIONS_CATALOG, CatalogRegion } from '../../../data/availableRegions';
+import {
+  listInstalledRegions,
+  saveRegionToStorage,
+} from '../../../services/transitStorage';
+import {
+  switchTransitRegion,
+  getTransitRegion,
+} from '../../../services/mvvMatrixService';
+import {
+  Train,
+  RefreshCw,
+  Loader2,
+  CheckCircle2,
+  DownloadCloud,
+  Check,
+  MapPin,
+  Info,
+  Layers,
+  Sparkles,
+  HardDrive,
+} from 'lucide-react';
 
 interface MvvMatrixTabProps {
   mvvMeta: {
+    id?: string;
+    name?: string;
     version: string;
     lastUpdated: string;
     source: string;
@@ -15,6 +38,7 @@ interface MvvMatrixTabProps {
   onSyncMvv: () => void;
   activeTransitModes: TransitSubMode[];
   onToggleTransitMode: (mode: TransitSubMode) => void;
+  onRefreshIsochrones?: () => void;
 }
 
 export const MvvMatrixTab: React.FC<MvvMatrixTabProps> = ({
@@ -24,21 +48,63 @@ export const MvvMatrixTab: React.FC<MvvMatrixTabProps> = ({
   onSyncMvv,
   activeTransitModes,
   onToggleTransitMode,
+  onRefreshIsochrones,
 }) => {
+  const [installedList, setInstalledList] = useState<TransitRegionMetadata[]>([]);
+  const [downloadingRegionId, setDownloadingRegionId] = useState<string | null>(null);
+  const [downloadMessage, setDownloadMessage] = useState<string | null>(null);
+  const currentRegion = getTransitRegion();
+
+  const loadInstalled = async () => {
+    try {
+      const list = await listInstalledRegions();
+      setInstalledList(list);
+    } catch {}
+  };
+
+  useEffect(() => {
+    loadInstalled();
+  }, [mvvMeta]);
+
+  const handleSelectOrDownloadRegion = async (cat: CatalogRegion) => {
+    try {
+      setDownloadingRegionId(cat.id);
+      setDownloadMessage(`Lade ${cat.name}...`);
+      await switchTransitRegion(cat.id);
+      await loadInstalled();
+      setDownloadMessage(`${cat.name} ist jetzt aktiv und offline verfügbar!`);
+      if (onRefreshIsochrones) {
+        onRefreshIsochrones();
+      }
+      setTimeout(() => setDownloadMessage(null), 3500);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setDownloadMessage(`Fehler: ${msg}`);
+    } finally {
+      setDownloadingRegionId(null);
+    }
+  };
+
   return (
     <div className="space-y-4">
+      {/* Active Region Header Card */}
       <div className="p-3.5 bg-blue-50/70 border border-blue-200/80 rounded-xl space-y-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="p-1 bg-blue-600 text-white rounded-md">
+            <div className="p-1.5 bg-blue-600 text-white rounded-lg shadow-xs">
               <Train className="w-4 h-4" />
             </div>
             <div>
-              <span className="text-xs font-bold text-slate-900">
-                Münchner Verkehrsverbund (MVV / MVG)
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-slate-900">
+                  {currentRegion.name || 'München & Metropolregion (MVV)'}
+                </span>
+                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 flex items-center gap-1">
+                  <Check className="w-2.5 h-2.5" /> Aktiv
+                </span>
+              </div>
               <div className="text-[11px] text-slate-600">
-                U-Bahn, S-Bahn, Tram & Express-/Metrobusse
+                {currentRegion.source} • Ebene 2 (Verbund & Metropolregion)
               </div>
             </div>
           </div>
@@ -47,27 +113,27 @@ export const MvvMatrixTab: React.FC<MvvMatrixTabProps> = ({
             type="button"
             onClick={onSyncMvv}
             disabled={isSyncingMvv}
-            className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white text-xs font-semibold rounded-lg shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
-            title="Fahrplan- und Haltestellendaten jetzt aktualisieren"
+            className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white text-xs font-semibold rounded-lg shadow-xs flex items-center gap-1.5 transition-all cursor-pointer shrink-0"
+            title="Aktuelle Region aktualisieren / validieren"
           >
             {isSyncingMvv ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
             ) : (
               <RefreshCw className="w-3.5 h-3.5" />
             )}
-            <span>{isSyncingMvv ? 'Aktualisiere...' : 'Jetzt aktualisieren'}</span>
+            <span>{isSyncingMvv ? 'Aktualisiere...' : 'Sync'}</span>
           </button>
         </div>
 
-        {mvvSyncMessage && (
-          <div className="mt-2 p-2 bg-white rounded-lg border border-blue-200 text-xs text-blue-900 flex items-center gap-2">
+        {(mvvSyncMessage || downloadMessage) && (
+          <div className="mt-2 p-2 bg-white rounded-lg border border-blue-200 text-xs text-blue-900 flex items-center gap-2 animate-in fade-in">
             <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-            <span>{mvvSyncMessage}</span>
+            <span>{downloadMessage || mvvSyncMessage}</span>
           </div>
         )}
       </div>
 
-      {/* Matrix Statistics & Metadata */}
+      {/* Network Statistics */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
         <div className="bg-slate-50 border border-slate-200 p-2.5 rounded-xl">
           <div className="text-[10px] uppercase font-bold text-slate-400">Haltestellen</div>
@@ -76,25 +142,118 @@ export const MvvMatrixTab: React.FC<MvvMatrixTabProps> = ({
         </div>
 
         <div className="bg-slate-50 border border-slate-200 p-2.5 rounded-xl">
-          <div className="text-[10px] uppercase font-bold text-slate-400">Verbindungen</div>
+          <div className="text-[10px] uppercase font-bold text-slate-400">Fahrstrecken</div>
           <div className="text-base font-extrabold text-slate-800 mt-0.5">{mvvMeta.connectionCount}</div>
           <div className="text-[10px] text-slate-500">Fahrzeit-Kanten</div>
         </div>
 
         <div className="bg-slate-50 border border-slate-200 p-2.5 rounded-xl">
-          <div className="text-[10px] uppercase font-bold text-slate-400">Verkehrsträger</div>
-          <div className="text-base font-extrabold text-slate-800 mt-0.5">S, U, Tram, Bus</div>
-          <div className="text-[10px] text-slate-500">Multimodal integriert</div>
+          <div className="text-[10px] uppercase font-bold text-slate-400">Speicher</div>
+          <div className="text-base font-extrabold text-slate-800 mt-0.5 flex items-center gap-1">
+            <HardDrive className="w-3.5 h-3.5 text-blue-600" />
+            <span>IndexedDB</span>
+          </div>
+          <div className="text-[10px] text-slate-500">Offline persistent</div>
         </div>
 
         <div className="bg-slate-50 border border-slate-200 p-2.5 rounded-xl">
-          <div className="text-[10px] uppercase font-bold text-slate-400">Stand / Version</div>
+          <div className="text-[10px] uppercase font-bold text-slate-400">Version / Stand</div>
           <div className="text-xs font-bold text-slate-800 mt-1 truncate">{mvvMeta.version}</div>
           <div className="text-[10px] text-slate-500 truncate">{mvvMeta.lastUpdated}</div>
         </div>
       </div>
 
-      {/* Verkehrsmittel / Modalitäten Filter */}
+      {/* Regions Package Catalog (Ebene 2: Metropolregionen) */}
+      <div className="bg-slate-50 border border-slate-200 p-3.5 rounded-xl space-y-2.5">
+        <div className="flex items-center justify-between">
+          <div className="font-bold text-xs text-slate-800 flex items-center gap-1.5">
+            <Layers className="w-3.5 h-3.5 text-blue-600" />
+            <span>Bundesweite ÖPNV-Metropolregionen (Ebene 2):</span>
+          </div>
+          <span className="text-[10px] text-slate-500 bg-white px-2 py-0.5 rounded-md border border-slate-200">
+            DELFI / Bundesdatenbank
+          </span>
+        </div>
+
+        <p className="text-[11px] text-slate-500 leading-normal">
+          Wähle deine Suchregion oder lade weitere Städtepakete herunter. Jedes Paket umfasst die gesamte Metropolregion mit Kernstadt, Vorortbussen und S-/Regionalbahnen.
+        </p>
+
+        <div className="space-y-2 pt-1">
+          {AVAILABLE_REGIONS_CATALOG.map((cat) => {
+            const isActive = currentRegion.id === cat.id;
+            const isInstalled = installedList.some((r) => r.id === cat.id) || cat.isBuiltIn;
+            const isDownloading = downloadingRegionId === cat.id;
+
+            return (
+              <div
+                key={cat.id}
+                className={`p-3 rounded-xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+                  isActive
+                    ? 'bg-blue-50/80 border-blue-300 shadow-2xs'
+                    : 'bg-white border-slate-200 hover:border-slate-300'
+                }`}
+              >
+                <div className="space-y-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-xs text-slate-900">{cat.name}</span>
+                    {isActive ? (
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-600 text-white flex items-center gap-1">
+                        <Check className="w-2.5 h-2.5" /> Aktiv
+                      </span>
+                    ) : isInstalled ? (
+                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
+                        Bereit
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+                        {cat.downloadSizeApprox}
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-[11px] text-slate-500 leading-tight">
+                    {cat.description}
+                  </div>
+                  <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                    {cat.majorLines.map((line) => (
+                      <span
+                        key={line}
+                        className="text-[9px] font-semibold px-1.5 py-0.5 bg-slate-100 text-slate-700 rounded-md"
+                      >
+                        {line}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                  {isActive ? (
+                    <div className="px-3 py-1.5 text-xs font-semibold text-blue-700 bg-blue-100/60 rounded-lg flex items-center gap-1">
+                      <Check className="w-3.5 h-3.5" /> In Benutzung
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => handleSelectOrDownloadRegion(cat)}
+                      disabled={isDownloading}
+                      className="px-3 py-1.5 bg-slate-800 hover:bg-slate-900 disabled:bg-slate-300 text-white text-xs font-semibold rounded-lg shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                    >
+                      {isDownloading ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <DownloadCloud className="w-3.5 h-3.5" />
+                      )}
+                      <span>{isDownloading ? 'Lade...' : isInstalled ? 'Aktivieren' : 'Download & Start'}</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Modalitäten-Filter */}
       <div className="bg-slate-50 border border-slate-200 p-3.5 rounded-xl space-y-2.5">
         <div className="flex items-center justify-between">
           <div className="font-bold text-xs text-slate-800 flex items-center gap-1.5">
@@ -107,17 +266,18 @@ export const MvvMatrixTab: React.FC<MvvMatrixTabProps> = ({
         </div>
 
         <p className="text-[11px] text-slate-500 leading-normal">
-          Wähle aus, welche Verkehrsmittel für die MVV-Isochronen und Fahrzeiten berücksichtigt werden sollen. Mindestens ein Verkehrsmittel bleibt immer aktiv.
+          Wähle aus, welche Verkehrsmittel für die Isochronen und Fahrzeiten berücksichtigt werden sollen. Mindestens ein Verkehrsmittel bleibt immer aktiv.
         </p>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-1">
           {(
             [
+              { id: 'sbahn', label: 'S-Bahn', icon: '🚆', desc: 'Stammstrecke & Außenäste' },
+              { id: 'ubahn', label: 'U-Bahn', icon: '🚇', desc: 'U-Bahn Kernnetz' },
+              { id: 'train', label: 'Regionalbahn', icon: '🚄', desc: 'RE / BRB / Regionalzüge' },
               { id: 'tram', label: 'Tram', icon: '🚋', desc: 'Straßenbahnlinien' },
-              { id: 'ubahn', label: 'U-Bahn', icon: '🚇', desc: 'U1 – U8 Netz' },
+              { id: 'expressbus', label: 'Expressbus', icon: '⚡', desc: 'X-Busse (z.B. X30, X80)' },
               { id: 'bus', label: 'Bus', icon: '🚌', desc: 'Stadt- & Regionalbusse' },
-              { id: 'expressbus', label: 'Expressbus', icon: '⚡', desc: 'X-Busse (z.B. X30, X50)' },
-              { id: 'sbahn', label: 'S-Bahn', icon: '🚆', desc: 'S1 – S8 Stammstrecke & Außenäste' },
             ] as const
           ).map((modeItem) => {
             const isChecked = activeTransitModes.includes(modeItem.id as TransitSubMode);
@@ -151,16 +311,16 @@ export const MvvMatrixTab: React.FC<MvvMatrixTabProps> = ({
         </div>
       </div>
 
-      {/* Info Box explaining transit mechanics */}
+      {/* Info Box */}
       <div className="bg-slate-50 border border-slate-200 p-3 rounded-xl text-xs text-slate-600 space-y-1.5 leading-relaxed">
         <div className="font-bold text-slate-800 flex items-center gap-1.5">
           <Info className="w-3.5 h-3.5 text-blue-600" />
-          <span>Wie die MVV-Isochrone berechnet wird:</span>
+          <span>Wie die ÖPNV-Isochrone berechnet wird:</span>
         </div>
         <ul className="list-disc pl-4 space-y-1 text-[11px]">
-          <li><strong>Erste Meile (Fußweg):</strong> Berechnet die Gehzeit von der Haustür zur nächsten Station (unter Berücksichtigung des gewählten Maximums, z. B. 10 Min).</li>
-          <li><strong>Echte Fahrzeiten:</strong> Nutzt die Soll-Fahrzeitkanten der Linien (z. B. Tram 23 Domagkstr. ➔ Münchner Freiheit in 6 Min; S8 Pasing ➔ Gilching in 16 Min).</li>
-          <li><strong>Umstiege & Puffer:</strong> Berücksichtigt deine Parameter <em>Max. Umstiege</em> und <em>Max. Umstiegszeit</em> (Takt-Wartezeit & Bahnsteigwechsel).</li>
+          <li><strong>Erste Meile (Fußweg):</strong> Berechnet die Gehzeit zur nächsten Station (unter Berücksichtigung des gewählten Maximums, z. B. 10 Min).</li>
+          <li><strong>Echte Fahrzeiten:</strong> Nutzt die Soll-Fahrzeitkanten der Linien (z. B. S-Bahn Stammstrecke, Regionalbahn ins Umland).</li>
+          <li><strong>Gezielte A*-Punktinspektion:</strong> Bei Klicks auf die Karte ermittelt ein zielgerichteter A*-Algorithmus sofort die schnellste Verbindung.</li>
           <li><strong>Letzte Meile (Umkreis):</strong> An jeder erreichten Station wird mit der verbleibenden Restreisezeit die Fußgänger-Erreichbarkeit aufgespannt.</li>
         </ul>
       </div>

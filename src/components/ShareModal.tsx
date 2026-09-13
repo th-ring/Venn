@@ -32,6 +32,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
       v: p.visible,
       mt: p.maxTransfers,
       mw: p.maxWalkToStationMin,
+      mfw: p.maxWalkFromStationMin,
     })),
     s: {
       d: schedule.direction,

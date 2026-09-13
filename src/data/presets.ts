@@ -20,7 +20,7 @@ export const DEFAULT_MUNICH_PROFILES: PersonProfile[] = [
     lng: 11.5852,
     travelTimeMinutes: 35,
     mode: 'transit',
-    color: '#10B981', // Emerald
+    color: '#8B5CF6', // Purple (distinct from green intersection)
     visible: true,
   },
 ];

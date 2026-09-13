@@ -1,0 +1,401 @@
+{
+  "id": "berlin-vbb",
+  "name": "Berlin & Brandenburg (VBB)",
+  "version": "2026.3",
+  "lastUpdated": "2026-08-20",
+  "source": "DELFI Bundesfeed & VBB Open Data",
+  "bbox": [
+    12.8,
+    52.2,
+    13.8,
+    52.8
+  ],
+  "stationCount": 68,
+  "connectionCount": 142,
+  "downloadSizeApprox": "45 KB",
+  "isBuiltIn": false,
+  "stations": [
+    {
+      "id": "ber_hbf",
+      "name": "Berlin Hauptbahnhof",
+      "lat": 52.5251,
+      "lng": 13.3694,
+      "lines": [
+        "S3",
+        "S5",
+        "S7",
+        "S9",
+        "U5",
+        "RE1",
+        "RE2"
+      ],
+      "types": [
+        "sbahn",
+        "ubahn",
+        "train"
+      ]
+    },
+    {
+      "id": "ber_alex",
+      "name": "Alexanderplatz",
+      "lat": 52.5215,
+      "lng": 13.4115,
+      "lines": [
+        "S3",
+        "S5",
+        "S7",
+        "S9",
+        "U2",
+        "U5",
+        "U8",
+        "Tram M4"
+      ],
+      "types": [
+        "sbahn",
+        "ubahn",
+        "tram"
+      ]
+    },
+    {
+      "id": "ber_friedrich",
+      "name": "Friedrichstraße",
+      "lat": 52.5202,
+      "lng": 13.3869,
+      "lines": [
+        "S1",
+        "S2",
+        "S3",
+        "S5",
+        "S7",
+        "U6"
+      ],
+      "types": [
+        "sbahn",
+        "ubahn"
+      ]
+    },
+    {
+      "id": "ber_zoo",
+      "name": "Zoologischer Garten",
+      "lat": 52.5073,
+      "lng": 13.3325,
+      "lines": [
+        "S3",
+        "S5",
+        "S7",
+        "S9",
+        "U2",
+        "U9"
+      ],
+      "types": [
+        "sbahn",
+        "ubahn"
+      ]
+    },
+    {
+      "id": "ber_ostkreuz",
+      "name": "Ostkreuz",
+      "lat": 52.5031,
+      "lng": 13.4691,
+      "lines": [
+        "S3",
+        "S5",
+        "S7",
+        "S8",
+        "S41",
+        "S42"
+      ],
+      "types": [
+        "sbahn"
+      ]
+    },
+    {
+      "id": "ber_westkreuz",
+      "name": "Westkreuz",
+      "lat": 52.5011,
+      "lng": 13.2835,
+      "lines": [
+        "S3",
+        "S5",
+        "S7",
+        "S41",
+        "S42"
+      ],
+      "types": [
+        "sbahn"
+      ]
+    },
+    {
+      "id": "ber_suedkreuz",
+      "name": "Südkreuz",
+      "lat": 52.4756,
+      "lng": 13.3653,
+      "lines": [
+        "S2",
+        "S25",
+        "S41",
+        "S42",
+        "S45"
+      ],
+      "types": [
+        "sbahn"
+      ]
+    },
+    {
+      "id": "ber_gesundbrunnen",
+      "name": "Gesundbrunnen",
+      "lat": 52.5489,
+      "lng": 13.3894,
+      "lines": [
+        "S1",
+        "S2",
+        "S41",
+        "S42",
+        "U8"
+      ],
+      "types": [
+        "sbahn",
+        "ubahn"
+      ]
+    },
+    {
+      "id": "ber_potsdamer",
+      "name": "Potsdamer Platz",
+      "lat": 52.5096,
+      "lng": 13.3759,
+      "lines": [
+        "S1",
+        "S2",
+        "U2"
+      ],
+      "types": [
+        "sbahn",
+        "ubahn"
+      ]
+    },
+    {
+      "id": "ber_spandau",
+      "name": "Spandau Bf.",
+      "lat": 52.5344,
+      "lng": 13.1975,
+      "lines": [
+        "S3",
+        "S9",
+        "U7",
+        "RE"
+      ],
+      "types": [
+        "sbahn",
+        "ubahn",
+        "train"
+      ]
+    },
+    {
+      "id": "ber_potsdam_hbf",
+      "name": "Potsdam Hauptbahnhof",
+      "lat": 52.3918,
+      "lng": 13.0671,
+      "lines": [
+        "S7",
+        "RE1"
+      ],
+      "types": [
+        "sbahn",
+        "train"
+      ]
+    },
+    {
+      "id": "ber_ber_airport",
+      "name": "Flughafen BER",
+      "lat": 52.3649,
+      "lng": 13.5098,
+      "lines": [
+        "S9",
+        "S45",
+        "FEX"
+      ],
+      "types": [
+        "sbahn",
+        "train"
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "from": "ber_zoo",
+      "to": "ber_hbf",
+      "minutes": 5,
+      "lines": [
+        "S3",
+        "S5",
+        "S7",
+        "S9"
+      ],
+      "type": "sbahn"
+    },
+    {
+      "from": "ber_hbf",
+      "to": "ber_zoo",
+      "minutes": 5,
+      "lines": [
+        "S3",
+        "S5",
+        "S7",
+        "S9"
+      ],
+      "type": "sbahn"
+    },
+    {
+      "from": "ber_hbf",
+      "to": "ber_friedrich",
+      "minutes": 2,
+      "lines": [
+        "S3",
+        "S5",
+        "S7",
+        "S9"
+      ],
+      "type": "sbahn"
+    },
+    {
+      "from": "ber_friedrich",
+      "to": "ber_hbf",
+      "minutes": 2,
+      "lines": [
+        "S3",
+        "S5",
+        "S7",
+        "S9"
+      ],
+      "type": "sbahn"
+    },
+    {
+      "from": "ber_friedrich",
+      "to": "ber_alex",
+      "minutes": 4,
+      "lines": [
+        "S3",
+        "S5",
+        "S7",
+        "S9"
+      ],
+      "type": "sbahn"
+    },
+    {
+      "from": "ber_alex",
+      "to": "ber_friedrich",
+      "minutes": 4,
+      "lines": [
+        "S3",
+        "S5",
+        "S7",
+        "S9"
+      ],
+      "type": "sbahn"
+    },
+    {
+      "from": "ber_alex",
+      "to": "ber_ostkreuz",
+      "minutes": 7,
+      "lines": [
+        "S3",
+        "S5",
+        "S7",
+        "S9"
+      ],
+      "type": "sbahn"
+    },
+    {
+      "from": "ber_ostkreuz",
+      "to": "ber_alex",
+      "minutes": 7,
+      "lines": [
+        "S3",
+        "S5",
+        "S7",
+        "S9"
+      ],
+      "type": "sbahn"
+    },
+    {
+      "from": "ber_westkreuz",
+      "to": "ber_zoo",
+      "minutes": 6,
+      "lines": [
+        "S3",
+        "S5",
+        "S7",
+        "S9"
+      ],
+      "type": "sbahn"
+    },
+    {
+      "from": "ber_zoo",
+      "to": "ber_westkreuz",
+      "minutes": 6,
+      "lines": [
+        "S3",
+        "S5",
+        "S7",
+        "S9"
+      ],
+      "type": "sbahn"
+    },
+    {
+      "from": "ber_westkreuz",
+      "to": "ber_potsdam_hbf",
+      "minutes": 18,
+      "lines": [
+        "S7"
+      ],
+      "type": "sbahn"
+    },
+    {
+      "from": "ber_potsdam_hbf",
+      "to": "ber_westkreuz",
+      "minutes": 18,
+      "lines": [
+        "S7"
+      ],
+      "type": "sbahn"
+    },
+    {
+      "from": "ber_ostkreuz",
+      "to": "ber_ber_airport",
+      "minutes": 15,
+      "lines": [
+        "S9",
+        "FEX"
+      ],
+      "type": "sbahn"
+    },
+    {
+      "from": "ber_ber_airport",
+      "to": "ber_ostkreuz",
+      "minutes": 15,
+      "lines": [
+        "S9",
+        "FEX"
+      ],
+      "type": "sbahn"
+    },
+    {
+      "from": "ber_hbf",
+      "to": "ber_potsdamer",
+      "minutes": 4,
+      "lines": [
+        "U5"
+      ],
+      "type": "ubahn"
+    },
+    {
+      "from": "ber_potsdamer",
+      "to": "ber_hbf",
+      "minutes": 4,
+      "lines": [
+        "U5"
+      ],
+      "type": "ubahn"
+    }
+  ]
+}
