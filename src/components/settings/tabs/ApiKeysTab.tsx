@@ -2,6 +2,7 @@ import React from 'react';
 import { KeyCheckResult } from '../../../services/apiKeyValidator';
 import { ShieldCheck, Loader2, CheckCircle2, AlertCircle, Info, ExternalLink } from 'lucide-react';
 import { SecureApiKeyInput } from '../SecureApiKeyInput';
+import { ApiKeyGuideTooltip } from '../ApiKeyGuideTooltip';
 
 interface ApiKeysTabProps {
   googleKeyInput: string;
@@ -38,6 +39,7 @@ export const ApiKeysTab: React.FC<ApiKeysTabProps> = ({
             <span className="text-xs font-bold text-slate-900">
               Google Maps API Key
             </span>
+            <ApiKeyGuideTooltip api="google" />
           </div>
 
           <div className="flex items-center gap-2">
@@ -209,6 +211,7 @@ export const ApiKeysTab: React.FC<ApiKeysTabProps> = ({
             <span className="text-xs font-bold text-slate-900">
               OpenRouteService API Key (optional)
             </span>
+            <ApiKeyGuideTooltip api="ors" />
           </div>
 
           <div className="flex items-center gap-2">
