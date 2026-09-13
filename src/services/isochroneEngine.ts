@@ -340,7 +340,7 @@ async function fetchOrsIsochrone(
     fidelity: 'AUTOMATIC',
   };
 
-  const url = `https://api.openrouteservice.org/v2/isochrones/${orsProfile}`;
+  const url = `https://api.heigit.org/openrouteservice/v2/isochrones/${orsProfile}`;
   const payload = {
     locations: [[profile.lng, profile.lat]],
     range: [clampedSeconds],
