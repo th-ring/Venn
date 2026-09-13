@@ -6,7 +6,6 @@ import {
   hasOrsApiKey,
 } from '../../../services/isochroneEngine';
 import { ExternalLink } from 'lucide-react';
-import { ApiKeyGuideTooltip } from '../ApiKeyGuideTooltip';
 
 interface IsochroneEngineTabProps {
   activeProvider: IsochroneProvider;
@@ -69,19 +68,16 @@ export const IsochroneEngineTab: React.FC<IsochroneEngineTabProps> = ({
               )}
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <ApiKeyGuideTooltip api="google" />
-            <a
-              href="https://developers.google.com/maps/documentation/isochrones"
-              target="_blank"
-              rel="noreferrer"
-              className="text-[11px] text-blue-600 hover:underline flex items-center gap-1"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <span>Doku</span>
-              <ExternalLink className="w-2.5 h-2.5" />
-            </a>
-          </div>
+          <a
+            href="https://developers.google.com/maps/documentation/isochrones"
+            target="_blank"
+            rel="noreferrer"
+            className="text-[11px] text-blue-600 hover:underline flex items-center gap-1"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <span>Doku</span>
+            <ExternalLink className="w-2.5 h-2.5" />
+          </a>
         </div>
         <p className="text-[11px] text-slate-600 mt-1 pl-5 leading-relaxed">
           Offizielle Google Maps Erreichbarkeits-Polygone für <strong>Pkw, Fahrrad und Fußwege</strong>.
@@ -159,19 +155,16 @@ export const IsochroneEngineTab: React.FC<IsochroneEngineTabProps> = ({
               )}
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <ApiKeyGuideTooltip api="ors" />
-            <a
-              href="https://openrouteservice.org"
-              target="_blank"
-              rel="noreferrer"
-              className="text-[11px] text-blue-600 hover:underline flex items-center gap-1"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <span>openrouteservice.org</span>
-              <ExternalLink className="w-2.5 h-2.5" />
-            </a>
-          </div>
+          <a
+            href="https://openrouteservice.org"
+            target="_blank"
+            rel="noreferrer"
+            className="text-[11px] text-blue-600 hover:underline flex items-center gap-1"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <span>openrouteservice.org</span>
+            <ExternalLink className="w-2.5 h-2.5" />
+          </a>
         </div>
         <p className="text-[11px] text-slate-600 mt-1 pl-5 leading-relaxed">
           OpenStreetMap-basierte Isochronen für Auto, Fahrrad und Fußgänger (kostenloser API-Key erforderlich).
