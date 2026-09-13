@@ -11,6 +11,7 @@ import {
   TransitSubMode,
 } from '../types';
 import { generateMvvTransitIsochrone, calculateReachableStations, findShortestTransitTrip, getTransitRegion } from './mvvMatrixService';
+import { fillPolygonHoles } from './geometry';
 
 interface IsochroneCacheKey {
   lat: number;
@@ -25,6 +26,7 @@ interface IsochroneCacheKey {
   liveTraffic?: boolean;
   smoothing?: boolean;
   fidelity?: string;
+  fillHoles?: boolean;
   transitModes?: string;
 }
 
@@ -36,7 +38,7 @@ export function clearIsochroneCache(): void {
 
 function makeCacheKey(k: IsochroneCacheKey): string {
   const currentRegion = getTransitRegion();
-  return `${currentRegion.id}_${currentRegion.version}_${k.lat.toFixed(4)}_${k.lng.toFixed(4)}_${k.time}_${k.mode}_${k.direction}_${k.transfers ?? 'any'}_wTo:${k.walkToStation ?? 10}_wFrom:${k.walkFromStation ?? 10}_${k.transferWait ?? 'any'}_lt:${k.liveTraffic ? 1 : 0}_sm:${k.smoothing ? 1 : 0}_fi:${k.fidelity ?? 'auto'}_tm:${k.transitModes ?? 'all'}`;
+  return `${currentRegion.id}_${currentRegion.version}_${k.lat.toFixed(4)}_${k.lng.toFixed(4)}_${k.time}_${k.mode}_${k.direction}_${k.transfers ?? 'any'}_wTo:${k.walkToStation ?? 5}_wFrom:${k.walkFromStation ?? 5}_${k.transferWait ?? 'any'}_lt:${k.liveTraffic ? 1 : 0}_sm:${k.smoothing ? 1 : 0}_fi:${k.fidelity ?? 'auto'}_fh:${k.fillHoles !== false ? 1 : 0}_tm:${k.transitModes ?? 'all'}`;
 }
 
 export type IsochroneProvider = 'calibrated' | 'google' | 'ors';
@@ -269,7 +271,7 @@ async function fetchGoogleIsochrone(
 
       const data = await res.json();
       if (data.isochrone && data.isochrone.geoJson) {
-        const feature: GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon> = {
+        let feature: GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon> = {
           type: 'Feature',
           geometry: data.isochrone.geoJson,
           properties: {
@@ -280,6 +282,12 @@ async function fetchGoogleIsochrone(
             mode: profile.mode,
           },
         };
+
+        // If hole-filling is enabled (default true), eliminate artificial interior void artifacts
+        if (opts.fillHoles !== false) {
+          feature = fillPolygonHoles(feature);
+        }
+
         return { feature };
       }
     } catch (err: any) {
@@ -300,6 +308,7 @@ async function fetchGoogleIsochrone(
  */
 async function fetchOrsIsochrone(
   profile: PersonProfile,
+  schedule: CommuteSchedule,
   apiKey: string
 ): Promise<IsochroneFetchResult> {
   const trimmedKey = apiKey.trim();
@@ -325,7 +334,13 @@ async function fetchOrsIsochrone(
   const rawSeconds = profile.travelTimeMinutes * 60;
   const clampedSeconds = Math.min(rawSeconds, maxSeconds);
 
-  const url = `https://api.openrouteservice.org/v2/isochrones/${orsProfile}`;
+  const opts = schedule.options ?? {
+    liveTraffic: false,
+    enableSmoothing: true,
+    fidelity: 'AUTOMATIC',
+  };
+
+  const url = `https://api.heigit.org/openrouteservice/v2/isochrones/${orsProfile}`;
   const payload = {
     locations: [[profile.lng, profile.lat]],
     range: [clampedSeconds],
@@ -345,7 +360,10 @@ async function fetchOrsIsochrone(
     if (res.ok) {
       const data = await res.json();
       if (data.features && data.features.length > 0) {
-        const feature = data.features[0] as GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon>;
+        let feature = data.features[0] as GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon>;
+        if (opts.fillHoles !== false) {
+          feature = fillPolygonHoles(feature);
+        }
         feature.properties = {
           ...feature.properties,
           source: 'ors',
@@ -434,6 +452,7 @@ export async function generateIsochrone(
     liveTraffic: opts.liveTraffic,
     smoothing: opts.enableSmoothing,
     fidelity: opts.fidelity,
+    fillHoles: opts.fillHoles !== false,
     transitModes: transitModesStr,
   }) + `_${provider}_${googleKey ? 'g' : ''}_${orsKey ? 'o' : ''}`;
 
@@ -524,7 +543,7 @@ export async function generateIsochrone(
       return fallbackPoly;
     }
 
-    const res = await fetchOrsIsochrone(profile, orsKey);
+    const res = await fetchOrsIsochrone(profile, schedule, orsKey);
     if (res.feature) {
       isochroneCache.set(cacheKey, res.feature);
       return res.feature;
@@ -574,9 +593,9 @@ function generateCalibratedIsochrone(
     lng,
     travelTimeMinutes,
     mode,
-    maxTransfers = 2,
-    maxWalkToStationMin = 10,
-    maxTransferWaitMin = 10,
+    maxTransfers = 1,
+    maxWalkToStationMin = 5,
+    maxTransferWaitMin = 5,
   } = profile;
 
   const opts = schedule.options ?? {
@@ -720,9 +739,9 @@ export function estimateCommuteTime(
   destination: { lat: number; lng: number },
   mode: TransportMode,
   schedule: CommuteSchedule,
-  maxTransfers = 2,
-  maxWalkToStationMin = 10,
-  maxWalkFromStationMin = 10,
+  maxTransfers = 1,
+  maxWalkToStationMin = 5,
+  maxWalkFromStationMin = 5,
   transitModes?: TransitSubMode[]
 ): { travelTimeMinutes: number; distanceKm: number; details?: CommuteRouteDetails } {
   const from = turf.point([origin.lng, origin.lat]);

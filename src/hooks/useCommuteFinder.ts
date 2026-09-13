@@ -30,6 +30,10 @@ import {
   switchTransitRegion,
   getTransitRegion,
 } from '../services/mvvMatrixService';
+import {
+  getRentalDistrictAtPoint,
+  getSavedRentalOverlaySettings,
+} from '../services/rentalService';
 
 const PALETTE = ['#3B82F6', '#F97316', '#10B981', '#A855F7', '#EC4899', '#06B6D4', '#EAB308'];
 
@@ -82,6 +86,7 @@ export function useCommuteFinder() {
               liveTraffic: parsed.s.lt ?? false,
               enableSmoothing: parsed.s.sm ?? true,
               fidelity: parsed.s.fi || 'AUTOMATIC',
+              fillHoles: parsed.s.fh ?? true,
             },
           };
         }
@@ -97,6 +102,8 @@ export function useCommuteFinder() {
         liveTraffic: false,
         enableSmoothing: true,
         fidelity: 'AUTOMATIC',
+        fillHoles: true,
+        rentalOverlay: getSavedRentalOverlaySettings(),
       },
     };
   });
@@ -269,7 +276,10 @@ export function useCommuteFinder() {
         mode: 'transit',
         color,
         visible: true,
-        maxTransfers: 2,
+        maxTransfers: 1,
+        maxWalkToStationMin: 5,
+        maxWalkFromStationMin: 5,
+        maxTransferWaitMin: 5,
         transitModes: [...DEFAULT_TRANSIT_SUBMODES],
       };
 
@@ -338,6 +348,12 @@ export function useCommuteFinder() {
       const withinLimitCount = estimates.filter((e) => e.isWithinLimit).length;
       const allWithinLimit = withinLimitCount === active.length;
 
+      const rentalInfo = getRentalDistrictAtPoint(
+        lat,
+        lng,
+        schedule.options?.rentalOverlay?.selectedRegionId || 'munich-mvv'
+      );
+
       setInspectionPoint({
         lat,
         lng,
@@ -346,6 +362,7 @@ export function useCommuteFinder() {
         allWithinLimit,
         activePersonsCount: active.length,
         withinLimitCount,
+        rentalInfo: rentalInfo || undefined,
       });
 
       const addr = await reverseGeocode(lat, lng);

@@ -22,6 +22,10 @@ export const DEFAULT_MUNICH_PROFILES: PersonProfile[] = [
     mode: 'transit',
     color: '#8B5CF6', // Purple (distinct from green intersection)
     visible: true,
+    maxTransfers: 1,
+    maxWalkToStationMin: 5,
+    maxWalkFromStationMin: 5,
+    maxTransferWaitMin: 5,
   },
 ];
 
@@ -53,8 +57,10 @@ export const PRESET_SCENARIOS: PresetScenario[] = [
         mode: 'transit',
         color: '#3B82F6', // Vibrant Blue
         visible: true,
-        maxTransfers: 2,
-        maxWalkToStationMin: 10,
+        maxTransfers: 1,
+        maxWalkToStationMin: 5,
+        maxWalkFromStationMin: 5,
+        maxTransferWaitMin: 5,
       },
       {
         id: 'p-berlin-2',
@@ -87,7 +93,7 @@ export const PRESET_SCENARIOS: PresetScenario[] = [
         mode: 'transit',
         color: '#3B82F6',
         visible: true,
-        maxTransfers: 2,
+        maxTransfers: 1,
       },
       {
         id: 'p-ffm-2',

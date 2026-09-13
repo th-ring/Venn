@@ -5,6 +5,8 @@ import { Sidebar } from './components/Sidebar';
 import { InspectionPanel } from './components/InspectionPanel';
 import { FallbackWarningBanner } from './components/FallbackWarningBanner';
 import { clearIsochroneCache } from './services/isochroneEngine';
+import { saveRentalOverlaySettings } from './services/rentalService';
+import type { SettingsTabId } from './components/settings/SettingsModal';
 import { SlidersHorizontal } from 'lucide-react';
 
 const ShareModal = React.lazy(() =>
@@ -52,9 +54,9 @@ export default function App() {
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
-  const [settingsModalTab, setSettingsModalTab] = useState<'basemap' | 'isochrones' | 'mvv' | 'keys' | 'heatmap'>('basemap');
+  const [settingsModalTab, setSettingsModalTab] = useState<SettingsTabId>('basemap');
 
-  const handleOpenSettings = (tab: 'basemap' | 'isochrones' | 'mvv' | 'keys' | 'heatmap' = 'basemap') => {
+  const handleOpenSettings = (tab: SettingsTabId = 'basemap') => {
     setSettingsModalTab(tab);
     setIsSettingsModalOpen(true);
   };
@@ -149,6 +151,20 @@ export default function App() {
               },
             }))
           }
+          rentalSettings={schedule.options?.rentalOverlay}
+          onUpdateRentalOverlay={(upd) => {
+            saveRentalOverlaySettings(upd);
+            setSchedule((prev) => ({
+              ...prev,
+              options: {
+                ...(prev.options || { liveTraffic: false, enableSmoothing: true, fidelity: 'AUTOMATIC' }),
+                rentalOverlay: {
+                  ...(prev.options?.rentalOverlay || { enabled: false, opacity: 0.35, selectedRegionId: 'munich-mvv' }),
+                  ...upd,
+                },
+              },
+            }));
+          }}
           basemap={basemap}
           onBasemapChange={handleBasemapChange}
           onOpenApiKeySettings={() => handleOpenSettings('keys')}

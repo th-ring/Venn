@@ -16,7 +16,9 @@ import {
   CornerDownRight,
   ShieldAlert,
   ShieldCheck,
+  Building2,
 } from 'lucide-react';
+import { getRentalChoroplethColor } from '../services/rentalService';
 
 interface InspectionPanelProps {
   inspection: InspectionPoint | null;
@@ -120,6 +122,43 @@ export const InspectionPanel: React.FC<InspectionPanelProps> = ({ inspection, on
           <span>
             Dieser Punkt liegt nicht in der gemeinsamen Schnittmenge, weil mindestens ein Ziel das Zeitbudget überschreitet.
           </span>
+        </div>
+      )}
+
+      {/* Mietspiegel / Rental District Card */}
+      {inspection.rentalInfo && (
+        <div className="bg-gradient-to-r from-slate-50 to-blue-50/50 border-b border-slate-200/80 p-3 flex items-start gap-2.5">
+          <div className="p-1.5 rounded-lg bg-blue-100 text-blue-700 shrink-0 mt-0.5">
+            <Building2 className="w-4 h-4" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center justify-between gap-1">
+              <span className="text-xs font-bold text-slate-800 truncate" title={inspection.rentalInfo.name}>
+                {inspection.rentalInfo.name} <span className="text-slate-400 font-normal">({inspection.rentalInfo.districtNumber})</span>
+              </span>
+              <span
+                className="text-[10px] font-bold px-1.5 py-0.5 rounded-full shrink-0"
+                style={{
+                  backgroundColor: `${getRentalChoroplethColor(inspection.rentalInfo.avgRentColdSqm)}20`,
+                  color: getRentalChoroplethColor(inspection.rentalInfo.avgRentColdSqm),
+                }}
+              >
+                {inspection.rentalInfo.qualityLabel}
+              </span>
+            </div>
+            <div className="flex items-baseline gap-2 mt-0.5">
+              <span className="text-sm font-extrabold text-slate-900">
+                Ø {inspection.rentalInfo.avgRentColdSqm.toFixed(2)} €/m²
+              </span>
+              <span className="text-[10px] text-slate-500">
+                Spanne: {inspection.rentalInfo.minRentColdSqm.toFixed(2)} – {inspection.rentalInfo.maxRentColdSqm.toFixed(2)} €
+              </span>
+            </div>
+            <div className="text-[9px] text-slate-400 mt-0.5 flex items-center justify-between">
+              <span>{inspection.rentalInfo.source}</span>
+              <span className="font-semibold text-slate-500">Kaltmiete</span>
+            </div>
+          </div>
         </div>
       )}
 
