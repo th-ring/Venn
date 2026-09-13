@@ -36,10 +36,29 @@ export type BasemapProvider =
   | 'google_streets'
   | 'google_transit';
 
+export type PriorityHeatmapItem = 'ubahn' | 'sbahn' | 'highway';
+
+export const ALL_HEATMAP_ITEMS: PriorityHeatmapItem[] = ['ubahn', 'sbahn', 'highway'];
+
+export type PriorityHeatmapMode = 'none' | 'ubahn' | 'sbahn' | 'highway';
+
+export type TransitSubMode = 'tram' | 'ubahn' | 'bus' | 'expressbus' | 'sbahn';
+
+export const ALL_TRANSIT_SUBMODES: TransitSubMode[] = ['tram', 'ubahn', 'bus', 'expressbus', 'sbahn'];
+
+export interface HeatmapSettings {
+  mode: PriorityHeatmapMode;
+  selectedItems?: PriorityHeatmapItem[];
+  radiusKm: number; // e.g. 1.5 km buffer or gradient distance
+  intensity: number; // 0.2 to 1.0 opacity
+}
+
 export interface IsochroneOptions {
   liveTraffic: boolean;
   enableSmoothing: boolean;
   fidelity: PolygonFidelity;
+  heatmap?: HeatmapSettings;
+  transitModes?: TransitSubMode[];
 }
 
 export interface CommuteSchedule {
@@ -62,7 +81,9 @@ export interface FallbackSuggestion {
 export interface CalculationResult {
   isochrones: Record<string, GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon>>;
   intersection: GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon | GeoJSON.GeometryCollection> | null;
+  rawIntersection?: GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon | GeoJSON.GeometryCollection> | null;
   intersectionAreaKm2: number;
+  rawIntersectionAreaKm2?: number;
   emptyIntersection: boolean;
   suggestions: FallbackSuggestion[];
 }

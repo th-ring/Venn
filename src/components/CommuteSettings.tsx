@@ -1,10 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   CommuteSchedule,
   PolygonFidelity,
   BasemapProvider,
   BasemapPlatform,
   MapVariant,
+  PriorityHeatmapMode,
+  PriorityHeatmapItem,
+  ALL_HEATMAP_ITEMS,
+  HeatmapSettings,
+  TransitSubMode,
+  ALL_TRANSIT_SUBMODES,
 } from '../types';
 import {
   getOrsApiKey,
@@ -43,6 +49,13 @@ import {
   AlertCircle,
   ShieldCheck,
   Sliders,
+  Flame,
+  Car,
+  Bus,
+  Settings,
+  ChevronDown,
+  ChevronUp,
+  ChevronRight,
 } from 'lucide-react';
 import {
   validateGoogleMapsApiKey,
@@ -65,6 +78,10 @@ interface CommuteSettingsProps {
   onBasemapChange?: (provider: BasemapProvider) => void;
   isApiKeyModalOpen?: boolean;
   onToggleApiKeyModal?: (open: boolean) => void;
+  showOnlyIntersection?: boolean;
+  onToggleOnlyIntersection?: () => void;
+  showIndividualIsochrones?: boolean;
+  onToggleIndividualIsochrones?: () => void;
 }
 
 export const CommuteSettings: React.FC<CommuteSettingsProps> = ({
@@ -78,6 +95,10 @@ export const CommuteSettings: React.FC<CommuteSettingsProps> = ({
   onBasemapChange,
   isApiKeyModalOpen = false,
   onToggleApiKeyModal,
+  showOnlyIntersection,
+  onToggleOnlyIntersection,
+  showIndividualIsochrones,
+  onToggleIndividualIsochrones,
 }) => {
   const [internalModalOpen, setInternalModalOpen] = useState(false);
   const showModal = isApiKeyModalOpen || internalModalOpen;
@@ -89,7 +110,7 @@ export const CommuteSettings: React.FC<CommuteSettingsProps> = ({
     }
   };
 
-  const [modalTab, setModalTab] = useState<'basemap' | 'isochrones' | 'mvv' | 'keys'>('basemap');
+  const [modalTab, setModalTab] = useState<'basemap' | 'isochrones' | 'mvv' | 'keys' | 'heatmap'>('basemap');
 
   // Input states
   const [googleKeyInput, setGoogleKeyInput] = useState(getGoogleMapsApiKey());
@@ -212,6 +233,119 @@ export const CommuteSettings: React.FC<CommuteSettingsProps> = ({
     fidelity: 'AUTOMATIC',
   };
 
+  const activeTransitModes: TransitSubMode[] =
+    options.transitModes && options.transitModes.length > 0
+      ? options.transitModes
+      : ALL_TRANSIT_SUBMODES;
+
+  const handleToggleTransitMode = (mode: TransitSubMode) => {
+    let nextModes: TransitSubMode[];
+    if (activeTransitModes.includes(mode)) {
+      // Prevent unchecking all modes (keep at least one)
+      if (activeTransitModes.length <= 1) {
+        return;
+      }
+      nextModes = activeTransitModes.filter((m) => m !== mode);
+    } else {
+      nextModes = [...activeTransitModes, mode];
+    }
+    onChangeSchedule({
+      options: {
+        ...options,
+        transitModes: nextModes,
+      },
+    });
+  };
+
+  const heatmap: HeatmapSettings = options.heatmap ?? {
+    mode: 'none',
+    selectedItems: [],
+    radiusKm: 1.5,
+    intensity: 0.65,
+  };
+
+  const activeHeatmapItems: PriorityHeatmapItem[] =
+    heatmap.selectedItems && heatmap.selectedItems.length > 0
+      ? heatmap.selectedItems
+      : heatmap.mode && heatmap.mode !== 'none'
+      ? [heatmap.mode as PriorityHeatmapItem]
+      : [];
+
+  const isHeatmapActive = activeHeatmapItems.length > 0;
+
+  // Dropdown for Heatmap multi-select
+  const [isHeatmapDropdownOpen, setIsHeatmapDropdownOpen] = useState(false);
+  const heatmapDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (heatmapDropdownRef.current && !heatmapDropdownRef.current.contains(e.target as Node)) {
+        setIsHeatmapDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Collapsible UI sections for clean daily use
+  const [isScheduleCollapsed, setIsScheduleCollapsed] = useState(false);
+  const [isTransitCollapsed, setIsTransitCollapsed] = useState(false);
+  const [isHeatmapCollapsed, setIsHeatmapCollapsed] = useState(false);
+
+  const handleUpdateHeatmap = (updated: Partial<HeatmapSettings>) => {
+    onChangeSchedule({
+      options: {
+        ...options,
+        heatmap: {
+          ...heatmap,
+          ...updated,
+        },
+      },
+    });
+  };
+
+  const handleToggleHeatmapItem = (item: PriorityHeatmapItem) => {
+    let nextItems: PriorityHeatmapItem[];
+    if (activeHeatmapItems.includes(item)) {
+      nextItems = activeHeatmapItems.filter((i) => i !== item);
+    } else {
+      nextItems = [...activeHeatmapItems, item];
+    }
+    const nextMode: PriorityHeatmapMode = nextItems.length > 0 ? nextItems[0] : 'none';
+    handleUpdateHeatmap({
+      mode: nextMode,
+      selectedItems: nextItems,
+    });
+  };
+
+  const handleToggleHeatmapActive = () => {
+    if (isHeatmapActive) {
+      handleUpdateHeatmap({
+        mode: 'none',
+        selectedItems: [],
+      });
+    } else {
+      handleUpdateHeatmap({
+        mode: 'ubahn',
+        selectedItems: ['ubahn', 'sbahn'],
+      });
+    }
+  };
+
+  const handleSelectAllHeatmapItems = () => {
+    handleUpdateHeatmap({
+      mode: 'ubahn',
+      selectedItems: ['ubahn', 'sbahn', 'highway'],
+    });
+  };
+
+  const handleClearAllHeatmapItems = () => {
+    handleUpdateHeatmap({
+      mode: 'none',
+      selectedItems: [],
+    });
+  };
+
   const handleToggleOption = (key: 'liveTraffic' | 'enableSmoothing') => {
     onChangeSchedule({
       options: {
@@ -233,274 +367,534 @@ export const CommuteSettings: React.FC<CommuteSettingsProps> = ({
   const isGoogleBasemap = activeBasemap.startsWith('google');
 
   return (
-    <div className="flex flex-col gap-3">
-      {/* 1. Haupt-Pendelparameter (Richtung, Wochentag, Uhrzeit) */}
-      <div className="bg-white rounded-xl border border-slate-200/90 p-3 shadow-2xs">
-        <div className="flex items-center justify-between gap-3">
-          {/* Richtung (Hin- vs. Rückweg) */}
-          <div className="flex items-center gap-2">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-              Richtung
-            </span>
-            <div className="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200/60">
-              <button
-                id="btn-direction-to-work"
-                type="button"
-                onClick={() => onChangeSchedule({ direction: 'to_work' })}
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold transition-all ${
-                  schedule.direction === 'to_work'
-                    ? 'bg-white text-blue-600 shadow-2xs'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-                title="Isochrone berechnet von den Profilen weg (z.B. morgendlicher Arbeitsweg)"
-              >
-                <ArrowRightLeft className="w-3 h-3" />
-                <span>Zum Ziel</span>
-              </button>
-              <button
-                id="btn-direction-from-work"
-                type="button"
-                onClick={() => onChangeSchedule({ direction: 'from_work' })}
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold transition-all ${
-                  schedule.direction === 'from_work'
-                    ? 'bg-white text-blue-600 shadow-2xs'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-                title="Isochrone berechnet hin zu den Profilen (z.B. Heimweg nach Feierabend)"
-              >
-                <ArrowRightLeft className="w-3 h-3 rotate-180" />
-                <span>Vom Ziel</span>
-              </button>
+    <div className="flex flex-col gap-2.5">
+      {/* 1. Pendelzeit & Fahrtrichtung (Einklappbar) */}
+      <div className="bg-white rounded-xl border border-slate-200/90 shadow-2xs overflow-hidden transition-all">
+        {/* Header / Toggle-Leiste */}
+        <div
+          onClick={() => setIsScheduleCollapsed((prev) => !prev)}
+          className="p-2.5 flex items-center justify-between gap-2 cursor-pointer hover:bg-slate-50/80 transition-colors select-none"
+        >
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="p-1 rounded-lg bg-blue-50 text-blue-600 shrink-0">
+              <Clock className="w-3.5 h-3.5" />
             </div>
+            <span className="text-xs font-bold text-slate-800 truncate">
+              Pendelzeit & Richtung
+            </span>
           </div>
 
-          {/* Tag & Uhrzeit */}
-          <div className="flex items-center gap-3">
-            {/* Tag (Werktag / Wochenende) */}
-            <div className="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200/60">
-              <button
-                id="btn-day-workday"
-                type="button"
-                onClick={() => onChangeSchedule({ dayOfWeek: 'workday' })}
-                className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs font-semibold transition-all ${
-                  schedule.dayOfWeek === 'workday'
-                    ? 'bg-white text-blue-600 shadow-2xs'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-                title="Werktags-Takt & typische Berufsverkehr-Dichte"
-              >
-                <Calendar className="w-3 h-3" />
-                <span>Mo–Fr</span>
-              </button>
-              <button
-                id="btn-day-weekend"
-                type="button"
-                onClick={() => onChangeSchedule({ dayOfWeek: 'weekend' })}
-                className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs font-semibold transition-all ${
-                  schedule.dayOfWeek === 'weekend'
-                    ? 'bg-white text-blue-600 shadow-2xs'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-                title="Wochenend-Fahrpläne (ausgedünnter ÖPNV, freie Straßen)"
-              >
-                <Calendar className="w-3 h-3" />
-                <span>Sa/So</span>
-              </button>
-            </div>
+          <div className="flex items-center gap-2 shrink-0">
+            {/* Summary badge when collapsed */}
+            {isScheduleCollapsed && (
+              <span className="text-[11px] font-medium bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md truncate max-w-[170px]">
+                {schedule.direction === 'to_work' ? 'Zum Ziel' : 'Vom Ziel'} • {schedule.dayOfWeek === 'workday' ? 'Mo–Fr' : 'Sa/So'} {schedule.time || '08:30'}
+              </span>
+            )}
 
-            {/* Minutengenaue Uhrzeit */}
-            <div className="flex items-center gap-1.5 bg-slate-100 px-2 py-1 rounded-lg border border-slate-200/60">
-              <Clock className="w-3.5 h-3.5 text-slate-500" />
-              <input
-                id="input-departure-time"
-                type="time"
-                step="60"
-                value={schedule.time || '08:30'}
-                onChange={(e) => {
-                  if (e.target.value) {
-                    onChangeSchedule({ time: e.target.value });
+            {/* Action Buttons: Refresh & Auto */}
+            <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+              <button
+                id="btn-manual-refresh"
+                type="button"
+                disabled={isCalculating}
+                onClick={() => {
+                  if (onRefreshIsochrones) {
+                    onRefreshIsochrones();
                   }
                 }}
-                className="bg-slate-50 hover:bg-slate-100 border border-slate-200 focus:border-blue-500 focus:bg-white text-slate-800 font-semibold px-2 py-0.5 rounded-lg text-xs focus:outline-none transition-colors cursor-pointer"
-                title="Minutengenaue Abfahrtszeit wählen (HH:MM)"
-              />
+                className={`p-1.5 rounded-lg border text-xs font-semibold shadow-2xs transition-all cursor-pointer ${
+                  isCalculating
+                    ? 'bg-blue-50 text-blue-500 border-blue-200 cursor-not-allowed'
+                    : 'bg-white hover:bg-blue-50 text-slate-600 hover:text-blue-700 border-slate-200 hover:border-blue-200 active:scale-95'
+                }`}
+                title="Isochronen jetzt manuell neu berechnen"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isCalculating ? 'animate-spin text-blue-600' : ''}`} />
+              </button>
+
+              {onToggleAutoUpdate && (
+                <button
+                  id="btn-toggle-autoupdate"
+                  type="button"
+                  onClick={onToggleAutoUpdate}
+                  className={`p-1.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
+                    autoUpdate
+                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200 shadow-2xs'
+                      : 'bg-slate-100 text-slate-400 border-slate-200 hover:bg-slate-200/70'
+                  }`}
+                  title={
+                    autoUpdate
+                      ? 'Automatische Neuberechnung: AKTIV'
+                      : 'Automatische Neuberechnung: PAUSIERT'
+                  }
+                >
+                  <Zap className={`w-3.5 h-3.5 ${autoUpdate ? 'text-emerald-600 fill-emerald-600' : 'text-slate-400'}`} />
+                </button>
+              )}
+            </div>
+
+            <button
+              type="button"
+              className="text-slate-400 hover:text-slate-600 p-0.5 rounded transition-colors"
+              title={isScheduleCollapsed ? 'Aufklappen' : 'Einklappen'}
+            >
+              {isScheduleCollapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
+            </button>
+          </div>
+        </div>
+
+        {/* Content Body */}
+        {!isScheduleCollapsed && (
+          <div className="p-3 pt-0 border-t border-slate-100 mt-1 space-y-2.5">
+            <div className="flex items-center justify-between gap-2 pt-2">
+              {/* Richtung */}
+              <div className="flex items-center gap-1.5">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                  Richtung:
+                </span>
+                <div className="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200/60">
+                  <button
+                    id="btn-direction-to-work"
+                    type="button"
+                    onClick={() => onChangeSchedule({ direction: 'to_work' })}
+                    className={`flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-semibold transition-all cursor-pointer ${
+                      schedule.direction === 'to_work'
+                        ? 'bg-white text-blue-600 shadow-2xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                    title="Vom Wohnort zum Arbeitsplatz / Ziel"
+                  >
+                    <ArrowRightLeft className="w-3 h-3" />
+                    <span>Zum Ziel</span>
+                  </button>
+                  <button
+                    id="btn-direction-from-work"
+                    type="button"
+                    onClick={() => onChangeSchedule({ direction: 'from_work' })}
+                    className={`flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-semibold transition-all cursor-pointer ${
+                      schedule.direction === 'from_work'
+                        ? 'bg-white text-blue-600 shadow-2xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                    title="Vom Arbeitsplatz / Ziel nach Hause"
+                  >
+                    <ArrowRightLeft className="w-3 h-3 rotate-180" />
+                    <span>Vom Ziel</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Tag */}
+              <div className="flex items-center gap-1.5">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                  Tag:
+                </span>
+                <div className="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200/60">
+                  <button
+                    id="btn-day-workday"
+                    type="button"
+                    onClick={() => onChangeSchedule({ dayOfWeek: 'workday' })}
+                    className={`flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-semibold transition-all cursor-pointer ${
+                      schedule.dayOfWeek === 'workday'
+                        ? 'bg-white text-blue-600 shadow-2xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    <Calendar className="w-3 h-3" />
+                    <span>Mo–Fr</span>
+                  </button>
+                  <button
+                    id="btn-day-weekend"
+                    type="button"
+                    onClick={() => onChangeSchedule({ dayOfWeek: 'weekend' })}
+                    className={`flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-semibold transition-all cursor-pointer ${
+                      schedule.dayOfWeek === 'weekend'
+                        ? 'bg-white text-blue-600 shadow-2xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    <Calendar className="w-3 h-3" />
+                    <span>Sa/So</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Uhrzeit */}
+            <div className="flex items-center justify-between gap-2 pt-1 border-t border-slate-100">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-medium text-slate-600">Abfahrtszeit:</span>
+                <div className="flex items-center gap-1.5 bg-slate-100 px-2 py-1 rounded-lg border border-slate-200/60">
+                  <Clock className="w-3.5 h-3.5 text-slate-500" />
+                  <input
+                    id="input-departure-time"
+                    type="time"
+                    step="60"
+                    value={schedule.time || '08:30'}
+                    onChange={(e) => {
+                      if (e.target.value) {
+                        onChangeSchedule({ time: e.target.value });
+                      }
+                    }}
+                    className="bg-slate-50 hover:bg-slate-100 border border-slate-200 focus:border-blue-500 focus:bg-white text-slate-800 font-semibold px-1.5 py-0.5 rounded-md text-xs focus:outline-none transition-colors cursor-pointer"
+                  />
+                </div>
+              </div>
+
+              {/* Presets */}
+              <div className="flex items-center gap-1">
+                {['07:30', '08:30', '17:30'].map((preset) => (
+                  <button
+                    key={preset}
+                    type="button"
+                    onClick={() => onChangeSchedule({ time: preset })}
+                    className={`text-[11px] px-1.5 py-0.5 rounded-md border transition-colors cursor-pointer ${
+                      schedule.time === preset
+                        ? 'bg-blue-50 text-blue-700 border-blue-200 font-semibold'
+                        : 'text-slate-500 hover:text-slate-800 border-slate-200 bg-slate-50'
+                    }`}
+                  >
+                    {preset}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
+        )}
+      </div>
 
-          {/* Action Buttons: Manuell aktualisieren & Auto-Aktualisieren Switch */}
-          <div className="flex items-center gap-1">
-            <button
-              id="btn-manual-refresh"
-              type="button"
-              disabled={isCalculating}
-              onClick={() => {
-                if (onRefreshIsochrones) {
-                  onRefreshIsochrones();
-                }
-              }}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold shadow-xs border transition-all ${
-                isCalculating
-                  ? 'bg-blue-50 text-blue-500 border-blue-200 cursor-not-allowed'
-                  : 'bg-white hover:bg-blue-50 text-slate-700 hover:text-blue-700 border-slate-200/90 active:scale-95'
-              }`}
-              title="Berechnung und Isochronen jetzt manuell neu berechnen"
-            >
-              <RefreshCw
-                className={`w-3.5 h-3.5 ${isCalculating ? 'animate-spin text-blue-600' : 'text-slate-500'}`}
-              />
-              <span className="hidden sm:inline">
-                {isCalculating ? 'Lädt...' : 'Aktualisieren'}
+      {/* 2. Prioritäts-Heatmap (Einklappbar mit Dropdown-Mehrfachauswahl) */}
+      <div className="bg-white rounded-xl border border-slate-200/90 shadow-2xs overflow-visible transition-all">
+        {/* Header / Toggle */}
+        <div
+          onClick={() => setIsHeatmapCollapsed((prev) => !prev)}
+          className="p-2.5 flex items-center justify-between gap-2 cursor-pointer hover:bg-slate-50/80 transition-colors select-none"
+        >
+          <div className="flex items-center gap-2 min-w-0">
+            <div className={`p-1 rounded-lg shrink-0 ${isHeatmapActive ? 'bg-amber-100 text-amber-600' : 'bg-slate-100 text-slate-400'}`}>
+              <Flame className="w-3.5 h-3.5" />
+            </div>
+            <span className="text-xs font-bold text-slate-800 truncate">
+              Prioritäts-Heatmap
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            {/* Status-Badge */}
+            {isHeatmapActive ? (
+              <span className="text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200/80 px-2 py-0.5 rounded-md flex items-center gap-1">
+                <span>{activeHeatmapItems.length} aktiv</span>
               </span>
-            </button>
+            ) : (
+              <span className="text-[11px] font-medium text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md">
+                Inaktiv
+              </span>
+            )}
 
-            {onToggleAutoUpdate && (
+            <button
+              type="button"
+              className="text-slate-400 hover:text-slate-600 p-0.5 rounded transition-colors"
+              title={isHeatmapCollapsed ? 'Aufklappen' : 'Einklappen'}
+            >
+              {isHeatmapCollapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
+            </button>
+          </div>
+        </div>
+
+        {/* Content Body */}
+        {!isHeatmapCollapsed && (
+          <div className="p-3 pt-0 border-t border-slate-100 mt-1 space-y-3">
+            {/* Master Switch */}
+            <div className="flex items-center justify-between pt-2">
+              <span className="text-xs font-medium text-slate-700">
+                Heatmap im Treffbereich aktivieren
+              </span>
               <button
-                id="btn-toggle-autoupdate"
+                id="switch-heatmap-master"
                 type="button"
-                onClick={onToggleAutoUpdate}
-                className={`flex items-center gap-1 px-2 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
-                  autoUpdate
-                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200 shadow-2xs'
-                    : 'bg-slate-100 text-slate-500 border-slate-200 hover:bg-slate-200/70'
+                role="switch"
+                aria-checked={isHeatmapActive}
+                onClick={handleToggleHeatmapActive}
+                className={`w-8 h-4.5 flex items-center rounded-full p-0.5 transition-colors cursor-pointer ${
+                  isHeatmapActive ? 'bg-amber-500' : 'bg-slate-200'
                 }`}
-                title={
-                  autoUpdate
-                    ? 'Automatische Aktualisierung bei Eingabe-Änderung ist AKTIV'
-                    : 'Automatische Aktualisierung ist PAUSIERT (Klicke auf Aktualisieren zum Berechnen)'
-                }
+                title={isHeatmapActive ? 'Heatmap deaktivieren' : 'Heatmap aktivieren'}
               >
-                <Zap
-                  className={`w-3 h-3 ${autoUpdate ? 'text-emerald-600 fill-emerald-600' : 'text-slate-400'}`}
+                <div
+                  className={`bg-white w-3.5 h-3.5 rounded-full shadow-xs transform transition-transform ${
+                    isHeatmapActive ? 'translate-x-3.5' : 'translate-x-0'
+                  }`}
                 />
-                <span className="text-[11px] whitespace-nowrap">
-                  {autoUpdate ? 'Auto' : 'Manuell'}
-                </span>
               </button>
+            </div>
+
+            {/* When active: Dropdown Multi-Select & Sliders */}
+            {isHeatmapActive && (
+              <div className="space-y-2.5 pt-1 border-t border-slate-100">
+                {/* Multi-Select Dropdown */}
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className="font-semibold text-slate-600">
+                      Prioritäts-Infrastruktur (Mehrfachauswahl):
+                    </span>
+                    <span className="text-[10px] text-slate-400">
+                      {activeHeatmapItems.length} von {ALL_HEATMAP_ITEMS.length} gewählt
+                    </span>
+                  </div>
+
+                  <div ref={heatmapDropdownRef} className="relative">
+                    <button
+                      id="btn-heatmap-dropdown"
+                      type="button"
+                      onClick={() => setIsHeatmapDropdownOpen((prev) => !prev)}
+                      className="w-full flex items-center justify-between gap-2 p-2 rounded-xl bg-slate-50 hover:bg-slate-100/80 border border-slate-200 text-xs text-left shadow-2xs transition-all cursor-pointer"
+                    >
+                      <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+                        {activeHeatmapItems.length === 0 ? (
+                          <span className="text-slate-400 italic">Klicke, um Kategorien zu wählen...</span>
+                        ) : (
+                          activeHeatmapItems.map((item) => {
+                            const isUbahn = item === 'ubahn';
+                            const isSbahn = item === 'sbahn';
+                            return (
+                              <span
+                                key={item}
+                                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold border ${
+                                  isUbahn
+                                    ? 'bg-blue-50 text-blue-700 border-blue-200'
+                                    : isSbahn
+                                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                    : 'bg-orange-50 text-orange-700 border-orange-200'
+                                }`}
+                              >
+                                <span>{isUbahn ? '🚇 U-Bahn' : isSbahn ? '🚆 S-Bahn' : '🚗 Autobahn'}</span>
+                                <span
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleToggleHeatmapItem(item);
+                                  }}
+                                  className="text-slate-400 hover:text-slate-700 font-bold ml-0.5 cursor-pointer"
+                                  title="Abwählen"
+                                >
+                                  ×
+                                </span>
+                              </span>
+                            );
+                          })
+                        )}
+                      </div>
+                      <ChevronDown
+                        className={`w-4 h-4 text-slate-400 shrink-0 transition-transform ${
+                          isHeatmapDropdownOpen ? 'rotate-180 text-amber-600' : ''
+                        }`}
+                      />
+                    </button>
+
+                    {/* Floating Dropdown Card */}
+                    {isHeatmapDropdownOpen && (
+                      <div className="absolute top-full left-0 right-0 mt-1.5 z-40 bg-white rounded-xl shadow-xl border border-slate-200 p-2.5 space-y-2">
+                        <div className="flex items-center justify-between text-[11px] font-semibold text-slate-700 pb-1.5 border-b border-slate-100">
+                          <span>Kategorien wählen (z.B. zwei kombinieren):</span>
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={handleSelectAllHeatmapItems}
+                              className="text-[10px] text-amber-700 font-semibold hover:underline cursor-pointer"
+                            >
+                              Alle
+                            </button>
+                            <span className="text-slate-200">|</span>
+                            <button
+                              type="button"
+                              onClick={handleClearAllHeatmapItems}
+                              className="text-[10px] text-slate-400 hover:underline cursor-pointer"
+                            >
+                              Keine
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="space-y-1">
+                          {[
+                            {
+                              id: 'ubahn' as PriorityHeatmapItem,
+                              label: '🚇 U-Bahn Stationen',
+                              desc: 'U1 – U8 Haltestellen im MVV/MVG Netz',
+                            },
+                            {
+                              id: 'sbahn' as PriorityHeatmapItem,
+                              label: '🚆 S-Bahn Stationen',
+                              desc: 'S1 – S8 Stammstrecke und Außenäste',
+                            },
+                            {
+                              id: 'highway' as PriorityHeatmapItem,
+                              label: '🚗 Autobahn-Anschlussstellen',
+                              desc: 'A8, A9, A94, A95, A96, A99 Zufahrten',
+                            },
+                          ].map((opt) => {
+                            const isChecked = activeHeatmapItems.includes(opt.id);
+                            return (
+                              <label
+                                key={opt.id}
+                                className={`flex items-center gap-2.5 p-2 rounded-lg cursor-pointer transition-colors ${
+                                  isChecked
+                                    ? 'bg-amber-50/70 text-amber-950 font-semibold'
+                                    : 'text-slate-600 hover:bg-slate-50'
+                                }`}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={isChecked}
+                                  onChange={() => handleToggleHeatmapItem(opt.id)}
+                                  className="rounded text-amber-600 focus:ring-amber-500 border-slate-300 cursor-pointer"
+                                />
+                                <div className="flex-1 min-w-0">
+                                  <div className="text-xs">{opt.label}</div>
+                                  <div className="text-[10px] text-slate-400 font-normal truncate">
+                                    {opt.desc}
+                                  </div>
+                                </div>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Range Sliders */}
+                <div className="bg-amber-50/60 border border-amber-200/70 rounded-xl p-2.5 space-y-2">
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className="text-amber-900 font-medium">Suchradius / Fußdistanz:</span>
+                    <span className="font-bold text-amber-800">
+                      {heatmap.radiusKm >= 1 ? `${heatmap.radiusKm.toFixed(1)} km` : `${(heatmap.radiusKm * 1000).toFixed(0)} m`} (ca. {Math.round(heatmap.radiusKm * 12)} Min)
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0.5"
+                    max="3.5"
+                    step="0.25"
+                    value={heatmap.radiusKm}
+                    onChange={(e) => handleUpdateHeatmap({ radiusKm: parseFloat(e.target.value) })}
+                    className="w-full accent-amber-600 h-1.5 bg-amber-200 rounded-lg cursor-pointer"
+                  />
+
+                  <div className="flex items-center justify-between text-[11px] pt-1 border-t border-amber-200/50">
+                    <span className="text-amber-900 font-medium">Farbintensität & Deckkraft:</span>
+                    <span className="font-bold text-amber-800">
+                      {Math.round(heatmap.intensity * 100)}%
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0.2"
+                    max="0.95"
+                    step="0.05"
+                    value={heatmap.intensity}
+                    onChange={(e) => handleUpdateHeatmap({ intensity: parseFloat(e.target.value) })}
+                    className="w-full accent-amber-600 h-1.5 bg-amber-200 rounded-lg cursor-pointer"
+                  />
+                </div>
+              </div>
             )}
           </div>
-        </div>
+        )}
       </div>
 
-      {/* Zentrale Optionen (Live-Traffic, Glatte Kanten, Kartendienst & Engine Settings) */}
-      <div className="bg-white rounded-xl border border-slate-200/90 p-2.5 shadow-2xs flex flex-col gap-2">
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-              Karten & APIs
-            </span>
-            {/* Kartendienst & API Settings Modal Button */}
-            <button
-              id="btn-open-api-settings"
-              type="button"
-              onClick={() => handleSetModalOpen(true)}
-              className={`flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-lg border transition-all whitespace-nowrap ${
-                isGoogleBasemap || hasGoogleKey
-                  ? 'bg-blue-50 text-blue-800 border-blue-200 hover:bg-blue-100'
-                  : 'text-slate-600 hover:text-slate-800 bg-slate-50 border-slate-200 hover:bg-slate-100'
-              }`}
-              title="Kartendienst (OSM/Google Maps) & API-Schlüssel konfigurieren"
-            >
-              <Layers className="w-3 h-3 text-blue-600" />
-              <span className="font-semibold">
-                Karte: {isGoogleBasemap ? 'Google Maps' : 'OSM'}
+      {/* 3. ÖPNV-Verkehrsmittel (Einklappbar) */}
+      {schedule.mode === 'transit' && (
+        <div className="bg-white rounded-xl border border-slate-200/90 shadow-2xs overflow-hidden transition-all">
+          <div
+            onClick={() => setIsTransitCollapsed((prev) => !prev)}
+            className="p-2.5 flex items-center justify-between gap-2 cursor-pointer hover:bg-slate-50/80 transition-colors select-none"
+          >
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="p-1 rounded-lg bg-blue-50 text-blue-600 shrink-0">
+                <Train className="w-3.5 h-3.5" />
+              </div>
+              <span className="text-xs font-bold text-slate-800 truncate">
+                ÖPNV-Verkehrsmittel
               </span>
-              <span className="text-slate-300">|</span>
-              <span className="text-slate-500">
-                {activeProvider === 'google'
-                  ? 'Google Isochronen'
-                  : activeProvider === 'ors'
-                  ? 'ORS'
-                  : 'Integriert'}
-              </span>
-            </button>
-          </div>
-
-          <div className="flex items-center gap-4">
-            {/* Live-Traffic Switch */}
-            <div className="flex items-center gap-1.5">
-              <button
-                id="switch-live-traffic"
-                type="button"
-                role="switch"
-                aria-checked={options.liveTraffic}
-                onClick={() => handleToggleOption('liveTraffic')}
-                className={`w-7 h-4 flex items-center rounded-full p-0.5 transition-colors cursor-pointer ${
-                  options.liveTraffic ? 'bg-blue-600' : 'bg-slate-200'
-                }`}
-                title="Verkehrslage berücksichtigen (Rush Hour & Stau)"
-              >
-                <div
-                  className={`bg-white w-3 h-3 rounded-full shadow-xs transform transition-transform ${
-                    options.liveTraffic ? 'translate-x-3' : 'translate-x-0'
-                  }`}
-                />
-              </button>
-              <label
-                htmlFor="switch-live-traffic"
-                className="text-xs text-slate-600 font-medium cursor-pointer select-none"
-              >
-                Live-Verkehr
-              </label>
             </div>
 
-            {/* Polygon Glättung Switch */}
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-2 shrink-0">
+              <span className="text-[11px] font-medium bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md">
+                {activeTransitModes.length} von {ALL_TRANSIT_SUBMODES.length} aktiv
+              </span>
               <button
-                id="switch-polygon-smoothing"
                 type="button"
-                role="switch"
-                aria-checked={options.enableSmoothing}
-                onClick={() => handleToggleOption('enableSmoothing')}
-                className={`w-7 h-4 flex items-center rounded-full p-0.5 transition-colors cursor-pointer ${
-                  options.enableSmoothing ? 'bg-blue-600' : 'bg-slate-200'
-                }`}
-                title="Geglättete B-Spline Isochronen-Umrisse für bessere Lesbarkeit"
+                className="text-slate-400 hover:text-slate-600 p-0.5 rounded transition-colors"
+                title={isTransitCollapsed ? 'Aufklappen' : 'Einklappen'}
               >
-                <div
-                  className={`bg-white w-3 h-3 rounded-full shadow-xs transform transition-transform ${
-                    options.enableSmoothing ? 'translate-x-3' : 'translate-x-0'
-                  }`}
-                />
+                {isTransitCollapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
               </button>
-              <label
-                htmlFor="switch-polygon-smoothing"
-                className="text-xs text-slate-600 font-medium cursor-pointer select-none"
-              >
-                Glatte Kanten
-              </label>
+            </div>
+          </div>
+
+          {!isTransitCollapsed && (
+            <div className="p-2.5 pt-0 border-t border-slate-100 mt-1">
+              <div className="grid grid-cols-5 gap-1 bg-slate-100 p-1 rounded-xl">
+                {[
+                  { id: 'tram' as TransitSubMode, label: 'Tram', icon: '🚋' },
+                  { id: 'ubahn' as TransitSubMode, label: 'U-Bahn', icon: '🚇' },
+                  { id: 'bus' as TransitSubMode, label: 'Bus', icon: '🚌' },
+                  { id: 'expressbus' as TransitSubMode, label: 'X-Bus', icon: '⚡' },
+                  { id: 'sbahn' as TransitSubMode, label: 'S-Bahn', icon: '🚆' },
+                ].map((item) => {
+                  const active = activeTransitModes.includes(item.id);
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => handleToggleTransitMode(item.id)}
+                      title={`${item.label} ${active ? 'abwählen' : 'einbeziehen'}`}
+                      className={`py-1.5 px-1 text-center rounded-lg transition-all text-xs font-medium flex flex-col sm:flex-row items-center justify-center gap-1 cursor-pointer ${
+                        active
+                          ? 'bg-white text-blue-900 shadow-xs font-semibold ring-1 ring-blue-500/20'
+                          : 'text-slate-400 hover:text-slate-700 hover:bg-white/50 opacity-60'
+                      }`}
+                    >
+                      <span>{item.icon}</span>
+                      <span className="truncate">{item.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 4. Single Point of Entry: Einstellungen Card (Karten, APIs & Parameter) */}
+      <button
+        id="btn-open-api-settings"
+        type="button"
+        onClick={() => handleSetModalOpen(true)}
+        className="w-full flex items-center justify-between p-2.5 rounded-xl bg-slate-50 hover:bg-blue-50/70 border border-slate-200/90 hover:border-blue-200 text-xs transition-all group cursor-pointer shadow-2xs"
+        title="Zentrales Einstellungsfenster für Karten, APIs, Isochronen-Parameter und MVV-Matrix öffnen"
+      >
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="p-1.5 rounded-lg bg-white border border-slate-200 group-hover:border-blue-300 text-slate-600 group-hover:text-blue-600 shadow-2xs transition-colors shrink-0">
+            <Settings className="w-4 h-4" />
+          </div>
+          <div className="text-left min-w-0">
+            <div className="font-bold text-slate-800 group-hover:text-blue-900 leading-tight">
+              Karten, APIs & Parameter
+            </div>
+            <div className="text-[11px] text-slate-500 leading-tight truncate">
+              {isGoogleBasemap ? 'Google Maps' : 'OSM'} • {options.fidelity || 'Auto'} • {options.liveTraffic ? 'Live-Verkehr an' : 'Standard'}
             </div>
           </div>
         </div>
 
-        {/* Detailgenauigkeit / Fidelity Selector */}
-        <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
-          <span className="text-[11px] font-semibold text-slate-500">Detailgrad:</span>
-          <div className="grid grid-cols-4 gap-1 bg-slate-100 p-0.5 rounded-lg w-72">
-            {[
-              { id: 'AUTOMATIC' as PolygonFidelity, label: 'Auto' },
-              { id: 'LOW' as PolygonFidelity, label: 'Grob' },
-              { id: 'MEDIUM' as PolygonFidelity, label: 'Mittel' },
-              { id: 'HIGH' as PolygonFidelity, label: 'Präzise' },
-            ].map((item) => {
-              const isSelected = (options.fidelity || 'AUTOMATIC') === item.id;
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => handleSelectFidelity(item.id)}
-                  className={`py-1 text-center rounded-lg transition-all text-xs font-medium ${
-                    isSelected
-                      ? 'bg-white text-blue-700 shadow-xs font-semibold ring-1 ring-blue-500/20'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
-                  }`}
-                >
-                  {item.label}
-                </button>
-              );
-            })}
-          </div>
+        <div className="flex items-center gap-1 text-[11px] font-semibold text-blue-600 bg-white group-hover:bg-blue-600 group-hover:text-white px-2.5 py-1 rounded-lg border border-blue-200 transition-colors shadow-2xs shrink-0">
+          <span>Öffnen</span>
+          <ChevronRight className="w-3.5 h-3.5" />
         </div>
-      </div>
+      </button>
 
       {/* Kartendienst, Isochronen & API Keys Modal */}
       {showModal && (
@@ -578,6 +972,19 @@ export const CommuteSettings: React.FC<CommuteSettingsProps> = ({
               >
                 <Key className="w-3.5 h-3.5" />
                 <span>4. API-Keys & Check</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setModalTab('heatmap')}
+                className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5 ${
+                  modalTab === 'heatmap'
+                    ? 'bg-white text-amber-600 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <Flame className="w-3.5 h-3.5 text-amber-500" />
+                <span>5. Treff-Heatmap</span>
               </button>
             </div>
 
@@ -924,6 +1331,125 @@ export const CommuteSettings: React.FC<CommuteSettingsProps> = ({
                     OpenStreetMap-basierte Isochronen für Auto, Fahrrad und Fußgänger (kostenloser API-Key erforderlich).
                   </p>
                 </div>
+
+                {/* Berechnungsparameter: Detailgrad, Live-Verkehr & Glättung */}
+                <div className="pt-3 border-t border-slate-200/80 space-y-3">
+                  <div className="text-xs font-bold text-slate-800">
+                    Berechnungs- & Darstellungs-Parameter
+                  </div>
+
+                  {/* Detailgenauigkeit / Fidelity */}
+                  <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-2">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-semibold text-slate-700">Detailgrad der Isochronen:</span>
+                      <span className="text-[11px] text-slate-500">
+                        {options.fidelity === 'HIGH' ? 'Sehr präzise Berechnungsraster' : options.fidelity === 'LOW' ? 'Grob & maximal schnell' : 'Ausgewogen'}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-4 gap-1 bg-white p-1 rounded-lg border border-slate-200">
+                      {[
+                        { id: 'AUTOMATIC' as PolygonFidelity, label: 'Auto' },
+                        { id: 'LOW' as PolygonFidelity, label: 'Grob' },
+                        { id: 'MEDIUM' as PolygonFidelity, label: 'Mittel' },
+                        { id: 'HIGH' as PolygonFidelity, label: 'Präzise' },
+                      ].map((item) => {
+                        const isSelected = (options.fidelity || 'AUTOMATIC') === item.id;
+                        return (
+                          <button
+                            key={item.id}
+                            type="button"
+                            onClick={() => handleSelectFidelity(item.id)}
+                            className={`py-1.5 text-center rounded-md transition-all text-xs font-medium cursor-pointer ${
+                              isSelected
+                                ? 'bg-blue-600 text-white shadow-xs font-semibold'
+                                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                            }`}
+                          >
+                            {item.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Switches for Live-Traffic and Smoothing */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {/* Live-Verkehr Switch */}
+                    <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 flex items-center justify-between">
+                      <div>
+                        <div className="text-xs font-semibold text-slate-800">Live-Verkehr & Stau</div>
+                        <div className="text-[10px] text-slate-500">Rush-Hour Berücksichtigung</div>
+                      </div>
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={options.liveTraffic}
+                        onClick={() => handleToggleOption('liveTraffic')}
+                        className={`w-8 h-4.5 flex items-center rounded-full p-0.5 transition-colors cursor-pointer ${
+                          options.liveTraffic ? 'bg-blue-600' : 'bg-slate-200'
+                        }`}
+                      >
+                        <div
+                          className={`bg-white w-3.5 h-3.5 rounded-full shadow-xs transform transition-transform ${
+                            options.liveTraffic ? 'translate-x-3.5' : 'translate-x-0'
+                          }`}
+                        />
+                      </button>
+                    </div>
+
+                    {/* Glatte Kanten Switch */}
+                    <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 flex items-center justify-between">
+                      <div>
+                        <div className="text-xs font-semibold text-slate-800">Glatte Kanten</div>
+                        <div className="text-[10px] text-slate-500">B-Spline Konturen-Glättung</div>
+                      </div>
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={options.enableSmoothing}
+                        onClick={() => handleToggleOption('enableSmoothing')}
+                        className={`w-8 h-4.5 flex items-center rounded-full p-0.5 transition-colors cursor-pointer ${
+                          options.enableSmoothing ? 'bg-blue-600' : 'bg-slate-200'
+                        }`}
+                      >
+                        <div
+                          className={`bg-white w-3.5 h-3.5 rounded-full shadow-xs transform transition-transform ${
+                            options.enableSmoothing ? 'translate-x-3.5' : 'translate-x-0'
+                          }`}
+                        />
+                      </button>
+                    </div>
+
+                    {/* Nur überlagerten Treffbereich anzeigen Switch */}
+                    {onToggleOnlyIntersection && (
+                      <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 flex items-center justify-between">
+                        <div className="pr-2">
+                          <div className="text-xs font-semibold text-slate-800">
+                            Nur überlagerten Treffbereich anzeigen
+                          </div>
+                          <div className="text-[10px] text-slate-500 leading-tight mt-0.5">
+                            Blendet die individuellen Personen-Isochronen aus und zeigt nur den gemeinsamen grünen Treffbereich.
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          role="switch"
+                          aria-checked={showOnlyIntersection}
+                          onClick={onToggleOnlyIntersection}
+                          className={`w-8 h-4.5 shrink-0 flex items-center rounded-full p-0.5 transition-colors cursor-pointer ${
+                            showOnlyIntersection ? 'bg-emerald-600' : 'bg-slate-200'
+                          }`}
+                        >
+                          <div
+                            className={`bg-white w-3.5 h-3.5 rounded-full shadow-xs transform transition-transform ${
+                              showOnlyIntersection ? 'translate-x-3.5' : 'translate-x-0'
+                            }`}
+                          />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             )}
 
@@ -994,6 +1520,63 @@ export const CommuteSettings: React.FC<CommuteSettingsProps> = ({
                     <div className="text-[10px] uppercase font-bold text-slate-400">Stand / Version</div>
                     <div className="text-xs font-bold text-slate-800 mt-1 truncate">{mvvMeta.version}</div>
                     <div className="text-[10px] text-slate-500 truncate">{mvvMeta.lastUpdated}</div>
+                  </div>
+                </div>
+
+                {/* Verkehrsmittel / Modalitäten Filter */}
+                <div className="bg-slate-50 border border-slate-200 p-3.5 rounded-xl space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <div className="font-bold text-xs text-slate-800 flex items-center gap-1.5">
+                      <Train className="w-3.5 h-3.5 text-blue-600" />
+                      <span>ÖPNV-Verkehrsträger einbeziehen:</span>
+                    </div>
+                    <div className="text-[11px] text-slate-500 font-medium">
+                      {activeTransitModes.length} von {ALL_TRANSIT_SUBMODES.length} aktiv
+                    </div>
+                  </div>
+
+                  <p className="text-[11px] text-slate-500 leading-normal">
+                    Wähle aus, welche Verkehrsmittel für die MVV-Isochronen und Fahrzeiten berücksichtigt werden sollen. Mindestens ein Verkehrsmittel bleibt immer aktiv.
+                  </p>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-1">
+                    {(
+                      [
+                        { id: 'tram', label: 'Tram', icon: '🚋', desc: 'Straßenbahnlinien' },
+                        { id: 'ubahn', label: 'U-Bahn', icon: '🚇', desc: 'U1 – U8 Netz' },
+                        { id: 'bus', label: 'Bus', icon: '🚌', desc: 'Stadt- & Regionalbusse' },
+                        { id: 'expressbus', label: 'Expressbus', icon: '⚡', desc: 'X-Busse (z.B. X30, X50)' },
+                        { id: 'sbahn', label: 'S-Bahn', icon: '🚆', desc: 'S1 – S8 Stammstrecke & Außenäste' },
+                      ] as const
+                    ).map((modeItem) => {
+                      const isChecked = activeTransitModes.includes(modeItem.id as TransitSubMode);
+                      return (
+                        <label
+                          key={modeItem.id}
+                          className={`flex items-start gap-2.5 p-2.5 rounded-xl border transition-all cursor-pointer select-none ${
+                            isChecked
+                              ? 'bg-blue-50/70 border-blue-300 shadow-2xs'
+                              : 'bg-white border-slate-200 opacity-60 hover:opacity-100 hover:border-slate-300'
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={() => handleToggleTransitMode(modeItem.id as TransitSubMode)}
+                            className="mt-0.5 rounded text-blue-600 focus:ring-blue-500 border-slate-300 cursor-pointer"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-1.5 font-semibold text-xs text-slate-800">
+                              <span>{modeItem.icon}</span>
+                              <span>{modeItem.label}</span>
+                            </div>
+                            <div className="text-[10px] text-slate-500 mt-0.5 leading-tight truncate">
+                              {modeItem.desc}
+                            </div>
+                          </div>
+                        </label>
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -1237,6 +1820,158 @@ export const CommuteSettings: React.FC<CommuteSettingsProps> = ({
                     </a>
                   </p>
                 </div>
+              </div>
+            )}
+
+            {/* TAB 5: TREFFBEREICH-HEATMAP NACH NÄHE (U-BAHN, S-BAHN, AUTOBAHN) */}
+            {modalTab === 'heatmap' && (
+              <div className="space-y-4">
+                <div className="p-3.5 bg-amber-50/70 border border-amber-200/80 rounded-xl space-y-1.5">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1 bg-amber-500 text-white rounded-md">
+                      <Flame className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <span className="text-xs font-bold text-slate-900">
+                        Prioritäts-Heatmap im gemeinsamen Treffbereich
+                      </span>
+                      <div className="text-[11px] text-slate-600">
+                        Visualisiert Lagen mit optimaler Nähe zu Schnellbahnen oder Autobahnen
+                      </div>
+                    </div>
+                  </div>
+                  <p className="text-xs text-slate-600 leading-relaxed pt-1">
+                    Markiert innerhalb des gemeinsamen Treffbereichs (bzw. Wohnbereichs) diejenigen Zonen als Heatmap, die besonders nah an einer Haltestelle oder Autobahnauffahrt liegen (in 3 konzentrischen Fußdistanz-Stufen).
+                  </p>
+                </div>
+
+                {/* Auswahl der Prioritäts-Kriterien (Mehrfachauswahl) */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="text-xs font-bold text-slate-700">
+                      1. Prioritäts-Kriterien (Mehrfachauswahl möglich):
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={handleSelectAllHeatmapItems}
+                        className="text-[11px] text-amber-700 font-semibold hover:underline cursor-pointer"
+                      >
+                        Alle wählen
+                      </button>
+                      <span className="text-slate-300">|</span>
+                      <button
+                        type="button"
+                        onClick={handleClearAllHeatmapItems}
+                        className="text-[11px] text-slate-500 hover:underline cursor-pointer"
+                      >
+                        Keine
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                    {[
+                      {
+                        id: 'ubahn' as PriorityHeatmapItem,
+                        title: '🚇 U-Bahn',
+                        desc: 'Priorisiert Gehdistanz zu allen Münchner U-Bahn-Stationen (U1-U8).',
+                        icon: <Train className="w-4 h-4 text-blue-600" />,
+                      },
+                      {
+                        id: 'sbahn' as PriorityHeatmapItem,
+                        title: '🚆 S-Bahn',
+                        desc: 'Priorisiert Gehdistanz zum MVV S-Bahn-Netz (S1-S8 Stammstrecke + Außenäste).',
+                        icon: <Train className="w-4 h-4 text-emerald-600" />,
+                      },
+                      {
+                        id: 'highway' as PriorityHeatmapItem,
+                        title: '🚗 Autobahn',
+                        desc: 'Priorisiert kurze Anbindung an Anschlussstellen (A8, A9, A94, A95, A96, A99).',
+                        icon: <Car className="w-4 h-4 text-orange-600" />,
+                      },
+                    ].map((opt) => {
+                      const active = activeHeatmapItems.includes(opt.id);
+                      return (
+                        <div
+                          key={opt.id}
+                          onClick={() => handleToggleHeatmapItem(opt.id)}
+                          className={`p-3 rounded-xl border transition-all cursor-pointer flex flex-col justify-between gap-2 select-none ${
+                            active
+                              ? 'bg-amber-50/70 border-amber-400 ring-2 ring-amber-400/40 shadow-xs'
+                              : 'bg-white border-slate-200 hover:border-slate-300'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="checkbox"
+                                checked={active}
+                                onChange={() => handleToggleHeatmapItem(opt.id)}
+                                className="rounded text-amber-600 focus:ring-amber-500 border-slate-300 cursor-pointer"
+                                onClick={(e) => e.stopPropagation()}
+                              />
+                              <span className="font-bold text-xs text-slate-900">{opt.title}</span>
+                            </div>
+                            <div className="p-1 bg-slate-100 rounded-md shrink-0">{opt.icon}</div>
+                          </div>
+                          <span className="text-[11px] text-slate-500 leading-snug">{opt.desc}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Parameter-Regler */}
+                {isHeatmapActive && (
+                  <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-3">
+                    <div className="text-xs font-bold text-slate-800 flex items-center justify-between">
+                      <span>2. Heatmap-Parameter einstellen</span>
+                      <span className="text-[10px] text-slate-500">Live auf der Karte</span>
+                    </div>
+
+                    <div>
+                      <div className="flex items-center justify-between text-xs mb-1">
+                        <span className="text-slate-700 font-medium">Maximaler Such- & Einflussradius:</span>
+                        <span className="font-bold text-amber-800 bg-amber-100/70 px-2 py-0.5 rounded-md">
+                          {heatmap.radiusKm >= 1 ? `${heatmap.radiusKm.toFixed(2)} km` : `${(heatmap.radiusKm * 1000).toFixed(0)} m`} (ca. {Math.round(heatmap.radiusKm * 12)} Min)
+                        </span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0.5"
+                        max="3.5"
+                        step="0.1"
+                        value={heatmap.radiusKm}
+                        onChange={(e) => handleUpdateHeatmap({ radiusKm: parseFloat(e.target.value) })}
+                        className="w-full accent-amber-600 h-2 bg-slate-200 rounded-lg cursor-pointer"
+                      />
+                      <div className="flex justify-between text-[10px] text-slate-400 mt-1">
+                        <span>500 m (Top Gehdistanz)</span>
+                        <span>1.5 km (Standard)</span>
+                        <span>3.5 km (Großraum)</span>
+                      </div>
+                    </div>
+
+                    <div className="pt-2 border-t border-slate-200">
+                      <div className="flex items-center justify-between text-xs mb-1">
+                        <span className="text-slate-700 font-medium">Farbintensität & Deckkraft:</span>
+                        <span className="font-bold text-amber-800 bg-amber-100/70 px-2 py-0.5 rounded-md">
+                          {Math.round(heatmap.intensity * 100)} %
+                        </span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0.2"
+                        max="0.95"
+                        step="0.05"
+                        value={heatmap.intensity}
+                        onChange={(e) => handleUpdateHeatmap({ intensity: parseFloat(e.target.value) })}
+                        className="w-full accent-amber-600 h-2 bg-slate-200 rounded-lg cursor-pointer"
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 

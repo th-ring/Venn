@@ -1,6 +1,7 @@
 import * as turf from '@turf/turf';
 import { PersonProfile, CommuteSchedule, TransportMode, BasemapProvider, BasemapPlatform, MapVariant } from '../types';
-import { generateMvvTransitIsochrone } from './mvvMatrixService';
+import { generateMvvTransitIsochrone, calculateReachableStations } from './mvvMatrixService';
+import { DEFAULT_MVV_DATASET } from '../data/mvvDataset';
 
 interface IsochroneCacheKey {
   lat: number;
@@ -14,25 +15,30 @@ interface IsochroneCacheKey {
   liveTraffic?: boolean;
   smoothing?: boolean;
   fidelity?: string;
+  transitModes?: string;
 }
 
 const isochroneCache = new Map<string, GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon>>();
 
 function makeCacheKey(k: IsochroneCacheKey): string {
-  return `${k.lat.toFixed(4)}_${k.lng.toFixed(4)}_${k.time}_${k.mode}_${k.direction}_${k.transfers ?? 'any'}_${k.walkTime ?? 'any'}_${k.transferWait ?? 'any'}_lt:${k.liveTraffic ? 1 : 0}_sm:${k.smoothing ? 1 : 0}_fi:${k.fidelity ?? 'auto'}`;
+  return `${DEFAULT_MVV_DATASET.version}_${k.lat.toFixed(4)}_${k.lng.toFixed(4)}_${k.time}_${k.mode}_${k.direction}_${k.transfers ?? 'any'}_${k.walkTime ?? 'any'}_${k.transferWait ?? 'any'}_lt:${k.liveTraffic ? 1 : 0}_sm:${k.smoothing ? 1 : 0}_fi:${k.fidelity ?? 'auto'}_tm:${k.transitModes ?? 'all'}`;
 }
 
 export type IsochroneProvider = 'calibrated' | 'google' | 'ors';
 
 export function getSelectedProvider(): IsochroneProvider {
+  if (typeof localStorage === 'undefined') return 'calibrated';
   return (localStorage.getItem('isochrone_provider') as IsochroneProvider) || 'calibrated';
 }
 
 export function setSelectedProvider(provider: IsochroneProvider): void {
-  localStorage.setItem('isochrone_provider', provider);
+  if (typeof localStorage !== 'undefined') {
+    localStorage.setItem('isochrone_provider', provider);
+  }
 }
 
 export function getBasemapPlatform(): BasemapPlatform {
+  if (typeof localStorage === 'undefined') return 'osm';
   const stored = localStorage.getItem('basemap_platform');
   if (stored === 'google' || stored === 'osm') return stored;
   // Fallback to older basemap_provider if present
@@ -42,11 +48,14 @@ export function getBasemapPlatform(): BasemapPlatform {
 }
 
 export function setBasemapPlatform(platform: BasemapPlatform): void {
-  localStorage.setItem('basemap_platform', platform);
-  localStorage.setItem('basemap_provider', `${platform}_${getMapVariant()}`);
+  if (typeof localStorage !== 'undefined') {
+    localStorage.setItem('basemap_platform', platform);
+    localStorage.setItem('basemap_provider', `${platform}_${getMapVariant()}`);
+  }
 }
 
 export function getMapVariant(): MapVariant {
+  if (typeof localStorage === 'undefined') return 'normal';
   const stored = localStorage.getItem('map_variant');
   if (stored === 'normal' || stored === 'satellite' || stored === 'streets' || stored === 'transit') {
     return stored;
@@ -59,8 +68,10 @@ export function getMapVariant(): MapVariant {
 }
 
 export function setMapVariant(variant: MapVariant): void {
-  localStorage.setItem('map_variant', variant);
-  localStorage.setItem('basemap_provider', `${getBasemapPlatform()}_${variant}`);
+  if (typeof localStorage !== 'undefined') {
+    localStorage.setItem('map_variant', variant);
+    localStorage.setItem('basemap_provider', `${getBasemapPlatform()}_${variant}`);
+  }
 }
 
 export function getSelectedBasemap(): BasemapProvider {
@@ -68,19 +79,21 @@ export function getSelectedBasemap(): BasemapProvider {
 }
 
 export function setSelectedBasemap(provider: BasemapProvider): void {
-  localStorage.setItem('basemap_provider', provider);
-  if (provider.startsWith('google')) {
-    localStorage.setItem('basemap_platform', 'google');
-    if (provider.includes('satellite')) localStorage.setItem('map_variant', 'satellite');
-    else if (provider.includes('transit')) localStorage.setItem('map_variant', 'transit');
-    else if (provider.includes('streets')) localStorage.setItem('map_variant', 'streets');
-    else localStorage.setItem('map_variant', 'normal');
-  } else {
-    localStorage.setItem('basemap_platform', 'osm');
-    if (provider.includes('satellite')) localStorage.setItem('map_variant', 'satellite');
-    else if (provider.includes('transit')) localStorage.setItem('map_variant', 'transit');
-    else if (provider.includes('streets')) localStorage.setItem('map_variant', 'streets');
-    else localStorage.setItem('map_variant', 'normal');
+  if (typeof localStorage !== 'undefined') {
+    localStorage.setItem('basemap_provider', provider);
+    if (provider.startsWith('google')) {
+      localStorage.setItem('basemap_platform', 'google');
+      if (provider.includes('satellite')) localStorage.setItem('map_variant', 'satellite');
+      else if (provider.includes('transit')) localStorage.setItem('map_variant', 'transit');
+      else if (provider.includes('streets')) localStorage.setItem('map_variant', 'streets');
+      else localStorage.setItem('map_variant', 'normal');
+    } else {
+      localStorage.setItem('basemap_platform', 'osm');
+      if (provider.includes('satellite')) localStorage.setItem('map_variant', 'satellite');
+      else if (provider.includes('transit')) localStorage.setItem('map_variant', 'transit');
+      else if (provider.includes('streets')) localStorage.setItem('map_variant', 'streets');
+      else localStorage.setItem('map_variant', 'normal');
+    }
   }
 }
 
@@ -88,10 +101,12 @@ export function setSelectedBasemap(provider: BasemapProvider): void {
  * Checks whether user has configured a Google Maps API key in localStorage
  */
 export function getGoogleMapsApiKey(): string {
+  if (typeof localStorage === 'undefined') return '';
   return localStorage.getItem('google_maps_api_key') || '';
 }
 
 export function setGoogleMapsApiKey(key: string): void {
+  if (typeof localStorage === 'undefined') return;
   if (key) {
     localStorage.setItem('google_maps_api_key', key.trim());
   } else {
@@ -103,10 +118,12 @@ export function setGoogleMapsApiKey(key: string): void {
  * Checks whether user has configured an OpenRouteService API key in localStorage
  */
 export function getOrsApiKey(): string {
+  if (typeof localStorage === 'undefined') return '';
   return localStorage.getItem('ors_api_key') || '';
 }
 
 export function setOrsApiKey(key: string): void {
+  if (typeof localStorage === 'undefined') return;
   if (key) {
     localStorage.setItem('ors_api_key', key.trim());
   } else {
@@ -229,6 +246,8 @@ export async function generateIsochrone(
     fidelity: 'AUTOMATIC',
   };
 
+  const transitModesStr = opts.transitModes && opts.transitModes.length > 0 ? [...opts.transitModes].sort().join(',') : 'all';
+
   const cacheKey = makeCacheKey({
     lat: profile.lat,
     lng: profile.lng,
@@ -241,6 +260,7 @@ export async function generateIsochrone(
     liveTraffic: opts.liveTraffic,
     smoothing: opts.enableSmoothing,
     fidelity: opts.fidelity,
+    transitModes: transitModesStr,
   }) + `_${provider}_${googleKey ? 'g' : ''}_${orsKey ? 'o' : ''}`;
 
   if (isochroneCache.has(cacheKey)) {
@@ -290,7 +310,7 @@ export async function generateIsochrone(
   // 3. For Transit: Use official MVV/MVG Haltestellen- & Fahrzeitmatrix
   if (profile.mode === 'transit') {
     try {
-      const mvvPolygon = generateMvvTransitIsochrone(profile);
+      const mvvPolygon = generateMvvTransitIsochrone(profile, opts.transitModes);
       if (mvvPolygon && mvvPolygon.geometry) {
         isochroneCache.set(cacheKey, mvvPolygon);
         return mvvPolygon;
@@ -512,14 +532,62 @@ export function estimateCommuteTime(
     }
     case 'transit': {
       roadDistanceKm = straightDistKm * 1.22;
+      // Direct walking if very close (< 800m)
+      if (straightDistKm <= 0.8) {
+        travelTimeMin = (straightDistKm / 0.082) * 1.25;
+        break;
+      }
+
+      // Check if reachable via MVV network matrix (U-Bahn, S-Bahn, Tram, Bus)
+      try {
+        const destPoint = turf.point([destination.lng, destination.lat]);
+        const reachable = calculateReachableStations(
+          {
+            id: 'temp-calc',
+            name: 'Transit Calc',
+            address: '',
+            visible: true,
+            color: '#000',
+            lat: origin.lat,
+            lng: origin.lng,
+            travelTimeMinutes: 90, // broad query window to find optimal transit route
+            mode: 'transit',
+            maxTransfers,
+            maxWalkToStationMin,
+          },
+          schedule.options?.transitModes
+        );
+
+        let bestMvvTime: number | null = null;
+        for (const item of reachable) {
+          const stPoint = turf.point([item.station.lng, item.station.lat]);
+          const walkToDestKm = turf.distance(stPoint, destPoint, { units: 'kilometers' });
+          // If station is within walking distance of destination (up to 1.5 km)
+          if (walkToDestKm <= 1.5) {
+            const lastMileWalkMin = (walkToDestKm / 0.082) * 1.25;
+            const total = item.totalTimeMin + lastMileWalkMin;
+            if (bestMvvTime === null || total < bestMvvTime) {
+              bestMvvTime = total;
+            }
+          }
+        }
+
+        if (bestMvvTime !== null) {
+          travelTimeMin = bestMvvTime;
+          break;
+        }
+      } catch {
+        // Fallback to calibrated transit calculation
+      }
+
       // Walking to/from transit stop (e.g. 5-10 min)
       const walkAccessTime = Math.min(maxWalkToStationMin, 7);
       // Rail speed: 45 km/h for mid/long distance, 22 km/h for short bus
-      const speedKmh = roadDistanceKm > 4 ? 42 : 24;
+      const speedKmh = roadDistanceKm > 4 ? 44 : 24;
       const inVehicleTime = (roadDistanceKm / speedKmh) * 60;
       // Transfers: 1 transfer every ~7 km, max transfers capped
       const transfers = Math.min(maxTransfers, Math.floor(roadDistanceKm / 7));
-      const transferDelay = transfers * 5; // 5 min per transfer
+      const transferDelay = transfers * 4; // 4 min per transfer
       travelTimeMin = walkAccessTime + inVehicleTime + transferDelay;
       break;
     }

@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
+import * as turf from '@turf/turf';
 import {
   PersonProfile,
   CalculationResult,
@@ -23,7 +24,17 @@ import {
   Check,
   ChevronDown,
   Globe,
+  Home,
+  Flame,
+  Focus,
 } from 'lucide-react';
+import {
+  HeatmapSettings,
+} from '../types';
+import {
+  generatePriorityHeatmapZones,
+  getPriorityTargets,
+} from '../services/priorityHeatmapEngine';
 import {
   getGoogleMapsApiKey,
   getBasemapPlatform,
@@ -48,6 +59,14 @@ interface MapComponentProps {
   onUpdatePersonPosition: (personId: string, lat: number, lng: number) => void;
   showIntersectionLayer: boolean;
   onToggleIntersectionLayer: () => void;
+  showIndividualIsochrones?: boolean;
+  onToggleIndividualIsochrones?: () => void;
+  showOnlyIntersection?: boolean;
+  onToggleOnlyIntersection?: () => void;
+  onlyResidential?: boolean;
+  onToggleOnlyResidential?: () => void;
+  heatmapSettings?: HeatmapSettings;
+  onUpdateHeatmap?: (settings: Partial<HeatmapSettings>) => void;
   onMapLoaded?: () => void;
   basemap?: BasemapProvider;
   onBasemapChange?: (provider: BasemapProvider) => void;
@@ -96,6 +115,14 @@ export const MapComponent: React.FC<MapComponentProps> = ({
   onUpdatePersonPosition,
   showIntersectionLayer,
   onToggleIntersectionLayer,
+  showIndividualIsochrones = true,
+  onToggleIndividualIsochrones,
+  showOnlyIntersection,
+  onToggleOnlyIntersection,
+  onlyResidential = false,
+  onToggleOnlyResidential,
+  heatmapSettings,
+  onUpdateHeatmap,
   basemap: externalBasemap,
   onBasemapChange,
   onOpenApiKeySettings,
@@ -111,6 +138,11 @@ export const MapComponent: React.FC<MapComponentProps> = ({
   const [basemapError, setBasemapError] = useState<string | null>(null);
   const [showLayerMenu, setShowLayerMenu] = useState(false);
   const layerMenuRef = useRef<HTMLDivElement>(null);
+
+  const isOnlyIntersectionActive =
+    showOnlyIntersection !== undefined
+      ? showOnlyIntersection
+      : !showIndividualIsochrones && showIntersectionLayer;
 
   // Sync if external composite basemap prop changes (e.g. from modal)
   useEffect(() => {
@@ -428,60 +460,163 @@ export const MapComponent: React.FC<MapComponentProps> = ({
 
     if (!result) return;
 
-    // 1. Draw individual person isochrones
-    profiles.forEach((profile) => {
-      if (!profile.visible) return;
-      const poly = result.isochrones[profile.id];
-      if (!poly) return;
+    // 1. Draw individual person isochrones (only if enabled)
+    if (showIndividualIsochrones) {
+      profiles.forEach((profile) => {
+        if (!profile.visible) return;
+        const poly = result.isochrones[profile.id];
+        if (!poly) return;
 
-      const layer = L.geoJSON(poly as any, {
-        style: {
-          color: profile.color,
-          weight: 2,
-          opacity: 0.85,
-          fillColor: profile.color,
-          fillOpacity: 0.15,
-          dashArray: '4, 4',
-        },
+        const layer = L.geoJSON(poly as any, {
+          style: {
+            color: profile.color,
+            weight: 2,
+            opacity: 0.85,
+            fillColor: profile.color,
+            fillOpacity: 0.15,
+            dashArray: '4, 4',
+          },
+        });
+
+        layer.bindTooltip(
+          `<strong>${profile.name}</strong><br/>Max. ${profile.travelTimeMinutes} Min (${
+            profile.mode === 'transit'
+              ? 'ÖPNV'
+              : profile.mode === 'driving'
+              ? 'Auto'
+              : profile.mode === 'cycling'
+              ? 'Rad'
+              : 'Fuß'
+          })`,
+          { sticky: true, className: 'isochrone-tooltip' }
+        );
+
+        layer.addTo(isochronesGroup);
       });
-
-      layer.bindTooltip(
-        `<strong>${profile.name}</strong><br/>Max. ${profile.travelTimeMinutes} Min (${
-          profile.mode === 'transit'
-            ? 'ÖPNV'
-            : profile.mode === 'driving'
-            ? 'Auto'
-            : profile.mode === 'cycling'
-            ? 'Rad'
-            : 'Fuß'
-        })`,
-        { sticky: true, className: 'isochrone-tooltip' }
-      );
-
-      layer.addTo(isochronesGroup);
-    });
+    }
 
     // 2. Draw Golden Intersection zone (FR-2.1)
     if (showIntersectionLayer && result.intersection) {
       const intersectionLayer = L.geoJSON(result.intersection as any, {
         style: {
-          color: '#047857', // Emerald green
+          color: onlyResidential ? '#065f46' : '#047857', // Darker emerald for residential
           weight: 3.5,
           opacity: 0.95,
-          fillColor: '#10b981',
-          fillOpacity: 0.38,
+          fillColor: onlyResidential ? '#059669' : '#10b981',
+          fillOpacity: onlyResidential ? 0.45 : 0.38,
           lineJoin: 'round',
         },
       });
 
       intersectionLayer.bindTooltip(
-        `<div style="font-weight: bold; color: #065f46; font-size: 13px;">🎯 Gemeinsamer Treffbereich</div><div style="font-size: 11px; color: #047857;">Fläche: ca. ${result.intersectionAreaKm2} km²<br/>Für alle erreichbar!</div>`,
+        `<div style="font-weight: bold; color: #065f46; font-size: 13px;">${
+          onlyResidential ? '🏡 Gemeinsamer Wohnbereich' : '🎯 Gemeinsamer Treffbereich'
+        }</div><div style="font-size: 11px; color: #047857;">Fläche: ca. ${
+          result.intersectionAreaKm2
+        } km²${
+          onlyResidential && result.rawIntersectionAreaKm2
+            ? ` (von ${result.rawIntersectionAreaKm2} km² Gesamt)`
+            : ''
+        }<br/>${onlyResidential ? 'Reduziert auf reale Siedlungs- & Wohnflächen' : 'Für alle erreichbar!'}</div>`,
         { sticky: true }
       );
 
       intersectionLayer.addTo(isochronesGroup);
+
+      // 3. Draw Priority Heatmap Layer if active (Part 2: U-Bahn, S-Bahn, Autobahn)
+      if (heatmapSettings && heatmapSettings.mode !== 'none') {
+        try {
+          const heatmapZones = generatePriorityHeatmapZones(
+            result.intersection as any,
+            heatmapSettings
+          );
+
+          heatmapZones.forEach((zone) => {
+            const zoneLayer = L.geoJSON(zone.geometry as any, {
+              style: {
+                stroke: true,
+                color: zone.color,
+                weight: 1.5,
+                opacity: Math.min(0.9, (heatmapSettings.intensity ?? 0.65) * 1.1),
+                fillColor: zone.color,
+                fillOpacity: Math.min(0.85, (heatmapSettings.intensity ?? 0.65) * (zone.tier === 'tier1' ? 0.75 : zone.tier === 'tier2' ? 0.55 : 0.38)),
+                lineJoin: 'round',
+              },
+            });
+
+            zoneLayer.bindTooltip(
+              `<div style="font-weight: bold; font-size: 12px; color: ${zone.color};">${zone.label}</div><div style="font-size: 11px; color: #334155;">${zone.description}</div>`,
+              { sticky: true }
+            );
+
+            zoneLayer.addTo(isochronesGroup);
+          });
+
+          // Also render discrete icon markers for the relevant priority stations / junctions in view
+          const activeItems =
+            heatmapSettings.selectedItems && heatmapSettings.selectedItems.length > 0
+              ? heatmapSettings.selectedItems
+              : heatmapSettings.mode && heatmapSettings.mode !== 'none'
+              ? [heatmapSettings.mode]
+              : [];
+          const priorityTargets = getPriorityTargets(activeItems);
+          if (priorityTargets.length > 0) {
+            // Find targets near intersection
+            priorityTargets.forEach((target) => {
+              const pt = turf.point([target.lng, target.lat]);
+              let isNear = false;
+              try {
+                // If within max radius or within 2km of intersection
+                const distToIntersection = turf.pointToPolygonDistance(pt, result.intersection as any, { units: 'kilometers' });
+                if (distToIntersection <= (heatmapSettings.radiusKm || 1.5)) {
+                  isNear = true;
+                }
+              } catch {
+                isNear = true;
+              }
+
+              if (isNear) {
+                const markerHtml = `
+                  <div style="
+                    width: 20px;
+                    height: 20px;
+                    border-radius: 50%;
+                    background: ${target.type === 'ubahn' ? '#2563eb' : target.type === 'sbahn' ? '#059669' : '#ea580c'};
+                    border: 2px solid #ffffff;
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    color: white;
+                    font-size: 10px;
+                    font-weight: bold;
+                  ">
+                    ${target.type === 'ubahn' ? 'U' : target.type === 'sbahn' ? 'S' : 'A'}
+                  </div>
+                `;
+
+                const markerIcon = L.divIcon({
+                  html: markerHtml,
+                  className: 'priority-target-marker',
+                  iconSize: [20, 20],
+                  iconAnchor: [10, 10],
+                });
+
+                const tMarker = L.marker([target.lat, target.lng], { icon: markerIcon });
+                tMarker.bindTooltip(
+                  `<div style="font-size: 11px;"><strong>${target.name}</strong><br/>${target.linesOrRoad ? `<span style="color:#64748b">${target.linesOrRoad}</span>` : ''}</div>`,
+                  { direction: 'top', offset: [0, -8] }
+                );
+                tMarker.addTo(isochronesGroup);
+              }
+            });
+          }
+        } catch (err) {
+          console.warn('Error rendering heatmap zones:', err);
+        }
+      }
     }
-  }, [result, profiles, showIntersectionLayer]);
+  }, [result, profiles, showIntersectionLayer, showIndividualIsochrones, onlyResidential, heatmapSettings]);
 
   // Center bounds on visible markers / isochrones
   const handleFitBounds = () => {
@@ -668,6 +803,102 @@ export const MapComponent: React.FC<MapComponentProps> = ({
                 </div>
               </div>
 
+              {/* STUFE 3: KARTEN-EBENEN & ÜBERLAGERUNG */}
+              <div className="pt-2.5 border-t border-slate-100">
+                <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">
+                  3. Ebenen & Überlagerung
+                </div>
+                <div className="space-y-1.5">
+                  {/* Option: Nur überlagerten Treffbereich (nur Grün) */}
+                  {onToggleOnlyIntersection && (
+                    <div
+                      onClick={onToggleOnlyIntersection}
+                      className={`p-2 rounded-xl border flex items-center justify-between cursor-pointer transition-all ${
+                        isOnlyIntersectionActive
+                          ? 'bg-emerald-50/90 border-emerald-400 text-emerald-950 font-bold ring-1 ring-emerald-300'
+                          : 'bg-white border-slate-200 hover:bg-slate-50 text-slate-700'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <Focus
+                          className={`w-4 h-4 ${
+                            isOnlyIntersectionActive ? 'text-emerald-600' : 'text-slate-400'
+                          }`}
+                        />
+                        <span className="text-xs">Nur überlagerter Treffbereich (Grün)</span>
+                      </div>
+                      <span
+                        className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${
+                          isOnlyIntersectionActive
+                            ? 'bg-emerald-200/90 text-emerald-900'
+                            : 'bg-slate-100 text-slate-500'
+                        }`}
+                      >
+                        {isOnlyIntersectionActive ? 'Aktiv' : 'Aus'}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Option: Einzelne Personen-Isochronen */}
+                  {onToggleIndividualIsochrones && (
+                    <div
+                      onClick={onToggleIndividualIsochrones}
+                      className={`p-2 rounded-xl border flex items-center justify-between cursor-pointer transition-all ${
+                        showIndividualIsochrones
+                          ? 'bg-blue-50/60 border-blue-300 text-blue-950 font-semibold'
+                          : 'bg-white border-slate-200 hover:bg-slate-50 text-slate-500'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <Layers
+                          className={`w-4 h-4 ${
+                            showIndividualIsochrones ? 'text-blue-600' : 'text-slate-400'
+                          }`}
+                        />
+                        <span className="text-xs">Einzel-Isochronen ({profiles.length} Orte)</span>
+                      </div>
+                      <span
+                        className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${
+                          showIndividualIsochrones
+                            ? 'bg-blue-100 text-blue-800'
+                            : 'bg-slate-100 text-slate-400'
+                        }`}
+                      >
+                        {showIndividualIsochrones ? 'Sichtbar' : 'Versteckt'}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Option: Überlagerter Treffbereich (Schnittmenge) */}
+                  <div
+                    onClick={onToggleIntersectionLayer}
+                    className={`p-2 rounded-xl border flex items-center justify-between cursor-pointer transition-all ${
+                      showIntersectionLayer
+                        ? 'bg-emerald-50/60 border-emerald-300 text-emerald-950 font-semibold'
+                        : 'bg-white border-slate-200 hover:bg-slate-50 text-slate-500'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      {showIntersectionLayer ? (
+                        <Eye className="w-4 h-4 text-emerald-600" />
+                      ) : (
+                        <EyeOff className="w-4 h-4 text-slate-400" />
+                      )}
+                      <span className="text-xs">Gemeinsamer Treffbereich</span>
+                    </div>
+                    <span
+                      className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${
+                        showIntersectionLayer
+                          ? 'bg-emerald-100 text-emerald-800'
+                          : 'bg-slate-100 text-slate-400'
+                      }`}
+                    >
+                      {showIntersectionLayer ? 'Sichtbar' : 'Versteckt'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
               {onOpenApiKeySettings && (
                 <div className="mt-3 pt-2 border-t border-slate-100 px-1">
                   <button
@@ -689,6 +920,86 @@ export const MapComponent: React.FC<MapComponentProps> = ({
 
         {/* Action Controls */}
         <div className="flex flex-col gap-2">
+          {/* Quick-Toggle: Wohnbereich-Filter */}
+          {onToggleOnlyResidential && result?.intersection && (
+            <button
+              id="btn-toggle-residential"
+              type="button"
+              onClick={onToggleOnlyResidential}
+              title={
+                onlyResidential
+                  ? 'Wohngebiets-Filter aktiv (Klicken für gesamte Fläche)'
+                  : 'Auf Wohnbereich reduzieren (Forste, Seen & Industrie ausfiltern)'
+              }
+              className={`p-2.5 rounded-xl shadow-md border transition-all flex items-center justify-center backdrop-blur-xs hover:shadow-lg cursor-pointer ${
+                onlyResidential
+                  ? 'bg-emerald-700 hover:bg-emerald-800 text-white border-emerald-600 ring-2 ring-emerald-400/50'
+                  : 'bg-white/95 hover:bg-white text-slate-600 hover:text-slate-900 border-slate-200/80'
+              }`}
+            >
+              <Home className="w-5 h-5" />
+            </button>
+          )}
+
+          {/* Quick-Toggle: Prioritäts-Heatmap (Zyklus: none -> ubahn -> sbahn -> highway -> none) */}
+          {onUpdateHeatmap && result?.intersection && (
+            <button
+              id="btn-toggle-heatmap"
+              type="button"
+              onClick={() => {
+                const current = heatmapSettings?.mode || 'none';
+                const nextMode =
+                  current === 'none'
+                    ? 'ubahn'
+                    : current === 'ubahn'
+                    ? 'sbahn'
+                    : current === 'sbahn'
+                    ? 'highway'
+                    : 'none';
+                onUpdateHeatmap({ mode: nextMode });
+              }}
+              title={
+                heatmapSettings && heatmapSettings.mode !== 'none'
+                  ? `Treff-Heatmap: ${
+                      heatmapSettings.mode === 'ubahn'
+                        ? 'U-Bahn'
+                        : heatmapSettings.mode === 'sbahn'
+                        ? 'S-Bahn'
+                        : 'Autobahn'
+                    } aktiv (Klicken zum Durchschalten)`
+                  : 'Prioritäts-Heatmap aktivieren (U-Bahn / S-Bahn / Autobahn)'
+              }
+              className={`p-2.5 rounded-xl shadow-md border transition-all flex items-center justify-center backdrop-blur-xs hover:shadow-lg cursor-pointer ${
+                heatmapSettings && heatmapSettings.mode !== 'none'
+                  ? 'bg-amber-500 hover:bg-amber-600 text-white border-amber-400 ring-2 ring-amber-300/50'
+                  : 'bg-white/95 hover:bg-white text-slate-600 hover:text-slate-900 border-slate-200/80'
+              }`}
+            >
+              <Flame className="w-5 h-5" />
+            </button>
+          )}
+
+          {/* Quick-Toggle: Nur überlagerten Treffbereich anzeigen (nur Grün) */}
+          {onToggleOnlyIntersection && result?.intersection && (
+            <button
+              id="btn-toggle-only-intersection"
+              type="button"
+              onClick={onToggleOnlyIntersection}
+              title={
+                isOnlyIntersectionActive
+                  ? 'Nur überlagerter Treffbereich aktiv (Klicken, um Einzel-Isochronen wieder einzublenden)'
+                  : 'Nur überlagerten Treffbereich anzeigen (Einzel-Isochronen der Personen ausblenden)'
+              }
+              className={`p-2.5 rounded-xl shadow-md border transition-all flex items-center justify-center backdrop-blur-xs hover:shadow-lg cursor-pointer ${
+                isOnlyIntersectionActive
+                  ? 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-500 ring-2 ring-emerald-400/50'
+                  : 'bg-white/95 hover:bg-white text-slate-600 hover:text-slate-900 border-slate-200/80'
+              }`}
+            >
+              <Focus className="w-5 h-5" />
+            </button>
+          )}
+
           <button
             id="btn-fit-bounds"
             type="button"
@@ -718,6 +1029,21 @@ export const MapComponent: React.FC<MapComponentProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Active "Nur überlagerter Treffbereich" Floating Indicator */}
+      {isOnlyIntersectionActive && result?.intersection && onToggleOnlyIntersection && (
+        <div className="absolute bottom-6 left-4 z-20 bg-white/95 backdrop-blur-md px-3.5 py-2 rounded-xl shadow-md border border-emerald-300 flex items-center gap-2.5 text-xs text-emerald-950 animate-in fade-in duration-150">
+          <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-emerald-300" />
+          <span className="font-semibold">Nur überlagerter Treffbereich (Grün)</span>
+          <button
+            type="button"
+            onClick={onToggleOnlyIntersection}
+            className="text-[11px] font-bold text-emerald-700 hover:text-emerald-950 underline cursor-pointer ml-1"
+          >
+            Alle Bereiche einblenden
+          </button>
+        </div>
+      )}
     </div>
   );
 };
