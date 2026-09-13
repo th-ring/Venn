@@ -51,7 +51,7 @@ export const ScheduleControls: React.FC<ScheduleControlsProps> = ({
             <span className="text-[11px] font-medium bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md truncate max-w-[170px]">
               {schedule.direction === 'to_work' ? 'Zum Ziel' : 'Vom Ziel'} •{' '}
               {schedule.dayOfWeek === 'workday' ? 'Mo–Fr' : 'Sa/So'}{' '}
-              {schedule.time || '08:30'}
+              {schedule.time || '07:00'}
             </span>
           )}
 
@@ -204,7 +204,7 @@ export const ScheduleControls: React.FC<ScheduleControlsProps> = ({
                   id="input-departure-time"
                   type="time"
                   step="60"
-                  value={schedule.time || '08:30'}
+                  value={schedule.time || '07:00'}
                   onChange={(e) => {
                     if (e.target.value) {
                       onChangeSchedule({ time: e.target.value });
@@ -217,7 +217,7 @@ export const ScheduleControls: React.FC<ScheduleControlsProps> = ({
 
             {/* Presets */}
             <div className="flex items-center gap-1">
-              {['07:30', '08:30', '17:30'].map((preset) => (
+              {['07:00', '07:30', '08:00', '17:00'].map((preset) => (
                 <button
                   key={preset}
                   type="button"
