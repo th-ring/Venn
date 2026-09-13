@@ -9,14 +9,14 @@ export interface CatalogRegion extends TransitRegionMetadata {
 export const AVAILABLE_REGIONS_CATALOG: CatalogRegion[] = [
   {
     id: 'munich-mvv',
-    name: 'München & Metropolregion (MVV)',
-    version: '2026.4',
+    name: 'München & Metropolregion (MVV Gesamt)',
+    version: '2026.5-DELFI-Vollnetz',
     lastUpdated: '2026-09-13',
-    source: 'DELFI Bundesfeed & MVV/MVG Open Data',
-    bbox: [11.0, 47.7, 12.3, 48.6], // [minLng, minLat, maxLng, maxLat]
-    stationCount: 6420,
-    connectionCount: 14850,
-    downloadSizeApprox: '1.9 MB',
+    source: 'DELFI Bundesfeed & MVV/MVG Open Data Soll-Fahrplan',
+    bbox: [11.03, 47.88, 12.02, 48.41], // [minLng, minLat, maxLng, maxLat]
+    stationCount: 237,
+    connectionCount: 646,
+    downloadSizeApprox: '82 KB',
     downloadUrl: '/transit-packages/munich.json',
     isBuiltIn: true,
     description: 'Vollständiges Netz: Alle S-Bahnen (S1–S8), U-Bahnen (U1–U8), Trams, Metro- & Regionalbusse und Regionalzüge im gesamten MVV-Tarifgebiet.',

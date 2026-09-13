@@ -1,4 +1,4 @@
-import { DEFAULT_MVV_DATASET } from '../data/mvvDataset';
+import { getTransitRegion } from './mvvMatrixService';
 
 export interface GeocodingResult {
   placeId: string;
@@ -23,15 +23,16 @@ export async function searchAddress(query: string): Promise<GeocodingResult[]> {
     return searchCache.get(cacheKey)!;
   }
 
-  // 1. Instant local MVV station match
+  // 1. Instant local transit station match from active network
   const localStationMatches: GeocodingResult[] = [];
   const qLower = trimmed.toLowerCase();
-  for (const st of DEFAULT_MVV_DATASET.stations) {
+  const activeRegion = getTransitRegion();
+  for (const st of activeRegion.stations) {
     if (st.name.toLowerCase().includes(qLower)) {
       const typesStr = st.types.map(t => t.toUpperCase()).join(' / ');
       localStationMatches.push({
-        placeId: `mvv-station-${st.id}`,
-        displayName: `${st.name} (${typesStr}), München & Region`,
+        placeId: `transit-station-${st.id}`,
+        displayName: `${st.name} (${typesStr}), ${activeRegion.name}`,
         shortName: `${st.name} [${typesStr}]`,
         lat: st.lat,
         lng: st.lng,
@@ -110,12 +111,13 @@ export async function reverseGeocode(lat: number, lng: number): Promise<string> 
     return reverseCache.get(key)!;
   }
 
-  // Check if coordinates closely match a known MVV station (< 220m)
-  for (const st of DEFAULT_MVV_DATASET.stations) {
+  // Check if coordinates closely match a known transit station (< 220m)
+  const activeRegion = getTransitRegion();
+  for (const st of activeRegion.stations) {
     const dLat = Math.abs(st.lat - lat);
     const dLng = Math.abs(st.lng - lng);
     if (dLat < 0.0018 && dLng < 0.0025) {
-      const stationLabel = `${st.name}, München`;
+      const stationLabel = `${st.name}, ${activeRegion.name}`;
       reverseCache.set(key, stationLabel);
       return stationLabel;
     }
