@@ -1,4 +1,4 @@
-import React, { useState, Suspense } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useCommuteFinder } from './hooks/useCommuteFinder';
 import { MapComponent } from './components/MapComponent';
 import { Sidebar } from './components/Sidebar';
@@ -7,7 +7,12 @@ import { FallbackWarningBanner } from './components/FallbackWarningBanner';
 import { clearIsochroneCache } from './services/isochroneEngine';
 import { saveRentalOverlaySettings } from './services/rentalService';
 import type { SettingsTabId } from './components/settings/SettingsModal';
-import { SlidersHorizontal } from 'lucide-react';
+import {
+  SlidersHorizontal,
+  PanelLeftOpen,
+  CheckCircle2,
+  Loader2,
+} from 'lucide-react';
 
 const ShareModal = React.lazy(() =>
   import('./components/ShareModal').then((m) => ({ default: m.ShareModal }))
@@ -49,12 +54,72 @@ export default function App() {
     handleSelectInspectionPoint,
     handleApplySuggestion,
     runCalculation,
+    layerOrder,
+    handleReorderLayer,
+    handleResetLayerOrder,
+    hiddenLayers,
+    handleToggleLayerVisibility,
+    poiIconSettings,
+    handleUpdatePoiIcons,
+    handleToggleProfileVisibility,
   } = useCommuteFinder();
 
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [settingsModalTab, setSettingsModalTab] = useState<SettingsTabId>('basemap');
+
+  // Desktop sidebar collapse state (persisted)
+  const [isDesktopSidebarOpen, setIsDesktopSidebarOpen] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('commute_sidebar_open') !== 'false';
+    } catch {
+      return true;
+    }
+  });
+
+  // Sidebar width for desktop drag-to-resize (persisted)
+  const [sidebarWidth, setSidebarWidth] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem('commute_sidebar_width');
+      if (saved) {
+        const parsed = parseInt(saved, 10);
+        if (!isNaN(parsed) && parsed >= 340 && parsed <= 900) {
+          return parsed;
+        }
+      }
+    } catch {}
+    return 450;
+  });
+
+  const handleToggleDesktopSidebar = () => {
+    setIsDesktopSidebarOpen((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem('commute_sidebar_open', String(next));
+      } catch {}
+      return next;
+    });
+  };
+
+  const handleResizeSidebarWidth = (newWidth: number) => {
+    setSidebarWidth(newWidth);
+    try {
+      localStorage.setItem('commute_sidebar_width', String(newWidth));
+    } catch {}
+  };
+
+  // Keyboard shortcut: Ctrl+B or Cmd+B to toggle sidebar
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'b' || e.key === 'B')) {
+        e.preventDefault();
+        handleToggleDesktopSidebar();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   const handleOpenSettings = (tab: SettingsTabId = 'basemap') => {
     setSettingsModalTab(tab);
@@ -95,21 +160,58 @@ export default function App() {
         onToggleIndividualIsochrones={handleToggleIndividualIsochrones}
         onSelectScenario={handleSelectScenario}
         activeScenarioId={activeScenarioId}
+        isDesktopOpen={isDesktopSidebarOpen}
+        onToggleDesktopCollapse={handleToggleDesktopSidebar}
+        sidebarWidth={sidebarWidth}
+        onResizeWidth={handleResizeSidebarWidth}
       />
 
       {/* Main Map Stage */}
       <main className="relative flex-1 h-full w-full overflow-hidden">
-        {/* Mobile Header Bar */}
-        <div className="md:hidden absolute top-4 left-4 z-20 flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setIsMobileSidebarOpen(true)}
-            className="bg-white/95 text-slate-800 p-2.5 rounded-xl shadow-md border border-slate-200 backdrop-blur-sm flex items-center gap-2 text-xs font-bold cursor-pointer"
+        {/* Floating Sidebar Toggle Button when sidebar is collapsed (Desktop or Mobile) */}
+        {(!isDesktopSidebarOpen || !isMobileSidebarOpen) && (
+          <div
+            className={`absolute top-4 left-4 z-20 flex items-center gap-2 ${
+              isDesktopSidebarOpen ? 'md:hidden' : 'flex'
+            }`}
           >
-            <SlidersHorizontal className="w-4 h-4 text-blue-600" />
-            <span>Referenzorte ({profiles.length})</span>
-          </button>
-        </div>
+            <button
+              id="btn-expand-sidebar"
+              type="button"
+              onClick={() => {
+                setIsDesktopSidebarOpen(true);
+                setIsMobileSidebarOpen(true);
+                try {
+                  localStorage.setItem('commute_sidebar_open', 'true');
+                } catch {}
+              }}
+              className="bg-white/95 hover:bg-blue-50/90 text-slate-800 hover:text-blue-700 px-3 py-2 rounded-xl shadow-md border border-slate-200/90 backdrop-blur-md flex items-center gap-2 text-xs font-bold cursor-pointer transition-all hover:scale-102 active:scale-98 group"
+              title="Seitenleiste einblenden (Strg+B)"
+            >
+              <div className="p-1 rounded-lg bg-blue-50 text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                <PanelLeftOpen className="w-4 h-4" />
+              </div>
+              <span>Referenzorte ({profiles.length})</span>
+
+              {/* Status Badge inside floating trigger */}
+              {result?.intersection && (result?.intersectionAreaKm2 || 0) > 0 ? (
+                <span className="text-[10px] font-semibold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full border border-emerald-200/80 flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                  {result?.intersectionAreaKm2} km²
+                </span>
+              ) : isCalculating ? (
+                <span className="text-[10px] font-semibold bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full border border-blue-200/80 flex items-center gap-1">
+                  <Loader2 className="w-3 h-3 text-blue-600 animate-spin" />
+                  Berechne...
+                </span>
+              ) : (
+                <span className="text-[10px] font-semibold bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full border border-amber-200/80">
+                  ∅
+                </span>
+              )}
+            </button>
+          </div>
+        )}
 
         {/* Prominent Fallback Warning Banner if an online API fails */}
         <FallbackWarningBanner
@@ -168,6 +270,14 @@ export default function App() {
           basemap={basemap}
           onBasemapChange={handleBasemapChange}
           onOpenApiKeySettings={() => handleOpenSettings('keys')}
+          layerOrder={layerOrder}
+          onReorderLayer={handleReorderLayer}
+          onResetLayerOrder={handleResetLayerOrder}
+          hiddenLayers={hiddenLayers}
+          onToggleLayerVisibility={handleToggleLayerVisibility}
+          poiIconSettings={poiIconSettings}
+          onUpdatePoiIcons={handleUpdatePoiIcons}
+          onToggleProfileVisibility={handleToggleProfileVisibility}
         />
 
         {/* Floating Inspection Panel */}

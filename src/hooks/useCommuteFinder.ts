@@ -9,6 +9,10 @@ import {
   PresetScenario,
   DEFAULT_TRANSIT_SUBMODES,
   IsochroneFallbackAlert,
+  LayerId,
+  DEFAULT_LAYER_ORDER,
+  PoiIconSettings,
+  DEFAULT_POI_ICON_SETTINGS,
 } from '../types';
 import { DEFAULT_MUNICH_PROFILES } from '../data/presets';
 import {
@@ -81,7 +85,7 @@ export function useCommuteFinder() {
           return {
             direction: parsed.s.d || 'to_work',
             dayOfWeek: parsed.s.w || 'workday',
-            time: parsed.s.t || '08:30',
+            time: parsed.s.t || '07:00',
             options: {
               liveTraffic: parsed.s.lt ?? false,
               enableSmoothing: parsed.s.sm ?? true,
@@ -97,7 +101,7 @@ export function useCommuteFinder() {
     return {
       direction: 'to_work',
       dayOfWeek: 'workday',
-      time: '08:30',
+      time: '07:00',
       options: {
         liveTraffic: false,
         enableSmoothing: true,
@@ -141,6 +145,86 @@ export function useCommuteFinder() {
   const handleBasemapChange = useCallback((newBasemap: BasemapProvider) => {
     setBasemap(newBasemap);
     setSelectedBasemap(newBasemap);
+  }, []);
+
+  // Layer Ordering & Management
+  const [layerOrder, setLayerOrder] = useState<LayerId[]>(() => {
+    try {
+      const saved = localStorage.getItem('commute_layer_order');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const valid = parsed.filter((id: any) => DEFAULT_LAYER_ORDER.includes(id));
+          DEFAULT_LAYER_ORDER.forEach((id) => {
+            if (!valid.includes(id)) valid.push(id);
+          });
+          return valid;
+        }
+      }
+    } catch {}
+    return DEFAULT_LAYER_ORDER;
+  });
+
+  const [hiddenLayers, setHiddenLayers] = useState<Set<LayerId>>(new Set());
+
+  const [poiIconSettings, setPoiIconSettings] = useState<PoiIconSettings>(() => {
+    try {
+      const saved = localStorage.getItem('commute_poi_icon_settings');
+      if (saved) {
+        return { ...DEFAULT_POI_ICON_SETTINGS, ...JSON.parse(saved) };
+      }
+    } catch {}
+    return DEFAULT_POI_ICON_SETTINGS;
+  });
+
+  const handleReorderLayer = useCallback((fromIndex: number, toIndex: number) => {
+    setLayerOrder((prev) => {
+      if (fromIndex < 0 || fromIndex >= prev.length || toIndex < 0 || toIndex >= prev.length) {
+        return prev;
+      }
+      const next = [...prev];
+      const [moved] = next.splice(fromIndex, 1);
+      next.splice(toIndex, 0, moved);
+      try {
+        localStorage.setItem('commute_layer_order', JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+  }, []);
+
+  const handleResetLayerOrder = useCallback(() => {
+    setLayerOrder(DEFAULT_LAYER_ORDER);
+    try {
+      localStorage.removeItem('commute_layer_order');
+    } catch {}
+  }, []);
+
+  const handleToggleLayerVisibility = useCallback((layerId: LayerId) => {
+    setHiddenLayers((prev) => {
+      const next = new Set(prev);
+      if (next.has(layerId)) {
+        next.delete(layerId);
+      } else {
+        next.add(layerId);
+      }
+      return next;
+    });
+  }, []);
+
+  const handleUpdatePoiIcons = useCallback((updated: Partial<PoiIconSettings>) => {
+    setPoiIconSettings((prev) => {
+      const next = { ...prev, ...updated };
+      try {
+        localStorage.setItem('commute_poi_icon_settings', JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+  }, []);
+
+  const handleToggleProfileVisibility = useCallback((id: string) => {
+    setProfiles((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, visible: !p.visible } : p))
+    );
   }, []);
 
   // Initialize IndexedDB transit storage on startup
@@ -480,5 +564,13 @@ export function useCommuteFinder() {
     handleSelectInspectionPoint,
     handleApplySuggestion,
     runCalculation,
+    layerOrder,
+    handleReorderLayer,
+    handleResetLayerOrder,
+    hiddenLayers,
+    handleToggleLayerVisibility,
+    poiIconSettings,
+    handleUpdatePoiIcons,
+    handleToggleProfileVisibility,
   };
 }
