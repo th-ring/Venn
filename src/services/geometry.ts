@@ -45,6 +45,39 @@ export function calculateMultiIntersection(
 }
 
 /**
+ * Removes interior rings (holes) from a Polygon or MultiPolygon feature.
+ * Preserves the outer boundary (coordinates[0]) of each polygon component,
+ * effectively filling artificial voids or unreached pockets (e.g. from Google Maps Isochrones API preview artifacts).
+ */
+export function fillPolygonHoles<T extends GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon>>(
+  feature: T
+): T {
+  if (!feature || !feature.geometry) return feature;
+
+  if (feature.geometry.type === 'Polygon') {
+    return {
+      ...feature,
+      geometry: {
+        type: 'Polygon',
+        coordinates: [feature.geometry.coordinates[0]],
+      },
+    };
+  }
+
+  if (feature.geometry.type === 'MultiPolygon') {
+    return {
+      ...feature,
+      geometry: {
+        type: 'MultiPolygon',
+        coordinates: feature.geometry.coordinates.map((polyCoords) => [polyCoords[0]]),
+      },
+    };
+  }
+
+  return feature;
+}
+
+/**
  * Calculates the area in square kilometers of a GeoJSON feature
  */
 export function calculateAreaKm2(

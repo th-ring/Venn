@@ -5,8 +5,10 @@ import {
   BasemapProvider,
   HeatmapSettings,
   PersonProfile,
+  RentalOverlaySettings,
 } from '../../types';
 import { getGoogleMapsApiKey, getOrsApiKey } from '../../services/isochroneEngine';
+import { RENTAL_LEGEND_TIERS } from '../../services/rentalService';
 import {
   Layers,
   Map as MapIcon,
@@ -23,6 +25,7 @@ import {
   Home,
   Flame,
   Crosshair,
+  Euro,
 } from 'lucide-react';
 
 export const MAP_VARIANTS: Array<{
@@ -75,6 +78,8 @@ interface MapLayerControlsProps {
   onToggleOnlyResidential?: () => void;
   heatmapSettings?: HeatmapSettings;
   onUpdateHeatmap?: (settings: Partial<HeatmapSettings>) => void;
+  rentalSettings?: RentalOverlaySettings;
+  onUpdateRentalOverlay?: (settings: Partial<RentalOverlaySettings>) => void;
   onFitBounds: () => void;
   onOpenApiKeySettings?: () => void;
 }
@@ -97,6 +102,8 @@ export const MapLayerControls: React.FC<MapLayerControlsProps> = ({
   onToggleOnlyResidential,
   heatmapSettings,
   onUpdateHeatmap,
+  rentalSettings,
+  onUpdateRentalOverlay,
   onFitBounds,
   onOpenApiKeySettings,
 }) => {
@@ -356,6 +363,65 @@ export const MapLayerControls: React.FC<MapLayerControlsProps> = ({
                       {showIntersectionLayer ? 'Sichtbar' : 'Versteckt'}
                     </span>
                   </div>
+
+                  {onUpdateRentalOverlay && (
+                    <div className="rounded-xl border border-slate-200 bg-white p-2 transition-all">
+                      <div
+                        onClick={() =>
+                          onUpdateRentalOverlay({
+                            enabled: !rentalSettings?.enabled,
+                          })
+                        }
+                        className="flex items-center justify-between cursor-pointer"
+                      >
+                        <div className="flex items-center gap-2">
+                          <Euro
+                            className={`w-4 h-4 ${
+                              rentalSettings?.enabled ? 'text-purple-600' : 'text-slate-400'
+                            }`}
+                          />
+                          <div>
+                            <span className="text-xs font-semibold block text-slate-800">
+                              Mietspiegel (München)
+                            </span>
+                            <span className="text-[10px] text-slate-500 block">
+                              Ø Kaltmiete je Stadtbezirk
+                            </span>
+                          </div>
+                        </div>
+                        <span
+                          className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${
+                            rentalSettings?.enabled
+                              ? 'bg-purple-100 text-purple-800'
+                              : 'bg-slate-100 text-slate-400'
+                          }`}
+                        >
+                          {rentalSettings?.enabled ? 'Aktiv' : 'Aus'}
+                        </span>
+                      </div>
+
+                      {rentalSettings?.enabled && (
+                        <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between gap-2">
+                          <span className="text-[10px] text-slate-500 font-medium">
+                            Deckkraft: {Math.round((rentalSettings.opacity ?? 0.35) * 100)}%
+                          </span>
+                          <input
+                            type="range"
+                            min="0.15"
+                            max="0.75"
+                            step="0.05"
+                            value={rentalSettings.opacity ?? 0.35}
+                            onChange={(e) =>
+                              onUpdateRentalOverlay({
+                                opacity: parseFloat(e.target.value),
+                              })
+                            }
+                            className="w-24 h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-purple-600"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -460,6 +526,31 @@ export const MapLayerControls: React.FC<MapLayerControlsProps> = ({
             </button>
           )}
 
+          {/* Quick-Toggle: Mietspiegel Overlay */}
+          {onUpdateRentalOverlay && (
+            <button
+              id="btn-toggle-rental-overlay"
+              type="button"
+              onClick={() =>
+                onUpdateRentalOverlay({
+                  enabled: !rentalSettings?.enabled,
+                })
+              }
+              title={
+                rentalSettings?.enabled
+                  ? 'Mietspiegel-Choropleth ausblenden (München)'
+                  : 'Mietspiegel & Kaltmiete (€/m²) einblenden (München Open Data)'
+              }
+              className={`p-2.5 rounded-xl shadow-md border transition-all flex items-center justify-center backdrop-blur-xs hover:shadow-lg cursor-pointer ${
+                rentalSettings?.enabled
+                  ? 'bg-purple-700 hover:bg-purple-800 text-white border-purple-600 ring-2 ring-purple-400/50'
+                  : 'bg-white/95 hover:bg-white text-slate-600 hover:text-slate-900 border-slate-200/80'
+              }`}
+            >
+              <Euro className="w-5 h-5" />
+            </button>
+          )}
+
           {/* Fit Bounds */}
           <button
             id="btn-fit-bounds"
@@ -504,6 +595,39 @@ export const MapLayerControls: React.FC<MapLayerControlsProps> = ({
           >
             Alle Bereiche einblenden
           </button>
+        </div>
+      )}
+
+      {/* Active Mietspiegel Legend Floating Banner */}
+      {rentalSettings?.enabled && (
+        <div
+          className={`absolute ${
+            isOnlyIntersectionActive && hasIntersection && onToggleOnlyIntersection
+              ? 'bottom-20'
+              : 'bottom-6'
+          } left-4 z-20 bg-white/95 backdrop-blur-md px-3 py-2 rounded-2xl shadow-lg border border-slate-200/90 flex flex-col gap-1.5 text-xs text-slate-800 animate-in fade-in slide-in-from-bottom-2 duration-150 max-w-xs`}
+        >
+          <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-1">
+            <div className="flex items-center gap-1.5 font-bold text-slate-900 text-[11px]">
+              <Euro className="w-3.5 h-3.5 text-purple-600" />
+              <span>Mietspiegel München</span>
+            </div>
+            <span className="text-[10px] text-slate-400">Ø Kaltmiete</span>
+          </div>
+
+          <div className="grid grid-cols-5 gap-1 text-[9px] font-semibold text-center">
+            {RENTAL_LEGEND_TIERS.map((tier) => (
+              <div key={tier.label} className="flex flex-col items-center gap-0.5">
+                <div
+                  className="w-full h-2 rounded-full shadow-2xs"
+                  style={{ backgroundColor: tier.color }}
+                />
+                <span className="text-slate-600 leading-tight truncate w-full" title={tier.label}>
+                  {tier.label}
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </>

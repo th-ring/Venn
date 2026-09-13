@@ -13,9 +13,9 @@ export interface PersonProfile {
   color: string;
   visible: boolean;
   maxTransfers?: number; // 0, 1, 2, or undefined for unlimited
-  maxWalkToStationMin?: number; // Max walk from home to station (First Mile, e.g. 5, 10, 15, 20 min)
-  maxWalkFromStationMin?: number; // Max walk from station to destination/work (Last Mile, e.g. 5, 10, 15, 20 min)
-  maxTransferWaitMin?: number; // 5, 10, 15, 20 min max wait/buffer at transfers
+  maxWalkToStationMin?: number; // Max walk from home to station (First Mile, default 5 min)
+  maxWalkFromStationMin?: number; // Max walk from station to destination/work (Last Mile, default 5 min)
+  maxTransferWaitMin?: number; // Max wait/buffer at transfers (default 5 min)
   transitModes?: TransitSubMode[]; // Allowed transit modes (tram, ubahn, bus, expressbus, sbahn, train)
 }
 
@@ -93,11 +93,19 @@ export interface HeatmapSettings {
   intensity: number; // 0.2 to 1.0 opacity
 }
 
+export interface RentalOverlaySettings {
+  enabled: boolean;
+  opacity: number; // 0.15 to 0.70, default 0.35
+  selectedRegionId?: string; // e.g. 'munich-mvv'
+}
+
 export interface IsochroneOptions {
   liveTraffic: boolean;
   enableSmoothing: boolean;
   fidelity: PolygonFidelity;
+  fillHoles?: boolean;
   heatmap?: HeatmapSettings;
+  rentalOverlay?: RentalOverlaySettings;
   transitModes?: TransitSubMode[];
 }
 
@@ -164,6 +172,45 @@ export interface CommuteEstimate {
   details?: CommuteRouteDetails;
 }
 
+export type ResidentialQualityTier = 'average' | 'good' | 'prime';
+
+export interface RentalDistrictProperties {
+  districtNumber: string;
+  name: string;
+  avgRentColdSqm: number;
+  minRentColdSqm: number;
+  maxRentColdSqm: number;
+  qualityTier: ResidentialQualityTier;
+  qualityLabel: string;
+  description?: string;
+  source: string;
+  sourceUrl?: string;
+  lastUpdated: string;
+}
+
+export type RentalDistrictFeature = GeoJSON.Feature<
+  GeoJSON.Polygon | GeoJSON.MultiPolygon,
+  RentalDistrictProperties
+>;
+
+export type RentalDistrictFeatureCollection = GeoJSON.FeatureCollection<
+  GeoJSON.Polygon | GeoJSON.MultiPolygon,
+  RentalDistrictProperties
+>;
+
+export interface RentalRegionCatalogEntry {
+  id: string;
+  name: string;
+  cityName: string;
+  available: boolean;
+  source: string;
+  sourceUrl: string;
+  license: string;
+  lastUpdated: string;
+  unit: string;
+  description: string;
+}
+
 export interface InspectionPoint {
   lat: number;
   lng: number;
@@ -172,6 +219,7 @@ export interface InspectionPoint {
   allWithinLimit: boolean;
   activePersonsCount: number;
   withinLimitCount: number;
+  rentalInfo?: RentalDistrictProperties;
 }
 
 export interface PresetScenario {
