@@ -593,7 +593,7 @@ function generateCalibratedIsochrone(
     lng,
     travelTimeMinutes,
     mode,
-    maxTransfers = 2,
+    maxTransfers = 1,
     maxWalkToStationMin = 5,
     maxTransferWaitMin = 5,
   } = profile;
@@ -739,7 +739,7 @@ export function estimateCommuteTime(
   destination: { lat: number; lng: number },
   mode: TransportMode,
   schedule: CommuteSchedule,
-  maxTransfers = 2,
+  maxTransfers = 1,
   maxWalkToStationMin = 5,
   maxWalkFromStationMin = 5,
   transitModes?: TransitSubMode[]

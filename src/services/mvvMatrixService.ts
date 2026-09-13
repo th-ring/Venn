@@ -299,7 +299,7 @@ export function calculateReachableStations(
     lat,
     lng,
     travelTimeMinutes,
-    maxTransfers = 3,
+    maxTransfers = 1,
     maxWalkFromStationMin = 5,
     maxTransferWaitMin = 5,
   } = profile;
