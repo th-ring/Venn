@@ -38,6 +38,7 @@ import { IsochroneEngineTab } from './tabs/IsochroneEngineTab';
 import { MvvMatrixTab } from './tabs/MvvMatrixTab';
 import { ApiKeysTab } from './tabs/ApiKeysTab';
 import { PriorityHeatmapTab } from './tabs/PriorityHeatmapTab';
+import { RentalOverlayTab } from './tabs/RentalOverlayTab';
 import {
   Settings,
   Layers,
@@ -46,12 +47,15 @@ import {
   Train,
   Key,
   Flame,
+  Euro,
   X,
   Check,
 } from 'lucide-react';
 
+export type SettingsTabId = 'basemap' | 'isochrones' | 'mvv' | 'keys' | 'heatmap' | 'rental';
+
 const SETTINGS_MENU: Array<{
-  id: 'basemap' | 'isochrones' | 'mvv' | 'keys' | 'heatmap';
+  id: SettingsTabId;
   label: string;
   subLabel: string;
   icon: React.ComponentType<{ className?: string }>;
@@ -61,6 +65,7 @@ const SETTINGS_MENU: Array<{
   { id: 'mvv', label: '3. ÖPNV & Regionen', subLabel: 'Netze & Verkehrsmittel', icon: Train },
   { id: 'keys', label: '4. API-Keys', subLabel: 'Google & ORS Keys', icon: Key },
   { id: 'heatmap', label: '5. Heatmap', subLabel: 'Prioritäts-Infrastruktur', icon: Flame },
+  { id: 'rental', label: '6. Mietspiegel', subLabel: 'München & Open Data', icon: Euro },
 ];
 
 interface SettingsModalProps {
@@ -72,7 +77,7 @@ interface SettingsModalProps {
   onBasemapChange?: (provider: BasemapProvider) => void;
   showOnlyIntersection?: boolean;
   onToggleOnlyIntersection?: () => void;
-  initialTab?: 'basemap' | 'isochrones' | 'mvv' | 'keys' | 'heatmap';
+  initialTab?: SettingsTabId;
 }
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({
@@ -88,7 +93,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 }) => {
   if (!isOpen) return null;
 
-  const [modalTab, setModalTab] = useState<'basemap' | 'isochrones' | 'mvv' | 'keys' | 'heatmap'>(initialTab);
+  const [modalTab, setModalTab] = useState<SettingsTabId>(initialTab);
 
   useEffect(() => {
     setModalTab(initialTab);
@@ -237,11 +242,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     });
   };
 
-  const handleToggleOption = (key: 'liveTraffic' | 'enableSmoothing') => {
+  const handleToggleOption = (key: 'liveTraffic' | 'enableSmoothing' | 'fillHoles') => {
+    const currentVal = key === 'fillHoles' ? options.fillHoles !== false : !!options[key];
     onChangeSchedule({
       options: {
         ...options,
-        [key]: !options[key],
+        [key]: !currentVal,
       },
     });
   };
@@ -409,6 +415,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 <PriorityHeatmapTab
                   heatmap={heatmap}
                   onUpdateHeatmap={handleUpdateHeatmap}
+                />
+              )}
+
+              {modalTab === 'rental' && (
+                <RentalOverlayTab
+                  schedule={schedule}
+                  onChangeSchedule={onChangeSchedule}
                 />
               )}
             </div>
