@@ -19,6 +19,7 @@ import {
   calculateAreaKm2,
   generateEmptyIntersectionSuggestions,
 } from './services/geometry';
+import { maskByResidentialAreas } from './data/residentialZones';
 import { reverseGeocode } from './services/geocoding';
 import { MapComponent } from './components/MapComponent';
 import { Sidebar } from './components/Sidebar';
@@ -100,12 +101,30 @@ export default function App() {
   const [lastCalculatedAt, setLastCalculatedAt] = useState<Date | null>(null);
   const [inspectionPoint, setInspectionPoint] = useState<InspectionPoint | null>(null);
   const [showIntersectionLayer, setShowIntersectionLayer] = useState(true);
+  const [showIndividualIsochrones, setShowIndividualIsochrones] = useState(true);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   // Basemap & API modal state
   const [basemap, setBasemap] = useState<BasemapProvider>(() => getSelectedBasemap());
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
+  const [onlyResidential, setOnlyResidential] = useState(false);
+
+  const showOnlyIntersection = !showIndividualIsochrones && showIntersectionLayer;
+
+  const handleToggleOnlyIntersection = () => {
+    if (showOnlyIntersection) {
+      setShowIndividualIsochrones(true);
+      setShowIntersectionLayer(true);
+    } else {
+      setShowIndividualIsochrones(false);
+      setShowIntersectionLayer(true);
+    }
+  };
+
+  const handleToggleIndividualIsochrones = () => {
+    setShowIndividualIsochrones((prev) => !prev);
+  };
 
   const handleBasemapChange = (newBasemap: BasemapProvider) => {
     setBasemap(newBasemap);
@@ -117,7 +136,11 @@ export default function App() {
 
   // 2. Perform Isochrone and Intersection Calculation
   const runCalculation = useCallback(
-    async (currentProfiles: PersonProfile[], currentSchedule: CommuteSchedule) => {
+    async (
+      currentProfiles: PersonProfile[],
+      currentSchedule: CommuteSchedule,
+      residentialFilter = onlyResidential
+    ) => {
       setIsPending(false);
       setIsCalculating(true);
       const active = currentProfiles.filter((p) => p.visible);
@@ -145,18 +168,33 @@ export default function App() {
           polygonList.push(poly);
         });
 
-        // Compute intersection
-        const intersection = calculateMultiIntersection(polygonList);
-        const areaKm2 = calculateAreaKm2(intersection);
-        const isEmpty = !intersection || areaKm2 <= 0;
+        // Compute raw intersection
+        const rawIntersection = calculateMultiIntersection(polygonList);
+        const rawAreaKm2 = calculateAreaKm2(rawIntersection);
+
+        // If residential filter active, mask with residential areas
+        let finalIntersection = rawIntersection;
+        let finalAreaKm2 = rawAreaKm2;
+
+        if (residentialFilter && rawIntersection) {
+          const masked = maskByResidentialAreas(rawIntersection);
+          if (masked) {
+            finalIntersection = masked;
+            finalAreaKm2 = calculateAreaKm2(masked);
+          }
+        }
+
+        const isEmpty = !finalIntersection || finalAreaKm2 <= 0;
 
         // Fallback suggestions if empty
         const suggestions = isEmpty ? generateEmptyIntersectionSuggestions(active) : [];
 
         setResult({
           isochrones: isochronesMap,
-          intersection,
-          intersectionAreaKm2: areaKm2,
+          intersection: finalIntersection,
+          rawIntersection: rawIntersection,
+          intersectionAreaKm2: finalAreaKm2,
+          rawIntersectionAreaKm2: rawAreaKm2,
           emptyIntersection: isEmpty,
           suggestions,
         });
@@ -168,7 +206,7 @@ export default function App() {
         setIsPending(false);
       }
     },
-    []
+    [onlyResidential]
   );
 
   // 3. Trigger Calculation with Debounce when autoUpdate is true
@@ -308,6 +346,41 @@ export default function App() {
     }
   };
 
+  const handleToggleOnlyResidential = () => {
+    const nextVal = !onlyResidential;
+    setOnlyResidential(nextVal);
+    // Instant re-evaluation without recalculating entire isochrones if result already exists
+    if (result && result.rawIntersection) {
+      if (nextVal) {
+        const masked = maskByResidentialAreas(result.rawIntersection);
+        const area = calculateAreaKm2(masked);
+        setResult((prev) =>
+          prev
+            ? {
+                ...prev,
+                intersection: masked,
+                intersectionAreaKm2: area,
+                emptyIntersection: !masked || area <= 0,
+              }
+            : null
+        );
+      } else {
+        setResult((prev) =>
+          prev
+            ? {
+                ...prev,
+                intersection: prev.rawIntersection || null,
+                intersectionAreaKm2: prev.rawIntersectionAreaKm2 || 0,
+                emptyIntersection: !prev.rawIntersection || (prev.rawIntersectionAreaKm2 || 0) <= 0,
+              }
+            : null
+        );
+      }
+    } else {
+      runCalculation(profiles, schedule, nextVal);
+    }
+  };
+
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-slate-100 text-slate-900 font-sans antialiased">
       {/* Sidebar with Inputs, Controls & Settings */}
@@ -333,6 +406,12 @@ export default function App() {
         onBasemapChange={handleBasemapChange}
         isApiKeyModalOpen={isApiKeyModalOpen}
         onToggleApiKeyModal={setIsApiKeyModalOpen}
+        onlyResidential={onlyResidential}
+        onToggleOnlyResidential={handleToggleOnlyResidential}
+        showOnlyIntersection={showOnlyIntersection}
+        onToggleOnlyIntersection={handleToggleOnlyIntersection}
+        showIndividualIsochrones={showIndividualIsochrones}
+        onToggleIndividualIsochrones={handleToggleIndividualIsochrones}
       />
 
       {/* Main Map Stage */}
@@ -360,6 +439,25 @@ export default function App() {
           onUpdatePersonPosition={handleUpdatePersonPosition}
           showIntersectionLayer={showIntersectionLayer}
           onToggleIntersectionLayer={() => setShowIntersectionLayer((prev) => !prev)}
+          showIndividualIsochrones={showIndividualIsochrones}
+          onToggleIndividualIsochrones={handleToggleIndividualIsochrones}
+          showOnlyIntersection={showOnlyIntersection}
+          onToggleOnlyIntersection={handleToggleOnlyIntersection}
+          onlyResidential={onlyResidential}
+          onToggleOnlyResidential={handleToggleOnlyResidential}
+          heatmapSettings={schedule.options?.heatmap}
+          onUpdateHeatmap={(upd) =>
+            setSchedule((prev) => ({
+              ...prev,
+              options: {
+                ...(prev.options || { liveTraffic: false, enableSmoothing: true, fidelity: 'AUTOMATIC' }),
+                heatmap: {
+                  ...(prev.options?.heatmap || { mode: 'none', radiusKm: 1.5, intensity: 0.65 }),
+                  ...upd,
+                },
+              },
+            }))
+          }
           basemap={basemap}
           onBasemapChange={handleBasemapChange}
           onOpenApiKeySettings={() => setIsApiKeyModalOpen(true)}

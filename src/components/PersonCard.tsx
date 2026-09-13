@@ -71,6 +71,7 @@ export const PersonCard: React.FC<PersonCardProps> = ({
   const [isSearching, setIsSearching] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [isColorPickerOpen, setIsColorPickerOpen] = useState(false);
+  const [isCardCollapsed, setIsCardCollapsed] = useState(false);
 
   const searchContainerRef = useRef<HTMLDivElement>(null);
   const colorPickerContainerRef = useRef<HTMLDivElement>(null);
@@ -213,6 +214,15 @@ export const PersonCard: React.FC<PersonCardProps> = ({
             placeholder={`Referenzort ${index + 1}`}
             className="font-semibold text-slate-800 text-sm bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 focus:outline-none px-1 py-0.5 w-full truncate transition-colors"
           />
+          {isCardCollapsed && (
+            <div className="flex items-center gap-1.5 flex-shrink-0 text-[11px] text-slate-500 font-medium">
+              <span className="bg-slate-100 px-2 py-0.5 rounded-md font-semibold text-slate-700">
+                {profile.maxDurationMinutes} Min
+              </span>
+              <span className="text-slate-400">•</span>
+              <span className="truncate max-w-[90px]">{profile.mode === 'transit' ? 'ÖPNV' : profile.mode === 'driving' ? 'Pkw' : profile.mode === 'cycling' ? 'Fahrrad' : 'Zu Fuß'}</span>
+            </div>
+          )}
         </div>
 
         <div className="flex items-center gap-1 flex-shrink-0">
@@ -221,7 +231,7 @@ export const PersonCard: React.FC<PersonCardProps> = ({
             type="button"
             onClick={() => onUpdate({ visible: !profile.visible })}
             title={profile.visible ? 'Layer auf Karte ausblenden' : 'Layer einblenden'}
-            className={`p-1.5 rounded-lg transition-colors ${
+            className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
               profile.visible ? 'text-slate-600 hover:text-slate-950 hover:bg-slate-100' : 'text-slate-300 hover:text-slate-500 hover:bg-slate-100'
             }`}
           >
@@ -234,16 +244,27 @@ export const PersonCard: React.FC<PersonCardProps> = ({
               type="button"
               onClick={onRemove}
               title="Referenzort entfernen"
-              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
             >
               <Trash2 className="w-4 h-4" />
             </button>
           )}
+
+          <button
+            type="button"
+            onClick={() => setIsCardCollapsed((prev) => !prev)}
+            title={isCardCollapsed ? 'Details aufklappen' : 'Karte einklappen'}
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+          >
+            {isCardCollapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
+          </button>
         </div>
       </div>
 
-      {/* Address Search with Autocomplete */}
-      <div ref={searchContainerRef} className="relative mb-3">
+      {!isCardCollapsed && (
+        <>
+          {/* Address Search with Autocomplete */}
+          <div ref={searchContainerRef} className="relative mb-3">
         <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
             <MapPin className="w-4 h-4" />
@@ -369,7 +390,7 @@ export const PersonCard: React.FC<PersonCardProps> = ({
                   Max. Umstiege
                 </label>
                 <select
-                  value={profile.maxTransfers ?? 2}
+                  value={profile.maxTransfers ?? 3}
                   onChange={(e) =>
                     onUpdate({
                       maxTransfers: e.target.value === '99' ? undefined : parseInt(e.target.value, 10),
@@ -427,6 +448,8 @@ export const PersonCard: React.FC<PersonCardProps> = ({
             </div>
           )}
         </div>
+      )}
+      </>
       )}
     </div>
   );

@@ -21,6 +21,9 @@ import {
   ChevronRight,
   Loader2,
   RefreshCw,
+  Home,
+  Flame,
+  Focus,
 } from 'lucide-react';
 
 const PALETTE = ['#3B82F6', '#F97316', '#10B981', '#A855F7', '#EC4899', '#06B6D4', '#EAB308'];
@@ -47,6 +50,12 @@ interface SidebarProps {
   onBasemapChange?: (provider: BasemapProvider) => void;
   isApiKeyModalOpen?: boolean;
   onToggleApiKeyModal?: (open: boolean) => void;
+  onlyResidential?: boolean;
+  onToggleOnlyResidential?: () => void;
+  showOnlyIntersection?: boolean;
+  onToggleOnlyIntersection?: () => void;
+  showIndividualIsochrones?: boolean;
+  onToggleIndividualIsochrones?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -71,6 +80,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onBasemapChange,
   isApiKeyModalOpen,
   onToggleApiKeyModal,
+  onlyResidential = false,
+  onToggleOnlyResidential,
+  showOnlyIntersection,
+  onToggleOnlyIntersection,
+  showIndividualIsochrones,
+  onToggleIndividualIsochrones,
 }) => {
   const activeProfilesCount = profiles.filter((p) => p.visible).length;
   const hasIntersection = !!result?.intersection && (result?.intersectionAreaKm2 || 0) > 0;
@@ -131,16 +146,23 @@ export const Sidebar: React.FC<SidebarProps> = ({
         onBasemapChange={onBasemapChange}
         isApiKeyModalOpen={isApiKeyModalOpen}
         onToggleApiKeyModal={onToggleApiKeyModal}
+        showOnlyIntersection={showOnlyIntersection}
+        onToggleOnlyIntersection={onToggleOnlyIntersection}
+        showIndividualIsochrones={showIndividualIsochrones}
+        onToggleIndividualIsochrones={onToggleIndividualIsochrones}
       />
 
-      {/* Status & Summary Banner with Calculation State Transparency */}
-      <div className="px-4 py-2.5 bg-white border-b border-slate-200 flex flex-col gap-1.5 text-xs">
+      {/* Status & Summary Banner with Calculation State Transparency & Wohnbereichs-Filter */}
+      <div className="px-4 py-2.5 bg-white border-b border-slate-200 flex flex-col gap-2 text-xs">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             {hasIntersection ? (
               <div className="flex items-center gap-1.5 text-emerald-700 font-semibold bg-emerald-50 px-2.5 py-1 rounded-xl border border-emerald-200">
                 <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                <span>Schnittmenge: {result?.intersectionAreaKm2} km²</span>
+                <span>
+                  {onlyResidential ? 'Wohnbereich: ' : 'Schnittmenge: '}
+                  {result?.intersectionAreaKm2} km²
+                </span>
               </div>
             ) : (
               <div className="flex items-center gap-1.5 text-amber-700 font-semibold bg-amber-50 px-2.5 py-1 rounded-xl border border-amber-200">
@@ -155,6 +177,123 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <span>{activeProfilesCount} von {profiles.length} Referenzorten</span>
           </div>
         </div>
+
+        {/* Schnell-Filter: Nur überlagerten Treffbereich anzeigen (nur Grün) */}
+        {hasIntersection && onToggleOnlyIntersection && (
+          <div className="bg-slate-50 border border-slate-200/90 rounded-xl px-2.5 py-1.5 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div
+                className={`p-1 rounded-lg ${
+                  showOnlyIntersection ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-slate-600'
+                }`}
+              >
+                <Focus className="w-3.5 h-3.5" />
+              </div>
+              <div className="flex flex-col">
+                <span className="font-semibold text-[11px] text-slate-800 leading-tight">
+                  Nur Schnittmenge anzeigen
+                </span>
+                <span className="text-[10px] text-slate-500 leading-tight">
+                  {showOnlyIntersection
+                    ? 'Einzelbereiche ausgeblendet (nur Grün)'
+                    : 'Alle Bereiche aktiv (Einzel-Isochronen + Schnittmenge)'}
+                </span>
+              </div>
+            </div>
+
+            <button
+              id="switch-sidebar-only-intersection"
+              type="button"
+              role="switch"
+              aria-checked={showOnlyIntersection}
+              onClick={onToggleOnlyIntersection}
+              title={
+                showOnlyIntersection
+                  ? 'Klicken, um Einzel-Isochronen der Personen wieder einzublenden'
+                  : 'Klicken, um nur den überlagerten Treffbereich (grün) anzuzeigen'
+              }
+              className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden ${
+                showOnlyIntersection ? 'bg-emerald-600' : 'bg-slate-300'
+              }`}
+            >
+              <span
+                className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                  showOnlyIntersection ? 'translate-x-4' : 'translate-x-0'
+                }`}
+              />
+            </button>
+          </div>
+        )}
+
+        {/* Wohnbereich-Filter Toggle (Reduziert Treffbereich auf Wohngebiete) */}
+        {hasIntersection && onToggleOnlyResidential && (
+          <div className="bg-slate-50 border border-slate-200/90 rounded-xl px-2.5 py-1.5 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className={`p-1 rounded-lg ${onlyResidential ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-slate-600'}`}>
+                <Home className="w-3.5 h-3.5" />
+              </div>
+              <div className="flex flex-col">
+                <span className="font-semibold text-[11px] text-slate-800 leading-tight">
+                  Nur Wohnbereich anzeigen
+                </span>
+                <span className="text-[10px] text-slate-500 leading-tight">
+                  {onlyResidential
+                    ? `Gefiltert (${result?.intersectionAreaKm2} von ${result?.rawIntersectionAreaKm2 ?? result?.intersectionAreaKm2} km²)`
+                    : 'Filtert Forste, Seen & Industrie aus'}
+                </span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={onToggleOnlyResidential}
+              className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden ${
+                onlyResidential ? 'bg-emerald-600' : 'bg-slate-300'
+              }`}
+            >
+              <span
+                className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                  onlyResidential ? 'translate-x-4' : 'translate-x-0'
+                }`}
+              />
+            </button>
+          </div>
+        )}
+
+        {/* Prioritäts-Heatmap Statusanzeige (wenn aktiv) */}
+        {hasIntersection &&
+          ((schedule.options?.heatmap?.selectedItems && schedule.options.heatmap.selectedItems.length > 0) ||
+            (schedule.options?.heatmap?.mode && schedule.options.heatmap.mode !== 'none')) && (
+            <div className="bg-amber-50/80 border border-amber-200/90 rounded-xl px-2.5 py-1.5 flex items-center justify-between text-xs">
+              <div className="flex items-center gap-2">
+                <Flame className="w-3.5 h-3.5 text-amber-600" />
+                <span className="font-semibold text-[11px] text-amber-950">
+                  Heatmap aktiv:
+                </span>
+                <div className="flex items-center gap-1 flex-wrap">
+                  {(
+                    schedule.options?.heatmap?.selectedItems && schedule.options.heatmap.selectedItems.length > 0
+                      ? schedule.options.heatmap.selectedItems
+                      : [schedule.options?.heatmap?.mode]
+                  )
+                    .filter(Boolean)
+                    .map((item) => (
+                      <span
+                        key={item}
+                        className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100/90 text-amber-800"
+                      >
+                        {item === 'ubahn' ? '🚇 U-Bahn' : item === 'sbahn' ? '🚆 S-Bahn' : '🚗 Autobahn'}
+                      </span>
+                    ))}
+                </div>
+              </div>
+              <span className="text-[10px] font-semibold text-amber-700">
+                {(
+                  (schedule.options?.heatmap?.radiusKm ?? 1.5) * 1000
+                ).toFixed(0)}m
+              </span>
+            </div>
+          )}
 
         {/* Calculation State Transparency Bar */}
         <div className="flex items-center justify-between text-[11px] pt-1 border-t border-slate-100">
