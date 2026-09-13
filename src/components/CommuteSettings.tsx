@@ -2,12 +2,10 @@ import React from 'react';
 import {
   CommuteSchedule,
   PersonProfile,
-  TransitSubMode,
   HeatmapSettings,
 } from '../types';
 import { ScheduleControls } from './commute/ScheduleControls';
 import { PriorityHeatmapWidget } from './commute/PriorityHeatmapWidget';
-import { TransitSubmodeWidget } from './commute/TransitSubmodeWidget';
 
 export interface CommuteSettingsProps {
   schedule: CommuteSchedule;
@@ -21,17 +19,12 @@ export interface CommuteSettingsProps {
 
 export const CommuteSettings: React.FC<CommuteSettingsProps> = ({
   schedule,
-  profiles,
   onChangeSchedule,
   onRefreshIsochrones,
   isCalculating = false,
   autoUpdate = true,
   onToggleAutoUpdate,
 }) => {
-
-  const showTransitSubmodes =
-    !profiles || profiles.some((p) => p.visible && p.mode === 'transit');
-
   const options = schedule.options ?? {
     liveTraffic: false,
     enableSmoothing: true,
@@ -46,15 +39,6 @@ export const CommuteSettings: React.FC<CommuteSettingsProps> = ({
           ...(options.heatmap || { mode: 'none', radiusKm: 1.5, intensity: 0.65 }),
           ...updated,
         },
-      },
-    });
-  };
-
-  const handleChangeTransitModes = (modes: TransitSubMode[]) => {
-    onChangeSchedule({
-      options: {
-        ...options,
-        transitModes: modes,
       },
     });
   };
@@ -76,14 +60,7 @@ export const CommuteSettings: React.FC<CommuteSettingsProps> = ({
         heatmap={options.heatmap}
         onUpdateHeatmap={handleUpdateHeatmap}
       />
-
-      {/* 3. ÖPNV-Verkehrsmittel (sichtbar wenn ÖPNV-Profil vorhanden) */}
-      {showTransitSubmodes && (
-        <TransitSubmodeWidget
-          transitModes={options.transitModes}
-          onChangeTransitModes={handleChangeTransitModes}
-        />
-      )}
     </div>
   );
 };
+

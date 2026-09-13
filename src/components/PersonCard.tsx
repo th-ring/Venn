@@ -1,5 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { PersonProfile, TransportMode } from '../types';
+import {
+  PersonProfile,
+  TransportMode,
+  TransitSubMode,
+  ALL_TRANSIT_SUBMODES,
+  DEFAULT_TRANSIT_SUBMODES,
+} from '../types';
+import { TransitSubmodeWidget } from './commute/TransitSubmodeWidget';
 import { searchAddress, GeocodingResult } from '../services/geocoding';
 import {
   Train,
@@ -368,24 +375,43 @@ export const PersonCard: React.FC<PersonCardProps> = ({
       </div>
 
       {/* Advanced Transit Filters (FR-2.4) - only when ÖPNV selected */}
-      {profile.mode === 'transit' && (
-        <div className="mt-2.5 pt-2 border-t border-slate-100">
-          <button
-            id={`btn-advanced-transit-${profile.id}`}
-            type="button"
-            onClick={() => setShowAdvanced(!showAdvanced)}
-            className="flex items-center justify-between w-full text-[11px] text-slate-500 hover:text-slate-800 font-medium py-1"
-          >
-            <span className="flex items-center gap-1">
-              <Sliders className="w-3 h-3" />
-              Erweiterte ÖPNV-Filter
-            </span>
-            {showAdvanced ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-          </button>
+      {profile.mode === 'transit' && (() => {
+        const activeTransitModes =
+          profile.transitModes && profile.transitModes.length > 0
+            ? profile.transitModes
+            : DEFAULT_TRANSIT_SUBMODES;
 
-          {showAdvanced && (
-            <div className="mt-2 bg-slate-50 p-2.5 rounded-xl text-xs space-y-2">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        return (
+          <div className="mt-2.5 pt-2 border-t border-slate-100">
+            <button
+              id={`btn-advanced-transit-${profile.id}`}
+              type="button"
+              onClick={() => setShowAdvanced(!showAdvanced)}
+              className="flex items-center justify-between w-full text-[11px] text-slate-500 hover:text-slate-800 font-medium py-1 cursor-pointer"
+            >
+              <span className="flex items-center gap-1">
+                <Sliders className="w-3 h-3" />
+                Erweiterte ÖPNV-Filter
+              </span>
+              <div className="flex items-center gap-1.5">
+                <span className="text-[10px] font-semibold text-blue-700 bg-blue-50 border border-blue-200/60 px-1.5 py-0.5 rounded-md">
+                  {activeTransitModes.length} von {ALL_TRANSIT_SUBMODES.length} aktiv
+                </span>
+                {showAdvanced ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+              </div>
+            </button>
+
+            {showAdvanced && (
+              <div className="mt-2 bg-slate-50 p-2.5 rounded-xl text-xs space-y-2">
+                {/* ÖPNV-Verkehrsträger / Modalitäten (Tram, U-Bahn, Bus, X-Bus, S-Bahn, Regio) */}
+                <TransitSubmodeWidget
+                  embedded
+                  transitModes={profile.transitModes}
+                  onChangeTransitModes={(modes) => onUpdate({ transitModes: modes })}
+                  title="Verkehrsmittel für diese Adresse"
+                />
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {/* 1. First Mile: Wohnort -> Haltestelle */}
                 <div className="bg-white p-2 rounded-lg border border-slate-200/80 shadow-2xs">
                   <div className="flex items-center justify-between mb-0.5">
@@ -506,7 +532,8 @@ export const PersonCard: React.FC<PersonCardProps> = ({
             </div>
           )}
         </div>
-      )}
+      );
+    })()}
       </>
       )}
     </div>

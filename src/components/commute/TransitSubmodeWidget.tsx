@@ -1,20 +1,40 @@
 import React, { useState } from 'react';
-import { TransitSubMode, ALL_TRANSIT_SUBMODES } from '../../types';
+import { TransitSubMode, ALL_TRANSIT_SUBMODES, DEFAULT_TRANSIT_SUBMODES } from '../../types';
 import { Train, ChevronDown, ChevronUp } from 'lucide-react';
 
-interface TransitSubmodeWidgetProps {
+export interface TransitSubmodeItem {
+  id: TransitSubMode;
+  label: string;
+  icon: string;
+  description: string;
+}
+
+export const TRANSIT_SUBMODE_CONFIG: TransitSubmodeItem[] = [
+  { id: 'tram', label: 'Tram', icon: '🚋', description: 'Straßenbahnlinien' },
+  { id: 'ubahn', label: 'U-Bahn', icon: '🚇', description: 'U-Bahn Kernnetz' },
+  { id: 'bus', label: 'Bus', icon: '🚌', description: 'Stadt- & Regionalbusse' },
+  { id: 'expressbus', label: 'X-Bus', icon: '⚡', description: 'Expressbusse (z.B. X30, X80)' },
+  { id: 'sbahn', label: 'S-Bahn', icon: '🚆', description: 'S-Bahn (Stammstrecke & Außenäste)' },
+  { id: 'train', label: 'Regio', icon: '🚄', description: 'Regionalbahn (RB / RE / BRB)' },
+];
+
+export interface TransitSubmodeWidgetProps {
   transitModes?: TransitSubMode[];
   onChangeTransitModes: (modes: TransitSubMode[]) => void;
+  title?: string;
+  embedded?: boolean;
 }
 
 export const TransitSubmodeWidget: React.FC<TransitSubmodeWidgetProps> = ({
   transitModes,
   onChangeTransitModes,
+  title = 'ÖPNV-Verkehrsmittel',
+  embedded = false,
 }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   const activeTransitModes: TransitSubMode[] =
-    transitModes && transitModes.length > 0 ? transitModes : ALL_TRANSIT_SUBMODES;
+    transitModes && transitModes.length > 0 ? transitModes : DEFAULT_TRANSIT_SUBMODES;
 
   const handleToggleMode = (mode: TransitSubMode) => {
     let nextModes: TransitSubMode[];
@@ -28,6 +48,47 @@ export const TransitSubmodeWidget: React.FC<TransitSubmodeWidgetProps> = ({
     onChangeTransitModes(nextModes);
   };
 
+  const gridContent = (
+    <div className="grid grid-cols-3 sm:grid-cols-6 gap-1 bg-slate-100 p-1 rounded-xl">
+      {TRANSIT_SUBMODE_CONFIG.map((item) => {
+        const active = activeTransitModes.includes(item.id);
+        return (
+          <button
+            key={item.id}
+            type="button"
+            onClick={() => handleToggleMode(item.id)}
+            title={`${item.label} (${item.description}) – ${active ? 'abwählen' : 'einbeziehen'}`}
+            className={`py-1.5 px-1 text-center rounded-lg transition-all text-xs font-medium flex flex-col sm:flex-row items-center justify-center gap-1 cursor-pointer ${
+              active
+                ? 'bg-white text-blue-900 shadow-xs font-semibold ring-1 ring-blue-500/20'
+                : 'text-slate-400 hover:text-slate-700 hover:bg-white/50 opacity-60'
+            }`}
+          >
+            <span>{item.icon}</span>
+            <span className="truncate">{item.label}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+
+  if (embedded) {
+    return (
+      <div className="bg-white p-2.5 rounded-lg border border-slate-200/80 shadow-2xs space-y-1.5">
+        <div className="flex items-center justify-between">
+          <span className="text-[10px] font-bold text-slate-800 flex items-center gap-1">
+            <Train className="w-3.5 h-3.5 text-blue-600" />
+            {title}
+          </span>
+          <span className="text-[10px] font-semibold text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded">
+            {activeTransitModes.length} von {ALL_TRANSIT_SUBMODES.length} aktiv
+          </span>
+        </div>
+        {gridContent}
+      </div>
+    );
+  }
+
   return (
     <div className="bg-white rounded-xl border border-slate-200/90 shadow-2xs overflow-hidden transition-all">
       <div
@@ -39,7 +100,7 @@ export const TransitSubmodeWidget: React.FC<TransitSubmodeWidgetProps> = ({
             <Train className="w-3.5 h-3.5" />
           </div>
           <span className="text-xs font-bold text-slate-800 truncate">
-            ÖPNV-Verkehrsmittel
+            {title}
           </span>
         </div>
 
@@ -59,33 +120,7 @@ export const TransitSubmodeWidget: React.FC<TransitSubmodeWidgetProps> = ({
 
       {!isCollapsed && (
         <div className="p-2.5 pt-0 border-t border-slate-100 mt-1">
-          <div className="grid grid-cols-5 gap-1 bg-slate-100 p-1 rounded-xl">
-            {[
-              { id: 'tram' as TransitSubMode, label: 'Tram', icon: '🚋' },
-              { id: 'ubahn' as TransitSubMode, label: 'U-Bahn', icon: '🚇' },
-              { id: 'bus' as TransitSubMode, label: 'Bus', icon: '🚌' },
-              { id: 'expressbus' as TransitSubMode, label: 'X-Bus', icon: '⚡' },
-              { id: 'sbahn' as TransitSubMode, label: 'S-Bahn', icon: '🚆' },
-            ].map((item) => {
-              const active = activeTransitModes.includes(item.id);
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => handleToggleMode(item.id)}
-                  title={`${item.label} ${active ? 'abwählen' : 'einbeziehen'}`}
-                  className={`py-1.5 px-1 text-center rounded-lg transition-all text-xs font-medium flex flex-col sm:flex-row items-center justify-center gap-1 cursor-pointer ${
-                    active
-                      ? 'bg-white text-blue-900 shadow-xs font-semibold ring-1 ring-blue-500/20'
-                      : 'text-slate-400 hover:text-slate-700 hover:bg-white/50 opacity-60'
-                  }`}
-                >
-                  <span>{item.icon}</span>
-                  <span className="truncate">{item.label}</span>
-                </button>
-              );
-            })}
-          </div>
+          {gridContent}
         </div>
       )}
     </div>
