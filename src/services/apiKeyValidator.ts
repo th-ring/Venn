@@ -30,7 +30,7 @@ export async function validateOrsApiKey(apiKey: string): Promise<KeyCheckResult>
   }
 
   try {
-    const url = 'https://api.openrouteservice.org/v2/isochrones/driving-car';
+    const url = 'https://api.heigit.org/openrouteservice/v2/isochrones/driving-car';
     const res = await fetch(url, {
       method: 'POST',
       headers: {
