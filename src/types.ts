@@ -99,6 +99,43 @@ export interface RentalOverlaySettings {
   selectedRegionId?: string; // e.g. 'munich-mvv'
 }
 
+export type LayerId =
+  | 'inspection'
+  | 'persons'
+  | 'poi_icons'
+  | 'intersection'
+  | 'heatmap'
+  | 'isochrones'
+  | 'rental'
+  | 'basemap';
+
+export const DEFAULT_LAYER_ORDER: LayerId[] = [
+  'inspection',
+  'persons',
+  'poi_icons',
+  'intersection',
+  'heatmap',
+  'isochrones',
+  'rental',
+  'basemap',
+];
+
+export interface PoiIconSettings {
+  visible: boolean;
+  showUbahn: boolean;
+  showSbahn: boolean;
+  showHighway: boolean;
+  onlyWithinIntersection: boolean;
+}
+
+export const DEFAULT_POI_ICON_SETTINGS: PoiIconSettings = {
+  visible: true,
+  showUbahn: true,
+  showSbahn: true,
+  showHighway: true,
+  onlyWithinIntersection: true,
+};
+
 export interface IsochroneOptions {
   liveTraffic: boolean;
   enableSmoothing: boolean;
@@ -107,12 +144,14 @@ export interface IsochroneOptions {
   heatmap?: HeatmapSettings;
   rentalOverlay?: RentalOverlaySettings;
   transitModes?: TransitSubMode[];
+  poiIcons?: PoiIconSettings;
+  layerOrder?: LayerId[];
 }
 
 export interface CommuteSchedule {
   direction: CommuteDirection;
   dayOfWeek: 'workday' | 'weekend';
-  time: string; // "08:30"
+  time: string; // "07:00"
   options: IsochroneOptions;
 }
 

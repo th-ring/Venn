@@ -10,6 +10,10 @@ import {
   MapVariant,
   HeatmapSettings,
   RentalOverlaySettings,
+  LayerId,
+  PoiIconSettings,
+  DEFAULT_LAYER_ORDER,
+  DEFAULT_POI_ICON_SETTINGS,
 } from '../types';
 import { Loader2, AlertCircle, Key } from 'lucide-react';
 import {
@@ -63,6 +67,14 @@ interface MapComponentProps {
   basemap?: BasemapProvider;
   onBasemapChange?: (provider: BasemapProvider) => void;
   onOpenApiKeySettings?: () => void;
+  layerOrder?: LayerId[];
+  onReorderLayer?: (fromIndex: number, toIndex: number) => void;
+  onResetLayerOrder?: () => void;
+  hiddenLayers?: Set<LayerId>;
+  onToggleLayerVisibility?: (layerId: LayerId) => void;
+  poiIconSettings?: PoiIconSettings;
+  onUpdatePoiIcons?: (settings: Partial<PoiIconSettings>) => void;
+  onToggleProfileVisibility?: (id: string) => void;
 }
 
 export const MapComponent: React.FC<MapComponentProps> = ({
@@ -88,6 +100,14 @@ export const MapComponent: React.FC<MapComponentProps> = ({
   basemap: externalBasemap,
   onBasemapChange,
   onOpenApiKeySettings,
+  layerOrder = DEFAULT_LAYER_ORDER,
+  onReorderLayer = () => {},
+  onResetLayerOrder = () => {},
+  hiddenLayers = new Set<LayerId>(),
+  onToggleLayerVisibility = () => {},
+  poiIconSettings = DEFAULT_POI_ICON_SETTINGS,
+  onUpdatePoiIcons = () => {},
+  onToggleProfileVisibility,
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -116,14 +136,17 @@ export const MapComponent: React.FC<MapComponentProps> = ({
     }
   }, [externalBasemap]);
 
-  // Leaflet Layer groups
+  // Leaflet Layer groups & Panes
   const basemapLayerRef = useRef<L.Layer | null>(null);
   const rentalLayerRef = useRef<L.LayerGroup | null>(null);
-  const markersLayerRef = useRef<L.LayerGroup | null>(null);
   const isochronesLayerRef = useRef<L.LayerGroup | null>(null);
+  const heatmapLayerRef = useRef<L.LayerGroup | null>(null);
+  const intersectionLayerRef = useRef<L.LayerGroup | null>(null);
+  const poiIconsLayerRef = useRef<L.LayerGroup | null>(null);
+  const personsLayerRef = useRef<L.LayerGroup | null>(null);
   const inspectionMarkerRef = useRef<L.Marker | null>(null);
 
-  // Initialize map once
+  // Initialize map once with custom panes for deterministic layer ordering & hover hierarchy
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
 
@@ -140,13 +163,29 @@ export const MapComponent: React.FC<MapComponentProps> = ({
       })
       .addTo(map);
 
+    // Create custom Leaflet panes for deterministic z-ordering and hover hierarchy
+    map.createPane('pane-rental');
+    map.createPane('pane-isochrones');
+    map.createPane('pane-heatmap');
+    map.createPane('pane-intersection');
+    map.createPane('pane-poi_icons');
+    map.createPane('pane-persons');
+    map.createPane('pane-inspection');
+
+    // Create dedicated LayerGroups
     const rentalGroup = L.layerGroup().addTo(map);
     const isochronesGroup = L.layerGroup().addTo(map);
-    const markersGroup = L.layerGroup().addTo(map);
+    const heatmapGroup = L.layerGroup().addTo(map);
+    const intersectionGroup = L.layerGroup().addTo(map);
+    const poiIconsGroup = L.layerGroup().addTo(map);
+    const personsGroup = L.layerGroup().addTo(map);
 
     rentalLayerRef.current = rentalGroup;
     isochronesLayerRef.current = isochronesGroup;
-    markersLayerRef.current = markersGroup;
+    heatmapLayerRef.current = heatmapGroup;
+    intersectionLayerRef.current = intersectionGroup;
+    poiIconsLayerRef.current = poiIconsGroup;
+    personsLayerRef.current = personsGroup;
     mapRef.current = map;
 
     // Handle map clicks for inspection
@@ -154,13 +193,54 @@ export const MapComponent: React.FC<MapComponentProps> = ({
       onSelectInspectionPoint(e.latlng.lat, e.latlng.lng);
     });
 
+    // Observe container size changes
+    let animationFrameId: number | null = null;
+    const resizeObserver = new ResizeObserver(() => {
+      if (animationFrameId) cancelAnimationFrame(animationFrameId);
+      animationFrameId = requestAnimationFrame(() => {
+        if (mapRef.current) {
+          mapRef.current.invalidateSize({ pan: false });
+        }
+      });
+    });
+
+    if (mapContainerRef.current) {
+      resizeObserver.observe(mapContainerRef.current);
+    }
+
     return () => {
+      if (animationFrameId) cancelAnimationFrame(animationFrameId);
+      resizeObserver.disconnect();
       map.remove();
       mapRef.current = null;
       basemapLayerRef.current = null;
       rentalLayerRef.current = null;
+      isochronesLayerRef.current = null;
+      heatmapLayerRef.current = null;
+      intersectionLayerRef.current = null;
+      poiIconsLayerRef.current = null;
+      personsLayerRef.current = null;
     };
   }, []);
+
+  // Dynamically adjust Leaflet Pane z-indexes according to layerOrder
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    const baseZIndex = 350;
+    const total = layerOrder.length;
+
+    layerOrder.forEach((layerId, index) => {
+      const paneName = `pane-${layerId}`;
+      const pane = map.getPane(paneName);
+      if (pane) {
+        // index 0 has the highest z-index (top layer)
+        const zIndex = baseZIndex + (total - index) * 30;
+        pane.style.zIndex = `${zIndex}`;
+      }
+    });
+  }, [layerOrder]);
 
   // Switch basemap layer dynamically
   useEffect(() => {
@@ -258,12 +338,14 @@ export const MapComponent: React.FC<MapComponentProps> = ({
     }
   };
 
-  // Update draggable person markers
+  // 1. Render Draggable Person Markers (Pane: pane-persons)
   useEffect(() => {
-    const markersGroup = markersLayerRef.current;
-    if (!markersGroup || !mapRef.current) return;
+    const personsGroup = personsLayerRef.current;
+    if (!personsGroup || !mapRef.current) return;
 
-    markersGroup.clearLayers();
+    personsGroup.clearLayers();
+
+    if (hiddenLayers.has('persons')) return;
 
     profiles.forEach((profile) => {
       if (!profile.visible) return;
@@ -273,6 +355,7 @@ export const MapComponent: React.FC<MapComponentProps> = ({
       const marker = L.marker([profile.lat, profile.lng], {
         icon: customIcon,
         draggable: true,
+        pane: 'pane-persons',
         title: `${profile.name} - Ziehen um Standort zu verändern`,
       });
 
@@ -282,16 +365,16 @@ export const MapComponent: React.FC<MapComponentProps> = ({
       });
 
       marker.bindPopup(createPersonPopupHtml(profile));
-      marker.addTo(markersGroup);
+      marker.addTo(personsGroup);
     });
-  }, [profiles, onUpdatePersonPosition]);
+  }, [profiles, onUpdatePersonPosition, hiddenLayers]);
 
-  // Update inspection point pin
+  // 2. Render Inspection Point Pin (Pane: pane-inspection)
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
 
-    if (!inspectionPoint) {
+    if (!inspectionPoint || hiddenLayers.has('inspection')) {
       if (inspectionMarkerRef.current) {
         inspectionMarkerRef.current.remove();
         inspectionMarkerRef.current = null;
@@ -307,173 +390,238 @@ export const MapComponent: React.FC<MapComponentProps> = ({
     } else {
       const marker = L.marker([inspectionPoint.lat, inspectionPoint.lng], {
         icon: customPin,
+        pane: 'pane-inspection',
         zIndexOffset: 1000,
       }).addTo(map);
       inspectionMarkerRef.current = marker;
     }
-  }, [inspectionPoint]);
+  }, [inspectionPoint, hiddenLayers]);
 
-  // Render Isochrones, Intersection and Priority Heatmap
+  // 3. Render Individual Person Isochrones (Pane: pane-isochrones)
   useEffect(() => {
     const isochronesGroup = isochronesLayerRef.current;
     if (!isochronesGroup || !mapRef.current) return;
 
     isochronesGroup.clearLayers();
 
-    if (!result) return;
+    if (!result || !showIndividualIsochrones || hiddenLayers.has('isochrones')) return;
 
-    // 1. Draw individual person isochrones
-    if (showIndividualIsochrones) {
-      profiles.forEach((profile) => {
-        if (!profile.visible) return;
-        const poly = result.isochrones[profile.id];
-        if (!poly) return;
+    profiles.forEach((profile) => {
+      if (!profile.visible) return;
+      const poly = result.isochrones[profile.id];
+      if (!poly) return;
 
-        const layer = L.geoJSON(poly as any, {
-          style: {
-            color: profile.color,
-            weight: 2,
-            opacity: 0.85,
-            fillColor: profile.color,
-            fillOpacity: 0.15,
-            dashArray: '4, 4',
-          },
-        });
-
-        layer.bindTooltip(
-          `<strong>${profile.name}</strong><br/>Max. ${profile.travelTimeMinutes} Min (${
-            profile.mode === 'transit'
-              ? 'ÖPNV'
-              : profile.mode === 'driving'
-              ? 'Auto'
-              : profile.mode === 'cycling'
-              ? 'Rad'
-              : 'Fuß'
-          })`,
-          { sticky: true, className: 'isochrone-tooltip' }
-        );
-
-        layer.addTo(isochronesGroup);
-      });
-    }
-
-    // 2. Draw Golden Intersection zone
-    if (showIntersectionLayer && result.intersection) {
-      const intersectionLayer = L.geoJSON(result.intersection as any, {
+      const layer = L.geoJSON(poly as any, {
+        pane: 'pane-isochrones',
         style: {
-          color: onlyResidential ? '#065f46' : '#047857',
-          weight: 3.5,
-          opacity: 0.95,
-          fillColor: onlyResidential ? '#059669' : '#10b981',
-          fillOpacity: onlyResidential ? 0.45 : 0.38,
-          lineJoin: 'round',
+          color: profile.color,
+          weight: 2,
+          opacity: 0.85,
+          fillColor: profile.color,
+          fillOpacity: 0.15,
+          dashArray: '4, 4',
+        },
+        onEachFeature: (_, fLayer) => {
+          fLayer.on({
+            click: (e: L.LeafletMouseEvent) => {
+              onSelectInspectionPoint(e.latlng.lat, e.latlng.lng);
+            },
+          });
         },
       });
 
-      intersectionLayer.bindTooltip(
-        `<div style="font-weight: bold; color: #065f46; font-size: 13px;">${
-          onlyResidential ? '🏡 Gemeinsamer Wohnbereich' : '🎯 Gemeinsamer Treffbereich'
-        }</div><div style="font-size: 11px; color: #047857;">Fläche: ca. ${
-          result.intersectionAreaKm2
-        } km²${
-          onlyResidential && result.rawIntersectionAreaKm2
-            ? ` (von ${result.rawIntersectionAreaKm2} km² Gesamt)`
-            : ''
-        }<br/>${
-          onlyResidential
-            ? 'Reduziert auf reale Siedlungs- & Wohnflächen'
-            : 'Für alle erreichbar!'
-        }</div>`,
-        { sticky: true }
+      layer.bindTooltip(
+        `<strong>${profile.name}</strong><br/>Max. ${profile.travelTimeMinutes} Min (${
+          profile.mode === 'transit'
+            ? 'ÖPNV'
+            : profile.mode === 'driving'
+            ? 'Auto'
+            : profile.mode === 'cycling'
+            ? 'Rad'
+            : 'Fuß'
+        })`,
+        { sticky: true, className: 'isochrone-tooltip' }
       );
 
-      intersectionLayer.addTo(isochronesGroup);
+      layer.addTo(isochronesGroup);
+    });
+  }, [result, profiles, showIndividualIsochrones, hiddenLayers, onSelectInspectionPoint]);
 
-      // 3. Draw Priority Heatmap Layer if active
-      if (heatmapSettings && heatmapSettings.mode !== 'none') {
-        try {
-          const heatmapZones = generatePriorityHeatmapZones(
-            result.intersection as any,
-            heatmapSettings
-          );
+  // 4. Render Golden Intersection Layer (Pane: pane-intersection)
+  useEffect(() => {
+    const intersectionGroup = intersectionLayerRef.current;
+    if (!intersectionGroup || !mapRef.current) return;
 
-          heatmapZones.forEach((zone) => {
-            const zoneLayer = L.geoJSON(zone.geometry as any, {
-              style: {
-                stroke: true,
-                color: zone.color,
-                weight: 1.5,
-                opacity: Math.min(0.9, (heatmapSettings.intensity ?? 0.65) * 1.1),
-                fillColor: zone.color,
-                fillOpacity: Math.min(
-                  0.85,
-                  (heatmapSettings.intensity ?? 0.65) *
-                    (zone.tier === 'tier1' ? 0.75 : zone.tier === 'tier2' ? 0.55 : 0.38)
-                ),
-                lineJoin: 'round',
+    intersectionGroup.clearLayers();
+
+    if (!result?.intersection || !showIntersectionLayer || hiddenLayers.has('intersection')) return;
+
+    const intersectionLayer = L.geoJSON(result.intersection as any, {
+      pane: 'pane-intersection',
+      style: {
+        color: onlyResidential ? '#065f46' : '#047857',
+        weight: 3.5,
+        opacity: 0.95,
+        fillColor: onlyResidential ? '#059669' : '#10b981',
+        fillOpacity: onlyResidential ? 0.45 : 0.38,
+        lineJoin: 'round',
+      },
+      onEachFeature: (_, fLayer) => {
+        fLayer.on({
+          click: (e: L.LeafletMouseEvent) => {
+            onSelectInspectionPoint(e.latlng.lat, e.latlng.lng);
+          },
+        });
+      },
+    });
+
+    intersectionLayer.bindTooltip(
+      `<div style="font-weight: bold; color: #065f46; font-size: 13px;">${
+        onlyResidential ? '🏡 Gemeinsamer Wohnbereich' : '🎯 Gemeinsamer Treffbereich'
+      }</div><div style="font-size: 11px; color: #047857;">Fläche: ca. ${
+        result.intersectionAreaKm2
+      } km²${
+        onlyResidential && result.rawIntersectionAreaKm2
+          ? ` (von ${result.rawIntersectionAreaKm2} km² Gesamt)`
+          : ''
+      }<br/>${
+        onlyResidential
+          ? 'Reduziert auf reale Siedlungs- & Wohnflächen'
+          : 'Für alle erreichbar!'
+      }</div>`,
+      { sticky: true }
+    );
+
+    intersectionLayer.addTo(intersectionGroup);
+  }, [result, showIntersectionLayer, onlyResidential, hiddenLayers, onSelectInspectionPoint]);
+
+  // 5. Render Priority Heatmap Layer (Pane: pane-heatmap)
+  useEffect(() => {
+    const heatmapGroup = heatmapLayerRef.current;
+    if (!heatmapGroup || !mapRef.current) return;
+
+    heatmapGroup.clearLayers();
+
+    if (
+      !result?.intersection ||
+      !heatmapSettings ||
+      heatmapSettings.mode === 'none' ||
+      hiddenLayers.has('heatmap')
+    ) {
+      return;
+    }
+
+    try {
+      const heatmapZones = generatePriorityHeatmapZones(
+        result.intersection as any,
+        heatmapSettings
+      );
+
+      heatmapZones.forEach((zone) => {
+        const zoneLayer = L.geoJSON(zone.geometry as any, {
+          pane: 'pane-heatmap',
+          style: {
+            stroke: true,
+            color: zone.color,
+            weight: 1.5,
+            opacity: Math.min(0.9, (heatmapSettings.intensity ?? 0.65) * 1.1),
+            fillColor: zone.color,
+            fillOpacity: Math.min(
+              0.85,
+              (heatmapSettings.intensity ?? 0.65) *
+                (zone.tier === 'tier1' ? 0.75 : zone.tier === 'tier2' ? 0.55 : 0.38)
+            ),
+            lineJoin: 'round',
+          },
+          onEachFeature: (_, fLayer) => {
+            fLayer.on({
+              click: (e: L.LeafletMouseEvent) => {
+                onSelectInspectionPoint(e.latlng.lat, e.latlng.lng);
               },
             });
+          },
+        });
 
-            zoneLayer.bindTooltip(
-              `<div style="font-weight: bold; font-size: 12px; color: ${zone.color};">${zone.label}</div><div style="font-size: 11px; color: #334155;">${zone.description}</div>`,
-              { sticky: true }
-            );
+        zoneLayer.bindTooltip(
+          `<div style="font-weight: bold; font-size: 12px; color: ${zone.color};">${zone.label}</div><div style="font-size: 11px; color: #334155;">${zone.description}</div>`,
+          { sticky: true }
+        );
 
-            zoneLayer.addTo(isochronesGroup);
-          });
+        zoneLayer.addTo(heatmapGroup);
+      });
+    } catch (err) {
+      console.warn('Error rendering heatmap zones:', err);
+    }
+  }, [result, heatmapSettings, hiddenLayers, onSelectInspectionPoint]);
 
-          // Priority Station / Motorway target badges
-          const activeItems =
-            heatmapSettings.selectedItems && heatmapSettings.selectedItems.length > 0
-              ? heatmapSettings.selectedItems
-              : [heatmapSettings.mode];
+  // 6. Render POI Station & Highway Badges (Pane: pane-poi_icons)
+  useEffect(() => {
+    const poiGroup = poiIconsLayerRef.current;
+    if (!poiGroup || !mapRef.current) return;
 
-          const priorityTargets = getPriorityTargets(activeItems);
-          if (priorityTargets.length > 0) {
-            priorityTargets.forEach((target) => {
-              const pt = turf.point([target.lng, target.lat]);
-              let isNear = false;
-              try {
-                const distToIntersection = turf.pointToPolygonDistance(
-                  pt,
-                  result.intersection as any,
-                  { units: 'kilometers' }
-                );
-                if (distToIntersection <= (heatmapSettings.radiusKm || 1.5)) {
-                  isNear = true;
-                }
-              } catch {
-                isNear = true;
-              }
+    poiGroup.clearLayers();
 
-              if (isNear) {
-                const markerIcon = createPriorityTargetIcon(target.type);
-                const tMarker = L.marker([target.lat, target.lng], { icon: markerIcon });
-                tMarker.bindTooltip(
-                  `<div style="font-size: 11px;"><strong>${target.name}</strong><br/>${
-                    target.linesOrRoad ? `<span style="color:#64748b">${target.linesOrRoad}</span>` : ''
-                  }</div>`,
-                  { direction: 'top', offset: [0, -8] }
-                );
-                tMarker.addTo(isochronesGroup);
-              }
-            });
+    if (!poiIconSettings.visible || hiddenLayers.has('poi_icons')) return;
+
+    // Collect active target types
+    const activeTypes: Array<'ubahn' | 'sbahn' | 'highway'> = [];
+    if (poiIconSettings.showUbahn) activeTypes.push('ubahn');
+    if (poiIconSettings.showSbahn) activeTypes.push('sbahn');
+    if (poiIconSettings.showHighway) activeTypes.push('highway');
+
+    if (activeTypes.length === 0) return;
+
+    const targets = getPriorityTargets(activeTypes);
+    if (targets.length === 0) return;
+
+    targets.forEach((target) => {
+      let isVisible = true;
+
+      // Filter by intersection proximity if requested
+      if (poiIconSettings.onlyWithinIntersection && result?.intersection) {
+        try {
+          const pt = turf.point([target.lng, target.lat]);
+          const distToIntersection = turf.pointToPolygonDistance(
+            pt,
+            result.intersection as any,
+            { units: 'kilometers' }
+          );
+          if (distToIntersection > (heatmapSettings?.radiusKm || 1.5)) {
+            isVisible = false;
           }
-        } catch (err) {
-          console.warn('Error rendering heatmap zones:', err);
+        } catch {
+          isVisible = true;
         }
       }
-    }
-  }, [result, profiles, showIntersectionLayer, showIndividualIsochrones, onlyResidential, heatmapSettings]);
 
-  // Render Rental Choropleth Overlay
+      if (isVisible) {
+        const markerIcon = createPriorityTargetIcon(target.type);
+        const marker = L.marker([target.lat, target.lng], {
+          icon: markerIcon,
+          pane: 'pane-poi_icons',
+        });
+        marker.bindTooltip(
+          `<div style="font-size: 11px;"><strong>${target.name}</strong><br/>${
+            target.linesOrRoad ? `<span style="color:#64748b">${target.linesOrRoad}</span>` : ''
+          }</div>`,
+          { direction: 'top', offset: [0, -8] }
+        );
+        marker.on('click', () => {
+          onSelectInspectionPoint(target.lat, target.lng);
+        });
+        marker.addTo(poiGroup);
+      }
+    });
+  }, [poiIconSettings, result, heatmapSettings?.radiusKm, hiddenLayers, onSelectInspectionPoint]);
+
+  // 7. Render Rental Choropleth Overlay (Pane: pane-rental)
   useEffect(() => {
     const rentalGroup = rentalLayerRef.current;
     if (!rentalGroup || !mapRef.current) return;
 
     rentalGroup.clearLayers();
 
-    if (!rentalSettings?.enabled) return;
+    if (!rentalSettings?.enabled || hiddenLayers.has('rental')) return;
 
     const geojson = getRentalGeoJsonForRegion(rentalSettings.selectedRegionId || 'munich-mvv');
     if (!geojson) return;
@@ -481,6 +629,7 @@ export const MapComponent: React.FC<MapComponentProps> = ({
     const opacity = rentalSettings.opacity ?? 0.35;
 
     const layer = L.geoJSON(geojson as any, {
+      pane: 'pane-rental',
       style: (feature) => {
         const price = feature?.properties?.avgRentColdSqm || 18.0;
         const color = getRentalChoroplethColor(price);
@@ -526,9 +675,7 @@ export const MapComponent: React.FC<MapComponentProps> = ({
               opacity: 1,
               fillOpacity: Math.min(0.85, opacity + 0.15),
             });
-            if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
-              target.bringToFront();
-            }
+            // NO target.bringToFront() - Keeps Leaflet Pane hierarchy completely intact!
           },
           mouseout: (e: any) => {
             const target = e.target;
@@ -546,7 +693,13 @@ export const MapComponent: React.FC<MapComponentProps> = ({
     });
 
     layer.addTo(rentalGroup);
-  }, [rentalSettings?.enabled, rentalSettings?.opacity, rentalSettings?.selectedRegionId, onSelectInspectionPoint]);
+  }, [
+    rentalSettings?.enabled,
+    rentalSettings?.opacity,
+    rentalSettings?.selectedRegionId,
+    hiddenLayers,
+    onSelectInspectionPoint,
+  ]);
 
   // Center bounds on visible markers / isochrones
   const handleFitBounds = () => {
@@ -603,7 +756,7 @@ export const MapComponent: React.FC<MapComponentProps> = ({
         </div>
       )}
 
-      {/* Modular Map Controls Top-Right & Floating Banners */}
+      {/* Modular Map Controls Top-Right & Layer Manager Drawer */}
       <MapLayerControls
         activePlatform={activePlatform}
         activeVariant={activeVariant}
@@ -611,6 +764,7 @@ export const MapComponent: React.FC<MapComponentProps> = ({
         onSelectVariant={handleSelectVariant}
         isBasemapLoading={isBasemapLoading}
         profiles={profiles}
+        onToggleProfileVisibility={onToggleProfileVisibility}
         hasIntersection={hasIntersection}
         showIntersectionLayer={showIntersectionLayer}
         onToggleIntersectionLayer={onToggleIntersectionLayer}
@@ -626,6 +780,14 @@ export const MapComponent: React.FC<MapComponentProps> = ({
         onUpdateRentalOverlay={onUpdateRentalOverlay}
         onFitBounds={handleFitBounds}
         onOpenApiKeySettings={onOpenApiKeySettings}
+        layerOrder={layerOrder}
+        onReorderLayer={onReorderLayer}
+        onResetLayerOrder={onResetLayerOrder}
+        hiddenLayers={hiddenLayers}
+        onToggleLayerVisibility={onToggleLayerVisibility}
+        poiIconSettings={poiIconSettings}
+        onUpdatePoiIcons={onUpdatePoiIcons}
+        intersectionAreaKm2={result?.intersectionAreaKm2}
       />
     </div>
   );
