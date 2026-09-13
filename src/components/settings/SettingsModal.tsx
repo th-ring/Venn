@@ -62,7 +62,7 @@ const SETTINGS_MENU: Array<{
   subLabel: string;
   icon: React.ComponentType<{ className?: string }>;
 }> = [
-  { id: 'basemap', label: '1. Kartendienst', subLabel: 'OSM, ÖPNV, CARTO & Google', icon: MapIcon },
+  { id: 'basemap', label: '1. Kartendienst', subLabel: 'OSM, MemoMaps, CARTO & Google', icon: MapIcon },
   { id: 'isochrones', label: '2. Isochronen', subLabel: 'Engine & Parameter', icon: Globe },
   { id: 'mvv', label: '3. Datenpakete & Regionen', subLabel: 'Autobahn, ÖPNV & Mietspiegel', icon: Layers },
   { id: 'keys', label: '4. API-Keys', subLabel: 'Google & ORS Keys', icon: Key },
@@ -114,9 +114,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     setModalPlatform(platform);
     if (platform === 'carto' && !['carto_light', 'carto_dark', 'carto_voyager'].includes(modalVariant)) {
       setModalVariant('carto_light');
-    } else if (platform === 'opnv' && !['memomaps', 'transit', 'railway'].includes(modalVariant)) {
+    } else if ((platform === 'memomaps' || platform === 'opnv') && modalVariant !== 'memomaps') {
       setModalVariant('memomaps');
-    } else if (platform === 'osm' && ['carto_light', 'carto_dark', 'carto_voyager', 'railway'].includes(modalVariant)) {
+    } else if (platform === 'osm' && ['carto_light', 'carto_dark', 'carto_voyager', 'memomaps', 'railway'].includes(modalVariant)) {
       setModalVariant('normal');
     } else if (platform === 'google' && ['carto_light', 'carto_dark', 'carto_voyager', 'topo', 'memomaps', 'railway'].includes(modalVariant)) {
       setModalVariant('normal');
@@ -366,7 +366,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
               </div>
               <div className="truncate text-slate-600">
-                Karte: <span className="font-semibold">{modalPlatform === 'google' ? 'Google Maps' : modalPlatform === 'carto' ? 'CARTO' : modalPlatform === 'opnv' ? 'ÖPNV' : 'OSM'}</span>
+                Karte: <span className="font-semibold">{modalPlatform === 'google' ? 'Google Maps' : modalPlatform === 'carto' ? 'CARTO' : modalPlatform === 'memomaps' || modalPlatform === 'opnv' ? 'MemoMaps' : 'OSM'}</span>
               </div>
               <div className="truncate text-slate-600">
                 Engine: <span className="font-semibold">{activeProvider === 'google' ? 'Google API' : activeProvider === 'ors' ? 'ORS' : 'Offline'}</span>
