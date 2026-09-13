@@ -217,7 +217,7 @@ export const PersonCard: React.FC<PersonCardProps> = ({
           {isCardCollapsed && (
             <div className="flex items-center gap-1.5 flex-shrink-0 text-[11px] text-slate-500 font-medium">
               <span className="bg-slate-100 px-2 py-0.5 rounded-md font-semibold text-slate-700">
-                {profile.maxDurationMinutes} Min
+                {profile.travelTimeMinutes} Min
               </span>
               <span className="text-slate-400">•</span>
               <span className="truncate max-w-[90px]">{profile.mode === 'transit' ? 'ÖPNV' : profile.mode === 'driving' ? 'Pkw' : profile.mode === 'cycling' ? 'Fahrrad' : 'Zu Fuß'}</span>

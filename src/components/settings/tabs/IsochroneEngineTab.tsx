@@ -1,0 +1,276 @@
+import React from 'react';
+import { PolygonFidelity, IsochroneOptions } from '../../../types';
+import { IsochroneProvider } from '../../../services/isochroneEngine';
+import { ExternalLink } from 'lucide-react';
+
+interface IsochroneEngineTabProps {
+  activeProvider: IsochroneProvider;
+  onSelectProvider: (provider: IsochroneProvider) => void;
+  options: IsochroneOptions;
+  onSelectFidelity: (fidelity: PolygonFidelity) => void;
+  onToggleOption: (key: 'liveTraffic' | 'enableSmoothing') => void;
+  showOnlyIntersection?: boolean;
+  onToggleOnlyIntersection?: () => void;
+}
+
+export const IsochroneEngineTab: React.FC<IsochroneEngineTabProps> = ({
+  activeProvider,
+  onSelectProvider,
+  options,
+  onSelectFidelity,
+  onToggleOption,
+  showOnlyIntersection,
+  onToggleOnlyIntersection,
+}) => {
+  return (
+    <div className="space-y-3">
+      <div className="text-xs text-slate-600 leading-relaxed">
+        Wähle, welche Berechnungs-Engine die Erreichbarkeits-Polygone (Fahrzeit-Zonen) berechnen soll.
+      </div>
+
+      {/* Option 1: Google Maps Isochrones API */}
+      <div
+        onClick={() => onSelectProvider('google')}
+        className={`p-3 rounded-xl border cursor-pointer transition-all ${
+          activeProvider === 'google'
+            ? 'border-blue-500 bg-blue-50/50 ring-1 ring-blue-400'
+            : 'border-slate-200 bg-white hover:border-slate-300'
+        }`}
+      >
+        <div className="flex items-start justify-between">
+          <div className="flex items-center gap-2">
+            <input
+              type="radio"
+              name="provider"
+              checked={activeProvider === 'google'}
+              onChange={() => onSelectProvider('google')}
+              className="text-blue-600"
+            />
+            <div>
+              <span className="text-xs font-bold text-slate-900">
+                Google Maps Isochrones API
+              </span>
+              <span className="ml-2 text-[10px] font-semibold bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full">
+                Public Preview
+              </span>
+            </div>
+          </div>
+          <a
+            href="https://developers.google.com/maps/documentation/isochrones"
+            target="_blank"
+            rel="noreferrer"
+            className="text-[11px] text-blue-600 hover:underline flex items-center gap-1"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <span>Doku</span>
+            <ExternalLink className="w-2.5 h-2.5" />
+          </a>
+        </div>
+        <p className="text-[11px] text-slate-600 mt-1 pl-5 leading-relaxed">
+          Offizielle Google Maps Erreichbarkeits-Polygone für <strong>Pkw, Fahrrad und Fußwege</strong>.
+          <span className="text-amber-700 block mt-0.5">
+            (Hinweis: Für ÖPNV wird automatisch die MVV/MVG-Haltestellenmatrix genutzt, da Google keine ÖPNV-Isochronen bereitstellt.)
+          </span>
+        </p>
+      </div>
+
+      {/* Option 2: Integrierte Offline Simulation */}
+      <div
+        onClick={() => onSelectProvider('calibrated')}
+        className={`p-3 rounded-xl border cursor-pointer transition-all ${
+          activeProvider === 'calibrated'
+            ? 'border-blue-500 bg-blue-50/50 ring-1 ring-blue-400'
+            : 'border-slate-200 bg-white hover:border-slate-300'
+        }`}
+      >
+        <div className="flex items-center gap-2">
+          <input
+            type="radio"
+            name="provider"
+            checked={activeProvider === 'calibrated'}
+            onChange={() => onSelectProvider('calibrated')}
+            className="text-blue-600"
+          />
+          <div>
+            <span className="text-xs font-bold text-slate-900">
+              Integrierte Multimodale Engine (Standard)
+            </span>
+            <span className="ml-2 text-[10px] font-semibold bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded-full">
+              100% Kostenfrei & Ohne Key
+            </span>
+          </div>
+        </div>
+        <p className="text-[11px] text-slate-600 mt-1 pl-5 leading-relaxed">
+          Mathematisch kalibriertes Modell mit schnellen radialen Transit-Fingern (S-Bahn/U-Bahn),
+          lokalem Bus-Netz, Autobahn-Korridoren und Tageszeit-/Rush-Hour-Faktoren.
+        </p>
+      </div>
+
+      {/* Option 3: OpenRouteService (ORS) */}
+      <div
+        onClick={() => onSelectProvider('ors')}
+        className={`p-3 rounded-xl border cursor-pointer transition-all ${
+          activeProvider === 'ors'
+            ? 'border-blue-500 bg-blue-50/50 ring-1 ring-blue-400'
+            : 'border-slate-200 bg-white hover:border-slate-300'
+        }`}
+      >
+        <div className="flex items-start justify-between">
+          <div className="flex items-center gap-2">
+            <input
+              type="radio"
+              name="provider"
+              checked={activeProvider === 'ors'}
+              onChange={() => onSelectProvider('ors')}
+              className="text-blue-600"
+            />
+            <div>
+              <span className="text-xs font-bold text-slate-900">
+                OpenRouteService (ORS)
+              </span>
+              <span className="ml-2 text-[10px] font-semibold bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded-full">
+                Open Source API
+              </span>
+            </div>
+          </div>
+          <a
+            href="https://openrouteservice.org"
+            target="_blank"
+            rel="noreferrer"
+            className="text-[11px] text-blue-600 hover:underline flex items-center gap-1"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <span>openrouteservice.org</span>
+            <ExternalLink className="w-2.5 h-2.5" />
+          </a>
+        </div>
+        <p className="text-[11px] text-slate-600 mt-1 pl-5 leading-relaxed">
+          OpenStreetMap-basierte Isochronen für Auto, Fahrrad und Fußgänger (kostenloser API-Key erforderlich).
+        </p>
+      </div>
+
+      {/* Berechnungsparameter: Detailgrad, Live-Verkehr & Glättung */}
+      <div className="pt-3 border-t border-slate-200/80 space-y-3">
+        <div className="text-xs font-bold text-slate-800">
+          Berechnungs- & Darstellungs-Parameter
+        </div>
+
+        {/* Detailgenauigkeit / Fidelity */}
+        <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-2">
+          <div className="flex items-center justify-between text-xs">
+            <span className="font-semibold text-slate-700">Detailgrad der Isochronen:</span>
+            <span className="text-[11px] text-slate-500">
+              {options.fidelity === 'HIGH'
+                ? 'Sehr präzise Berechnungsraster'
+                : options.fidelity === 'LOW'
+                ? 'Grob & maximal schnell'
+                : 'Ausgewogen'}
+            </span>
+          </div>
+          <div className="grid grid-cols-4 gap-1 bg-white p-1 rounded-lg border border-slate-200">
+            {[
+              { id: 'AUTOMATIC' as PolygonFidelity, label: 'Auto' },
+              { id: 'LOW' as PolygonFidelity, label: 'Grob' },
+              { id: 'MEDIUM' as PolygonFidelity, label: 'Mittel' },
+              { id: 'HIGH' as PolygonFidelity, label: 'Präzise' },
+            ].map((item) => {
+              const isSelected = (options.fidelity || 'AUTOMATIC') === item.id;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => onSelectFidelity(item.id)}
+                  className={`py-1.5 text-center rounded-md transition-all text-xs font-medium cursor-pointer ${
+                    isSelected
+                      ? 'bg-blue-600 text-white shadow-xs font-semibold'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                  }`}
+                >
+                  {item.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Switches for Live-Traffic, Smoothing, and Only Intersection */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          {/* Live-Verkehr Switch */}
+          <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 flex items-center justify-between">
+            <div>
+              <div className="text-xs font-semibold text-slate-800">Live-Verkehr & Stau</div>
+              <div className="text-[10px] text-slate-500">Rush-Hour Berücksichtigung</div>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={options.liveTraffic}
+              onClick={() => onToggleOption('liveTraffic')}
+              className={`w-8 h-4.5 flex items-center rounded-full p-0.5 transition-colors cursor-pointer ${
+                options.liveTraffic ? 'bg-blue-600' : 'bg-slate-200'
+              }`}
+            >
+              <div
+                className={`bg-white w-3.5 h-3.5 rounded-full shadow-xs transform transition-transform ${
+                  options.liveTraffic ? 'translate-x-3.5' : 'translate-x-0'
+                }`}
+              />
+            </button>
+          </div>
+
+          {/* Glatte Kanten Switch */}
+          <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 flex items-center justify-between">
+            <div>
+              <div className="text-xs font-semibold text-slate-800">Glatte Kanten</div>
+              <div className="text-[10px] text-slate-500">B-Spline Konturen-Glättung</div>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={options.enableSmoothing}
+              onClick={() => onToggleOption('enableSmoothing')}
+              className={`w-8 h-4.5 flex items-center rounded-full p-0.5 transition-colors cursor-pointer ${
+                options.enableSmoothing ? 'bg-blue-600' : 'bg-slate-200'
+              }`}
+            >
+              <div
+                className={`bg-white w-3.5 h-3.5 rounded-full shadow-xs transform transition-transform ${
+                  options.enableSmoothing ? 'translate-x-3.5' : 'translate-x-0'
+                }`}
+              />
+            </button>
+          </div>
+
+          {/* Nur überlagerten Treffbereich anzeigen Switch */}
+          {onToggleOnlyIntersection && (
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 flex items-center justify-between sm:col-span-2">
+              <div className="pr-2">
+                <div className="text-xs font-semibold text-slate-800">
+                  Nur überlagerten Treffbereich anzeigen
+                </div>
+                <div className="text-[10px] text-slate-500 leading-tight mt-0.5">
+                  Blendet die individuellen Personen-Isochronen aus und zeigt nur den gemeinsamen grünen Treffbereich.
+                </div>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={showOnlyIntersection}
+                onClick={onToggleOnlyIntersection}
+                className={`w-8 h-4.5 shrink-0 flex items-center rounded-full p-0.5 transition-colors cursor-pointer ${
+                  showOnlyIntersection ? 'bg-emerald-600' : 'bg-slate-200'
+                }`}
+              >
+                <div
+                  className={`bg-white w-3.5 h-3.5 rounded-full shadow-xs transform transition-transform ${
+                    showOnlyIntersection ? 'translate-x-3.5' : 'translate-x-0'
+                  }`}
+                />
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
