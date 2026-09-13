@@ -9,12 +9,17 @@ import {
   BasemapPlatform,
   MapVariant,
   HeatmapSettings,
+  RentalOverlaySettings,
 } from '../types';
 import { Loader2, AlertCircle, Key } from 'lucide-react';
 import {
   generatePriorityHeatmapZones,
   getPriorityTargets,
 } from '../services/priorityHeatmapEngine';
+import {
+  getRentalGeoJsonForRegion,
+  getRentalChoroplethColor,
+} from '../services/rentalService';
 import {
   getGoogleMapsApiKey,
   getBasemapPlatform,
@@ -53,6 +58,8 @@ interface MapComponentProps {
   onToggleOnlyResidential?: () => void;
   heatmapSettings?: HeatmapSettings;
   onUpdateHeatmap?: (settings: Partial<HeatmapSettings>) => void;
+  rentalSettings?: RentalOverlaySettings;
+  onUpdateRentalOverlay?: (settings: Partial<RentalOverlaySettings>) => void;
   basemap?: BasemapProvider;
   onBasemapChange?: (provider: BasemapProvider) => void;
   onOpenApiKeySettings?: () => void;
@@ -76,6 +83,8 @@ export const MapComponent: React.FC<MapComponentProps> = ({
   onToggleOnlyResidential,
   heatmapSettings,
   onUpdateHeatmap,
+  rentalSettings,
+  onUpdateRentalOverlay,
   basemap: externalBasemap,
   onBasemapChange,
   onOpenApiKeySettings,
@@ -109,6 +118,7 @@ export const MapComponent: React.FC<MapComponentProps> = ({
 
   // Leaflet Layer groups
   const basemapLayerRef = useRef<L.Layer | null>(null);
+  const rentalLayerRef = useRef<L.LayerGroup | null>(null);
   const markersLayerRef = useRef<L.LayerGroup | null>(null);
   const isochronesLayerRef = useRef<L.LayerGroup | null>(null);
   const inspectionMarkerRef = useRef<L.Marker | null>(null);
@@ -130,9 +140,11 @@ export const MapComponent: React.FC<MapComponentProps> = ({
       })
       .addTo(map);
 
+    const rentalGroup = L.layerGroup().addTo(map);
     const isochronesGroup = L.layerGroup().addTo(map);
     const markersGroup = L.layerGroup().addTo(map);
 
+    rentalLayerRef.current = rentalGroup;
     isochronesLayerRef.current = isochronesGroup;
     markersLayerRef.current = markersGroup;
     mapRef.current = map;
@@ -146,6 +158,7 @@ export const MapComponent: React.FC<MapComponentProps> = ({
       map.remove();
       mapRef.current = null;
       basemapLayerRef.current = null;
+      rentalLayerRef.current = null;
     };
   }, []);
 
@@ -453,6 +466,88 @@ export const MapComponent: React.FC<MapComponentProps> = ({
     }
   }, [result, profiles, showIntersectionLayer, showIndividualIsochrones, onlyResidential, heatmapSettings]);
 
+  // Render Rental Choropleth Overlay
+  useEffect(() => {
+    const rentalGroup = rentalLayerRef.current;
+    if (!rentalGroup || !mapRef.current) return;
+
+    rentalGroup.clearLayers();
+
+    if (!rentalSettings?.enabled) return;
+
+    const geojson = getRentalGeoJsonForRegion(rentalSettings.selectedRegionId || 'munich-mvv');
+    if (!geojson) return;
+
+    const opacity = rentalSettings.opacity ?? 0.35;
+
+    const layer = L.geoJSON(geojson as any, {
+      style: (feature) => {
+        const price = feature?.properties?.avgRentColdSqm || 18.0;
+        const color = getRentalChoroplethColor(price);
+        return {
+          color: color,
+          weight: 1.5,
+          opacity: 0.85,
+          fillColor: color,
+          fillOpacity: opacity,
+          lineJoin: 'round',
+        };
+      },
+      onEachFeature: (feature, fLayer) => {
+        const p = feature.properties;
+        const color = getRentalChoroplethColor(p.avgRentColdSqm);
+
+        fLayer.bindTooltip(
+          `<div style="font-family: inherit; font-size: 12px; line-height: 1.35; padding: 2px;">
+            <div style="font-weight: 700; color: #0f172a; font-size: 13px;">
+              ${p.name} <span style="font-weight: 400; color: #64748b;">(Bezirk ${p.districtNumber})</span>
+            </div>
+            <div style="margin-top: 4px; font-weight: 800; font-size: 14px; color: ${color};">
+              Ø ${p.avgRentColdSqm.toFixed(2)} €/m² <span style="font-size: 11px; font-weight: 500; color: #475569;">Kaltmiete</span>
+            </div>
+            <div style="font-size: 11px; color: #64748b; margin-top: 2px;">
+              Spanne: ${p.minRentColdSqm.toFixed(2)} – ${p.maxRentColdSqm.toFixed(2)} €/m²
+            </div>
+            <div style="font-size: 10px; color: #0369a1; font-weight: 600; margin-top: 3px;">
+              ${p.qualityLabel}
+            </div>
+            <div style="font-size: 9px; color: #94a3b8; margin-top: 4px; border-top: 1px solid #f1f5f9; padding-top: 2px;">
+              ${p.source}
+            </div>
+          </div>`,
+          { sticky: true, className: 'rental-choropleth-tooltip' }
+        );
+
+        fLayer.on({
+          mouseover: (e: any) => {
+            const target = e.target;
+            target.setStyle({
+              weight: 2.5,
+              opacity: 1,
+              fillOpacity: Math.min(0.85, opacity + 0.15),
+            });
+            if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
+              target.bringToFront();
+            }
+          },
+          mouseout: (e: any) => {
+            const target = e.target;
+            target.setStyle({
+              weight: 1.5,
+              opacity: 0.85,
+              fillOpacity: opacity,
+            });
+          },
+          click: (e: L.LeafletMouseEvent) => {
+            onSelectInspectionPoint(e.latlng.lat, e.latlng.lng);
+          },
+        });
+      },
+    });
+
+    layer.addTo(rentalGroup);
+  }, [rentalSettings?.enabled, rentalSettings?.opacity, rentalSettings?.selectedRegionId, onSelectInspectionPoint]);
+
   // Center bounds on visible markers / isochrones
   const handleFitBounds = () => {
     const map = mapRef.current;
@@ -527,6 +622,8 @@ export const MapComponent: React.FC<MapComponentProps> = ({
         onToggleOnlyResidential={onToggleOnlyResidential}
         heatmapSettings={heatmapSettings}
         onUpdateHeatmap={onUpdateHeatmap}
+        rentalSettings={rentalSettings}
+        onUpdateRentalOverlay={onUpdateRentalOverlay}
         onFitBounds={handleFitBounds}
         onOpenApiKeySettings={onOpenApiKeySettings}
       />
