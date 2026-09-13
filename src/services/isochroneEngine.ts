@@ -30,6 +30,10 @@ interface IsochroneCacheKey {
 
 const isochroneCache = new Map<string, GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon>>();
 
+export function clearIsochroneCache(): void {
+  isochroneCache.clear();
+}
+
 function makeCacheKey(k: IsochroneCacheKey): string {
   const currentRegion = getTransitRegion();
   return `${currentRegion.id}_${currentRegion.version}_${k.lat.toFixed(4)}_${k.lng.toFixed(4)}_${k.time}_${k.mode}_${k.direction}_${k.transfers ?? 'any'}_wTo:${k.walkToStation ?? 10}_wFrom:${k.walkFromStation ?? 10}_${k.transferWait ?? 'any'}_lt:${k.liveTraffic ? 1 : 0}_sm:${k.smoothing ? 1 : 0}_fi:${k.fidelity ?? 'auto'}_tm:${k.transitModes ?? 'all'}`;
@@ -46,6 +50,14 @@ export function setSelectedProvider(provider: IsochroneProvider): void {
   if (typeof localStorage !== 'undefined') {
     localStorage.setItem('isochrone_provider', provider);
   }
+}
+
+export function hasGoogleMapsApiKey(): boolean {
+  return !!getGoogleMapsApiKey();
+}
+
+export function hasOrsApiKey(): boolean {
+  return !!getOrsApiKey();
 }
 
 export function getBasemapPlatform(): BasemapPlatform {
@@ -150,6 +162,12 @@ export function setOrsApiKey(key: string): void {
   }
 }
 
+export interface IsochroneFetchResult {
+  feature: GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon> | null;
+  error?: string;
+  statusCode?: number;
+}
+
 /**
  * Calls the official Google Maps Isochrones API (https://developers.google.com/maps/documentation/isochrones)
  * Currently in Public Preview!
@@ -159,7 +177,15 @@ async function fetchGoogleIsochrone(
   profile: PersonProfile,
   schedule: CommuteSchedule,
   apiKey: string
-): Promise<GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon> | null> {
+): Promise<IsochroneFetchResult> {
+  const trimmedKey = apiKey.trim();
+  if (!trimmedKey) {
+    return {
+      feature: null,
+      error: 'Kein Google Maps API-Key hinterlegt',
+    };
+  }
+
   // Google Isochrones API limits:
   // DRIVE: max 3600s (60 min), WALK / BICYCLE: max 7200s (120 min)
   const durationSeconds = Math.min(
@@ -202,9 +228,12 @@ async function fetchGoogleIsochrone(
 
   // Attempt proxy endpoint first (avoids CORS issues), then direct API endpoint
   const endpoints = [
-    `/api/google-isochrone?key=${encodeURIComponent(apiKey)}`,
-    `https://isochrones.googleapis.com/v1/isochrones:generate?key=${encodeURIComponent(apiKey)}`,
+    `/api/google-isochrone?key=${encodeURIComponent(trimmedKey)}`,
+    `https://isochrones.googleapis.com/v1/isochrones:generate?key=${encodeURIComponent(trimmedKey)}`,
   ];
+
+  let lastError = 'Google Maps Isochronen API nicht erreichbar';
+  let lastStatus: number | undefined;
 
   for (const url of endpoints) {
     try {
@@ -212,14 +241,29 @@ async function fetchGoogleIsochrone(
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-Goog-Api-Key': apiKey,
+          'X-Goog-Api-Key': trimmedKey,
         },
         body: JSON.stringify(payload),
       });
 
       if (!res.ok) {
-        const errorText = await res.text();
-        console.warn(`Google Isochrones API returned error (${res.status}):`, errorText);
+        lastStatus = res.status;
+        const errText = await res.text().catch(() => '');
+        let errJson: any = null;
+        try {
+          errJson = JSON.parse(errText);
+        } catch {}
+        const serverMsg = errJson?.error?.message || errText || '';
+
+        if (res.status === 400) {
+          lastError = `Google Maps: Ungültige Parameter (${serverMsg || 'HTTP 400'})`;
+        } else if (res.status === 403) {
+          lastError = `Google Maps API-Key abgewiesen oder Isochrones API nicht aktiviert (${serverMsg || 'HTTP 403'})`;
+        } else if (res.status === 429) {
+          lastError = `Google Maps Kontingent/Rate-Limit erreicht (HTTP 429)`;
+        } else {
+          lastError = `Google Maps Fehler (HTTP ${res.status}): ${serverMsg || 'Unbekannter Serverfehler'}`;
+        }
         continue;
       }
 
@@ -229,19 +273,122 @@ async function fetchGoogleIsochrone(
           type: 'Feature',
           geometry: data.isochrone.geoJson,
           properties: {
-            source: 'google_maps_isochrones',
+            source: 'google',
+            provider: 'google',
+            isFallback: false,
             travelTimeMinutes: profile.travelTimeMinutes,
             mode: profile.mode,
           },
         };
-        return feature;
+        return { feature };
       }
-    } catch (err) {
-      console.warn('Attempt to reach Google Isochrones API failed:', err);
+    } catch (err: any) {
+      lastError = `Netzwerkfehler Google Maps Isochrones API: ${err?.message || 'Verbindung fehlgeschlagen'}`;
     }
   }
 
-  return null;
+  return {
+    feature: null,
+    error: lastError,
+    statusCode: lastStatus,
+  };
+}
+
+/**
+ * Calls OpenRouteService (HeiGIT) Isochrones API v2
+ * Supports: driving-car, cycling-regular, foot-walking
+ */
+async function fetchOrsIsochrone(
+  profile: PersonProfile,
+  apiKey: string
+): Promise<IsochroneFetchResult> {
+  const trimmedKey = apiKey.trim();
+  if (!trimmedKey) {
+    return {
+      feature: null,
+      error: 'Kein OpenRouteService API-Key hinterlegt',
+    };
+  }
+
+  let orsProfile = 'driving-car';
+  if (profile.mode === 'cycling') orsProfile = 'cycling-regular';
+  if (profile.mode === 'walking') orsProfile = 'foot-walking';
+
+  // Range clamping based on ORS free tier limits:
+  // foot-walking: max 1800s (30 min)
+  // driving-car: max 3000s (50 min)
+  // cycling-regular: max 3600s (60 min)
+  let maxSeconds = 3000;
+  if (profile.mode === 'walking') maxSeconds = 1800;
+  if (profile.mode === 'cycling') maxSeconds = 3600;
+
+  const rawSeconds = profile.travelTimeMinutes * 60;
+  const clampedSeconds = Math.min(rawSeconds, maxSeconds);
+
+  const url = `https://api.openrouteservice.org/v2/isochrones/${orsProfile}`;
+  const payload = {
+    locations: [[profile.lng, profile.lat]],
+    range: [clampedSeconds],
+    range_type: 'time',
+  };
+
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': trimmedKey,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      if (data.features && data.features.length > 0) {
+        const feature = data.features[0] as GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon>;
+        feature.properties = {
+          ...feature.properties,
+          source: 'ors',
+          provider: 'ors',
+          isFallback: false,
+          travelTimeMinutes: profile.travelTimeMinutes,
+          mode: profile.mode,
+        };
+        return { feature };
+      }
+      return {
+        feature: null,
+        error: 'OpenRouteService hat keine Isochrone zurückgegeben',
+        statusCode: res.status,
+      };
+    }
+
+    const errData = await res.json().catch(() => null);
+    const serverMessage =
+      errData?.error?.message ||
+      errData?.error ||
+      (typeof errData === 'string' ? errData : '');
+
+    let readableError = `OpenRouteService HTTP ${res.status}`;
+    if (res.status === 401 || res.status === 403) {
+      readableError = `OpenRouteService API-Key ungültig oder abgewiesen (HTTP ${res.status})`;
+    } else if (res.status === 429) {
+      readableError = `OpenRouteService Rate-Limit überschritten (HTTP 429)`;
+    } else if (serverMessage) {
+      readableError = `OpenRouteService: ${serverMessage} (HTTP ${res.status})`;
+    }
+
+    return {
+      feature: null,
+      error: readableError,
+      statusCode: res.status,
+    };
+  } catch (err: any) {
+    return {
+      feature: null,
+      error: `Netzwerkfehler beim Erreichen von OpenRouteService: ${err?.message || 'Verbindung fehlgeschlagen'}`,
+    };
+  }
 }
 
 /**
@@ -294,61 +441,118 @@ export async function generateIsochrone(
     return isochroneCache.get(cacheKey)!;
   }
 
-  // 1. Google Maps Isochrones API (for driving, cycling, walking)
-  if (googleKey && (provider === 'google' || !orsKey) && profile.mode !== 'transit') {
-    const googleFeature = await fetchGoogleIsochrone(profile, schedule, googleKey);
-    if (googleFeature) {
-      isochroneCache.set(cacheKey, googleFeature);
-      return googleFeature;
-    }
-  }
-
-  // 2. OpenRouteService (if configured and provider is ors)
-  if (orsKey && (provider === 'ors' || !googleKey) && profile.mode !== 'transit') {
-    try {
-      const orsProfile = profile.mode === 'driving' ? 'driving-car' : (profile.mode === 'cycling' ? 'cycling-regular' : 'foot-walking');
-      const timeSeconds = profile.travelTimeMinutes * 60;
-      const url = `https://api.openrouteservice.org/v2/isochrones/${orsProfile}`;
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Authorization': orsKey,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          locations: [[profile.lng, profile.lat]],
-          range: [timeSeconds],
-          units: 'm',
-        }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.features && data.features.length > 0) {
-          const feature = data.features[0];
-          isochroneCache.set(cacheKey, feature);
-          return feature;
-        }
-      }
-    } catch (e) {
-      console.warn('ORS fetch failed, falling back to calibrated engine', e);
-    }
-  }
-
-  // 3. For Transit: Use official MVV/MVG Haltestellen- & Fahrzeitmatrix
+  // 1. For Transit: Use official MVV/MVG Haltestellen- & Fahrzeitmatrix
   if (profile.mode === 'transit') {
     try {
       const mvvPolygon = generateMvvTransitIsochrone(profile, effectiveTransitModes);
       if (mvvPolygon && mvvPolygon.geometry) {
+        mvvPolygon.properties = {
+          ...mvvPolygon.properties,
+          source: 'transit_metro_matrix',
+          provider: 'transit_metro_matrix',
+          isFallback: false,
+        };
         isochroneCache.set(cacheKey, mvvPolygon);
         return mvvPolygon;
       }
-    } catch (err) {
+    } catch (err: any) {
       console.warn('MVV transit calculation failed, falling back to calibrated model:', err);
+      const fallbackPoly = generateCalibratedIsochrone(profile, schedule);
+      fallbackPoly.properties = {
+        ...fallbackPoly.properties,
+        source: 'calibrated',
+        provider: 'transit_metro_matrix',
+        requestedProvider: 'calibrated',
+        isFallback: true,
+        fallbackReason: `ÖPNV-Fahrzeitmatrix fehlgeschlagen (${err?.message || 'Unerwarteter Fehler'})`,
+      };
+      isochroneCache.set(cacheKey, fallbackPoly);
+      return fallbackPoly;
     }
   }
 
-  // 4. High-precision built-in multi-modal isochrone engine (fallback & driving/cycling)
+  // 2. Google Maps requested (for driving, cycling, walking)
+  if (provider === 'google') {
+    if (!googleKey) {
+      const fallbackPoly = generateCalibratedIsochrone(profile, schedule);
+      fallbackPoly.properties = {
+        ...fallbackPoly.properties,
+        source: 'calibrated',
+        provider: 'calibrated',
+        requestedProvider: 'google',
+        isFallback: true,
+        fallbackReason: 'Google Maps gewählt, aber kein API-Key in den Einstellungen hinterlegt.',
+      };
+      isochroneCache.set(cacheKey, fallbackPoly);
+      return fallbackPoly;
+    }
+
+    const res = await fetchGoogleIsochrone(profile, schedule, googleKey);
+    if (res.feature) {
+      isochroneCache.set(cacheKey, res.feature);
+      return res.feature;
+    }
+
+    // Google failed -> fallback to calibrated with reason
+    const fallbackPoly = generateCalibratedIsochrone(profile, schedule);
+    fallbackPoly.properties = {
+      ...fallbackPoly.properties,
+      source: 'calibrated',
+      provider: 'calibrated',
+      requestedProvider: 'google',
+      isFallback: true,
+      fallbackReason: res.error || 'Google Maps Isochronen API fehlgeschlagen',
+      statusCode: res.statusCode,
+    };
+    isochroneCache.set(cacheKey, fallbackPoly);
+    return fallbackPoly;
+  }
+
+  // 3. OpenRouteService requested (for driving, cycling, walking)
+  if (provider === 'ors') {
+    if (!orsKey) {
+      const fallbackPoly = generateCalibratedIsochrone(profile, schedule);
+      fallbackPoly.properties = {
+        ...fallbackPoly.properties,
+        source: 'calibrated',
+        provider: 'calibrated',
+        requestedProvider: 'ors',
+        isFallback: true,
+        fallbackReason: 'OpenRouteService gewählt, aber kein API-Key in den Einstellungen hinterlegt.',
+      };
+      isochroneCache.set(cacheKey, fallbackPoly);
+      return fallbackPoly;
+    }
+
+    const res = await fetchOrsIsochrone(profile, orsKey);
+    if (res.feature) {
+      isochroneCache.set(cacheKey, res.feature);
+      return res.feature;
+    }
+
+    // ORS failed -> fallback to calibrated with reason
+    const fallbackPoly = generateCalibratedIsochrone(profile, schedule);
+    fallbackPoly.properties = {
+      ...fallbackPoly.properties,
+      source: 'calibrated',
+      provider: 'calibrated',
+      requestedProvider: 'ors',
+      isFallback: true,
+      fallbackReason: res.error || 'OpenRouteService API fehlgeschlagen',
+      statusCode: res.statusCode,
+    };
+    isochroneCache.set(cacheKey, fallbackPoly);
+    return fallbackPoly;
+  }
+
+  // 4. Default / Intentional Offline Simulation (provider === 'calibrated')
   const polygon = generateCalibratedIsochrone(profile, schedule);
+  polygon.properties = {
+    ...polygon.properties,
+    source: 'calibrated',
+    provider: 'calibrated',
+    isFallback: false,
+  };
   isochroneCache.set(cacheKey, polygon);
   return polygon;
 }

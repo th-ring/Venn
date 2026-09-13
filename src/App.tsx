@@ -3,6 +3,8 @@ import { useCommuteFinder } from './hooks/useCommuteFinder';
 import { MapComponent } from './components/MapComponent';
 import { Sidebar } from './components/Sidebar';
 import { InspectionPanel } from './components/InspectionPanel';
+import { FallbackWarningBanner } from './components/FallbackWarningBanner';
+import { clearIsochroneCache } from './services/isochroneEngine';
 import { SlidersHorizontal } from 'lucide-react';
 
 const ShareModal = React.lazy(() =>
@@ -106,6 +108,16 @@ export default function App() {
             <span>Referenzorte ({profiles.length})</span>
           </button>
         </div>
+
+        {/* Prominent Fallback Warning Banner if an online API fails */}
+        <FallbackWarningBanner
+          alerts={result?.fallbackAlerts}
+          onOpenSettings={handleOpenSettings}
+          onRetry={() => {
+            clearIsochroneCache();
+            runCalculation();
+          }}
+        />
 
         {/* Leaflet Map with Controls */}
         <MapComponent

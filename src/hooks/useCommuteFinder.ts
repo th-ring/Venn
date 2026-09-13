@@ -8,6 +8,7 @@ import {
   BasemapProvider,
   PresetScenario,
   DEFAULT_TRANSIT_SUBMODES,
+  IsochroneFallbackAlert,
 } from '../types';
 import { DEFAULT_MUNICH_PROFILES } from '../data/presets';
 import {
@@ -167,10 +168,22 @@ export function useCommuteFinder() {
         const generated = await Promise.all(isochronePromises);
         const isochronesMap: Record<string, GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon>> = {};
         const polygonList: Array<GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon>> = [];
+        const fallbackAlerts: IsochroneFallbackAlert[] = [];
 
         generated.forEach(({ id, poly }) => {
           isochronesMap[id] = poly;
           polygonList.push(poly);
+          if (poly.properties?.isFallback && poly.properties?.fallbackReason) {
+            const p = active.find((person) => person.id === id);
+            fallbackAlerts.push({
+              personId: id,
+              personName: p?.name || p?.address || 'Referenzort',
+              mode: p?.mode || 'driving',
+              requestedProvider: poly.properties.requestedProvider || 'calibrated',
+              reason: poly.properties.fallbackReason,
+              statusCode: poly.properties.statusCode,
+            });
+          }
         });
 
         const rawIntersection = calculateMultiIntersection(polygonList);
@@ -198,6 +211,7 @@ export function useCommuteFinder() {
           rawIntersectionAreaKm2: rawAreaKm2,
           emptyIntersection: isEmpty,
           suggestions,
+          fallbackAlerts: fallbackAlerts.length > 0 ? fallbackAlerts : undefined,
         });
         setLastCalculatedAt(new Date());
       } catch (err) {

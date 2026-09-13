@@ -6,7 +6,7 @@ import {
   HeatmapSettings,
   PersonProfile,
 } from '../../types';
-import { getGoogleMapsApiKey } from '../../services/isochroneEngine';
+import { getGoogleMapsApiKey, getOrsApiKey } from '../../services/isochroneEngine';
 import {
   Layers,
   Map as MapIcon,
@@ -149,11 +149,18 @@ export const MapLayerControls: React.FC<MapLayerControlsProps> = ({
               <div className="mb-3">
                 <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center justify-between">
                   <span>1. Kartendienst (Dienst)</span>
-                  {getGoogleMapsApiKey() && (
-                    <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-full">
-                      Google Key aktiv
-                    </span>
-                  )}
+                  <div className="flex items-center gap-1">
+                    {getGoogleMapsApiKey() && (
+                      <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-full" title="Google Maps API-Key aktiv">
+                        Google ✔
+                      </span>
+                    )}
+                    {getOrsApiKey() && (
+                      <span className="text-[10px] font-semibold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-full" title="OpenRouteService API-Key aktiv">
+                        ORS ✔
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-1.5 bg-slate-100 p-1 rounded-xl">
@@ -161,28 +168,38 @@ export const MapLayerControls: React.FC<MapLayerControlsProps> = ({
                   <button
                     type="button"
                     onClick={() => onSelectPlatform('osm')}
-                    className={`py-2 px-2.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                    className={`py-2 px-2.5 rounded-lg text-xs font-bold transition-all flex flex-col items-center justify-center gap-0.5 cursor-pointer ${
                       activePlatform === 'osm'
                         ? 'bg-white text-blue-900 shadow-xs border border-blue-200 ring-1 ring-blue-400/20'
                         : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
                     }`}
                   >
-                    <Globe className="w-3.5 h-3.5 text-slate-700" />
-                    <span>OpenStreetMap</span>
+                    <div className="flex items-center gap-1.5">
+                      <Globe className="w-3.5 h-3.5 text-slate-700" />
+                      <span>OpenStreetMap</span>
+                    </div>
+                    <span className="text-[9px] font-normal text-slate-500">
+                      {getOrsApiKey() ? 'ORS API aktiv' : 'Offline-Modell'}
+                    </span>
                   </button>
 
                   {/* Option Google Maps */}
                   <button
                     type="button"
                     onClick={() => onSelectPlatform('google')}
-                    className={`py-2 px-2.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                    className={`py-2 px-2.5 rounded-lg text-xs font-bold transition-all flex flex-col items-center justify-center gap-0.5 cursor-pointer ${
                       activePlatform === 'google'
                         ? 'bg-white text-blue-900 shadow-xs border border-blue-200 ring-1 ring-blue-400/20'
                         : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
                     }`}
                   >
-                    <MapIcon className="w-3.5 h-3.5 text-blue-600" />
-                    <span>Google Maps</span>
+                    <div className="flex items-center gap-1.5">
+                      <MapIcon className="w-3.5 h-3.5 text-blue-600" />
+                      <span>Google Maps</span>
+                    </div>
+                    <span className={`text-[9px] font-normal ${getGoogleMapsApiKey() ? 'text-emerald-600' : 'text-amber-600'}`}>
+                      {getGoogleMapsApiKey() ? 'Google API aktiv' : 'Key erforderlich'}
+                    </span>
                   </button>
                 </div>
 
