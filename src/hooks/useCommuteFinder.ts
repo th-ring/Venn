@@ -22,6 +22,12 @@ import {
 } from '../services/geometry';
 import { maskByResidentialAreas } from '../data/residentialZones';
 import { reverseGeocode } from '../services/geocoding';
+import {
+  initializeTransitStorage,
+  detectRegionForCoordinate,
+  switchTransitRegion,
+  getTransitRegion,
+} from '../services/mvvMatrixService';
 
 const PALETTE = ['#3B82F6', '#F97316', '#10B981', '#A855F7', '#EC4899', '#06B6D4', '#EAB308'];
 
@@ -46,6 +52,7 @@ export function useCommuteFinder() {
             visible: item.v !== false,
             maxTransfers: item.mt,
             maxWalkToStationMin: item.mw,
+            maxWalkFromStationMin: item.mfw,
           }));
         }
       }
@@ -123,6 +130,11 @@ export function useCommuteFinder() {
   const handleBasemapChange = useCallback((newBasemap: BasemapProvider) => {
     setBasemap(newBasemap);
     setSelectedBasemap(newBasemap);
+  }, []);
+
+  // Initialize IndexedDB transit storage on startup
+  useEffect(() => {
+    initializeTransitStorage().catch(() => {});
   }, []);
 
   // Calculation Engine
@@ -257,6 +269,16 @@ export function useCommuteFinder() {
   const handleUpdatePersonPosition = useCallback(
     async (personId: string, lat: number, lng: number) => {
       handleUpdateProfile(personId, { lat, lng });
+
+      // Auto-detect if coordinates belong to another metropolitan region
+      const detected = detectRegionForCoordinate(lat, lng);
+      const current = getTransitRegion();
+      if (detected && detected.id !== current.id) {
+        try {
+          await switchTransitRegion(detected.id);
+        } catch {}
+      }
+
       const resolvedAddress = await reverseGeocode(lat, lng);
       handleUpdateProfile(personId, { address: resolvedAddress });
     },
@@ -269,13 +291,14 @@ export function useCommuteFinder() {
       const active = profiles.filter((p) => p.visible);
 
       const estimates = active.map((p) => {
-        const { travelTimeMinutes, distanceKm } = estimateCommuteTime(
+        const { travelTimeMinutes, distanceKm, details } = estimateCommuteTime(
           { lat, lng },
           { lat: p.lat, lng: p.lng },
           p.mode,
           schedule,
           p.maxTransfers,
-          p.maxWalkToStationMin
+          p.maxWalkToStationMin,
+          p.maxWalkFromStationMin
         );
 
         const isWithinLimit = travelTimeMinutes <= p.travelTimeMinutes;
@@ -289,6 +312,7 @@ export function useCommuteFinder() {
           limitMinutes: p.travelTimeMinutes,
           isWithinLimit,
           distanceKm,
+          details,
         };
       });
 
@@ -376,6 +400,15 @@ export function useCommuteFinder() {
     setActiveScenarioId(scenario.id);
     setProfiles(scenario.profiles);
     setInspectionPoint(null);
+
+    const first = scenario.profiles[0];
+    if (first) {
+      const detected = detectRegionForCoordinate(first.lat, first.lng);
+      const current = getTransitRegion();
+      if (detected && detected.id !== current.id) {
+        switchTransitRegion(detected.id).catch(() => {});
+      }
+    }
   }, []);
 
   return {

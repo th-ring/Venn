@@ -49,7 +49,17 @@ export default function App() {
 
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
-  const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const [settingsModalTab, setSettingsModalTab] = useState<'basemap' | 'isochrones' | 'mvv' | 'keys' | 'heatmap'>('basemap');
+
+  const handleOpenSettings = (tab: 'basemap' | 'isochrones' | 'mvv' | 'keys' | 'heatmap' = 'basemap') => {
+    setSettingsModalTab(tab);
+    setIsSettingsModalOpen(true);
+  };
+
+  const handleCloseSettings = () => {
+    setIsSettingsModalOpen(false);
+  };
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-slate-100 text-slate-900 font-sans antialiased">
@@ -69,13 +79,10 @@ export default function App() {
         onChangeSchedule={(upd) => setSchedule((prev) => ({ ...prev, ...upd }))}
         onApplySuggestion={handleApplySuggestion}
         onOpenShareModal={() => setIsShareModalOpen(true)}
+        onOpenSettings={handleOpenSettings}
         onRefreshIsochrones={() => runCalculation()}
         isMobileOpen={isMobileSidebarOpen}
         onToggleMobile={() => setIsMobileSidebarOpen(false)}
-        basemap={basemap}
-        onBasemapChange={handleBasemapChange}
-        isApiKeyModalOpen={isApiKeyModalOpen}
-        onToggleApiKeyModal={setIsApiKeyModalOpen}
         onlyResidential={onlyResidential}
         onToggleOnlyResidential={handleToggleOnlyResidential}
         showOnlyIntersection={showOnlyIntersection}
@@ -132,7 +139,7 @@ export default function App() {
           }
           basemap={basemap}
           onBasemapChange={handleBasemapChange}
-          onOpenApiKeySettings={() => setIsApiKeyModalOpen(true)}
+          onOpenApiKeySettings={() => handleOpenSettings('keys')}
         />
 
         {/* Floating Inspection Panel */}
@@ -158,19 +165,19 @@ export default function App() {
         </Suspense>
       )}
 
-      {/* Settings / API Keys Modal from Map */}
-      {isApiKeyModalOpen && (
+      {/* Central Application Settings Modal */}
+      {isSettingsModalOpen && (
         <Suspense fallback={null}>
           <SettingsModal
-            isOpen={isApiKeyModalOpen}
-            onClose={() => setIsApiKeyModalOpen(false)}
+            isOpen={isSettingsModalOpen}
+            onClose={handleCloseSettings}
             schedule={schedule}
             onChangeSchedule={(upd) => setSchedule((prev) => ({ ...prev, ...upd }))}
             onRefreshIsochrones={runCalculation}
             onBasemapChange={handleBasemapChange}
             showOnlyIntersection={showOnlyIntersection}
             onToggleOnlyIntersection={handleToggleOnlyIntersection}
-            initialTab="keys"
+            initialTab={settingsModalTab}
           />
         </Suspense>
       )}

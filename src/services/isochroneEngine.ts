@@ -1,6 +1,14 @@
 import * as turf from '@turf/turf';
-import { PersonProfile, CommuteSchedule, TransportMode, BasemapProvider, BasemapPlatform, MapVariant } from '../types';
-import { generateMvvTransitIsochrone, calculateReachableStations } from './mvvMatrixService';
+import {
+  PersonProfile,
+  CommuteSchedule,
+  TransportMode,
+  BasemapProvider,
+  BasemapPlatform,
+  MapVariant,
+  CommuteRouteDetails,
+} from '../types';
+import { generateMvvTransitIsochrone, calculateReachableStations, findShortestTransitTrip } from './mvvMatrixService';
 import { DEFAULT_MVV_DATASET } from '../data/mvvDataset';
 
 interface IsochroneCacheKey {
@@ -10,7 +18,8 @@ interface IsochroneCacheKey {
   mode: string;
   direction: string;
   transfers?: number;
-  walkTime?: number;
+  walkToStation?: number;
+  walkFromStation?: number;
   transferWait?: number;
   liveTraffic?: boolean;
   smoothing?: boolean;
@@ -21,7 +30,7 @@ interface IsochroneCacheKey {
 const isochroneCache = new Map<string, GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon>>();
 
 function makeCacheKey(k: IsochroneCacheKey): string {
-  return `${DEFAULT_MVV_DATASET.version}_${k.lat.toFixed(4)}_${k.lng.toFixed(4)}_${k.time}_${k.mode}_${k.direction}_${k.transfers ?? 'any'}_${k.walkTime ?? 'any'}_${k.transferWait ?? 'any'}_lt:${k.liveTraffic ? 1 : 0}_sm:${k.smoothing ? 1 : 0}_fi:${k.fidelity ?? 'auto'}_tm:${k.transitModes ?? 'all'}`;
+  return `${DEFAULT_MVV_DATASET.version}_${k.lat.toFixed(4)}_${k.lng.toFixed(4)}_${k.time}_${k.mode}_${k.direction}_${k.transfers ?? 'any'}_wTo:${k.walkToStation ?? 10}_wFrom:${k.walkFromStation ?? 10}_${k.transferWait ?? 'any'}_lt:${k.liveTraffic ? 1 : 0}_sm:${k.smoothing ? 1 : 0}_fi:${k.fidelity ?? 'auto'}_tm:${k.transitModes ?? 'all'}`;
 }
 
 export type IsochroneProvider = 'calibrated' | 'google' | 'ors';
@@ -263,7 +272,8 @@ export async function generateIsochrone(
     mode: profile.mode,
     direction: schedule.direction,
     transfers: profile.maxTransfers,
-    walkTime: profile.maxWalkToStationMin,
+    walkToStation: profile.maxWalkToStationMin,
+    walkFromStation: profile.maxWalkFromStationMin,
     transferWait: profile.maxTransferWaitMin,
     liveTraffic: opts.liveTraffic,
     smoothing: opts.enableSmoothing,
@@ -498,8 +508,9 @@ export function estimateCommuteTime(
   mode: TransportMode,
   schedule: CommuteSchedule,
   maxTransfers = 2,
-  maxWalkToStationMin = 10
-): { travelTimeMinutes: number; distanceKm: number } {
+  maxWalkToStationMin = 10,
+  maxWalkFromStationMin = 10
+): { travelTimeMinutes: number; distanceKm: number; details?: CommuteRouteDetails } {
   const from = turf.point([origin.lng, origin.lat]);
   const to = turf.point([destination.lng, destination.lat]);
   const straightDistKm = turf.distance(from, to, { units: 'kilometers' });
@@ -510,24 +521,35 @@ export function estimateCommuteTime(
 
   let roadDistanceKm = straightDistKm;
   let travelTimeMin = 0;
+  let details: CommuteRouteDetails | undefined;
 
   switch (mode) {
     case 'walking': {
       roadDistanceKm = straightDistKm * 1.32;
-      // 4.8 km/h = 12.5 min per km
       travelTimeMin = roadDistanceKm * 12.5;
+      details = {
+        summary: `Zu Fuß (${roadDistanceKm.toFixed(1)} km)`,
+        steps: [
+          `🚶 ca. ${Math.round(travelTimeMin)} Min Fußweg bei ~4.8 km/h`,
+          `📍 Direkter Fußgängerpfad (${roadDistanceKm.toFixed(1)} km)`,
+        ],
+      };
       break;
     }
     case 'cycling': {
       roadDistanceKm = straightDistKm * 1.25;
-      // 16.5 km/h = ~3.6 min per km
       travelTimeMin = roadDistanceKm * 3.65;
+      details = {
+        summary: `Fahrrad / E-Bike (${roadDistanceKm.toFixed(1)} km)`,
+        steps: [
+          `🚲 ca. ${Math.round(travelTimeMin)} Min bei ~16.5 km/h`,
+          `🌿 Befestigte Radwege & Nebenstraßen (${roadDistanceKm.toFixed(1)} km)`,
+        ],
+      };
       break;
     }
     case 'driving': {
       roadDistanceKm = straightDistKm * 1.28;
-      // Urban base speed: 36 km/h (1.67 min/km)
-      // Highway portion kicks in for distance > 6 km
       let speedKmh = 38;
       if (roadDistanceKm > 6) {
         speedKmh = Math.min(85, 38 + (roadDistanceKm - 6) * 3.5);
@@ -535,7 +557,17 @@ export function estimateCommuteTime(
       if (isRushHour) {
         speedKmh *= 0.78;
       }
-      travelTimeMin = (roadDistanceKm / speedKmh) * 60 + 3; // +3 min for parking/signals
+      const driveTimeOnly = (roadDistanceKm / speedKmh) * 60;
+      travelTimeMin = driveTimeOnly + 3; // +3 min for parking/signals
+
+      details = {
+        summary: `Pkw über Straßennetz (${roadDistanceKm.toFixed(1)} km)`,
+        steps: [
+          `🚗 ca. ${Math.round(driveTimeOnly)} Min reine Fahrzeit (${roadDistanceKm.toFixed(1)} km)`,
+          isRushHour ? `⏱️ Berufsverkehr-Verzögerung einberechnet` : `🟢 Normaler Verkehrsfluss`,
+          `🅿️ +3 Min Puffer für Parkplatzsuche & Ampelstopps`,
+        ],
+      };
       break;
     }
     case 'transit': {
@@ -543,45 +575,50 @@ export function estimateCommuteTime(
       // Direct walking if very close (< 800m)
       if (straightDistKm <= 0.8) {
         travelTimeMin = (straightDistKm / 0.082) * 1.25;
+        details = {
+          summary: `Fußweg (< 800m)`,
+          steps: [`🚶 Direkter Fußweg (${Math.round(straightDistKm * 1000)} m, ca. ${Math.round(travelTimeMin)} Min)`],
+        };
         break;
       }
 
-      // Check if reachable via MVV network matrix (U-Bahn, S-Bahn, Tram, Bus)
+      // Check if reachable via Transit network matrix (U-Bahn, S-Bahn, Tram, Bus, Train)
       try {
-        const destPoint = turf.point([destination.lng, destination.lat]);
-        const reachable = calculateReachableStations(
+        const directTrip = findShortestTransitTrip(
+          origin,
+          destination,
           {
             id: 'temp-calc',
             name: 'Transit Calc',
             address: '',
             visible: true,
             color: '#000',
-            lat: origin.lat,
-            lng: origin.lng,
-            travelTimeMinutes: 90, // broad query window to find optimal transit route
+            lat: destination.lat,
+            lng: destination.lng,
+            travelTimeMinutes: 90,
             mode: 'transit',
             maxTransfers,
             maxWalkToStationMin,
+            maxWalkFromStationMin,
           },
           schedule.options?.transitModes
         );
 
-        let bestMvvTime: number | null = null;
-        for (const item of reachable) {
-          const stPoint = turf.point([item.station.lng, item.station.lat]);
-          const walkToDestKm = turf.distance(stPoint, destPoint, { units: 'kilometers' });
-          // If station is within walking distance of destination (up to 1.5 km)
-          if (walkToDestKm <= 1.5) {
-            const lastMileWalkMin = (walkToDestKm / 0.082) * 1.25;
-            const total = item.totalTimeMin + lastMileWalkMin;
-            if (bestMvvTime === null || total < bestMvvTime) {
-              bestMvvTime = total;
-            }
-          }
-        }
-
-        if (bestMvvTime !== null) {
-          travelTimeMin = bestMvvTime;
+        if (directTrip && directTrip.routeFound) {
+          travelTimeMin = directTrip.travelTimeMinutes;
+          details = {
+            summary: directTrip.linesUsed.length > 0 ? directTrip.linesUsed.join(' + ') : 'ÖPNV-Verbindung',
+            firstMileWalkMin: directTrip.firstMileWalkMin,
+            firstMileStationName: directTrip.firstMileStationName,
+            firstMileWalkLimitMin: directTrip.firstMileWalkLimitMin ?? maxWalkToStationMin,
+            inVehicleMin: directTrip.inVehicleMin,
+            linesUsed: directTrip.linesUsed,
+            transfersCount: directTrip.transfersCount,
+            lastMileWalkMin: directTrip.lastMileWalkMin,
+            lastMileStationName: directTrip.lastMileStationName,
+            lastMileWalkLimitMin: directTrip.lastMileWalkLimitMin ?? maxWalkFromStationMin,
+            steps: directTrip.steps,
+          };
           break;
         }
       } catch {
@@ -590,13 +627,27 @@ export function estimateCommuteTime(
 
       // Walking to/from transit stop (e.g. 5-10 min)
       const walkAccessTime = Math.min(maxWalkToStationMin, 7);
-      // Rail speed: 45 km/h for mid/long distance, 22 km/h for short bus
+      const walkDestTime = Math.min(maxWalkFromStationMin, 6);
       const speedKmh = roadDistanceKm > 4 ? 44 : 24;
       const inVehicleTime = (roadDistanceKm / speedKmh) * 60;
-      // Transfers: 1 transfer every ~7 km, max transfers capped
       const transfers = Math.min(maxTransfers, Math.floor(roadDistanceKm / 7));
-      const transferDelay = transfers * 4; // 4 min per transfer
-      travelTimeMin = walkAccessTime + inVehicleTime + transferDelay;
+      const transferDelay = transfers * 4;
+      travelTimeMin = walkAccessTime + inVehicleTime + transferDelay + walkDestTime;
+
+      details = {
+        summary: `ÖPNV (${Math.round(travelTimeMin)} Min)`,
+        firstMileWalkMin: walkAccessTime,
+        firstMileWalkLimitMin: maxWalkToStationMin,
+        inVehicleMin: Math.round(inVehicleTime),
+        transfersCount: transfers,
+        lastMileWalkMin: walkDestTime,
+        lastMileWalkLimitMin: maxWalkFromStationMin,
+        steps: [
+          `🚶 ca. ${walkAccessTime} Min Fußweg zur Einstiegshaltestelle (max. ${maxWalkToStationMin} Min)`,
+          `🚆 ca. ${Math.round(inVehicleTime)} Min Fahrt (${transfers} ${transfers === 1 ? 'Umstieg' : 'Umstiege'})`,
+          `🚶 ca. ${walkDestTime} Min Fußweg zum Zielort (max. ${maxWalkFromStationMin} Min)`,
+        ],
+      };
       break;
     }
   }
@@ -604,5 +655,6 @@ export function estimateCommuteTime(
   return {
     travelTimeMinutes: Math.max(1, Math.round(travelTimeMin)),
     distanceKm: Math.round(roadDistanceKm * 10) / 10,
+    details,
   };
 }

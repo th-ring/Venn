@@ -13,7 +13,8 @@ export interface PersonProfile {
   color: string;
   visible: boolean;
   maxTransfers?: number; // 0, 1, 2, or undefined for unlimited
-  maxWalkToStationMin?: number; // 5, 10, 15, or undefined
+  maxWalkToStationMin?: number; // Max walk from home to station (First Mile, e.g. 5, 10, 15, 20 min)
+  maxWalkFromStationMin?: number; // Max walk from station to destination/work (Last Mile, e.g. 5, 10, 15, 20 min)
   maxTransferWaitMin?: number; // 5, 10, 15, 20 min max wait/buffer at transfers
 }
 
@@ -42,9 +43,45 @@ export const ALL_HEATMAP_ITEMS: PriorityHeatmapItem[] = ['ubahn', 'sbahn', 'high
 
 export type PriorityHeatmapMode = 'none' | 'ubahn' | 'sbahn' | 'highway';
 
-export type TransitSubMode = 'tram' | 'ubahn' | 'bus' | 'expressbus' | 'sbahn';
+export type TransitSubMode = 'tram' | 'ubahn' | 'bus' | 'expressbus' | 'sbahn' | 'train';
 
-export const ALL_TRANSIT_SUBMODES: TransitSubMode[] = ['tram', 'ubahn', 'bus', 'expressbus', 'sbahn'];
+export const ALL_TRANSIT_SUBMODES: TransitSubMode[] = ['tram', 'ubahn', 'bus', 'expressbus', 'sbahn', 'train'];
+
+export interface TransitStation {
+  id: string;
+  name: string;
+  lat: number;
+  lng: number;
+  lines: string[];
+  types: ('sbahn' | 'ubahn' | 'tram' | 'bus' | 'train')[];
+}
+
+export interface TransitConnection {
+  from: string;
+  to: string;
+  minutes: number;
+  lines: string[];
+  type: 'sbahn' | 'ubahn' | 'tram' | 'bus' | 'train';
+}
+
+export interface TransitRegionMetadata {
+  id: string;
+  name: string;
+  version: string;
+  lastUpdated: string;
+  source: string;
+  bbox: [number, number, number, number]; // [minLng, minLat, maxLng, maxLat]
+  stationCount: number;
+  connectionCount: number;
+  downloadSizeApprox?: string;
+  downloadUrl?: string;
+  isBuiltIn?: boolean;
+}
+
+export interface TransitRegion extends TransitRegionMetadata {
+  stations: TransitStation[];
+  connections: TransitConnection[];
+}
 
 export interface HeatmapSettings {
   mode: PriorityHeatmapMode;
@@ -88,6 +125,20 @@ export interface CalculationResult {
   suggestions: FallbackSuggestion[];
 }
 
+export interface CommuteRouteDetails {
+  summary: string;
+  firstMileWalkMin?: number;
+  firstMileStationName?: string;
+  firstMileWalkLimitMin?: number;
+  inVehicleMin?: number;
+  linesUsed?: string[];
+  transfersCount?: number;
+  lastMileWalkMin?: number;
+  lastMileStationName?: string;
+  lastMileWalkLimitMin?: number;
+  steps?: string[];
+}
+
 export interface CommuteEstimate {
   personId: string;
   personName: string;
@@ -97,6 +148,7 @@ export interface CommuteEstimate {
   limitMinutes: number;
   isWithinLimit: boolean;
   distanceKm: number;
+  details?: CommuteRouteDetails;
 }
 
 export interface InspectionPoint {

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   BasemapPlatform,
   MapVariant,
@@ -37,6 +37,7 @@ import { MvvMatrixTab } from './tabs/MvvMatrixTab';
 import { ApiKeysTab } from './tabs/ApiKeysTab';
 import { PriorityHeatmapTab } from './tabs/PriorityHeatmapTab';
 import {
+  Settings,
   Layers,
   Map as MapIcon,
   Globe,
@@ -46,6 +47,19 @@ import {
   X,
   Check,
 } from 'lucide-react';
+
+const SETTINGS_MENU: Array<{
+  id: 'basemap' | 'isochrones' | 'mvv' | 'keys' | 'heatmap';
+  label: string;
+  subLabel: string;
+  icon: React.ComponentType<{ className?: string }>;
+}> = [
+  { id: 'basemap', label: '1. Kartendienst', subLabel: 'OSM & Google Maps', icon: MapIcon },
+  { id: 'isochrones', label: '2. Isochronen', subLabel: 'Engine & Parameter', icon: Globe },
+  { id: 'mvv', label: '3. ÖPNV & Regionen', subLabel: 'Netze & Verkehrsmittel', icon: Train },
+  { id: 'keys', label: '4. API-Keys', subLabel: 'Google & ORS Keys', icon: Key },
+  { id: 'heatmap', label: '5. Heatmap', subLabel: 'Prioritäts-Infrastruktur', icon: Flame },
+];
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -73,6 +87,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   if (!isOpen) return null;
 
   const [modalTab, setModalTab] = useState<'basemap' | 'isochrones' | 'mvv' | 'keys' | 'heatmap'>(initialTab);
+
+  useEffect(() => {
+    setModalTab(initialTab);
+  }, [initialTab]);
 
   // Input states
   const [googleKeyInput, setGoogleKeyInput] = useState(getGoogleMapsApiKey());
@@ -231,175 +249,177 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl p-5 max-w-xl w-full shadow-2xl border border-slate-200 max-h-[92vh] overflow-y-auto flex flex-col gap-4">
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-          <div>
-            <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-              <Layers className="w-4 h-4 text-blue-600" />
-              Karten- & API-Konfiguration
-            </h3>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Wähle deinen Kartendienst, die Isochronen-Quelle und verwalte API-Keys.
-            </p>
+    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 animate-in fade-in duration-150">
+      <div className="bg-white rounded-2xl w-full max-w-3xl h-[620px] max-h-[92vh] shadow-2xl border border-slate-200 flex flex-col overflow-hidden">
+        {/* Header - Fixed */}
+        <div className="px-5 py-3.5 border-b border-slate-200 bg-white flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-200/60 shadow-2xs">
+              <Settings className="w-4 h-4" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-slate-900 leading-tight">
+                Anwendungseinstellungen
+              </h3>
+              <p className="text-[11px] text-slate-500">
+                Zentrale Konfiguration für Kartendienste, Isochronen-Berechnung, ÖPNV-Netze, API-Keys und Heatmaps.
+              </p>
+            </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-600 text-xs font-semibold p-1.5 rounded-lg hover:bg-slate-100 transition-colors"
+            className="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+            title="Schließen"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Modal Tabs Navigation */}
-        <div className="flex bg-slate-100 p-1 rounded-xl gap-1 overflow-x-auto">
-          <button
-            type="button"
-            onClick={() => setModalTab('basemap')}
-            className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5 whitespace-nowrap ${
-              modalTab === 'basemap'
-                ? 'bg-white text-blue-600 shadow-xs'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <MapIcon className="w-3.5 h-3.5" />
-            <span>1. Kartendienst</span>
-          </button>
+        {/* Modal Body: Two-column layout with fixed navigation */}
+        <div className="flex flex-col sm:flex-row flex-1 min-h-0 overflow-hidden">
+          {/* Fixed Navigation Menu */}
+          <nav className="w-full sm:w-56 bg-slate-50/90 border-b sm:border-b-0 sm:border-r border-slate-200/90 p-2.5 flex sm:flex-col justify-between shrink-0 overflow-x-auto sm:overflow-x-visible select-none gap-1">
+            <div className="flex sm:flex-col gap-1 w-full">
+              <div className="hidden sm:block px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                Kategorien
+              </div>
 
-          <button
-            type="button"
-            onClick={() => setModalTab('isochrones')}
-            className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5 whitespace-nowrap ${
-              modalTab === 'isochrones'
-                ? 'bg-white text-blue-600 shadow-xs'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <Globe className="w-3.5 h-3.5" />
-            <span>2. Isochronen</span>
-          </button>
+              {SETTINGS_MENU.map((item) => {
+                const Icon = item.icon;
+                const isSelected = modalTab === item.id;
+                const isHeatmap = item.id === 'heatmap';
 
-          <button
-            type="button"
-            onClick={() => setModalTab('mvv')}
-            className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5 whitespace-nowrap ${
-              modalTab === 'mvv'
-                ? 'bg-white text-blue-600 shadow-xs'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <Train className="w-3.5 h-3.5" />
-            <span>3. MVV Matrix</span>
-          </button>
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => setModalTab(item.id)}
+                    className={`px-3 py-2 rounded-xl text-left transition-all flex items-center gap-2.5 cursor-pointer whitespace-nowrap shrink-0 sm:shrink ${
+                      isSelected
+                        ? isHeatmap
+                          ? 'bg-amber-500 text-white font-bold shadow-xs'
+                          : 'bg-blue-600 text-white font-bold shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 font-medium'
+                    }`}
+                  >
+                    <Icon className={`w-4 h-4 shrink-0 ${isSelected ? 'text-white' : isHeatmap ? 'text-amber-500' : 'text-slate-500'}`} />
+                    <div className="min-w-0">
+                      <div className="text-xs leading-tight">{item.label}</div>
+                      <div
+                        className={`hidden sm:block text-[10px] font-normal leading-tight truncate mt-0.5 ${
+                          isSelected ? 'text-white/80' : 'text-slate-400'
+                        }`}
+                      >
+                        {item.subLabel}
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
 
-          <button
-            type="button"
-            onClick={() => setModalTab('keys')}
-            className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5 whitespace-nowrap ${
-              modalTab === 'keys'
-                ? 'bg-white text-blue-600 shadow-xs'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <Key className="w-3.5 h-3.5" />
-            <span>4. API-Keys</span>
-          </button>
+            {/* Quick Status Pill in Sidebar on desktop */}
+            <div className="hidden sm:block p-2.5 rounded-xl bg-white border border-slate-200/80 text-[10px] text-slate-500 space-y-1">
+              <div className="font-bold text-slate-700 flex items-center justify-between">
+                <span>Konfiguration</span>
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+              </div>
+              <div className="truncate text-slate-600">
+                Karte: <span className="font-semibold">{modalPlatform === 'google' ? 'Google Maps' : 'OSM'}</span>
+              </div>
+              <div className="truncate text-slate-600">
+                Engine: <span className="font-semibold">{activeProvider === 'google' ? 'Google API' : activeProvider === 'ors' ? 'ORS' : 'Offline'}</span>
+              </div>
+            </div>
+          </nav>
 
-          <button
-            type="button"
-            onClick={() => setModalTab('heatmap')}
-            className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5 whitespace-nowrap ${
-              modalTab === 'heatmap'
-                ? 'bg-white text-amber-600 shadow-xs'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <Flame className="w-3.5 h-3.5 text-amber-500" />
-            <span>5. Heatmap</span>
-          </button>
-        </div>
+          {/* Main Content & Actions Area */}
+          <div className="flex-1 flex flex-col min-w-0 bg-white">
+            {/* Scrollable Tab Content Pane */}
+            <div className="flex-1 overflow-y-auto p-4 sm:p-5">
+              {modalTab === 'basemap' && (
+                <BasemapTab
+                  platform={modalPlatform}
+                  variant={modalVariant}
+                  onSelectPlatform={setModalPlatform}
+                  onSelectVariant={setModalVariant}
+                  hasGoogleKey={!!getGoogleMapsApiKey()}
+                  onOpenKeysTab={() => setModalTab('keys')}
+                />
+              )}
 
-        {/* Tab Content Panes */}
-        {modalTab === 'basemap' && (
-          <BasemapTab
-            platform={modalPlatform}
-            variant={modalVariant}
-            onSelectPlatform={setModalPlatform}
-            onSelectVariant={setModalVariant}
-            hasGoogleKey={!!getGoogleMapsApiKey()}
-            onOpenKeysTab={() => setModalTab('keys')}
-          />
-        )}
+              {modalTab === 'isochrones' && (
+                <IsochroneEngineTab
+                  activeProvider={activeProvider}
+                  onSelectProvider={setActiveProvider}
+                  options={options}
+                  onSelectFidelity={handleSelectFidelity}
+                  onToggleOption={handleToggleOption}
+                  showOnlyIntersection={showOnlyIntersection}
+                  onToggleOnlyIntersection={onToggleOnlyIntersection}
+                />
+              )}
 
-        {modalTab === 'isochrones' && (
-          <IsochroneEngineTab
-            activeProvider={activeProvider}
-            onSelectProvider={setActiveProvider}
-            options={options}
-            onSelectFidelity={handleSelectFidelity}
-            onToggleOption={handleToggleOption}
-            showOnlyIntersection={showOnlyIntersection}
-            onToggleOnlyIntersection={onToggleOnlyIntersection}
-          />
-        )}
+              {modalTab === 'mvv' && (
+                <MvvMatrixTab
+                  mvvMeta={mvvMeta}
+                  isSyncingMvv={isSyncingMvv}
+                  mvvSyncMessage={mvvSyncMessage}
+                  onSyncMvv={handleSyncMvv}
+                  activeTransitModes={activeTransitModes}
+                  onToggleTransitMode={handleToggleTransitMode}
+                  onRefreshIsochrones={onRefreshIsochrones}
+                />
+              )}
 
-        {modalTab === 'mvv' && (
-          <MvvMatrixTab
-            mvvMeta={mvvMeta}
-            isSyncingMvv={isSyncingMvv}
-            mvvSyncMessage={mvvSyncMessage}
-            onSyncMvv={handleSyncMvv}
-            activeTransitModes={activeTransitModes}
-            onToggleTransitMode={handleToggleTransitMode}
-          />
-        )}
+              {modalTab === 'keys' && (
+                <ApiKeysTab
+                  googleKeyInput={googleKeyInput}
+                  onChangeGoogleKeyInput={setGoogleKeyInput}
+                  isCheckingGoogle={isCheckingGoogle}
+                  googleCheckResult={googleCheckResult}
+                  onCheckGoogleKey={handleCheckGoogleKey}
+                  orsKeyInput={orsKeyInput}
+                  onChangeOrsKeyInput={setOrsKeyInput}
+                  isCheckingOrs={isCheckingOrs}
+                  orsCheckResult={orsCheckResult}
+                  onCheckOrsKey={handleCheckOrsKey}
+                />
+              )}
 
-        {modalTab === 'keys' && (
-          <ApiKeysTab
-            googleKeyInput={googleKeyInput}
-            onChangeGoogleKeyInput={setGoogleKeyInput}
-            isCheckingGoogle={isCheckingGoogle}
-            googleCheckResult={googleCheckResult}
-            onCheckGoogleKey={handleCheckGoogleKey}
-            orsKeyInput={orsKeyInput}
-            onChangeOrsKeyInput={setOrsKeyInput}
-            isCheckingOrs={isCheckingOrs}
-            orsCheckResult={orsCheckResult}
-            onCheckOrsKey={handleCheckOrsKey}
-          />
-        )}
+              {modalTab === 'heatmap' && (
+                <PriorityHeatmapTab
+                  heatmap={heatmap}
+                  onUpdateHeatmap={handleUpdateHeatmap}
+                />
+              )}
+            </div>
 
-        {modalTab === 'heatmap' && (
-          <PriorityHeatmapTab
-            heatmap={heatmap}
-            onUpdateHeatmap={handleUpdateHeatmap}
-          />
-        )}
+            {/* Fixed Footer */}
+            <div className="px-5 py-3 border-t border-slate-200 bg-slate-50/70 flex items-center justify-between shrink-0">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-3.5 py-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 rounded-xl transition-colors cursor-pointer"
+              >
+                Abbrechen
+              </button>
 
-        {/* Footer Actions */}
-        <div className="flex items-center justify-between pt-3 border-t border-slate-100">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-3.5 py-1.5 text-xs font-semibold text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
-          >
-            Abbrechen
-          </button>
-
-          <button
-            type="button"
-            onClick={handleSaveSettings}
-            className={`px-4 py-2 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 shadow-md cursor-pointer ${
-              isSaved
-                ? 'bg-emerald-600 text-white shadow-emerald-500/20'
-                : 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-500/20'
-            }`}
-          >
-            {isSaved ? <Check className="w-4 h-4" /> : null}
-            <span>{isSaved ? 'Gespeichert!' : 'Speichern & Übernehmen'}</span>
-          </button>
+              <button
+                type="button"
+                onClick={handleSaveSettings}
+                className={`px-4 py-2 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 shadow-md cursor-pointer ${
+                  isSaved
+                    ? 'bg-emerald-600 text-white shadow-emerald-500/20'
+                    : 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-500/20'
+                }`}
+              >
+                {isSaved ? <Check className="w-4 h-4" /> : null}
+                <span>{isSaved ? 'Gespeichert!' : 'Speichern & Übernehmen'}</span>
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>

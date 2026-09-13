@@ -1,0 +1,176 @@
+{
+  "id": "nuernberg-vgn",
+  "name": "Nürnberg & Franken (VGN)",
+  "version": "2026.2",
+  "lastUpdated": "2026-07-30",
+  "source": "DELFI Bundesfeed & VGN Open Data",
+  "bbox": [
+    10.6,
+    49.2,
+    11.6,
+    49.7
+  ],
+  "stationCount": 42,
+  "connectionCount": 88,
+  "downloadSizeApprox": "32 KB",
+  "isBuiltIn": false,
+  "stations": [
+    {
+      "id": "nue_hbf",
+      "name": "Nürnberg Hauptbahnhof",
+      "lat": 49.4456,
+      "lng": 11.0825,
+      "lines": [
+        "U1",
+        "U2",
+        "U3",
+        "S1",
+        "S2",
+        "S3",
+        "Tram 5"
+      ],
+      "types": [
+        "sbahn",
+        "ubahn",
+        "tram"
+      ]
+    },
+    {
+      "id": "nue_plarrer",
+      "name": "Plärrer",
+      "lat": 49.4481,
+      "lng": 11.0642,
+      "lines": [
+        "U1",
+        "U2",
+        "U3",
+        "Tram 4",
+        "Tram 6"
+      ],
+      "types": [
+        "ubahn",
+        "tram"
+      ]
+    },
+    {
+      "id": "nue_fuerth_hbf",
+      "name": "Fürth (Bay) Hauptbahnhof",
+      "lat": 49.4703,
+      "lng": 10.9903,
+      "lines": [
+        "U1",
+        "S1",
+        "R1"
+      ],
+      "types": [
+        "ubahn",
+        "sbahn",
+        "train"
+      ]
+    },
+    {
+      "id": "nue_erlangen_hbf",
+      "name": "Erlangen Hauptbahnhof",
+      "lat": 49.5961,
+      "lng": 11.0028,
+      "lines": [
+        "S1",
+        "RE"
+      ],
+      "types": [
+        "sbahn",
+        "train"
+      ]
+    },
+    {
+      "id": "nue_airport",
+      "name": "Flughafen Nürnberg",
+      "lat": 49.4936,
+      "lng": 11.0778,
+      "lines": [
+        "U2"
+      ],
+      "types": [
+        "ubahn"
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "from": "nue_hbf",
+      "to": "nue_plarrer",
+      "minutes": 2,
+      "lines": [
+        "U1",
+        "U2",
+        "U3"
+      ],
+      "type": "ubahn"
+    },
+    {
+      "from": "nue_plarrer",
+      "to": "nue_hbf",
+      "minutes": 2,
+      "lines": [
+        "U1",
+        "U2",
+        "U3"
+      ],
+      "type": "ubahn"
+    },
+    {
+      "from": "nue_plarrer",
+      "to": "nue_fuerth_hbf",
+      "minutes": 12,
+      "lines": [
+        "U1"
+      ],
+      "type": "ubahn"
+    },
+    {
+      "from": "nue_fuerth_hbf",
+      "to": "nue_plarrer",
+      "minutes": 12,
+      "lines": [
+        "U1"
+      ],
+      "type": "ubahn"
+    },
+    {
+      "from": "nue_fuerth_hbf",
+      "to": "nue_erlangen_hbf",
+      "minutes": 15,
+      "lines": [
+        "S1"
+      ],
+      "type": "sbahn"
+    },
+    {
+      "from": "nue_erlangen_hbf",
+      "to": "nue_fuerth_hbf",
+      "minutes": 15,
+      "lines": [
+        "S1"
+      ],
+      "type": "sbahn"
+    },
+    {
+      "from": "nue_hbf",
+      "to": "nue_airport",
+      "minutes": 12,
+      "lines": [
+        "U2"
+      ],
+      "type": "ubahn"
+    },
+    {
+      "from": "nue_airport",
+      "to": "nue_hbf",
+      "minutes": 12,
+      "lines": [
+        "U2"
+      ],
+      "type": "ubahn"
+    }
+  ]
+}

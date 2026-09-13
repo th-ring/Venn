@@ -384,66 +384,124 @@ export const PersonCard: React.FC<PersonCardProps> = ({
           </button>
 
           {showAdvanced && (
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2 bg-slate-50 p-2.5 rounded-xl text-xs">
-              <div>
-                <label className="block text-[10px] text-slate-500 font-semibold mb-1">
-                  Max. Umstiege
-                </label>
-                <select
-                  value={profile.maxTransfers ?? 3}
-                  onChange={(e) =>
-                    onUpdate({
-                      maxTransfers: e.target.value === '99' ? undefined : parseInt(e.target.value, 10),
-                    })
-                  }
-                  className="w-full bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs text-slate-700 focus:outline-none focus:border-blue-500"
-                >
-                  <option value="0">0 (Direktverbindung)</option>
-                  <option value="1">Max. 1 Umstieg</option>
-                  <option value="2">Max. 2 Umstiege</option>
-                  <option value="3">Max. 3 Umstiege</option>
-                  <option value="99">Egal / Beliebig</option>
-                </select>
-              </div>
+            <div className="mt-2 bg-slate-50 p-2.5 rounded-xl text-xs space-y-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {/* 1. First Mile: Wohnort -> Haltestelle */}
+                <div className="bg-white p-2 rounded-lg border border-slate-200/80 shadow-2xs">
+                  <div className="flex items-center justify-between mb-0.5">
+                    <label className="text-[10px] font-bold text-slate-800 flex items-center gap-1">
+                      <span>🚶 Wohnort ➔ Station</span>
+                    </label>
+                    <span className="text-[10px] font-semibold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">
+                      {profile.maxWalkToStationMin ?? 10} Min
+                    </span>
+                  </div>
+                  <p className="text-[9px] text-slate-400 mb-1.5 leading-tight">
+                    Max. Gehzeit von der Haustür zur Einstiegshaltestelle
+                  </p>
+                  <select
+                    value={profile.maxWalkToStationMin ?? 10}
+                    onChange={(e) =>
+                      onUpdate({
+                        maxWalkToStationMin: parseInt(e.target.value, 10),
+                      })
+                    }
+                    className="w-full bg-slate-50/80 border border-slate-200 rounded-md px-2 py-1 text-xs text-slate-700 focus:outline-none focus:border-blue-500 cursor-pointer"
+                  >
+                    <option value="5">5 Min (sehr nah)</option>
+                    <option value="10">10 Min (Standard)</option>
+                    <option value="15">15 Min (erweitert)</option>
+                    <option value="20">20 Min (weit)</option>
+                  </select>
+                </div>
 
-              <div>
-                <label className="block text-[10px] text-slate-500 font-semibold mb-1" title="Maximaler Fußweg von der Haustür zur ersten Haltestelle">
-                  Max. Gehzeit Station
-                </label>
-                <select
-                  value={profile.maxWalkToStationMin ?? 10}
-                  onChange={(e) =>
-                    onUpdate({
-                      maxWalkToStationMin: parseInt(e.target.value, 10),
-                    })
-                  }
-                  className="w-full bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs text-slate-700 focus:outline-none focus:border-blue-500"
-                >
-                  <option value="5">5 Minuten</option>
-                  <option value="10">10 Minuten</option>
-                  <option value="15">15 Minuten</option>
-                  <option value="20">20 Minuten</option>
-                </select>
-              </div>
+                {/* 2. Last Mile: Haltestelle -> Arbeitsplatz / Ziel */}
+                <div className="bg-white p-2 rounded-lg border border-slate-200/80 shadow-2xs">
+                  <div className="flex items-center justify-between mb-0.5">
+                    <label className="text-[10px] font-bold text-slate-800 flex items-center gap-1">
+                      <span>🏁 Station ➔ Zielort</span>
+                    </label>
+                    <span className="text-[10px] font-semibold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">
+                      {profile.maxWalkFromStationMin ?? 10} Min
+                    </span>
+                  </div>
+                  <p className="text-[9px] text-slate-400 mb-1.5 leading-tight">
+                    Max. Gehzeit von der Ausstiegshaltestelle zum Büro
+                  </p>
+                  <select
+                    value={profile.maxWalkFromStationMin ?? 10}
+                    onChange={(e) =>
+                      onUpdate({
+                        maxWalkFromStationMin: parseInt(e.target.value, 10),
+                      })
+                    }
+                    className="w-full bg-slate-50/80 border border-slate-200 rounded-md px-2 py-1 text-xs text-slate-700 focus:outline-none focus:border-blue-500 cursor-pointer"
+                  >
+                    <option value="5">5 Min (direkt vor der Tür)</option>
+                    <option value="10">10 Min (Standard)</option>
+                    <option value="15">15 Min (erweitert)</option>
+                    <option value="20">20 Min (weit)</option>
+                  </select>
+                </div>
 
-              <div>
-                <label className="block text-[10px] text-slate-500 font-semibold mb-1" title="Maximal tolerierte Wartezeit beim Umsteigen">
-                  Max. Umstiegszeit
-                </label>
-                <select
-                  value={profile.maxTransferWaitMin ?? 10}
-                  onChange={(e) =>
-                    onUpdate({
-                      maxTransferWaitMin: parseInt(e.target.value, 10),
-                    })
-                  }
-                  className="w-full bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs text-slate-700 focus:outline-none focus:border-blue-500"
-                >
-                  <option value="5">5 Minuten (Schnell)</option>
-                  <option value="10">10 Minuten (Standard)</option>
-                  <option value="15">15 Minuten</option>
-                  <option value="20">20 Minuten (Puffer)</option>
-                </select>
+                {/* 3. Max. Umstiege */}
+                <div className="bg-white p-2 rounded-lg border border-slate-200/80 shadow-2xs">
+                  <div className="flex items-center justify-between mb-0.5">
+                    <label className="text-[10px] font-bold text-slate-800">
+                      🔄 Max. Umstiege
+                    </label>
+                    <span className="text-[10px] font-semibold text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded">
+                      {profile.maxTransfers !== undefined ? profile.maxTransfers : 'Beliebig'}
+                    </span>
+                  </div>
+                  <p className="text-[9px] text-slate-400 mb-1.5 leading-tight">
+                    Maximal tolerierte Umstiege auf der Gesamtstrecke
+                  </p>
+                  <select
+                    value={profile.maxTransfers ?? 3}
+                    onChange={(e) =>
+                      onUpdate({
+                        maxTransfers: e.target.value === '99' ? undefined : parseInt(e.target.value, 10),
+                      })
+                    }
+                    className="w-full bg-slate-50/80 border border-slate-200 rounded-md px-2 py-1 text-xs text-slate-700 focus:outline-none focus:border-blue-500 cursor-pointer"
+                  >
+                    <option value="0">0 (Nur Direktverbindungen)</option>
+                    <option value="1">Max. 1 Umstieg</option>
+                    <option value="2">Max. 2 Umstiege</option>
+                    <option value="3">Max. 3 Umstiege (Standard)</option>
+                    <option value="99">Beliebig viele Umstiege</option>
+                  </select>
+                </div>
+
+                {/* 4. Max. Umstiegszeit */}
+                <div className="bg-white p-2 rounded-lg border border-slate-200/80 shadow-2xs">
+                  <div className="flex items-center justify-between mb-0.5">
+                    <label className="text-[10px] font-bold text-slate-800">
+                      ⏱️ Wartezeit Umstieg
+                    </label>
+                    <span className="text-[10px] font-semibold text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded">
+                      {profile.maxTransferWaitMin ?? 10} Min
+                    </span>
+                  </div>
+                  <p className="text-[9px] text-slate-400 mb-1.5 leading-tight">
+                    Tolerierter Zeitpuffer beim Wechseln der Linie
+                  </p>
+                  <select
+                    value={profile.maxTransferWaitMin ?? 10}
+                    onChange={(e) =>
+                      onUpdate({
+                        maxTransferWaitMin: parseInt(e.target.value, 10),
+                      })
+                    }
+                    className="w-full bg-slate-50/80 border border-slate-200 rounded-md px-2 py-1 text-xs text-slate-700 focus:outline-none focus:border-blue-500 cursor-pointer"
+                  >
+                    <option value="5">5 Min (Sportlich/Knapp)</option>
+                    <option value="10">10 Min (Standard)</option>
+                    <option value="15">15 Min (Komfortabel)</option>
+                    <option value="20">20 Min (Hoher Puffer)</option>
+                  </select>
+                </div>
               </div>
             </div>
           )}
