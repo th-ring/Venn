@@ -2,7 +2,7 @@ import React from 'react';
 import { BasemapPlatform, MapVariant } from '../../../types';
 import {
   OSM_VARIANTS,
-  OPNV_VARIANTS,
+  MEMOMAPS_VARIANTS,
   CARTO_VARIANTS,
   GOOGLE_VARIANTS,
 } from '../../map/MapLayerControls';
@@ -34,15 +34,15 @@ export const BasemapTab: React.FC<BasemapTabProps> = ({
       ? GOOGLE_VARIANTS
       : platform === 'carto'
       ? CARTO_VARIANTS
-      : platform === 'opnv'
-      ? OPNV_VARIANTS
+      : platform === 'memomaps' || platform === 'opnv'
+      ? MEMOMAPS_VARIANTS
       : OSM_VARIANTS;
 
   return (
     <div className="space-y-4">
       <div className="text-xs text-slate-600 leading-relaxed">
         Wähle deinen bevorzugten <strong>Kartenanbieter</strong> und den gewünschten <strong>Kartentyp</strong>. 
-        Karten von <em>OpenStreetMap</em>, <em>ÖPNV (memomaps.de)</em> und <em>CARTO</em> funktionieren sofort und ohne API-Key.
+        Karten von <em>OpenStreetMap</em>, <em>MemoMaps</em> und <em>CARTO</em> funktionieren sofort und ohne API-Key.
       </div>
 
       {/* STUFE 1: KARTENDIENST WÄHLEN */}
@@ -91,11 +91,11 @@ export const BasemapTab: React.FC<BasemapTabProps> = ({
             </span>
           </div>
 
-          {/* Option: ÖPNV */}
+          {/* Option: MemoMaps */}
           <div
-            onClick={() => onSelectPlatform('opnv')}
+            onClick={() => onSelectPlatform('memomaps')}
             className={`p-3 rounded-xl border cursor-pointer transition-all flex items-start justify-between ${
-              platform === 'opnv'
+              platform === 'memomaps' || platform === 'opnv'
                 ? 'border-emerald-500 bg-emerald-50/50 ring-2 ring-emerald-400/40 shadow-xs'
                 : 'border-slate-200 bg-white hover:border-slate-300'
             }`}
@@ -104,8 +104,8 @@ export const BasemapTab: React.FC<BasemapTabProps> = ({
               <input
                 type="radio"
                 name="modalPlatform"
-                checked={platform === 'opnv'}
-                onChange={() => onSelectPlatform('opnv')}
+                checked={platform === 'memomaps' || platform === 'opnv'}
+                onChange={() => onSelectPlatform('memomaps')}
                 className="mt-0.5 text-emerald-600 cursor-pointer"
               />
               <div className="p-1.5 bg-emerald-100 text-emerald-700 rounded-lg shrink-0">
@@ -113,10 +113,10 @@ export const BasemapTab: React.FC<BasemapTabProps> = ({
               </div>
               <div>
                 <div className="text-xs font-bold text-slate-900">
-                  ÖPNV
+                  MemoMaps
                 </div>
                 <div className="text-[10px] text-slate-500 mt-0.5">
-                  memomaps.de Linien & Bahnnetz.
+                  Reine ÖPNVkarte (Bus & Bahn).
                 </div>
               </div>
             </div>
@@ -220,6 +220,8 @@ export const BasemapTab: React.FC<BasemapTabProps> = ({
               ? 'Google Maps'
               : platform === 'carto'
               ? 'CARTO'
+              : platform === 'memomaps' || platform === 'opnv'
+              ? 'MemoMaps'
               : 'OpenStreetMap'}
             )
           </span>
