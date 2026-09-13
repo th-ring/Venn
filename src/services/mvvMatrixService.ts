@@ -787,35 +787,7 @@ export function generateMvvTransitIsochrone(
     polygonsToUnion.push(stationBuffer);
   }
 
-  // 3. Connect sequential transit corridors
-  const dataset = getTransitRegion();
-  const stationMap = new Map(dataset.stations.map((s) => [s.id, s]));
-  const reachedSet = new Set(reachableStations.map((r) => r.station.id));
-
-  for (const conn of dataset.connections) {
-    if (!isConnectionAllowed(conn, allowedModes)) {
-      continue;
-    }
-
-    if (reachedSet.has(conn.from) && reachedSet.has(conn.to)) {
-      const fromSt = stationMap.get(conn.from);
-      const toSt = stationMap.get(conn.to);
-      if (fromSt && toSt) {
-        const line = turf.lineString([
-          [fromSt.lng, fromSt.lat],
-          [toSt.lng, toSt.lat],
-        ]);
-        const corridorRadiusKm =
-          conn.type === 'sbahn' || conn.type === 'train' ? 0.45 : conn.type === 'ubahn' ? 0.38 : 0.32;
-        const corridorBuffer = turf.buffer(line, corridorRadiusKm, { units: 'kilometers' });
-        if (corridorBuffer) {
-          polygonsToUnion.push(corridorBuffer as GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon>);
-        }
-      }
-    }
-  }
-
-  // 4. Hierarchical union
+  // 3. Hierarchical union of origin walk area and station catchment bubbles
   let currentList = [...polygonsToUnion];
   while (currentList.length > 1) {
     const nextList: GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon>[] = [];
@@ -841,9 +813,7 @@ export function generateMvvTransitIsochrone(
 
   let merged: GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon> = currentList[0] || originWalkCircle;
 
-  try {
-    merged = turf.cleanCoords(merged as any) as any;
-  } catch {}
+  const dataset = getTransitRegion();
 
   merged.properties = {
     source: 'transit_metro_matrix',
