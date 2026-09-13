@@ -22,6 +22,8 @@ import {
   setBasemapPlatform,
   setMapVariant,
   setSelectedBasemap,
+  getRailwayOverlayEnabled,
+  setRailwayOverlayEnabled,
   clearIsochroneCache,
 } from '../../services/isochroneEngine';
 import {
@@ -105,7 +107,19 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const [activeProvider, setActiveProvider] = useState<IsochroneProvider>(getSelectedProvider());
   const [modalPlatform, setModalPlatform] = useState<BasemapPlatform>(() => getBasemapPlatform());
   const [modalVariant, setModalVariant] = useState<MapVariant>(() => getMapVariant());
+  const [modalRailwayOverlay, setModalRailwayOverlay] = useState<boolean>(() => getRailwayOverlayEnabled());
   const [isSaved, setIsSaved] = useState(false);
+
+  const handleModalSelectPlatform = (platform: BasemapPlatform) => {
+    setModalPlatform(platform);
+    if (platform === 'carto' && !['carto_light', 'carto_dark', 'carto_voyager'].includes(modalVariant)) {
+      setModalVariant('carto_light');
+    } else if (platform === 'osm' && ['carto_light', 'carto_dark', 'carto_voyager'].includes(modalVariant)) {
+      setModalVariant('normal');
+    } else if (platform === 'google' && ['carto_light', 'carto_dark', 'carto_voyager', 'topo'].includes(modalVariant)) {
+      setModalVariant('normal');
+    }
+  };
 
   // Key check statuses
   const [isCheckingGoogle, setIsCheckingGoogle] = useState(false);
@@ -187,6 +201,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     setSelectedProvider(providerToSave);
     setBasemapPlatform(modalPlatform);
     setMapVariant(modalVariant);
+    setRailwayOverlayEnabled(modalRailwayOverlay);
     const composite = `${modalPlatform}_${modalVariant}` as BasemapProvider;
     setSelectedBasemap(composite);
     if (onBasemapChange) {
@@ -349,7 +364,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
               </div>
               <div className="truncate text-slate-600">
-                Karte: <span className="font-semibold">{modalPlatform === 'google' ? 'Google Maps' : 'OSM'}</span>
+                Karte: <span className="font-semibold">{modalPlatform === 'google' ? 'Google Maps' : modalPlatform === 'carto' ? 'CARTO' : 'OSM'}</span>
               </div>
               <div className="truncate text-slate-600">
                 Engine: <span className="font-semibold">{activeProvider === 'google' ? 'Google API' : activeProvider === 'ors' ? 'ORS' : 'Offline'}</span>
@@ -365,10 +380,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 <BasemapTab
                   platform={modalPlatform}
                   variant={modalVariant}
-                  onSelectPlatform={setModalPlatform}
+                  onSelectPlatform={handleModalSelectPlatform}
                   onSelectVariant={setModalVariant}
                   hasGoogleKey={!!getGoogleMapsApiKey()}
                   onOpenKeysTab={() => setModalTab('keys')}
+                  showRailwayOverlay={modalRailwayOverlay}
+                  onToggleRailwayOverlay={() => setModalRailwayOverlay((prev) => !prev)}
                 />
               )}
 

@@ -65,10 +65,11 @@ export function hasOrsApiKey(): boolean {
 export function getBasemapPlatform(): BasemapPlatform {
   if (typeof localStorage === 'undefined') return 'osm';
   const stored = localStorage.getItem('basemap_platform');
-  if (stored === 'google' || stored === 'osm') return stored;
+  if (stored === 'google' || stored === 'osm' || stored === 'carto') return stored;
   // Fallback to older basemap_provider if present
   const oldProvider = localStorage.getItem('basemap_provider');
   if (oldProvider && oldProvider.startsWith('google')) return 'google';
+  if (oldProvider && oldProvider.startsWith('carto')) return 'carto';
   return 'osm';
 }
 
@@ -81,8 +82,18 @@ export function setBasemapPlatform(platform: BasemapPlatform): void {
 
 export function getMapVariant(): MapVariant {
   if (typeof localStorage === 'undefined') return 'normal';
-  const stored = localStorage.getItem('map_variant');
-  if (stored === 'normal' || stored === 'satellite' || stored === 'streets' || stored === 'transit') {
+  const stored = localStorage.getItem('map_variant') as MapVariant;
+  const validVariants: MapVariant[] = [
+    'normal',
+    'satellite',
+    'streets',
+    'transit',
+    'topo',
+    'carto_light',
+    'carto_dark',
+    'carto_voyager',
+  ];
+  if (stored && validVariants.includes(stored)) {
     return stored;
   }
   // Fallback check from old basemap_provider
@@ -112,13 +123,30 @@ export function setSelectedBasemap(provider: BasemapProvider): void {
       else if (provider.includes('transit')) localStorage.setItem('map_variant', 'transit');
       else if (provider.includes('streets')) localStorage.setItem('map_variant', 'streets');
       else localStorage.setItem('map_variant', 'normal');
+    } else if (provider.startsWith('carto')) {
+      localStorage.setItem('basemap_platform', 'carto');
+      if (provider.includes('dark')) localStorage.setItem('map_variant', 'carto_dark');
+      else if (provider.includes('voyager')) localStorage.setItem('map_variant', 'carto_voyager');
+      else localStorage.setItem('map_variant', 'carto_light');
     } else {
       localStorage.setItem('basemap_platform', 'osm');
       if (provider.includes('satellite')) localStorage.setItem('map_variant', 'satellite');
       else if (provider.includes('transit')) localStorage.setItem('map_variant', 'transit');
       else if (provider.includes('streets')) localStorage.setItem('map_variant', 'streets');
+      else if (provider.includes('topo')) localStorage.setItem('map_variant', 'topo');
       else localStorage.setItem('map_variant', 'normal');
     }
+  }
+}
+
+export function getRailwayOverlayEnabled(): boolean {
+  if (typeof localStorage === 'undefined') return false;
+  return localStorage.getItem('railway_overlay_enabled') === 'true';
+}
+
+export function setRailwayOverlayEnabled(enabled: boolean): void {
+  if (typeof localStorage !== 'undefined') {
+    localStorage.setItem('railway_overlay_enabled', enabled ? 'true' : 'false');
   }
 }
 

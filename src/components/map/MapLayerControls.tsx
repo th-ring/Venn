@@ -20,39 +20,104 @@ import {
   Flame,
   Crosshair,
   Euro,
+  Mountain,
+  Sun,
+  Moon,
+  Palette,
 } from 'lucide-react';
 import { LayerManagerPanel } from './LayerManagerPanel';
 
-export const MAP_VARIANTS: Array<{
+export interface MapVariantOption {
   id: MapVariant;
   label: string;
   subLabel: string;
   icon: typeof MapIcon;
-}> = [
+}
+
+export const OSM_VARIANTS: MapVariantOption[] = [
   {
     id: 'normal',
-    label: 'Normal',
-    subLabel: 'Standard-Karte mit Ortschaften & Flächen',
+    label: 'Standard',
+    subLabel: 'Klassische OpenStreetMap Kartografie',
     icon: MapIcon,
   },
   {
     id: 'satellite',
     label: 'Satellit',
-    subLabel: 'Echte Luftbilder & Satellitenaufnahmen',
+    subLabel: 'ESRI World Imagery Luftbilder',
     icon: Satellite,
   },
   {
     id: 'streets',
     label: 'Straße',
-    subLabel: 'Fokus auf Straßennetz, Autobahnen & Trassen',
+    subLabel: 'ESRI World Street Map',
+    icon: Navigation,
+  },
+  {
+    id: 'transit',
+    label: 'ÖPNV & Rad',
+    subLabel: 'CyclOSM mit Bahn, Tram & Radwegen',
+    icon: Train,
+  },
+  {
+    id: 'topo',
+    label: 'Topografie',
+    subLabel: 'OpenTopoMap mit Höhenlinien & Relief',
+    icon: Mountain,
+  },
+];
+
+export const CARTO_VARIANTS: MapVariantOption[] = [
+  {
+    id: 'carto_light',
+    label: 'Positron (Hell)',
+    subLabel: 'Minimalistisch & dezent (optimal für Daten)',
+    icon: Sun,
+  },
+  {
+    id: 'carto_dark',
+    label: 'Dark Matter',
+    subLabel: 'Eleganter Kontrast-Dunkelmodus',
+    icon: Moon,
+  },
+  {
+    id: 'carto_voyager',
+    label: 'Voyager',
+    subLabel: 'Pastell-Stadtansicht & Parks',
+    icon: Palette,
+  },
+];
+
+export const GOOGLE_VARIANTS: MapVariantOption[] = [
+  {
+    id: 'normal',
+    label: 'Standard',
+    subLabel: 'Offizielle Google Roadmap',
+    icon: MapIcon,
+  },
+  {
+    id: 'satellite',
+    label: 'Satellit',
+    subLabel: 'Google Hybrid-Luftbilder mit Straßen',
+    icon: Satellite,
+  },
+  {
+    id: 'streets',
+    label: 'Straße',
+    subLabel: 'Fokussiertes Google Straßennetz',
     icon: Navigation,
   },
   {
     id: 'transit',
     label: 'ÖPNV',
-    subLabel: 'Bahnlinien, Tram, Bus & Haltestellen',
+    subLabel: 'Google TransitLayer (U/S-Bahn, Tram)',
     icon: Train,
   },
+];
+
+export const MAP_VARIANTS: MapVariantOption[] = [
+  ...OSM_VARIANTS,
+  ...CARTO_VARIANTS,
 ];
 
 interface MapLayerControlsProps {
@@ -86,6 +151,8 @@ interface MapLayerControlsProps {
   poiIconSettings: PoiIconSettings;
   onUpdatePoiIcons: (settings: Partial<PoiIconSettings>) => void;
   intersectionAreaKm2?: number;
+  showRailwayOverlay?: boolean;
+  onToggleRailwayOverlay?: () => void;
 }
 
 export const MapLayerControls: React.FC<MapLayerControlsProps> = ({
@@ -93,6 +160,8 @@ export const MapLayerControls: React.FC<MapLayerControlsProps> = ({
   activeVariant,
   onSelectPlatform,
   onSelectVariant,
+  showRailwayOverlay = false,
+  onToggleRailwayOverlay,
   isBasemapLoading = false,
   profiles,
   onToggleProfileVisibility,
@@ -306,6 +375,8 @@ export const MapLayerControls: React.FC<MapLayerControlsProps> = ({
         hasOrsKey={!!getOrsApiKey()}
         onOpenApiKeySettings={onOpenApiKeySettings}
         intersectionAreaKm2={intersectionAreaKm2}
+        showRailwayOverlay={showRailwayOverlay}
+        onToggleRailwayOverlay={onToggleRailwayOverlay}
       />
 
       {/* Active "Nur überlagerter Treffbereich" Floating Banner */}
