@@ -15,7 +15,7 @@
     "@turf/turf": "^7.4.0",
     "leaflet": "^1.9.4",
     "leaflet.gridlayer.googlemutant": "^0.16.0",
-    "lucide-react": "^0.546.0",
+    "lucide-react": "^1.44.0",
     "react": "^19.0.1",
     "react-dom": "^19.0.1"
   },
