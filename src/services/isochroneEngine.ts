@@ -102,7 +102,11 @@ export function setSelectedBasemap(provider: BasemapProvider): void {
  */
 export function getGoogleMapsApiKey(): string {
   if (typeof localStorage === 'undefined') return '';
-  return localStorage.getItem('google_maps_api_key') || '';
+  return (
+    localStorage.getItem('google_maps_api_key') ||
+    ((import.meta as any).env?.VITE_GOOGLE_MAPS_API_KEY as string) ||
+    ''
+  );
 }
 
 export function setGoogleMapsApiKey(key: string): void {
@@ -119,7 +123,11 @@ export function setGoogleMapsApiKey(key: string): void {
  */
 export function getOrsApiKey(): string {
   if (typeof localStorage === 'undefined') return '';
-  return localStorage.getItem('ors_api_key') || '';
+  return (
+    localStorage.getItem('ors_api_key') ||
+    ((import.meta as any).env?.VITE_ORS_API_KEY as string) ||
+    ''
+  );
 }
 
 export function setOrsApiKey(key: string): void {
