@@ -1,12 +1,12 @@
 import * as turf from '@turf/turf';
 import { generateMvvTransitIsochrone, calculateReachableStations, findShortestTransitTrip } from '../src/services/mvvMatrixService.ts';
 
-const profileDomagk = {
-  id: 'p-muc-domagk',
-  name: 'Domagkstraße 1, München',
-  address: 'Domagkstraße 1, 80807 München',
-  lat: 48.1845,
-  lng: 11.5852,
+const profileMarienplatz = {
+  id: 'p-muc-marienplatz',
+  name: 'Marienplatz 1, München',
+  address: 'Marienplatz 1, 80331 München',
+  lat: 48.1371,
+  lng: 11.5754,
   travelTimeMinutes: 35,
   mode: 'transit',
   color: '#10B981',
@@ -15,10 +15,9 @@ const profileDomagk = {
   maxWalkToStationMin: 10,
 };
 
-const domagkIsochrone = generateMvvTransitIsochrone(profileDomagk);
+const marienplatzIsochrone = generateMvvTransitIsochrone(profileMarienplatz);
 
-// Pin from Image 2: Gräfelfing, near Ruffiniallee / Wandlhamerstr / Großhaderner Str.
-// Let's test a few candidate coordinates around Gräfelfing:
+// Candidate coordinates for diagnosis:
 const candidates = [
   { name: 'Graefelfing Station', lat: 48.1202, lng: 11.4352 },
   { name: 'Lochham Station', lat: 48.1321, lng: 11.4482 },
@@ -28,14 +27,14 @@ const candidates = [
 
 for (const c of candidates) {
   const pt = turf.point([c.lng, c.lat]);
-  let inDomagk = false;
+  let inMarienplatz = false;
   try {
-    inDomagk = turf.booleanPointInPolygon(pt, domagkIsochrone);
+    inMarienplatz = turf.booleanPointInPolygon(pt, marienplatzIsochrone);
   } catch (e) {
-    inDomagk = false;
+    inMarienplatz = false;
   }
-  const trip = findShortestTransitTrip({ lat: c.lat, lng: c.lng }, { lat: profileDomagk.lat, lng: profileDomagk.lng }, profileDomagk);
+  const trip = findShortestTransitTrip({ lat: c.lat, lng: c.lng }, { lat: profileMarienplatz.lat, lng: profileMarienplatz.lng }, profileMarienplatz);
   console.log(`${c.name} [${c.lat}, ${c.lng}]:`);
-  console.log(`  Inside Domagk Isochrone? ${inDomagk}`);
+  console.log(`  Inside Marienplatz Isochrone? ${inMarienplatz}`);
   console.log(`  Trip calculation: ${trip ? trip.travelTimeMinutes + ' min' : 'no route'}`);
 }

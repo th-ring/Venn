@@ -39,64 +39,43 @@ import {
   getSavedRentalOverlaySettings,
 } from '../services/rentalService';
 
+import {
+  FullShareConfig,
+  parseConfigFromWindowHash,
+  loadLocalProfileState,
+  saveLocalProfileState,
+  clearLocalProfileState,
+} from '../services/configShareService';
+
 const PALETTE = ['#3B82F6', '#F97316', '#10B981', '#A855F7', '#EC4899', '#06B6D4', '#EAB308'];
 
 export function useCommuteFinder() {
-  // 1. Initial Profiles from URL Hash (FR-4.5) or Default Munich Setup
-  const [profiles, setProfiles] = useState<PersonProfile[]>(() => {
-    try {
-      const hash = window.location.hash;
-      if (hash.startsWith('#zone=')) {
-        const jsonStr = decodeURIComponent(hash.replace('#zone=', ''));
-        const parsed = JSON.parse(jsonStr);
-        if (parsed && Array.isArray(parsed.p) && parsed.p.length > 0) {
-          return parsed.p.map((item: any, idx: number) => ({
-            id: `p-shared-${idx}-${Date.now()}`,
-            name: item.n || `Person ${idx + 1}`,
-            address: item.a || '',
-            lat: item.lat,
-            lng: item.lng,
-            travelTimeMinutes: item.t || 35,
-            mode: item.m || 'transit',
-            color: item.c || PALETTE[idx % PALETTE.length],
-            visible: item.v !== false,
-            maxTransfers: item.mt,
-            maxWalkToStationMin: item.mw,
-            maxWalkFromStationMin: item.mfw,
-            maxTransferWaitMin: item.mtw,
-            transitModes: Array.isArray(item.tm) ? item.tm : undefined,
-          }));
-        }
+  // 0. Initial Startup Config: 1) URL-Hash (#zone= / #config=), 2) LocalProfile (localStorage), 3) Defaults
+  const initialConfigRef = useRef<FullShareConfig | null>(null);
+  if (initialConfigRef.current === null) {
+    const fromHash = parseConfigFromWindowHash();
+    if (fromHash && fromHash.profiles && fromHash.profiles.length > 0) {
+      initialConfigRef.current = fromHash;
+    } else {
+      const fromLocal = loadLocalProfileState();
+      if (fromLocal && fromLocal.profiles && fromLocal.profiles.length > 0) {
+        initialConfigRef.current = fromLocal;
       }
-    } catch (e) {
-      console.warn('Failed to parse URL share hash:', e);
     }
-    return DEFAULT_MUNICH_PROFILES;
+  }
+  const initialConfig = initialConfigRef.current;
+
+  // 1. Initial Profiles
+  const [profiles, setProfiles] = useState<PersonProfile[]>(() => {
+    return initialConfig?.profiles && initialConfig.profiles.length > 0
+      ? initialConfig.profiles
+      : DEFAULT_MUNICH_PROFILES;
   });
 
-  // 2. Initial Schedule from URL Hash
+  // 2. Initial Schedule
   const [schedule, setSchedule] = useState<CommuteSchedule>(() => {
-    try {
-      const hash = window.location.hash;
-      if (hash.startsWith('#zone=')) {
-        const jsonStr = decodeURIComponent(hash.replace('#zone=', ''));
-        const parsed = JSON.parse(jsonStr);
-        if (parsed && parsed.s) {
-          return {
-            direction: parsed.s.d || 'to_work',
-            dayOfWeek: parsed.s.w || 'workday',
-            time: parsed.s.t || '07:00',
-            options: {
-              liveTraffic: parsed.s.lt ?? false,
-              enableSmoothing: parsed.s.sm ?? true,
-              fidelity: parsed.s.fi || 'AUTOMATIC',
-              fillHoles: parsed.s.fh ?? true,
-            },
-          };
-        }
-      }
-    } catch {
-      // Fall through
+    if (initialConfig?.schedule) {
+      return initialConfig.schedule;
     }
     return {
       direction: 'to_work',
@@ -118,11 +97,21 @@ export function useCommuteFinder() {
   const [autoUpdate, setAutoUpdate] = useState(true);
   const [lastCalculatedAt, setLastCalculatedAt] = useState<Date | null>(null);
   const [inspectionPoint, setInspectionPoint] = useState<InspectionPoint | null>(null);
-  const [showIntersectionLayer, setShowIntersectionLayer] = useState(true);
-  const [showIndividualIsochrones, setShowIndividualIsochrones] = useState(true);
-  const [onlyResidential, setOnlyResidential] = useState(false);
-  const [activeScenarioId, setActiveScenarioId] = useState<string>('munich-gilching');
-  const [basemap, setBasemap] = useState<BasemapProvider>(() => getSelectedBasemap());
+  const [showIntersectionLayer, setShowIntersectionLayer] = useState(
+    initialConfig?.showIntersectionLayer ?? true
+  );
+  const [showIndividualIsochrones, setShowIndividualIsochrones] = useState(
+    initialConfig?.showIndividualIsochrones ?? true
+  );
+  const [onlyResidential, setOnlyResidential] = useState(
+    initialConfig?.onlyResidential ?? false
+  );
+  const [activeScenarioId, setActiveScenarioId] = useState<string>(
+    initialConfig?.activeScenarioId || 'munich-standard'
+  );
+  const [basemap, setBasemap] = useState<BasemapProvider>(
+    () => initialConfig?.basemap || getSelectedBasemap()
+  );
 
   const calculationTimerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -149,6 +138,9 @@ export function useCommuteFinder() {
 
   // Layer Ordering & Management
   const [layerOrder, setLayerOrder] = useState<LayerId[]>(() => {
+    if (initialConfig?.layerOrder && initialConfig.layerOrder.length > 0) {
+      return initialConfig.layerOrder;
+    }
     try {
       const saved = localStorage.getItem('commute_layer_order');
       if (saved) {
@@ -165,9 +157,17 @@ export function useCommuteFinder() {
     return DEFAULT_LAYER_ORDER;
   });
 
-  const [hiddenLayers, setHiddenLayers] = useState<Set<LayerId>>(new Set());
+  const [hiddenLayers, setHiddenLayers] = useState<Set<LayerId>>(() => {
+    if (initialConfig?.hiddenLayers) {
+      return new Set(initialConfig.hiddenLayers);
+    }
+    return new Set();
+  });
 
   const [poiIconSettings, setPoiIconSettings] = useState<PoiIconSettings>(() => {
+    if (initialConfig?.poiIconSettings) {
+      return initialConfig.poiIconSettings;
+    }
     try {
       const saved = localStorage.getItem('commute_poi_icon_settings');
       if (saved) {
@@ -531,6 +531,101 @@ export function useCommuteFinder() {
     }
   }, []);
 
+  // 10. Reversible Full Configuration Object
+  const currentFullConfig: FullShareConfig = {
+    version: 2,
+    profiles,
+    schedule,
+    basemap,
+    layerOrder,
+    hiddenLayers: Array.from(hiddenLayers),
+    poiIconSettings,
+    onlyResidential,
+    showIndividualIsochrones,
+    showIntersectionLayer,
+    activeScenarioId,
+  };
+
+  // 11. Auto-save local profile state in browser (debounced)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      saveLocalProfileState(currentFullConfig);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [
+    profiles,
+    schedule,
+    basemap,
+    layerOrder,
+    hiddenLayers,
+    poiIconSettings,
+    onlyResidential,
+    showIndividualIsochrones,
+    showIntersectionLayer,
+    activeScenarioId,
+  ]);
+
+  // 12. Apply full imported configuration
+  const applyFullConfig = useCallback((newConfig: FullShareConfig) => {
+    if (newConfig.profiles && newConfig.profiles.length > 0) {
+      setProfiles(newConfig.profiles);
+    }
+    if (newConfig.schedule) {
+      setSchedule(newConfig.schedule);
+    }
+    if (newConfig.basemap) {
+      handleBasemapChange(newConfig.basemap);
+    }
+    if (newConfig.layerOrder && newConfig.layerOrder.length > 0) {
+      setLayerOrder(newConfig.layerOrder);
+    }
+    if (newConfig.hiddenLayers) {
+      setHiddenLayers(new Set(newConfig.hiddenLayers));
+    }
+    if (newConfig.poiIconSettings) {
+      setPoiIconSettings(newConfig.poiIconSettings);
+    }
+    if (newConfig.onlyResidential !== undefined) {
+      setOnlyResidential(newConfig.onlyResidential);
+    }
+    if (newConfig.showIndividualIsochrones !== undefined) {
+      setShowIndividualIsochrones(newConfig.showIndividualIsochrones);
+    }
+    if (newConfig.showIntersectionLayer !== undefined) {
+      setShowIntersectionLayer(newConfig.showIntersectionLayer);
+    }
+    if (newConfig.activeScenarioId) {
+      setActiveScenarioId(newConfig.activeScenarioId);
+    }
+  }, [handleBasemapChange]);
+
+  // 13. Reset to neutral defaults
+  const handleResetToDefaults = useCallback(() => {
+    clearLocalProfileState();
+    setProfiles(DEFAULT_MUNICH_PROFILES);
+    setActiveScenarioId('munich-standard');
+    setSchedule({
+      direction: 'to_work',
+      dayOfWeek: 'workday',
+      time: '07:00',
+      options: {
+        liveTraffic: false,
+        enableSmoothing: true,
+        fidelity: 'AUTOMATIC',
+        fillHoles: true,
+        rentalOverlay: getSavedRentalOverlaySettings(),
+      },
+    });
+    setBasemap('osm');
+    setSelectedBasemap('osm');
+    setLayerOrder(DEFAULT_LAYER_ORDER);
+    setHiddenLayers(new Set());
+    setPoiIconSettings(DEFAULT_POI_ICON_SETTINGS);
+    setOnlyResidential(false);
+    setShowIndividualIsochrones(true);
+    setShowIntersectionLayer(true);
+  }, []);
+
   return {
     profiles,
     setProfiles,
@@ -572,5 +667,8 @@ export function useCommuteFinder() {
     poiIconSettings,
     handleUpdatePoiIcons,
     handleToggleProfileVisibility,
+    currentFullConfig,
+    applyFullConfig,
+    handleResetToDefaults,
   };
 }

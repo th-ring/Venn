@@ -65,19 +65,21 @@ export function hasOrsApiKey(): boolean {
 export function getBasemapPlatform(): BasemapPlatform {
   if (typeof localStorage === 'undefined') return 'osm';
   const stored = localStorage.getItem('basemap_platform');
-  if (stored === 'google' || stored === 'osm' || stored === 'carto' || stored === 'opnv') return stored;
+  if (stored === 'google' || stored === 'osm' || stored === 'carto' || stored === 'memomaps') return stored;
+  if (stored === 'opnv') return 'memomaps';
   // Fallback to older basemap_provider if present
   const oldProvider = localStorage.getItem('basemap_provider');
   if (oldProvider && oldProvider.startsWith('google')) return 'google';
   if (oldProvider && oldProvider.startsWith('carto')) return 'carto';
-  if (oldProvider && oldProvider.startsWith('opnv')) return 'opnv';
+  if (oldProvider && (oldProvider.startsWith('memomaps') || oldProvider.startsWith('opnv'))) return 'memomaps';
   return 'osm';
 }
 
 export function setBasemapPlatform(platform: BasemapPlatform): void {
   if (typeof localStorage !== 'undefined') {
-    localStorage.setItem('basemap_platform', platform);
-    localStorage.setItem('basemap_provider', `${platform}_${getMapVariant()}`);
+    const normalized = platform === 'opnv' ? 'memomaps' : platform;
+    localStorage.setItem('basemap_platform', normalized);
+    localStorage.setItem('basemap_provider', `${normalized}_${getMapVariant()}`);
   }
 }
 
@@ -131,11 +133,9 @@ export function setSelectedBasemap(provider: BasemapProvider): void {
       if (provider.includes('dark')) localStorage.setItem('map_variant', 'carto_dark');
       else if (provider.includes('voyager')) localStorage.setItem('map_variant', 'carto_voyager');
       else localStorage.setItem('map_variant', 'carto_light');
-    } else if (provider.startsWith('opnv')) {
-      localStorage.setItem('basemap_platform', 'opnv');
-      if (provider.includes('transit')) localStorage.setItem('map_variant', 'transit');
-      else if (provider.includes('railway')) localStorage.setItem('map_variant', 'railway');
-      else localStorage.setItem('map_variant', 'memomaps');
+    } else if (provider.startsWith('memomaps') || provider.startsWith('opnv')) {
+      localStorage.setItem('basemap_platform', 'memomaps');
+      localStorage.setItem('map_variant', 'memomaps');
     } else {
       localStorage.setItem('basemap_platform', 'osm');
       if (provider.includes('satellite')) localStorage.setItem('map_variant', 'satellite');

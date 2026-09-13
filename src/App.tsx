@@ -62,6 +62,8 @@ export default function App() {
     poiIconSettings,
     handleUpdatePoiIcons,
     handleToggleProfileVisibility,
+    currentFullConfig,
+    applyFullConfig,
   } = useCommuteFinder();
 
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
@@ -299,6 +301,8 @@ export default function App() {
             onClose={() => setIsShareModalOpen(false)}
             profiles={profiles}
             schedule={schedule}
+            fullConfig={currentFullConfig}
+            onApplyConfig={applyFullConfig}
           />
         </Suspense>
       )}

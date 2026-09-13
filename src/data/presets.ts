@@ -2,22 +2,22 @@ import { PresetScenario, PersonProfile } from '../types';
 
 export const DEFAULT_MUNICH_PROFILES: PersonProfile[] = [
   {
-    id: 'p-gilching-1',
-    name: 'Zeppelinstraße 18, Gilching',
-    address: 'Zeppelinstraße 18, 82205 Gilching',
-    lat: 48.0919,
-    lng: 11.3042,
+    id: 'p-muc-bmw',
+    name: 'BMW Vierzylinder, München',
+    address: 'Petuelring 130, 80809 München',
+    lat: 48.1772,
+    lng: 11.5595,
     travelTimeMinutes: 35,
     mode: 'driving',
     color: '#3B82F6',
     visible: true,
   },
   {
-    id: 'p-muc-domagk',
-    name: 'Domagkstraße 1, München',
-    address: 'Domagkstraße 1, 80807 München',
-    lat: 48.1845,
-    lng: 11.5852,
+    id: 'p-muc-marienplatz',
+    name: 'Marienplatz, München',
+    address: 'Marienplatz 1, 80331 München',
+    lat: 48.1371,
+    lng: 11.5754,
     travelTimeMinutes: 35,
     mode: 'transit',
     color: '#8B5CF6', // Purple (distinct from green intersection)
@@ -31,11 +31,11 @@ export const DEFAULT_MUNICH_PROFILES: PersonProfile[] = [
 
 export const PRESET_SCENARIOS: PresetScenario[] = [
   {
-    id: 'munich-gilching',
-    name: 'Gilching & München (Standard)',
-    city: 'München / Gilching',
-    description: 'Zeppelinstraße 18 (Gilching, Auto) und Domagkstraße 1 (München Parkstadt Schwabing, ÖPNV).',
-    center: [48.14, 11.45],
+    id: 'munich-standard',
+    name: 'München: BMW & Marienplatz (Standard)',
+    city: 'München',
+    description: 'BMW Vierzylinder (Petuelring, Auto) und Marienplatz (Zentrum, ÖPNV).',
+    center: [48.155, 11.567],
     zoom: 11,
     profiles: DEFAULT_MUNICH_PROFILES,
   },

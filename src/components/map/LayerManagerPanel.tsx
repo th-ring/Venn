@@ -11,7 +11,7 @@ import {
 import {
   MAP_VARIANTS,
   OSM_VARIANTS,
-  OPNV_VARIANTS,
+  MEMOMAPS_VARIANTS,
   CARTO_VARIANTS,
   GOOGLE_VARIANTS,
 } from './MapLayerControls';
@@ -201,8 +201,8 @@ export const LayerManagerPanel: React.FC<LayerManagerPanelProps> = ({
             ? 'Google Maps'
             : activePlatform === 'carto'
             ? 'CARTO'
-            : activePlatform === 'opnv'
-            ? 'ÖPNV'
+            : activePlatform === 'memomaps' || activePlatform === 'opnv'
+            ? 'MemoMaps'
             : 'OpenStreetMap';
 
         const currentVariants =
@@ -210,8 +210,8 @@ export const LayerManagerPanel: React.FC<LayerManagerPanelProps> = ({
             ? GOOGLE_VARIANTS
             : activePlatform === 'carto'
             ? CARTO_VARIANTS
-            : activePlatform === 'opnv'
-            ? OPNV_VARIANTS
+            : activePlatform === 'memomaps' || activePlatform === 'opnv'
+            ? MEMOMAPS_VARIANTS
             : OSM_VARIANTS;
 
         const variantLabel =
@@ -775,15 +775,15 @@ export const LayerManagerPanel: React.FC<LayerManagerPanelProps> = ({
 
                         <button
                           type="button"
-                          onClick={() => onSelectPlatform('opnv')}
+                          onClick={() => onSelectPlatform('memomaps')}
                           className={`py-1.5 px-1 rounded-md text-[10px] font-bold text-center transition-all cursor-pointer flex items-center justify-center gap-1 ${
-                            activePlatform === 'opnv'
+                            activePlatform === 'memomaps' || activePlatform === 'opnv'
                               ? 'bg-white text-emerald-900 shadow-2xs'
                               : 'text-slate-600 hover:text-slate-900'
                           }`}
                         >
                           <Train className="w-3 h-3 shrink-0 text-emerald-600" />
-                          <span className="truncate">ÖPNV</span>
+                          <span className="truncate">MemoMaps</span>
                         </button>
 
                         <button
@@ -823,8 +823,8 @@ export const LayerManagerPanel: React.FC<LayerManagerPanelProps> = ({
                                 ? 'Google Maps'
                                 : activePlatform === 'carto'
                                 ? 'CARTO'
-                                : activePlatform === 'opnv'
-                                ? 'ÖPNV (Nahverkehr)'
+                                : activePlatform === 'memomaps' || activePlatform === 'opnv'
+                                ? 'MemoMaps (ÖPNV)'
                                 : 'OpenStreetMap'}
                             </strong>
                           </span>
@@ -835,13 +835,13 @@ export const LayerManagerPanel: React.FC<LayerManagerPanelProps> = ({
                           )}
                         </div>
 
-                        <div className="grid grid-cols-2 gap-1">
+                        <div className={`grid ${activePlatform === 'memomaps' || activePlatform === 'opnv' ? 'grid-cols-1' : 'grid-cols-2'} gap-1`}>
                           {(activePlatform === 'google'
                             ? GOOGLE_VARIANTS
                             : activePlatform === 'carto'
                             ? CARTO_VARIANTS
-                            : activePlatform === 'opnv'
-                            ? OPNV_VARIANTS
+                            : activePlatform === 'memomaps' || activePlatform === 'opnv'
+                            ? MEMOMAPS_VARIANTS
                             : OSM_VARIANTS
                           ).map((v) => {
                             const VIcon = v.icon;
