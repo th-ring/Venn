@@ -7,6 +7,7 @@ import {
   FallbackSuggestion,
   BasemapProvider,
   PresetScenario,
+  DEFAULT_TRANSIT_SUBMODES,
 } from '../types';
 import { DEFAULT_MUNICH_PROFILES } from '../data/presets';
 import {
@@ -53,6 +54,8 @@ export function useCommuteFinder() {
             maxTransfers: item.mt,
             maxWalkToStationMin: item.mw,
             maxWalkFromStationMin: item.mfw,
+            maxTransferWaitMin: item.mtw,
+            transitModes: Array.isArray(item.tm) ? item.tm : undefined,
           }));
         }
       }
@@ -253,6 +256,7 @@ export function useCommuteFinder() {
         color,
         visible: true,
         maxTransfers: 2,
+        transitModes: [...DEFAULT_TRANSIT_SUBMODES],
       };
 
       return [...prev, newProfile];
@@ -298,7 +302,8 @@ export function useCommuteFinder() {
           schedule,
           p.maxTransfers,
           p.maxWalkToStationMin,
-          p.maxWalkFromStationMin
+          p.maxWalkFromStationMin,
+          p.transitModes
         );
 
         const isWithinLimit = travelTimeMinutes <= p.travelTimeMinutes;

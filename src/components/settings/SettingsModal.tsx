@@ -6,6 +6,7 @@ import {
   CommuteSchedule,
   PolygonFidelity,
   TransitSubMode,
+  DEFAULT_TRANSIT_SUBMODES,
   HeatmapSettings,
 } from '../../types';
 import {
@@ -193,7 +194,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const activeTransitModes: TransitSubMode[] =
     options.transitModes && options.transitModes.length > 0
       ? options.transitModes
-      : ['tram', 'ubahn', 'bus', 'expressbus', 'sbahn'];
+      : DEFAULT_TRANSIT_SUBMODES;
 
   const handleToggleTransitMode = (mode: TransitSubMode) => {
     let nextModes: TransitSubMode[];

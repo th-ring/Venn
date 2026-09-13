@@ -7,6 +7,8 @@ import {
   BasemapPlatform,
   MapVariant,
   CommuteRouteDetails,
+  DEFAULT_TRANSIT_SUBMODES,
+  TransitSubMode,
 } from '../types';
 import { generateMvvTransitIsochrone, calculateReachableStations, findShortestTransitTrip, getTransitRegion } from './mvvMatrixService';
 
@@ -263,7 +265,14 @@ export async function generateIsochrone(
     fidelity: 'AUTOMATIC',
   };
 
-  const transitModesStr = opts.transitModes && opts.transitModes.length > 0 ? [...opts.transitModes].sort().join(',') : 'all';
+  const effectiveTransitModes =
+    profile.transitModes && profile.transitModes.length > 0
+      ? profile.transitModes
+      : opts.transitModes && opts.transitModes.length > 0
+      ? opts.transitModes
+      : DEFAULT_TRANSIT_SUBMODES;
+
+  const transitModesStr = [...effectiveTransitModes].sort().join(',');
 
   const cacheKey = makeCacheKey({
     lat: profile.lat,
@@ -328,7 +337,7 @@ export async function generateIsochrone(
   // 3. For Transit: Use official MVV/MVG Haltestellen- & Fahrzeitmatrix
   if (profile.mode === 'transit') {
     try {
-      const mvvPolygon = generateMvvTransitIsochrone(profile, opts.transitModes);
+      const mvvPolygon = generateMvvTransitIsochrone(profile, effectiveTransitModes);
       if (mvvPolygon && mvvPolygon.geometry) {
         isochroneCache.set(cacheKey, mvvPolygon);
         return mvvPolygon;
@@ -509,7 +518,8 @@ export function estimateCommuteTime(
   schedule: CommuteSchedule,
   maxTransfers = 2,
   maxWalkToStationMin = 10,
-  maxWalkFromStationMin = 10
+  maxWalkFromStationMin = 10,
+  transitModes?: TransitSubMode[]
 ): { travelTimeMinutes: number; distanceKm: number; details?: CommuteRouteDetails } {
   const from = turf.point([origin.lng, origin.lat]);
   const to = turf.point([destination.lng, destination.lat]);
@@ -600,8 +610,13 @@ export function estimateCommuteTime(
             maxTransfers,
             maxWalkToStationMin,
             maxWalkFromStationMin,
+            transitModes,
           },
-          schedule.options?.transitModes
+          transitModes && transitModes.length > 0
+            ? transitModes
+            : schedule.options?.transitModes && schedule.options.transitModes.length > 0
+            ? schedule.options.transitModes
+            : DEFAULT_TRANSIT_SUBMODES
         );
 
         if (directTrip && directTrip.routeFound) {

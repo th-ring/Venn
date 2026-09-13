@@ -19,6 +19,7 @@ import {
   PersonProfile,
   TransitSubMode,
   ALL_TRANSIT_SUBMODES,
+  DEFAULT_TRANSIT_SUBMODES,
   TransitRegion,
   TransitStation,
   TransitConnection,
@@ -304,7 +305,11 @@ export function calculateReachableStations(
   } = profile;
 
   const allowedModes = new Set<TransitSubMode>(
-    transitModes && transitModes.length > 0 ? transitModes : ALL_TRANSIT_SUBMODES
+    transitModes && transitModes.length > 0
+      ? transitModes
+      : profile.transitModes && profile.transitModes.length > 0
+      ? profile.transitModes
+      : DEFAULT_TRANSIT_SUBMODES
   );
 
   const dataset = getTransitRegion();
@@ -494,7 +499,11 @@ export function findShortestTransitTrip(
   transitModes?: TransitSubMode[]
 ): TransitTripResult | null {
   const allowedModes = new Set<TransitSubMode>(
-    transitModes && transitModes.length > 0 ? transitModes : ALL_TRANSIT_SUBMODES
+    transitModes && transitModes.length > 0
+      ? transitModes
+      : profile.transitModes && profile.transitModes.length > 0
+      ? profile.transitModes
+      : DEFAULT_TRANSIT_SUBMODES
   );
 
   const dataset = getTransitRegion();
@@ -752,7 +761,11 @@ export function generateMvvTransitIsochrone(
   const origin = turf.point([lng, lat]);
 
   const allowedModes = new Set<TransitSubMode>(
-    transitModes && transitModes.length > 0 ? transitModes : ALL_TRANSIT_SUBMODES
+    transitModes && transitModes.length > 0
+      ? transitModes
+      : profile.transitModes && profile.transitModes.length > 0
+      ? profile.transitModes
+      : DEFAULT_TRANSIT_SUBMODES
   );
 
   const walkSpeedKmPerMin = 0.082; // ~4.9 km/h

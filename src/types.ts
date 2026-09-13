@@ -16,6 +16,7 @@ export interface PersonProfile {
   maxWalkToStationMin?: number; // Max walk from home to station (First Mile, e.g. 5, 10, 15, 20 min)
   maxWalkFromStationMin?: number; // Max walk from station to destination/work (Last Mile, e.g. 5, 10, 15, 20 min)
   maxTransferWaitMin?: number; // 5, 10, 15, 20 min max wait/buffer at transfers
+  transitModes?: TransitSubMode[]; // Allowed transit modes (tram, ubahn, bus, expressbus, sbahn, train)
 }
 
 export type PolygonFidelity = 'AUTOMATIC' | 'LOW' | 'MEDIUM' | 'HIGH';
@@ -46,6 +47,8 @@ export type PriorityHeatmapMode = 'none' | 'ubahn' | 'sbahn' | 'highway';
 export type TransitSubMode = 'tram' | 'ubahn' | 'bus' | 'expressbus' | 'sbahn' | 'train';
 
 export const ALL_TRANSIT_SUBMODES: TransitSubMode[] = ['tram', 'ubahn', 'bus', 'expressbus', 'sbahn', 'train'];
+
+export const DEFAULT_TRANSIT_SUBMODES: TransitSubMode[] = ['tram', 'ubahn', 'bus', 'expressbus'];
 
 export interface TransitStation {
   id: string;
