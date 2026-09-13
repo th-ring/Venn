@@ -54,6 +54,12 @@ export const OSM_VARIANTS: MapVariantOption[] = [
     icon: Navigation,
   },
   {
+    id: 'memomaps',
+    label: 'ÖPNV (Liniennetz)',
+    subLabel: 'memomaps.de – Bus-, Tram- & Bahnlinien',
+    icon: Train,
+  },
+  {
     id: 'transit',
     label: 'ÖPNV & Rad',
     subLabel: 'CyclOSM mit Bahn, Tram & Radwegen',
@@ -64,6 +70,27 @@ export const OSM_VARIANTS: MapVariantOption[] = [
     label: 'Topografie',
     subLabel: 'OpenTopoMap mit Höhenlinien & Relief',
     icon: Mountain,
+  },
+];
+
+export const OPNV_VARIANTS: MapVariantOption[] = [
+  {
+    id: 'memomaps',
+    label: 'ÖPNVkarte',
+    subLabel: 'memomaps.de – Reines Liniennetz mit Bus, Tram & Bahn',
+    icon: Train,
+  },
+  {
+    id: 'transit',
+    label: 'ÖPNV & Rad',
+    subLabel: 'CyclOSM mit Nahverkehr & Radwegen',
+    icon: Navigation,
+  },
+  {
+    id: 'railway',
+    label: 'Schienennetz',
+    subLabel: 'OpenRailwayMap mit Gleisanlagen & Bahnhöfen',
+    icon: Train,
   },
 ];
 
@@ -117,6 +144,7 @@ export const GOOGLE_VARIANTS: MapVariantOption[] = [
 
 export const MAP_VARIANTS: MapVariantOption[] = [
   ...OSM_VARIANTS,
+  ...OPNV_VARIANTS,
   ...CARTO_VARIANTS,
 ];
 

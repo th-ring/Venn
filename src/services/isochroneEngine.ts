@@ -65,11 +65,12 @@ export function hasOrsApiKey(): boolean {
 export function getBasemapPlatform(): BasemapPlatform {
   if (typeof localStorage === 'undefined') return 'osm';
   const stored = localStorage.getItem('basemap_platform');
-  if (stored === 'google' || stored === 'osm' || stored === 'carto') return stored;
+  if (stored === 'google' || stored === 'osm' || stored === 'carto' || stored === 'opnv') return stored;
   // Fallback to older basemap_provider if present
   const oldProvider = localStorage.getItem('basemap_provider');
   if (oldProvider && oldProvider.startsWith('google')) return 'google';
   if (oldProvider && oldProvider.startsWith('carto')) return 'carto';
+  if (oldProvider && oldProvider.startsWith('opnv')) return 'opnv';
   return 'osm';
 }
 
@@ -88,7 +89,9 @@ export function getMapVariant(): MapVariant {
     'satellite',
     'streets',
     'transit',
+    'memomaps',
     'topo',
+    'railway',
     'carto_light',
     'carto_dark',
     'carto_voyager',
@@ -128,11 +131,17 @@ export function setSelectedBasemap(provider: BasemapProvider): void {
       if (provider.includes('dark')) localStorage.setItem('map_variant', 'carto_dark');
       else if (provider.includes('voyager')) localStorage.setItem('map_variant', 'carto_voyager');
       else localStorage.setItem('map_variant', 'carto_light');
+    } else if (provider.startsWith('opnv')) {
+      localStorage.setItem('basemap_platform', 'opnv');
+      if (provider.includes('transit')) localStorage.setItem('map_variant', 'transit');
+      else if (provider.includes('railway')) localStorage.setItem('map_variant', 'railway');
+      else localStorage.setItem('map_variant', 'memomaps');
     } else {
       localStorage.setItem('basemap_platform', 'osm');
       if (provider.includes('satellite')) localStorage.setItem('map_variant', 'satellite');
       else if (provider.includes('transit')) localStorage.setItem('map_variant', 'transit');
       else if (provider.includes('streets')) localStorage.setItem('map_variant', 'streets');
+      else if (provider.includes('memomaps')) localStorage.setItem('map_variant', 'memomaps');
       else if (provider.includes('topo')) localStorage.setItem('map_variant', 'topo');
       else localStorage.setItem('map_variant', 'normal');
     }
