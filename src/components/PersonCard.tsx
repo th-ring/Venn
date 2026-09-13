@@ -579,7 +579,7 @@ export const PersonCard: React.FC<PersonCardProps> = ({
                   </p>
                   <select
                     id={`select-transfers-${profile.id}`}
-                    value={profile.maxTransfers ?? 3}
+                    value={profile.maxTransfers ?? 1}
                     onChange={(e) =>
                       onUpdate({
                         maxTransfers: e.target.value === '99' ? undefined : parseInt(e.target.value, 10),
@@ -588,9 +588,9 @@ export const PersonCard: React.FC<PersonCardProps> = ({
                     className="w-full bg-slate-50/80 border border-slate-200 rounded-md px-2 py-1 text-xs text-slate-700 focus:outline-none focus:border-blue-500 cursor-pointer"
                   >
                     <option value="0">0 (Nur Direktverbindungen)</option>
-                    <option value="1">Max. 1 Umstieg</option>
+                    <option value="1">Max. 1 Umstieg (Standard)</option>
                     <option value="2">Max. 2 Umstiege</option>
-                    <option value="3">Max. 3 Umstiege (Standard)</option>
+                    <option value="3">Max. 3 Umstiege</option>
                     <option value="99">Beliebig viele Umstiege</option>
                   </select>
                 </div>

@@ -276,7 +276,7 @@ export function useCommuteFinder() {
         mode: 'transit',
         color,
         visible: true,
-        maxTransfers: 2,
+        maxTransfers: 1,
         maxWalkToStationMin: 5,
         maxWalkFromStationMin: 5,
         maxTransferWaitMin: 5,
