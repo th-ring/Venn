@@ -12,7 +12,7 @@ interface IsochroneEngineTabProps {
   onSelectProvider: (provider: IsochroneProvider) => void;
   options: IsochroneOptions;
   onSelectFidelity: (fidelity: PolygonFidelity) => void;
-  onToggleOption: (key: 'liveTraffic' | 'enableSmoothing') => void;
+  onToggleOption: (key: 'liveTraffic' | 'enableSmoothing' | 'fillHoles') => void;
   showOnlyIntersection?: boolean;
   onToggleOnlyIntersection?: () => void;
 }
@@ -258,6 +258,33 @@ export const IsochroneEngineTab: React.FC<IsochroneEngineTabProps> = ({
               <div
                 className={`bg-white w-3.5 h-3.5 rounded-full shadow-xs transform transition-transform ${
                   options.enableSmoothing ? 'translate-x-3.5' : 'translate-x-0'
+                }`}
+              />
+            </button>
+          </div>
+
+          {/* Hole-Filling Switch: Schließt künstliche Netzlöcher */}
+          <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 flex items-center justify-between sm:col-span-2">
+            <div className="pr-2">
+              <div className="text-xs font-semibold text-slate-800">
+                Künstliche Netzlöcher schließen (Hole-Filling)
+              </div>
+              <div className="text-[10px] text-slate-500 leading-tight mt-0.5">
+                Füllt unbegründete Hohlräume und Artefakte in dichten Stadtgebieten (z. B. Moosach) für ein konsistentes Erreichbarkeitspolygon.
+              </div>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={options.fillHoles !== false}
+              onClick={() => onToggleOption('fillHoles')}
+              className={`w-8 h-4.5 shrink-0 flex items-center rounded-full p-0.5 transition-colors cursor-pointer ${
+                options.fillHoles !== false ? 'bg-blue-600' : 'bg-slate-200'
+              }`}
+            >
+              <div
+                className={`bg-white w-3.5 h-3.5 rounded-full shadow-xs transform transition-transform ${
+                  options.fillHoles !== false ? 'translate-x-3.5' : 'translate-x-0'
                 }`}
               />
             </button>
