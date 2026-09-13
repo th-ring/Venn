@@ -2,6 +2,7 @@ import React from 'react';
 import { BasemapPlatform, MapVariant } from '../../../types';
 import {
   OSM_VARIANTS,
+  OPNV_VARIANTS,
   CARTO_VARIANTS,
   GOOGLE_VARIANTS,
 } from '../../map/MapLayerControls';
@@ -33,13 +34,15 @@ export const BasemapTab: React.FC<BasemapTabProps> = ({
       ? GOOGLE_VARIANTS
       : platform === 'carto'
       ? CARTO_VARIANTS
+      : platform === 'opnv'
+      ? OPNV_VARIANTS
       : OSM_VARIANTS;
 
   return (
     <div className="space-y-4">
       <div className="text-xs text-slate-600 leading-relaxed">
         Wähle deinen bevorzugten <strong>Kartenanbieter</strong> und den gewünschten <strong>Kartentyp</strong>. 
-        Karten von <em>OpenStreetMap</em> und <em>CARTO</em> funktionieren sofort und ohne API-Key.
+        Karten von <em>OpenStreetMap</em>, <em>ÖPNV (memomaps.de)</em> und <em>CARTO</em> funktionieren sofort und ohne API-Key.
       </div>
 
       {/* STUFE 1: KARTENDIENST WÄHLEN */}
@@ -53,7 +56,7 @@ export const BasemapTab: React.FC<BasemapTabProps> = ({
           )}
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
           {/* Option: OpenStreetMap */}
           <div
             onClick={() => onSelectPlatform('osm')}
@@ -80,6 +83,40 @@ export const BasemapTab: React.FC<BasemapTabProps> = ({
                 </div>
                 <div className="text-[10px] text-slate-500 mt-0.5">
                   100% frei, Open-Source & ohne Key.
+                </div>
+              </div>
+            </div>
+            <span className="text-[9px] font-semibold bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded-full shrink-0">
+              Frei
+            </span>
+          </div>
+
+          {/* Option: ÖPNV */}
+          <div
+            onClick={() => onSelectPlatform('opnv')}
+            className={`p-3 rounded-xl border cursor-pointer transition-all flex items-start justify-between ${
+              platform === 'opnv'
+                ? 'border-emerald-500 bg-emerald-50/50 ring-2 ring-emerald-400/40 shadow-xs'
+                : 'border-slate-200 bg-white hover:border-slate-300'
+            }`}
+          >
+            <div className="flex items-start gap-2.5">
+              <input
+                type="radio"
+                name="modalPlatform"
+                checked={platform === 'opnv'}
+                onChange={() => onSelectPlatform('opnv')}
+                className="mt-0.5 text-emerald-600 cursor-pointer"
+              />
+              <div className="p-1.5 bg-emerald-100 text-emerald-700 rounded-lg shrink-0">
+                <Train className="w-4 h-4" />
+              </div>
+              <div>
+                <div className="text-xs font-bold text-slate-900">
+                  ÖPNV
+                </div>
+                <div className="text-[10px] text-slate-500 mt-0.5">
+                  memomaps.de Linien & Bahnnetz.
                 </div>
               </div>
             </div>

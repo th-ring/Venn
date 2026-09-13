@@ -139,6 +139,11 @@ export function createOsmBasemapLayer(variant: MapVariant): L.Layer {
     });
   }
 
+  if (variant === 'memomaps') {
+    // ÖPNVkarte from memomaps.de - Pure public transit network with bus & train line numbers
+    return createMemomapsBasemapLayer();
+  }
+
   if (variant === 'topo') {
     // OpenTopoMap - Topographic map with elevation contours & hillshading
     return L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
@@ -154,6 +159,45 @@ export function createOsmBasemapLayer(variant: MapVariant): L.Layer {
       '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     maxZoom: 19,
   });
+}
+
+/**
+ * Creates pure ÖPNVkarte layer from memomaps.de
+ * Clean public transport map: bus, tram, subway, train routes with line numbers (no bike focus)
+ */
+export function createMemomapsBasemapLayer(): L.Layer {
+  return L.tileLayer('https://tile.memomaps.de/tilegen/{z}/{x}/{y}.png', {
+    attribution:
+      'Kartendaten: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>-Mitwirkende | Kartendarstellung: &copy; <a href="https://memomaps.de/">memomaps.de</a> (<a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>)',
+    maxZoom: 18,
+  });
+}
+
+/**
+ * Creates public transit (ÖPNV) focused basemap layer:
+ * - memomaps: ÖPNVkarte (memomaps.de) – Pure transit lines, bus/tram/metro/train routes with line numbers
+ * - transit: CyclOSM – Public transit & cycling infrastructure
+ * - railway: OpenRailwayMap – Railway & rail transport basemap
+ */
+export function createOpnvBasemapLayer(variant: MapVariant): L.Layer {
+  if (variant === 'transit') {
+    return L.tileLayer('https://{s}.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png', {
+      attribution:
+        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://www.cyclosm.org">CyclOSM</a> (ÖPNV & Rad)',
+      maxZoom: 20,
+    });
+  }
+
+  if (variant === 'railway') {
+    return L.tileLayer('https://{s}.tiles.openrailwaymap.org/standard/{z}/{x}/{y}.png', {
+      attribution:
+        'Map data: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors | Map style: &copy; <a href="https://www.openrailwaymap.org">OpenRailwayMap</a>',
+      maxZoom: 19,
+    });
+  }
+
+  // Default ÖPNV: memomaps.de ÖPNVkarte
+  return createMemomapsBasemapLayer();
 }
 
 /**
@@ -215,6 +259,9 @@ export function createBasemapLayer(platform: BasemapPlatform, variant: MapVarian
   }
   if (platform === 'carto') {
     return createCartoBasemapLayer(variant);
+  }
+  if (platform === 'opnv') {
+    return createOpnvBasemapLayer(variant);
   }
   return createOsmBasemapLayer(variant);
 }

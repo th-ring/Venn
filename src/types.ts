@@ -21,20 +21,23 @@ export interface PersonProfile {
 
 export type PolygonFidelity = 'AUTOMATIC' | 'LOW' | 'MEDIUM' | 'HIGH';
 
-export type BasemapPlatform = 'osm' | 'carto' | 'google';
+export type BasemapPlatform = 'osm' | 'opnv' | 'carto' | 'google';
 
 export type MapVariant =
   | 'normal'
   | 'satellite'
   | 'streets'
   | 'transit'
+  | 'memomaps'
   | 'topo'
+  | 'railway'
   | 'carto_light'
   | 'carto_dark'
   | 'carto_voyager';
 
 export type BasemapProvider =
   | 'osm'
+  | 'opnv'
   | 'carto'
   | 'google_roadmap'
   | 'google_satellite'
@@ -43,7 +46,11 @@ export type BasemapProvider =
   | 'osm_satellite'
   | 'osm_streets'
   | 'osm_transit'
+  | 'osm_memomaps'
   | 'osm_topo'
+  | 'opnv_memomaps'
+  | 'opnv_transit'
+  | 'opnv_railway'
   | 'carto_carto_light'
   | 'carto_carto_dark'
   | 'carto_carto_voyager'
