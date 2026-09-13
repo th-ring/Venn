@@ -1,6 +1,10 @@
 import React from 'react';
 import { PolygonFidelity, IsochroneOptions } from '../../../types';
-import { IsochroneProvider } from '../../../services/isochroneEngine';
+import {
+  IsochroneProvider,
+  hasGoogleMapsApiKey,
+  hasOrsApiKey,
+} from '../../../services/isochroneEngine';
 import { ExternalLink } from 'lucide-react';
 
 interface IsochroneEngineTabProps {
@@ -53,6 +57,15 @@ export const IsochroneEngineTab: React.FC<IsochroneEngineTabProps> = ({
               <span className="ml-2 text-[10px] font-semibold bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full">
                 Public Preview
               </span>
+              {hasGoogleMapsApiKey() ? (
+                <span className="ml-1.5 text-[10px] font-semibold bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded-full">
+                  Key aktiv ✔
+                </span>
+              ) : (
+                <span className="ml-1.5 text-[10px] font-semibold bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded-full">
+                  Key fehlt
+                </span>
+              )}
             </div>
           </div>
           <a
@@ -131,6 +144,15 @@ export const IsochroneEngineTab: React.FC<IsochroneEngineTabProps> = ({
               <span className="ml-2 text-[10px] font-semibold bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded-full">
                 Open Source API
               </span>
+              {hasOrsApiKey() ? (
+                <span className="ml-1.5 text-[10px] font-semibold bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded-full">
+                  Key aktiv ✔
+                </span>
+              ) : (
+                <span className="ml-1.5 text-[10px] font-semibold bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded-full">
+                  Key fehlt
+                </span>
+              )}
             </div>
           </div>
           <a

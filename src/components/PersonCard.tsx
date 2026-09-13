@@ -49,6 +49,7 @@ interface PersonCardProps {
   profile: PersonProfile;
   index: number;
   totalProfiles: number;
+  isochroneFeature?: GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon>;
   onUpdate: (updated: Partial<PersonProfile>) => void;
   onRemove: () => void;
 }
@@ -69,6 +70,7 @@ export const PersonCard: React.FC<PersonCardProps> = ({
   profile,
   index,
   totalProfiles,
+  isochroneFeature,
   onUpdate,
   onRemove,
 }) => {
@@ -348,9 +350,51 @@ export const PersonCard: React.FC<PersonCardProps> = ({
       {/* Travel Time Slider */}
       <div className="mb-2">
         <div className="flex items-center justify-between text-xs mb-1.5">
-          <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
-            Max. Reisezeit
-          </span>
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+              Max. Reisezeit
+            </span>
+            {isochroneFeature && (
+              <>
+                {isochroneFeature.properties?.isFallback ? (
+                  <span
+                    className="text-[9px] font-bold text-rose-700 bg-rose-100 border border-rose-300 px-1.5 py-0.2 rounded-md"
+                    title={isochroneFeature.properties?.fallbackReason || 'API-Fehler: Offline-Fallback aktiv'}
+                  >
+                    ⚠️ Fallback
+                  </span>
+                ) : isochroneFeature.properties?.source === 'ors' ? (
+                  <span
+                    className="text-[9px] font-bold text-blue-700 bg-blue-100 border border-blue-300 px-1.5 py-0.2 rounded-md"
+                    title="Berechnet über OpenRouteService (OSM)"
+                  >
+                    ORS (OSM)
+                  </span>
+                ) : isochroneFeature.properties?.source === 'google' || isochroneFeature.properties?.source === 'google_maps_isochrones' ? (
+                  <span
+                    className="text-[9px] font-bold text-emerald-700 bg-emerald-100 border border-emerald-300 px-1.5 py-0.2 rounded-md"
+                    title="Berechnet über Google Maps Isochrones API"
+                  >
+                    Google Maps
+                  </span>
+                ) : isochroneFeature.properties?.source === 'transit_metro_matrix' ? (
+                  <span
+                    className="text-[9px] font-bold text-purple-700 bg-purple-100 border border-purple-300 px-1.5 py-0.2 rounded-md"
+                    title="Berechnet über regionale ÖPNV-Fahrplanmatrix"
+                  >
+                    ÖPNV-Matrix
+                  </span>
+                ) : (
+                  <span
+                    className="text-[9px] font-normal text-slate-500 bg-slate-100 border border-slate-200 px-1.5 py-0.2 rounded-md"
+                    title="Integrierte Offline-Heuristik"
+                  >
+                    Offline
+                  </span>
+                )}
+              </>
+            )}
+          </div>
           <span
             className="font-bold px-2 py-0.5 rounded-md text-xs text-white"
             style={{ backgroundColor: profile.color }}

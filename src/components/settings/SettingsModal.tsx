@@ -22,6 +22,7 @@ import {
   setBasemapPlatform,
   setMapVariant,
   setSelectedBasemap,
+  clearIsochroneCache,
 } from '../../services/isochroneEngine';
 import {
   validateGoogleMapsApiKey,
@@ -167,7 +168,18 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const handleSaveSettings = () => {
     setGoogleMapsApiKey(googleKeyInput);
     setOrsApiKey(orsKeyInput);
-    setSelectedProvider(activeProvider);
+
+    let providerToSave = activeProvider;
+    // If user entered an ORS key and provider was still default 'calibrated', activate ORS
+    if (orsKeyInput.trim() && activeProvider === 'calibrated' && !getOrsApiKey()) {
+      providerToSave = 'ors';
+      setActiveProvider('ors');
+    } else if (googleKeyInput.trim() && activeProvider === 'calibrated' && !getGoogleMapsApiKey() && !orsKeyInput.trim()) {
+      providerToSave = 'google';
+      setActiveProvider('google');
+    }
+
+    setSelectedProvider(providerToSave);
     setBasemapPlatform(modalPlatform);
     setMapVariant(modalVariant);
     const composite = `${modalPlatform}_${modalVariant}` as BasemapProvider;
@@ -175,6 +187,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     if (onBasemapChange) {
       onBasemapChange(composite);
     }
+
+    // Invalidate isochrone cache so fresh calculation runs with new keys/provider
+    clearIsochroneCache();
+
     setIsSaved(true);
     if (onRefreshIsochrones) {
       onRefreshIsochrones();

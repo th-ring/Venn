@@ -118,6 +118,15 @@ export interface FallbackSuggestion {
   suggestedMode?: TransportMode;
 }
 
+export interface IsochroneFallbackAlert {
+  personId: string;
+  personName: string;
+  mode: TransportMode;
+  requestedProvider: 'google' | 'ors' | 'calibrated';
+  reason: string;
+  statusCode?: number;
+}
+
 export interface CalculationResult {
   isochrones: Record<string, GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon>>;
   intersection: GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon | GeoJSON.GeometryCollection> | null;
@@ -126,6 +135,7 @@ export interface CalculationResult {
   rawIntersectionAreaKm2?: number;
   emptyIntersection: boolean;
   suggestions: FallbackSuggestion[];
+  fallbackAlerts?: IsochroneFallbackAlert[];
 }
 
 export interface CommuteRouteDetails {
