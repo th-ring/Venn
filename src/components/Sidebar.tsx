@@ -5,10 +5,12 @@ import {
   CommuteSchedule,
   FallbackSuggestion,
   BasemapProvider,
+  PresetScenario,
 } from '../types';
 import { PersonCard } from './PersonCard';
 import { CommuteSettings } from './CommuteSettings';
 import { FallbackAlert } from './FallbackAlert';
+import { PresetSelector } from './PresetSelector';
 import {
   Users,
   Plus,
@@ -56,6 +58,8 @@ interface SidebarProps {
   onToggleOnlyIntersection?: () => void;
   showIndividualIsochrones?: boolean;
   onToggleIndividualIsochrones?: () => void;
+  onSelectScenario?: (scenario: PresetScenario) => void;
+  activeScenarioId?: string;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -86,6 +90,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onToggleOnlyIntersection,
   showIndividualIsochrones,
   onToggleIndividualIsochrones,
+  onSelectScenario,
+  activeScenarioId,
 }) => {
   const activeProfilesCount = profiles.filter((p) => p.visible).length;
   const hasIntersection = !!result?.intersection && (result?.intersectionAreaKm2 || 0) > 0;
@@ -134,9 +140,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
       </div>
 
+      {/* Preset Scenario Quick-Switch Bar */}
+      {onSelectScenario && (
+        <div className="px-4 py-2.5 bg-white border-b border-slate-200">
+          <PresetSelector
+            onSelectScenario={onSelectScenario}
+            activeScenarioId={activeScenarioId}
+          />
+        </div>
+      )}
+
       {/* Commute Direction & Time Settings */}
       <CommuteSettings
         schedule={schedule}
+        profiles={profiles}
         onChangeSchedule={onChangeSchedule}
         onRefreshIsochrones={onRefreshIsochrones}
         isCalculating={isCalculating || isPending}

@@ -15,6 +15,7 @@
 import * as turf from '@turf/turf';
 import { MvvDataset, MvvStation, DEFAULT_MVV_DATASET, MvvConnection } from '../data/mvvDataset';
 import { PersonProfile, TransitSubMode, ALL_TRANSIT_SUBMODES } from '../types';
+import { PriorityQueue } from './priorityQueue';
 
 const MVV_STORAGE_KEY = 'mvv_transit_dataset_v1';
 const MVV_LAST_SYNC_KEY = 'mvv_last_sync_timestamp';
@@ -288,7 +289,7 @@ export function calculateReachableStations(
   }
 
   const bestTimes = new Map<string, { time: number; transfers: number }>();
-  const pq: State[] = [];
+  const pq = new PriorityQueue<State>((a, b) => a.totalTime - b.totalTime);
 
   // Initial departure wait average:
   // High-frequency Munich rail core (Stammstrecke, U-Bahn) has ~2 min average wait
@@ -307,10 +308,8 @@ export function calculateReachableStations(
     }
   }
 
-  while (pq.length > 0) {
-    // Pop lowest time
-    pq.sort((a, b) => a.totalTime - b.totalTime);
-    const curr = pq.shift()!;
+  while (!pq.isEmpty()) {
+    const curr = pq.pop()!;
 
     const best = bestTimes.get(curr.stationId);
     if (best && curr.totalTime > best.time && curr.transfers >= best.transfers) {

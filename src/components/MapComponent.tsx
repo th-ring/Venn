@@ -8,29 +8,9 @@ import {
   BasemapProvider,
   BasemapPlatform,
   MapVariant,
-} from '../types';
-import {
-  Crosshair,
-  Eye,
-  EyeOff,
-  Loader2,
-  Layers,
-  Map as MapIcon,
-  Satellite,
-  Train,
-  Navigation,
-  AlertCircle,
-  Key,
-  Check,
-  ChevronDown,
-  Globe,
-  Home,
-  Flame,
-  Focus,
-} from 'lucide-react';
-import {
   HeatmapSettings,
 } from '../types';
+import { Loader2, AlertCircle, Key } from 'lucide-react';
 import {
   generatePriorityHeatmapZones,
   getPriorityTargets,
@@ -41,13 +21,19 @@ import {
   getMapVariant,
   setBasemapPlatform,
   setMapVariant,
-  getSelectedBasemap,
   setSelectedBasemap,
 } from '../services/isochroneEngine';
 import {
   loadGoogleMapsJsApi,
   createBasemapLayer,
 } from '../services/googleMapsBasemap';
+import {
+  createPersonPinIcon,
+  createInspectionPinIcon,
+  createPriorityTargetIcon,
+  createPersonPopupHtml,
+} from './map/mapIcons';
+import { MapLayerControls } from './map/MapLayerControls';
 
 interface MapComponentProps {
   profiles: PersonProfile[];
@@ -67,43 +53,10 @@ interface MapComponentProps {
   onToggleOnlyResidential?: () => void;
   heatmapSettings?: HeatmapSettings;
   onUpdateHeatmap?: (settings: Partial<HeatmapSettings>) => void;
-  onMapLoaded?: () => void;
   basemap?: BasemapProvider;
   onBasemapChange?: (provider: BasemapProvider) => void;
   onOpenApiKeySettings?: () => void;
 }
-
-export const MAP_VARIANTS: Array<{
-  id: MapVariant;
-  label: string;
-  subLabel: string;
-  icon: typeof MapIcon;
-}> = [
-  {
-    id: 'normal',
-    label: 'Normal',
-    subLabel: 'Standard-Karte mit Ortschaften & Flächen',
-    icon: MapIcon,
-  },
-  {
-    id: 'satellite',
-    label: 'Satellit',
-    subLabel: 'Echte Luftbilder & Satellitenaufnahmen',
-    icon: Satellite,
-  },
-  {
-    id: 'streets',
-    label: 'Straße',
-    subLabel: 'Fokus auf Straßennetz, Autobahnen & Trassen',
-    icon: Navigation,
-  },
-  {
-    id: 'transit',
-    label: 'ÖPNV',
-    subLabel: 'Bahnlinien, Tram, Bus & Haltestellen',
-    icon: Train,
-  },
-];
 
 export const MapComponent: React.FC<MapComponentProps> = ({
   profiles,
@@ -133,18 +86,10 @@ export const MapComponent: React.FC<MapComponentProps> = ({
   // Basemap platform & variant management
   const [activePlatform, setActivePlatform] = useState<BasemapPlatform>(() => getBasemapPlatform());
   const [activeVariant, setActiveVariant] = useState<MapVariant>(() => getMapVariant());
-
   const [isBasemapLoading, setIsBasemapLoading] = useState(false);
   const [basemapError, setBasemapError] = useState<string | null>(null);
-  const [showLayerMenu, setShowLayerMenu] = useState(false);
-  const layerMenuRef = useRef<HTMLDivElement>(null);
 
-  const isOnlyIntersectionActive =
-    showOnlyIntersection !== undefined
-      ? showOnlyIntersection
-      : !showIndividualIsochrones && showIntersectionLayer;
-
-  // Sync if external composite basemap prop changes (e.g. from modal)
+  // Sync if external composite basemap prop changes
   useEffect(() => {
     if (externalBasemap) {
       const isGoogle = externalBasemap.startsWith('google');
@@ -162,22 +107,11 @@ export const MapComponent: React.FC<MapComponentProps> = ({
     }
   }, [externalBasemap]);
 
-  // Layer groups
+  // Leaflet Layer groups
   const basemapLayerRef = useRef<L.Layer | null>(null);
   const markersLayerRef = useRef<L.LayerGroup | null>(null);
   const isochronesLayerRef = useRef<L.LayerGroup | null>(null);
   const inspectionMarkerRef = useRef<L.Marker | null>(null);
-
-  // Close layer dropdown on outside click
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (layerMenuRef.current && !layerMenuRef.current.contains(e.target as Node)) {
-        setShowLayerMenu(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
 
   // Initialize map once
   useEffect(() => {
@@ -235,32 +169,32 @@ export const MapComponent: React.FC<MapComponentProps> = ({
             setBasemapError(
               'Kein Google Maps API-Schlüssel hinterlegt. Bitte hinterlege deinen Key in den Einstellungen.'
             );
-            // Fallback to OSM for selected variant
             newLayer = createBasemapLayer('osm', activeVariant);
           } else {
-            // Load Google Maps JS API script if not yet loaded
             await loadGoogleMapsJsApi(apiKey);
             if (isCancelled) return;
             newLayer = createBasemapLayer('google', activeVariant);
           }
         } else {
-          // OpenStreetMap platform
           newLayer = createBasemapLayer('osm', activeVariant);
         }
 
         if (isCancelled) return;
 
+        const currentMap = mapRef.current;
+        if (!currentMap) return;
+
         // Remove old basemap layer safely
         if (basemapLayerRef.current) {
           try {
-            map.removeLayer(basemapLayerRef.current);
+            currentMap.removeLayer(basemapLayerRef.current);
           } catch (e) {
             console.warn('Error removing old basemap layer:', e);
           }
           basemapLayerRef.current = null;
         }
 
-        newLayer.addTo(map);
+        newLayer.addTo(currentMap);
         if ((newLayer as any).bringToBack) {
           (newLayer as any).bringToBack();
         }
@@ -271,9 +205,9 @@ export const MapComponent: React.FC<MapComponentProps> = ({
           err?.message ||
             'Kartenlayer konnte nicht geladen werden. Bitte API-Key und Verbindung prüfen.'
         );
-        // Fallback to standard OSM normal
-        if (!basemapLayerRef.current) {
-          const fallback = createBasemapLayer('osm', 'normal').addTo(map);
+        const fallbackMap = mapRef.current;
+        if (!basemapLayerRef.current && fallbackMap) {
+          const fallback = createBasemapLayer('osm', 'normal').addTo(fallbackMap);
           if ((fallback as any).bringToBack) (fallback as any).bringToBack();
           basemapLayerRef.current = fallback;
         }
@@ -291,7 +225,6 @@ export const MapComponent: React.FC<MapComponentProps> = ({
     };
   }, [activePlatform, activeVariant]);
 
-  // Handle switching platform (OSM <-> Google Maps)
   const handleSelectPlatform = (platform: BasemapPlatform) => {
     setActivePlatform(platform);
     setBasemapPlatform(platform);
@@ -302,7 +235,6 @@ export const MapComponent: React.FC<MapComponentProps> = ({
     }
   };
 
-  // Handle switching map variant (Normal, Satellit, Straße, ÖPNV)
   const handleSelectVariant = (variant: MapVariant) => {
     setActiveVariant(variant);
     setMapVariant(variant);
@@ -323,34 +255,7 @@ export const MapComponent: React.FC<MapComponentProps> = ({
     profiles.forEach((profile) => {
       if (!profile.visible) return;
 
-      const markerHtml = `
-        <div style="
-          background-color: ${profile.color};
-          width: 34px;
-          height: 34px;
-          border-radius: 50%;
-          border: 3px solid white;
-          box-shadow: 0 4px 10px rgba(0,0,0,0.35);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: white;
-          font-weight: bold;
-          font-size: 13px;
-          cursor: grab;
-          user-select: none;
-          transition: transform 0.15s ease;
-        " title="${profile.name} (Verschieben um Standort zu ändern)">
-          ${profile.name.charAt(0).toUpperCase()}
-        </div>
-      `;
-
-      const customIcon = L.divIcon({
-        className: 'custom-person-pin',
-        html: markerHtml,
-        iconSize: [34, 34],
-        iconAnchor: [17, 17],
-      });
+      const customIcon = createPersonPinIcon(profile.name, profile.color);
 
       const marker = L.marker([profile.lat, profile.lng], {
         icon: customIcon,
@@ -363,33 +268,7 @@ export const MapComponent: React.FC<MapComponentProps> = ({
         onUpdatePersonPosition(profile.id, newLatLng.lat, newLatLng.lng);
       });
 
-      marker.bindPopup(`
-        <div style="font-family: sans-serif; min-width: 170px;">
-          <div style="font-weight: 700; font-size: 14px; margin-bottom: 2px; color: ${profile.color};">
-            ${profile.name}
-          </div>
-          <div style="font-size: 11px; color: #475569; margin-bottom: 6px;">
-            ${profile.address || 'Gewählter Standort'}
-          </div>
-          <div style="display: flex; gap: 4px; align-items: center; font-size: 11px; font-weight: 600; color: #1e293b;">
-            <span>⏱️ Max. ${profile.travelTimeMinutes} Min</span>
-            <span>•</span>
-            <span>${
-              profile.mode === 'transit'
-                ? 'ÖPNV'
-                : profile.mode === 'driving'
-                ? 'Auto'
-                : profile.mode === 'cycling'
-                ? 'Fahrrad'
-                : 'Zu Fuß'
-            }</span>
-          </div>
-          <div style="font-size: 10px; color: #94a3b8; margin-top: 6px; border-top: 1px solid #f1f5f9; padding-top: 4px;">
-            Pin ziehen, um Wohnort zu ändern
-          </div>
-        </div>
-      `);
-
+      marker.bindPopup(createPersonPopupHtml(profile));
       marker.addTo(markersGroup);
     });
   }, [profiles, onUpdatePersonPosition]);
@@ -407,37 +286,7 @@ export const MapComponent: React.FC<MapComponentProps> = ({
       return;
     }
 
-    const pinBg = inspectionPoint.allWithinLimit ? '#059669' : '#dc2626';
-    const pinIconHtml = `
-      <div style="
-        background-color: ${pinBg};
-        width: 30px;
-        height: 30px;
-        border-radius: 50% 50% 50% 0;
-        transform: rotate(-45deg);
-        border: 2.5px solid white;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      ">
-        <div style="
-          transform: rotate(45deg);
-          color: white;
-          font-size: 14px;
-          font-weight: bold;
-        ">
-          ${inspectionPoint.allWithinLimit ? '✓' : '!'}
-        </div>
-      </div>
-    `;
-
-    const customPin = L.divIcon({
-      className: 'custom-inspection-pin',
-      html: pinIconHtml,
-      iconSize: [30, 30],
-      iconAnchor: [15, 30],
-    });
+    const customPin = createInspectionPinIcon(inspectionPoint.allWithinLimit);
 
     if (inspectionMarkerRef.current) {
       inspectionMarkerRef.current.setLatLng([inspectionPoint.lat, inspectionPoint.lng]);
@@ -451,7 +300,7 @@ export const MapComponent: React.FC<MapComponentProps> = ({
     }
   }, [inspectionPoint]);
 
-  // Render Isochrones and Intersection on the map
+  // Render Isochrones, Intersection and Priority Heatmap
   useEffect(() => {
     const isochronesGroup = isochronesLayerRef.current;
     if (!isochronesGroup || !mapRef.current) return;
@@ -460,7 +309,7 @@ export const MapComponent: React.FC<MapComponentProps> = ({
 
     if (!result) return;
 
-    // 1. Draw individual person isochrones (only if enabled)
+    // 1. Draw individual person isochrones
     if (showIndividualIsochrones) {
       profiles.forEach((profile) => {
         if (!profile.visible) return;
@@ -495,11 +344,11 @@ export const MapComponent: React.FC<MapComponentProps> = ({
       });
     }
 
-    // 2. Draw Golden Intersection zone (FR-2.1)
+    // 2. Draw Golden Intersection zone
     if (showIntersectionLayer && result.intersection) {
       const intersectionLayer = L.geoJSON(result.intersection as any, {
         style: {
-          color: onlyResidential ? '#065f46' : '#047857', // Darker emerald for residential
+          color: onlyResidential ? '#065f46' : '#047857',
           weight: 3.5,
           opacity: 0.95,
           fillColor: onlyResidential ? '#059669' : '#10b981',
@@ -517,13 +366,17 @@ export const MapComponent: React.FC<MapComponentProps> = ({
           onlyResidential && result.rawIntersectionAreaKm2
             ? ` (von ${result.rawIntersectionAreaKm2} km² Gesamt)`
             : ''
-        }<br/>${onlyResidential ? 'Reduziert auf reale Siedlungs- & Wohnflächen' : 'Für alle erreichbar!'}</div>`,
+        }<br/>${
+          onlyResidential
+            ? 'Reduziert auf reale Siedlungs- & Wohnflächen'
+            : 'Für alle erreichbar!'
+        }</div>`,
         { sticky: true }
       );
 
       intersectionLayer.addTo(isochronesGroup);
 
-      // 3. Draw Priority Heatmap Layer if active (Part 2: U-Bahn, S-Bahn, Autobahn)
+      // 3. Draw Priority Heatmap Layer if active
       if (heatmapSettings && heatmapSettings.mode !== 'none') {
         try {
           const heatmapZones = generatePriorityHeatmapZones(
@@ -539,7 +392,11 @@ export const MapComponent: React.FC<MapComponentProps> = ({
                 weight: 1.5,
                 opacity: Math.min(0.9, (heatmapSettings.intensity ?? 0.65) * 1.1),
                 fillColor: zone.color,
-                fillOpacity: Math.min(0.85, (heatmapSettings.intensity ?? 0.65) * (zone.tier === 'tier1' ? 0.75 : zone.tier === 'tier2' ? 0.55 : 0.38)),
+                fillOpacity: Math.min(
+                  0.85,
+                  (heatmapSettings.intensity ?? 0.65) *
+                    (zone.tier === 'tier1' ? 0.75 : zone.tier === 'tier2' ? 0.55 : 0.38)
+                ),
                 lineJoin: 'round',
               },
             });
@@ -552,22 +409,23 @@ export const MapComponent: React.FC<MapComponentProps> = ({
             zoneLayer.addTo(isochronesGroup);
           });
 
-          // Also render discrete icon markers for the relevant priority stations / junctions in view
+          // Priority Station / Motorway target badges
           const activeItems =
             heatmapSettings.selectedItems && heatmapSettings.selectedItems.length > 0
               ? heatmapSettings.selectedItems
-              : heatmapSettings.mode && heatmapSettings.mode !== 'none'
-              ? [heatmapSettings.mode]
-              : [];
+              : [heatmapSettings.mode];
+
           const priorityTargets = getPriorityTargets(activeItems);
           if (priorityTargets.length > 0) {
-            // Find targets near intersection
             priorityTargets.forEach((target) => {
               const pt = turf.point([target.lng, target.lat]);
               let isNear = false;
               try {
-                // If within max radius or within 2km of intersection
-                const distToIntersection = turf.pointToPolygonDistance(pt, result.intersection as any, { units: 'kilometers' });
+                const distToIntersection = turf.pointToPolygonDistance(
+                  pt,
+                  result.intersection as any,
+                  { units: 'kilometers' }
+                );
                 if (distToIntersection <= (heatmapSettings.radiusKm || 1.5)) {
                   isNear = true;
                 }
@@ -576,35 +434,12 @@ export const MapComponent: React.FC<MapComponentProps> = ({
               }
 
               if (isNear) {
-                const markerHtml = `
-                  <div style="
-                    width: 20px;
-                    height: 20px;
-                    border-radius: 50%;
-                    background: ${target.type === 'ubahn' ? '#2563eb' : target.type === 'sbahn' ? '#059669' : '#ea580c'};
-                    border: 2px solid #ffffff;
-                    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    color: white;
-                    font-size: 10px;
-                    font-weight: bold;
-                  ">
-                    ${target.type === 'ubahn' ? 'U' : target.type === 'sbahn' ? 'S' : 'A'}
-                  </div>
-                `;
-
-                const markerIcon = L.divIcon({
-                  html: markerHtml,
-                  className: 'priority-target-marker',
-                  iconSize: [20, 20],
-                  iconAnchor: [10, 10],
-                });
-
+                const markerIcon = createPriorityTargetIcon(target.type);
                 const tMarker = L.marker([target.lat, target.lng], { icon: markerIcon });
                 tMarker.bindTooltip(
-                  `<div style="font-size: 11px;"><strong>${target.name}</strong><br/>${target.linesOrRoad ? `<span style="color:#64748b">${target.linesOrRoad}</span>` : ''}</div>`,
+                  `<div style="font-size: 11px;"><strong>${target.name}</strong><br/>${
+                    target.linesOrRoad ? `<span style="color:#64748b">${target.linesOrRoad}</span>` : ''
+                  }</div>`,
                   { direction: 'top', offset: [0, -8] }
                 );
                 tMarker.addTo(isochronesGroup);
@@ -628,7 +463,6 @@ export const MapComponent: React.FC<MapComponentProps> = ({
 
     const bounds = L.latLngBounds(visibleProfiles.map((p) => [p.lat, p.lng]));
 
-    // Include intersection in bounds if exists
     if (result?.intersection) {
       try {
         const tempLayer = L.geoJSON(result.intersection as any);
@@ -641,8 +475,7 @@ export const MapComponent: React.FC<MapComponentProps> = ({
     map.fitBounds(bounds, { padding: [60, 60], maxZoom: 14 });
   };
 
-  const currentVariantInfo =
-    MAP_VARIANTS.find((v) => v.id === activeVariant) || MAP_VARIANTS[0];
+  const hasIntersection = !!result?.intersection && (result?.intersectionAreaKm2 || 0) > 0;
 
   return (
     <div className="relative w-full h-full select-none">
@@ -666,7 +499,7 @@ export const MapComponent: React.FC<MapComponentProps> = ({
             <button
               type="button"
               onClick={onOpenApiKeySettings}
-              className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-2.5 py-1 rounded-lg text-[11px] shrink-0 transition-colors flex items-center gap-1 shadow-xs"
+              className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-2.5 py-1 rounded-lg text-[11px] shrink-0 transition-colors flex items-center gap-1 shadow-xs cursor-pointer"
             >
               <Key className="w-3 h-3" />
               <span>Key eingeben</span>
@@ -675,375 +508,28 @@ export const MapComponent: React.FC<MapComponentProps> = ({
         </div>
       )}
 
-      {/* Floating Map Controls & Multi-Variant Basemap Switcher */}
-      <div className="absolute top-4 right-4 z-20 flex flex-col items-end gap-2">
-        {/* Basemap Switcher Dropdown */}
-        <div className="relative" ref={layerMenuRef}>
-          <button
-            id="btn-basemap-switcher"
-            type="button"
-            onClick={() => setShowLayerMenu((prev) => !prev)}
-            title="Kartendienst & Kartentyp wählen"
-            className="bg-white/95 hover:bg-white text-slate-800 p-2 sm:px-3 sm:py-2 rounded-xl shadow-md border border-slate-200/90 transition-all flex items-center gap-2 backdrop-blur-xs text-xs font-semibold hover:shadow-lg cursor-pointer"
-          >
-            {isBasemapLoading ? (
-              <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
-            ) : (
-              <Layers className="w-4 h-4 text-blue-600" />
-            )}
-            <span className="hidden sm:inline">
-              {activePlatform === 'google' ? 'Google Maps' : 'OpenStreetMap'} • {currentVariantInfo.label}
-            </span>
-            <ChevronDown className="w-3.5 h-3.5 text-slate-400 hidden sm:inline" />
-          </button>
-
-          {showLayerMenu && (
-            <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-2xl shadow-2xl border border-slate-200/90 p-3 z-30 animate-in fade-in zoom-in-95 duration-150">
-              {/* STUFE 1: KARTENDIENST WÄHLEN */}
-              <div className="mb-3">
-                <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center justify-between">
-                  <span>1. Kartendienst (Dienst)</span>
-                  {getGoogleMapsApiKey() && (
-                    <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-full">
-                      Google Key aktiv
-                    </span>
-                  )}
-                </div>
-
-                <div className="grid grid-cols-2 gap-1.5 bg-slate-100 p-1 rounded-xl">
-                  {/* Option OSM */}
-                  <button
-                    type="button"
-                    onClick={() => handleSelectPlatform('osm')}
-                    className={`py-2 px-2.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                      activePlatform === 'osm'
-                        ? 'bg-white text-blue-900 shadow-xs border border-blue-200 ring-1 ring-blue-400/20'
-                        : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
-                    }`}
-                  >
-                    <Globe className="w-3.5 h-3.5 text-slate-700" />
-                    <span>OpenStreetMap</span>
-                  </button>
-
-                  {/* Option Google Maps */}
-                  <button
-                    type="button"
-                    onClick={() => handleSelectPlatform('google')}
-                    className={`py-2 px-2.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                      activePlatform === 'google'
-                        ? 'bg-white text-blue-900 shadow-xs border border-blue-200 ring-1 ring-blue-400/20'
-                        : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
-                    }`}
-                  >
-                    <MapIcon className="w-3.5 h-3.5 text-blue-600" />
-                    <span>Google Maps</span>
-                  </button>
-                </div>
-
-                {activePlatform === 'google' && !getGoogleMapsApiKey() && (
-                  <div className="mt-2 text-[11px] text-amber-700 bg-amber-50 border border-amber-200/80 p-2 rounded-lg flex items-center justify-between">
-                    <span>Google Maps Key erforderlich</span>
-                    {onOpenApiKeySettings && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setShowLayerMenu(false);
-                          onOpenApiKeySettings();
-                        }}
-                        className="text-amber-900 underline font-semibold text-[10px]"
-                      >
-                        Eingeben
-                      </button>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* STUFE 2: KARTENTYP WÄHLEN (Normal, Satellit, Straße, ÖPNV) */}
-              <div className="pt-2.5 border-t border-slate-100">
-                <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">
-                  2. Kartentyp ({activePlatform === 'google' ? 'Google' : 'OSM'})
-                </div>
-
-                <div className="grid grid-cols-2 gap-1.5">
-                  {MAP_VARIANTS.map((variant) => {
-                    const Icon = variant.icon;
-                    const isSelected = activeVariant === variant.id;
-
-                    return (
-                      <button
-                        key={variant.id}
-                        type="button"
-                        onClick={() => handleSelectVariant(variant.id)}
-                        className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
-                          isSelected
-                            ? 'bg-blue-50/80 border-blue-500 text-blue-950 font-bold ring-1 ring-blue-400'
-                            : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-700'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between w-full mb-1">
-                          <div
-                            className={`p-1.5 rounded-lg ${
-                              isSelected ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600'
-                            }`}
-                          >
-                            <Icon className="w-3.5 h-3.5" />
-                          </div>
-                          {isSelected && <Check className="w-4 h-4 text-blue-600" />}
-                        </div>
-                        <div>
-                          <div className="text-xs font-semibold">{variant.label}</div>
-                          <div className="text-[10px] text-slate-500 font-normal leading-tight mt-0.5 line-clamp-1">
-                            {variant.subLabel}
-                          </div>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* STUFE 3: KARTEN-EBENEN & ÜBERLAGERUNG */}
-              <div className="pt-2.5 border-t border-slate-100">
-                <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">
-                  3. Ebenen & Überlagerung
-                </div>
-                <div className="space-y-1.5">
-                  {/* Option: Nur überlagerten Treffbereich (nur Grün) */}
-                  {onToggleOnlyIntersection && (
-                    <div
-                      onClick={onToggleOnlyIntersection}
-                      className={`p-2 rounded-xl border flex items-center justify-between cursor-pointer transition-all ${
-                        isOnlyIntersectionActive
-                          ? 'bg-emerald-50/90 border-emerald-400 text-emerald-950 font-bold ring-1 ring-emerald-300'
-                          : 'bg-white border-slate-200 hover:bg-slate-50 text-slate-700'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2">
-                        <Focus
-                          className={`w-4 h-4 ${
-                            isOnlyIntersectionActive ? 'text-emerald-600' : 'text-slate-400'
-                          }`}
-                        />
-                        <span className="text-xs">Nur überlagerter Treffbereich (Grün)</span>
-                      </div>
-                      <span
-                        className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${
-                          isOnlyIntersectionActive
-                            ? 'bg-emerald-200/90 text-emerald-900'
-                            : 'bg-slate-100 text-slate-500'
-                        }`}
-                      >
-                        {isOnlyIntersectionActive ? 'Aktiv' : 'Aus'}
-                      </span>
-                    </div>
-                  )}
-
-                  {/* Option: Einzelne Personen-Isochronen */}
-                  {onToggleIndividualIsochrones && (
-                    <div
-                      onClick={onToggleIndividualIsochrones}
-                      className={`p-2 rounded-xl border flex items-center justify-between cursor-pointer transition-all ${
-                        showIndividualIsochrones
-                          ? 'bg-blue-50/60 border-blue-300 text-blue-950 font-semibold'
-                          : 'bg-white border-slate-200 hover:bg-slate-50 text-slate-500'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2">
-                        <Layers
-                          className={`w-4 h-4 ${
-                            showIndividualIsochrones ? 'text-blue-600' : 'text-slate-400'
-                          }`}
-                        />
-                        <span className="text-xs">Einzel-Isochronen ({profiles.length} Orte)</span>
-                      </div>
-                      <span
-                        className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${
-                          showIndividualIsochrones
-                            ? 'bg-blue-100 text-blue-800'
-                            : 'bg-slate-100 text-slate-400'
-                        }`}
-                      >
-                        {showIndividualIsochrones ? 'Sichtbar' : 'Versteckt'}
-                      </span>
-                    </div>
-                  )}
-
-                  {/* Option: Überlagerter Treffbereich (Schnittmenge) */}
-                  <div
-                    onClick={onToggleIntersectionLayer}
-                    className={`p-2 rounded-xl border flex items-center justify-between cursor-pointer transition-all ${
-                      showIntersectionLayer
-                        ? 'bg-emerald-50/60 border-emerald-300 text-emerald-950 font-semibold'
-                        : 'bg-white border-slate-200 hover:bg-slate-50 text-slate-500'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      {showIntersectionLayer ? (
-                        <Eye className="w-4 h-4 text-emerald-600" />
-                      ) : (
-                        <EyeOff className="w-4 h-4 text-slate-400" />
-                      )}
-                      <span className="text-xs">Gemeinsamer Treffbereich</span>
-                    </div>
-                    <span
-                      className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${
-                        showIntersectionLayer
-                          ? 'bg-emerald-100 text-emerald-800'
-                          : 'bg-slate-100 text-slate-400'
-                      }`}
-                    >
-                      {showIntersectionLayer ? 'Sichtbar' : 'Versteckt'}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {onOpenApiKeySettings && (
-                <div className="mt-3 pt-2 border-t border-slate-100 px-1">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowLayerMenu(false);
-                      onOpenApiKeySettings();
-                    }}
-                    className="w-full py-1.5 text-center text-[11px] font-semibold text-blue-600 hover:text-blue-800 hover:bg-blue-50/70 rounded-lg transition-colors flex items-center justify-center gap-1 cursor-pointer"
-                  >
-                    <Key className="w-3 h-3" />
-                    <span>API-Keys & Einstellungen verwalten</span>
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Action Controls */}
-        <div className="flex flex-col gap-2">
-          {/* Quick-Toggle: Wohnbereich-Filter */}
-          {onToggleOnlyResidential && result?.intersection && (
-            <button
-              id="btn-toggle-residential"
-              type="button"
-              onClick={onToggleOnlyResidential}
-              title={
-                onlyResidential
-                  ? 'Wohngebiets-Filter aktiv (Klicken für gesamte Fläche)'
-                  : 'Auf Wohnbereich reduzieren (Forste, Seen & Industrie ausfiltern)'
-              }
-              className={`p-2.5 rounded-xl shadow-md border transition-all flex items-center justify-center backdrop-blur-xs hover:shadow-lg cursor-pointer ${
-                onlyResidential
-                  ? 'bg-emerald-700 hover:bg-emerald-800 text-white border-emerald-600 ring-2 ring-emerald-400/50'
-                  : 'bg-white/95 hover:bg-white text-slate-600 hover:text-slate-900 border-slate-200/80'
-              }`}
-            >
-              <Home className="w-5 h-5" />
-            </button>
-          )}
-
-          {/* Quick-Toggle: Prioritäts-Heatmap (Zyklus: none -> ubahn -> sbahn -> highway -> none) */}
-          {onUpdateHeatmap && result?.intersection && (
-            <button
-              id="btn-toggle-heatmap"
-              type="button"
-              onClick={() => {
-                const current = heatmapSettings?.mode || 'none';
-                const nextMode =
-                  current === 'none'
-                    ? 'ubahn'
-                    : current === 'ubahn'
-                    ? 'sbahn'
-                    : current === 'sbahn'
-                    ? 'highway'
-                    : 'none';
-                onUpdateHeatmap({ mode: nextMode });
-              }}
-              title={
-                heatmapSettings && heatmapSettings.mode !== 'none'
-                  ? `Treff-Heatmap: ${
-                      heatmapSettings.mode === 'ubahn'
-                        ? 'U-Bahn'
-                        : heatmapSettings.mode === 'sbahn'
-                        ? 'S-Bahn'
-                        : 'Autobahn'
-                    } aktiv (Klicken zum Durchschalten)`
-                  : 'Prioritäts-Heatmap aktivieren (U-Bahn / S-Bahn / Autobahn)'
-              }
-              className={`p-2.5 rounded-xl shadow-md border transition-all flex items-center justify-center backdrop-blur-xs hover:shadow-lg cursor-pointer ${
-                heatmapSettings && heatmapSettings.mode !== 'none'
-                  ? 'bg-amber-500 hover:bg-amber-600 text-white border-amber-400 ring-2 ring-amber-300/50'
-                  : 'bg-white/95 hover:bg-white text-slate-600 hover:text-slate-900 border-slate-200/80'
-              }`}
-            >
-              <Flame className="w-5 h-5" />
-            </button>
-          )}
-
-          {/* Quick-Toggle: Nur überlagerten Treffbereich anzeigen (nur Grün) */}
-          {onToggleOnlyIntersection && result?.intersection && (
-            <button
-              id="btn-toggle-only-intersection"
-              type="button"
-              onClick={onToggleOnlyIntersection}
-              title={
-                isOnlyIntersectionActive
-                  ? 'Nur überlagerter Treffbereich aktiv (Klicken, um Einzel-Isochronen wieder einzublenden)'
-                  : 'Nur überlagerten Treffbereich anzeigen (Einzel-Isochronen der Personen ausblenden)'
-              }
-              className={`p-2.5 rounded-xl shadow-md border transition-all flex items-center justify-center backdrop-blur-xs hover:shadow-lg cursor-pointer ${
-                isOnlyIntersectionActive
-                  ? 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-500 ring-2 ring-emerald-400/50'
-                  : 'bg-white/95 hover:bg-white text-slate-600 hover:text-slate-900 border-slate-200/80'
-              }`}
-            >
-              <Focus className="w-5 h-5" />
-            </button>
-          )}
-
-          <button
-            id="btn-fit-bounds"
-            type="button"
-            onClick={handleFitBounds}
-            title="Gesamten Suchbereich zentrieren"
-            className="bg-white/95 hover:bg-white text-slate-700 hover:text-slate-950 p-2.5 rounded-xl shadow-md border border-slate-200/80 transition-all flex items-center justify-center backdrop-blur-xs hover:shadow-lg cursor-pointer"
-          >
-            <Crosshair className="w-5 h-5 text-slate-700" />
-          </button>
-
-          <button
-            id="btn-toggle-intersection-layer"
-            type="button"
-            onClick={onToggleIntersectionLayer}
-            title={showIntersectionLayer ? 'Schnittmenge ausblenden' : 'Schnittmenge einblenden'}
-            className={`p-2.5 rounded-xl shadow-md border transition-all flex items-center justify-center backdrop-blur-xs hover:shadow-lg cursor-pointer ${
-              showIntersectionLayer
-                ? 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-500'
-                : 'bg-white/95 hover:bg-white text-slate-500 border-slate-200/80'
-            }`}
-          >
-            {showIntersectionLayer ? (
-              <Eye className="w-5 h-5 text-white" />
-            ) : (
-              <EyeOff className="w-5 h-5 text-slate-400" />
-            )}
-          </button>
-        </div>
-      </div>
-
-      {/* Active "Nur überlagerter Treffbereich" Floating Indicator */}
-      {isOnlyIntersectionActive && result?.intersection && onToggleOnlyIntersection && (
-        <div className="absolute bottom-6 left-4 z-20 bg-white/95 backdrop-blur-md px-3.5 py-2 rounded-xl shadow-md border border-emerald-300 flex items-center gap-2.5 text-xs text-emerald-950 animate-in fade-in duration-150">
-          <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-emerald-300" />
-          <span className="font-semibold">Nur überlagerter Treffbereich (Grün)</span>
-          <button
-            type="button"
-            onClick={onToggleOnlyIntersection}
-            className="text-[11px] font-bold text-emerald-700 hover:text-emerald-950 underline cursor-pointer ml-1"
-          >
-            Alle Bereiche einblenden
-          </button>
-        </div>
-      )}
+      {/* Modular Map Controls Top-Right & Floating Banners */}
+      <MapLayerControls
+        activePlatform={activePlatform}
+        activeVariant={activeVariant}
+        onSelectPlatform={handleSelectPlatform}
+        onSelectVariant={handleSelectVariant}
+        isBasemapLoading={isBasemapLoading}
+        profiles={profiles}
+        hasIntersection={hasIntersection}
+        showIntersectionLayer={showIntersectionLayer}
+        onToggleIntersectionLayer={onToggleIntersectionLayer}
+        showIndividualIsochrones={showIndividualIsochrones}
+        onToggleIndividualIsochrones={onToggleIndividualIsochrones}
+        showOnlyIntersection={showOnlyIntersection}
+        onToggleOnlyIntersection={onToggleOnlyIntersection}
+        onlyResidential={onlyResidential}
+        onToggleOnlyResidential={onToggleOnlyResidential}
+        heatmapSettings={heatmapSettings}
+        onUpdateHeatmap={onUpdateHeatmap}
+        onFitBounds={handleFitBounds}
+        onOpenApiKeySettings={onOpenApiKeySettings}
+      />
     </div>
   );
 };

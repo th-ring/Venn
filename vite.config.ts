@@ -21,5 +21,17 @@ export default defineConfig(() => {
         },
       },
     },
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            'vendor-react': ['react', 'react-dom'],
+            'vendor-leaflet': ['leaflet', 'leaflet.gridlayer.googlemutant'],
+            'vendor-turf': ['@turf/turf'],
+            'vendor-icons': ['lucide-react'],
+          },
+        },
+      },
+    },
   };
 });
