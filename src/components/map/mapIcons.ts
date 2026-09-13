@@ -122,19 +122,19 @@ export function createPersonPopupHtml(profile: PersonProfile): string {
       : 'Zu Fuß';
 
   return `
-    <div style="font-family: sans-serif; min-width: 170px;">
-      <div style="font-weight: 700; font-size: 14px; margin-bottom: 2px; color: ${profile.color};">
+    <div class="min-w-[170px] text-slate-800 dark:text-[#e3e3e3]">
+      <div class="font-bold text-sm mb-0.5" style="color: ${profile.color};">
         ${profile.name}
       </div>
-      <div style="font-size: 11px; color: #475569; margin-bottom: 6px;">
+      <div class="text-[11px] text-slate-500 dark:text-[#9aa0a6] mb-1.5 leading-snug">
         ${profile.address || 'Gewählter Standort'}
       </div>
-      <div style="display: flex; gap: 4px; align-items: center; font-size: 11px; font-weight: 600; color: #1e293b;">
+      <div class="flex gap-1 items-center text-[11px] font-semibold text-slate-800 dark:text-[#e3e3e3]">
         <span>⏱️ Max. ${profile.travelTimeMinutes} Min</span>
         <span>•</span>
         <span>${modeLabel}</span>
       </div>
-      <div style="font-size: 10px; color: #94a3b8; margin-top: 6px; border-top: 1px solid #f1f5f9; padding-top: 4px;">
+      <div class="text-[10px] text-slate-400 dark:text-[#9aa0a6] mt-1.5 border-t border-slate-100 dark:border-[#3c4043] pt-1">
         Pin ziehen, um Wohnort zu ändern
       </div>
     </div>

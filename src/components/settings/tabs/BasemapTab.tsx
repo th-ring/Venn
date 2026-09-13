@@ -40,17 +40,17 @@ export const BasemapTab: React.FC<BasemapTabProps> = ({
 
   return (
     <div className="space-y-4">
-      <div className="text-xs text-slate-600 leading-relaxed">
-        Wähle deinen bevorzugten <strong>Kartenanbieter</strong> und den gewünschten <strong>Kartentyp</strong>. 
+      <div className="text-xs text-slate-600 dark:text-[#9aa0a6] leading-relaxed">
+        Wähle deinen bevorzugten <strong>Kartenanbieter</strong> und den gewünschten <strong>Kartentyp</strong>.{' '}
         Karten von <em>OpenStreetMap</em>, <em>MemoMaps</em> und <em>CARTO</em> funktionieren sofort und ohne API-Key.
       </div>
 
       {/* STUFE 1: KARTENDIENST WÄHLEN */}
       <div>
-        <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center justify-between">
+        <div className="text-[11px] font-bold text-slate-500 dark:text-[#9aa0a6] uppercase tracking-wider mb-2 flex items-center justify-between">
           <span>1. Basis-Kartendienst</span>
           {hasGoogleKey && (
-            <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
+            <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 px-2 py-0.5 rounded-full">
               Google Key aktiv
             </span>
           )}
@@ -62,8 +62,8 @@ export const BasemapTab: React.FC<BasemapTabProps> = ({
             onClick={() => onSelectPlatform('osm')}
             className={`p-3 rounded-xl border cursor-pointer transition-all flex items-start justify-between ${
               platform === 'osm'
-                ? 'border-blue-500 bg-blue-50/50 ring-2 ring-blue-400/40 shadow-xs'
-                : 'border-slate-200 bg-white hover:border-slate-300'
+                ? 'border-blue-500 dark:border-[#8ab4f8] bg-blue-50/50 dark:bg-blue-950/40 ring-2 ring-blue-400/40 shadow-xs'
+                : 'border-slate-200 dark:border-[#3c4043] bg-white dark:bg-[#282a2c] hover:border-slate-300 dark:hover:border-[#5f6368]'
             }`}
           >
             <div className="flex items-start gap-2.5">
@@ -72,21 +72,21 @@ export const BasemapTab: React.FC<BasemapTabProps> = ({
                 name="modalPlatform"
                 checked={platform === 'osm'}
                 onChange={() => onSelectPlatform('osm')}
-                className="mt-0.5 text-blue-600 cursor-pointer"
+                className="mt-0.5 text-blue-600 dark:text-[#8ab4f8] cursor-pointer"
               />
-              <div className="p-1.5 bg-slate-100 text-blue-600 rounded-lg shrink-0">
+              <div className="p-1.5 bg-slate-100 dark:bg-[#303134] text-blue-600 dark:text-[#8ab4f8] rounded-lg shrink-0">
                 <Globe className="w-4 h-4" />
               </div>
               <div>
-                <div className="text-xs font-bold text-slate-900">
+                <div className="text-xs font-bold text-slate-900 dark:text-[#e3e3e3]">
                   OpenStreetMap
                 </div>
-                <div className="text-[10px] text-slate-500 mt-0.5">
+                <div className="text-[10px] text-slate-500 dark:text-[#9aa0a6] mt-0.5">
                   100% frei, Open-Source & ohne Key.
                 </div>
               </div>
             </div>
-            <span className="text-[9px] font-semibold bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded-full shrink-0">
+            <span className="text-[9px] font-semibold bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-300 px-1.5 py-0.5 rounded-full shrink-0">
               Frei
             </span>
           </div>
@@ -96,8 +96,8 @@ export const BasemapTab: React.FC<BasemapTabProps> = ({
             onClick={() => onSelectPlatform('memomaps')}
             className={`p-3 rounded-xl border cursor-pointer transition-all flex items-start justify-between ${
               platform === 'memomaps' || platform === 'opnv'
-                ? 'border-emerald-500 bg-emerald-50/50 ring-2 ring-emerald-400/40 shadow-xs'
-                : 'border-slate-200 bg-white hover:border-slate-300'
+                ? 'border-emerald-500 dark:border-emerald-400 bg-emerald-50/50 dark:bg-emerald-950/40 ring-2 ring-emerald-400/40 shadow-xs'
+                : 'border-slate-200 dark:border-[#3c4043] bg-white dark:bg-[#282a2c] hover:border-slate-300 dark:hover:border-[#5f6368]'
             }`}
           >
             <div className="flex items-start gap-2.5">
@@ -106,21 +106,21 @@ export const BasemapTab: React.FC<BasemapTabProps> = ({
                 name="modalPlatform"
                 checked={platform === 'memomaps' || platform === 'opnv'}
                 onChange={() => onSelectPlatform('memomaps')}
-                className="mt-0.5 text-emerald-600 cursor-pointer"
+                className="mt-0.5 text-emerald-600 dark:text-emerald-400 cursor-pointer"
               />
-              <div className="p-1.5 bg-emerald-100 text-emerald-700 rounded-lg shrink-0">
+              <div className="p-1.5 bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 rounded-lg shrink-0">
                 <Train className="w-4 h-4" />
               </div>
               <div>
-                <div className="text-xs font-bold text-slate-900">
+                <div className="text-xs font-bold text-slate-900 dark:text-[#e3e3e3]">
                   MemoMaps
                 </div>
-                <div className="text-[10px] text-slate-500 mt-0.5">
+                <div className="text-[10px] text-slate-500 dark:text-[#9aa0a6] mt-0.5">
                   Reine ÖPNVkarte (Bus & Bahn).
                 </div>
               </div>
             </div>
-            <span className="text-[9px] font-semibold bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded-full shrink-0">
+            <span className="text-[9px] font-semibold bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-300 px-1.5 py-0.5 rounded-full shrink-0">
               Frei
             </span>
           </div>
@@ -130,8 +130,8 @@ export const BasemapTab: React.FC<BasemapTabProps> = ({
             onClick={() => onSelectPlatform('carto')}
             className={`p-3 rounded-xl border cursor-pointer transition-all flex items-start justify-between ${
               platform === 'carto'
-                ? 'border-purple-500 bg-purple-50/50 ring-2 ring-purple-400/40 shadow-xs'
-                : 'border-slate-200 bg-white hover:border-slate-300'
+                ? 'border-purple-500 dark:border-purple-400 bg-purple-50/50 dark:bg-purple-950/40 ring-2 ring-purple-400/40 shadow-xs'
+                : 'border-slate-200 dark:border-[#3c4043] bg-white dark:bg-[#282a2c] hover:border-slate-300 dark:hover:border-[#5f6368]'
             }`}
           >
             <div className="flex items-start gap-2.5">
@@ -140,21 +140,21 @@ export const BasemapTab: React.FC<BasemapTabProps> = ({
                 name="modalPlatform"
                 checked={platform === 'carto'}
                 onChange={() => onSelectPlatform('carto')}
-                className="mt-0.5 text-purple-600 cursor-pointer"
+                className="mt-0.5 text-purple-600 dark:text-purple-400 cursor-pointer"
               />
-              <div className="p-1.5 bg-purple-100 text-purple-700 rounded-lg shrink-0">
+              <div className="p-1.5 bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 rounded-lg shrink-0">
                 <Palette className="w-4 h-4" />
               </div>
               <div>
-                <div className="text-xs font-bold text-slate-900">
+                <div className="text-xs font-bold text-slate-900 dark:text-[#e3e3e3]">
                   CARTO
                 </div>
-                <div className="text-[10px] text-slate-500 mt-0.5">
+                <div className="text-[10px] text-slate-500 dark:text-[#9aa0a6] mt-0.5">
                   Ultra-clean (Light & Dark) ohne Key.
                 </div>
               </div>
             </div>
-            <span className="text-[9px] font-semibold bg-purple-100 text-purple-800 px-1.5 py-0.5 rounded-full shrink-0">
+            <span className="text-[9px] font-semibold bg-purple-100 dark:bg-purple-900/60 text-purple-800 dark:text-purple-300 px-1.5 py-0.5 rounded-full shrink-0">
               Frei
             </span>
           </div>
@@ -164,8 +164,8 @@ export const BasemapTab: React.FC<BasemapTabProps> = ({
             onClick={() => onSelectPlatform('google')}
             className={`p-3 rounded-xl border cursor-pointer transition-all flex items-start justify-between ${
               platform === 'google'
-                ? 'border-blue-500 bg-blue-50/50 ring-2 ring-blue-400/40 shadow-xs'
-                : 'border-slate-200 bg-white hover:border-slate-300'
+                ? 'border-blue-500 dark:border-[#8ab4f8] bg-blue-50/50 dark:bg-blue-950/40 ring-2 ring-blue-400/40 shadow-xs'
+                : 'border-slate-200 dark:border-[#3c4043] bg-white dark:bg-[#282a2c] hover:border-slate-300 dark:hover:border-[#5f6368]'
             }`}
           >
             <div className="flex items-start gap-2.5">
@@ -174,36 +174,36 @@ export const BasemapTab: React.FC<BasemapTabProps> = ({
                 name="modalPlatform"
                 checked={platform === 'google'}
                 onChange={() => onSelectPlatform('google')}
-                className="mt-0.5 text-blue-600 cursor-pointer"
+                className="mt-0.5 text-blue-600 dark:text-[#8ab4f8] cursor-pointer"
               />
-              <div className="p-1.5 bg-amber-100 text-amber-700 rounded-lg shrink-0">
+              <div className="p-1.5 bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 rounded-lg shrink-0">
                 <MapIcon className="w-4 h-4" />
               </div>
               <div>
-                <div className="text-xs font-bold text-slate-900">
+                <div className="text-xs font-bold text-slate-900 dark:text-[#e3e3e3]">
                   Google Maps
                 </div>
-                <div className="text-[10px] text-slate-500 mt-0.5">
+                <div className="text-[10px] text-slate-500 dark:text-[#9aa0a6] mt-0.5">
                   Offizielle Google Maps JS API.
                 </div>
               </div>
             </div>
-            <span className="text-[9px] font-semibold bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded-full shrink-0">
+            <span className="text-[9px] font-semibold bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-300 px-1.5 py-0.5 rounded-full shrink-0">
               API-Key
             </span>
           </div>
         </div>
 
         {platform === 'google' && !hasGoogleKey && (
-          <div className="mt-2 p-2.5 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900 flex items-center justify-between">
+          <div className="mt-2 p-2.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 rounded-xl text-xs text-amber-900 dark:text-amber-200 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+              <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
               <span>Für Google Maps ist ein API-Key erforderlich.</span>
             </div>
             <button
               type="button"
               onClick={onOpenKeysTab}
-              className="text-amber-900 font-bold underline text-xs ml-2 cursor-pointer"
+              className="text-amber-900 dark:text-amber-300 font-bold underline text-xs ml-2 cursor-pointer"
             >
               Jetzt eintragen
             </button>
@@ -212,8 +212,8 @@ export const BasemapTab: React.FC<BasemapTabProps> = ({
       </div>
 
       {/* STUFE 2: KARTENTYP SEPARAT WÄHLEN */}
-      <div className="pt-2 border-t border-slate-100">
-        <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center justify-between">
+      <div className="pt-2 border-t border-slate-100 dark:border-[#3c4043]">
+        <div className="text-[11px] font-bold text-slate-500 dark:text-[#9aa0a6] uppercase tracking-wider mb-2 flex items-center justify-between">
           <span>
             2. Kartentyp auswählen (
             {platform === 'google'
@@ -225,7 +225,7 @@ export const BasemapTab: React.FC<BasemapTabProps> = ({
               : 'OpenStreetMap'}
             )
           </span>
-          <span className="text-[10px] text-slate-400 font-normal">
+          <span className="text-[10px] text-slate-400 dark:text-[#747775] font-normal">
             {currentVariants.length} Varianten verfügbar
           </span>
         </div>
@@ -240,24 +240,26 @@ export const BasemapTab: React.FC<BasemapTabProps> = ({
                 onClick={() => onSelectVariant(v.id)}
                 className={`p-2.5 rounded-xl border cursor-pointer transition-all ${
                   isSel
-                    ? 'border-blue-500 bg-blue-50/50 ring-2 ring-blue-400/30'
-                    : 'border-slate-200 bg-white hover:border-slate-300'
+                    ? 'border-blue-500 dark:border-[#8ab4f8] bg-blue-50/50 dark:bg-blue-950/40 ring-2 ring-blue-400/30'
+                    : 'border-slate-200 dark:border-[#3c4043] bg-white dark:bg-[#282a2c] hover:border-slate-300 dark:hover:border-[#5f6368]'
                 }`}
               >
                 <div className="flex items-center justify-between mb-1">
                   <div className="flex items-center gap-2">
                     <div
                       className={`p-1.5 rounded-lg ${
-                        isSel ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600'
+                        isSel
+                          ? 'bg-blue-600 dark:bg-[#8ab4f8] text-white dark:text-[#131314]'
+                          : 'bg-slate-100 dark:bg-[#303134] text-slate-600 dark:text-[#9aa0a6]'
                       }`}
                     >
                       <VIcon className="w-4 h-4" />
                     </div>
-                    <span className="text-xs font-bold text-slate-900">{v.label}</span>
+                    <span className="text-xs font-bold text-slate-900 dark:text-[#e3e3e3]">{v.label}</span>
                   </div>
-                  {isSel && <Check className="w-4 h-4 text-blue-600" />}
+                  {isSel && <Check className="w-4 h-4 text-blue-600 dark:text-[#8ab4f8]" />}
                 </div>
-                <p className="text-[10px] text-slate-500 leading-tight pl-8">
+                <p className="text-[10px] text-slate-500 dark:text-[#9aa0a6] leading-tight pl-8">
                   {v.subLabel}
                 </p>
               </div>
@@ -268,8 +270,8 @@ export const BasemapTab: React.FC<BasemapTabProps> = ({
 
       {/* STUFE 3: ZUSATZ-OVERLAYS */}
       {onToggleRailwayOverlay && (
-        <div className="pt-2 border-t border-slate-100">
-          <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">
+        <div className="pt-2 border-t border-slate-100 dark:border-[#3c4043]">
+          <div className="text-[11px] font-bold text-slate-500 dark:text-[#9aa0a6] uppercase tracking-wider mb-2">
             3. Zusatz-Overlays (über Basemap gelegt)
           </div>
 
@@ -278,22 +280,22 @@ export const BasemapTab: React.FC<BasemapTabProps> = ({
             onClick={onToggleRailwayOverlay}
             className={`w-full p-2.5 rounded-xl border text-left transition-all flex items-center justify-between cursor-pointer ${
               showRailwayOverlay
-                ? 'bg-amber-50 border-amber-300 text-amber-950 ring-1 ring-amber-300'
-                : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+                ? 'bg-amber-50 dark:bg-amber-950/40 border-amber-300 dark:border-amber-800/60 text-amber-950 dark:text-amber-200 ring-1 ring-amber-300 dark:ring-amber-700'
+                : 'bg-white dark:bg-[#282a2c] border-slate-200 dark:border-[#3c4043] text-slate-700 dark:text-[#e3e3e3] hover:bg-slate-50 dark:hover:bg-[#303134]'
             }`}
           >
             <div className="flex items-center gap-2.5">
-              <div className="p-1.5 bg-amber-100 text-amber-700 rounded-lg shrink-0">
+              <div className="p-1.5 bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 rounded-lg shrink-0">
                 <Train className="w-4 h-4" />
               </div>
               <div>
                 <div className="text-xs font-bold flex items-center gap-1.5">
                   <span>Schienennetz-Overlay</span>
-                  <span className="text-[9px] font-normal text-amber-800 bg-amber-100 px-1 py-0.2 rounded">
+                  <span className="text-[9px] font-normal text-amber-800 dark:text-amber-300 bg-amber-100 dark:bg-amber-900/60 px-1 py-0.2 rounded">
                     OpenRailwayMap
                   </span>
                 </div>
-                <div className="text-[10px] text-slate-500">
+                <div className="text-[10px] text-slate-500 dark:text-[#9aa0a6]">
                   Detailliertes Gleisnetz (S-Bahn, U-Bahn, Tram, Bahnhöfe) transparent über die Karte legen
                 </div>
               </div>
@@ -301,8 +303,8 @@ export const BasemapTab: React.FC<BasemapTabProps> = ({
             <span
               className={`text-[10px] px-2 py-0.5 rounded-md font-bold shrink-0 ${
                 showRailwayOverlay
-                  ? 'bg-amber-200 text-amber-900'
-                  : 'bg-slate-100 text-slate-500'
+                  ? 'bg-amber-200 dark:bg-amber-900/80 text-amber-900 dark:text-amber-200'
+                  : 'bg-slate-100 dark:bg-[#303134] text-slate-500 dark:text-[#9aa0a6]'
               }`}
             >
               {showRailwayOverlay ? 'Aktiv' : 'Aus'}

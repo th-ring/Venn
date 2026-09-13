@@ -35,12 +35,14 @@ import {
   getMvvDatasetMetadata,
   syncMvvDatasetFromEndpoint,
 } from '../../services/mvvMatrixService';
+import { AppearanceTab } from './tabs/AppearanceTab';
 import { BasemapTab } from './tabs/BasemapTab';
 import { IsochroneEngineTab } from './tabs/IsochroneEngineTab';
 import { DataPackagesTab } from './tabs/DataPackagesTab';
 import { ApiKeysTab } from './tabs/ApiKeysTab';
 import { PriorityHeatmapTab } from './tabs/PriorityHeatmapTab';
 import { RentalOverlayTab } from './tabs/RentalOverlayTab';
+import { useTheme } from '../../hooks/useTheme';
 import {
   Settings,
   Layers,
@@ -50,11 +52,19 @@ import {
   Key,
   Flame,
   Euro,
+  Palette,
   X,
   Check,
 } from 'lucide-react';
 
-export type SettingsTabId = 'basemap' | 'isochrones' | 'mvv' | 'keys' | 'heatmap' | 'rental';
+export type SettingsTabId =
+  | 'appearance'
+  | 'basemap'
+  | 'isochrones'
+  | 'mvv'
+  | 'keys'
+  | 'heatmap'
+  | 'rental';
 
 const SETTINGS_MENU: Array<{
   id: SettingsTabId;
@@ -62,12 +72,13 @@ const SETTINGS_MENU: Array<{
   subLabel: string;
   icon: React.ComponentType<{ className?: string }>;
 }> = [
-  { id: 'basemap', label: '1. Kartendienst', subLabel: 'OSM, MemoMaps, CARTO & Google', icon: MapIcon },
-  { id: 'isochrones', label: '2. Isochronen', subLabel: 'Engine & Parameter', icon: Globe },
-  { id: 'mvv', label: '3. Datenpakete & Regionen', subLabel: 'Autobahn, ÖPNV & Mietspiegel', icon: Layers },
-  { id: 'keys', label: '4. API-Keys', subLabel: 'Google & ORS Keys', icon: Key },
-  { id: 'heatmap', label: '5. Heatmap', subLabel: 'Prioritäts-Infrastruktur', icon: Flame },
-  { id: 'rental', label: '6. Mietspiegel', subLabel: 'München & Open Data', icon: Euro },
+  { id: 'appearance', label: '1. Erscheinungsbild', subLabel: 'System, Hell & Dunkel', icon: Palette },
+  { id: 'basemap', label: '2. Kartendienst', subLabel: 'OSM, MemoMaps, CARTO & Google', icon: MapIcon },
+  { id: 'isochrones', label: '3. Isochronen', subLabel: 'Engine & Parameter', icon: Globe },
+  { id: 'mvv', label: '4. Datenpakete & Regionen', subLabel: 'Autobahn, ÖPNV & Mietspiegel', icon: Layers },
+  { id: 'keys', label: '5. API-Keys', subLabel: 'Google & ORS Keys', icon: Key },
+  { id: 'heatmap', label: '6. Heatmap', subLabel: 'Prioritäts-Infrastruktur', icon: Flame },
+  { id: 'rental', label: '7. Mietspiegel', subLabel: 'München & Open Data', icon: Euro },
 ];
 
 interface SettingsModalProps {
@@ -96,6 +107,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   if (!isOpen) return null;
 
   const [modalTab, setModalTab] = useState<SettingsTabId>(initialTab);
+  const { themePreference, resolvedTheme, setThemePreference } = useTheme();
 
   useEffect(() => {
     setModalTab(initialTab);
@@ -289,27 +301,27 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 animate-in fade-in duration-150">
-      <div className="bg-white rounded-2xl w-full max-w-3xl h-[620px] max-h-[92vh] shadow-2xl border border-slate-200 flex flex-col overflow-hidden">
+    <div className="fixed inset-0 z-50 bg-slate-900/60 dark:bg-black/70 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 animate-in fade-in duration-150">
+      <div className="bg-white dark:bg-[#1e1f20] rounded-2xl w-full max-w-3xl h-[620px] max-h-[92vh] shadow-2xl border border-slate-200 dark:border-[#3c4043] flex flex-col overflow-hidden">
         {/* Header - Fixed */}
-        <div className="px-5 py-3.5 border-b border-slate-200 bg-white flex items-center justify-between shrink-0">
+        <div className="px-5 py-3.5 border-b border-slate-200 dark:border-[#3c4043] bg-white dark:bg-[#1e1f20] flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-200/60 shadow-2xs">
+            <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-[#8ab4f8] flex items-center justify-center border border-blue-200/60 dark:border-blue-800/60 shadow-2xs">
               <Settings className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-slate-900 leading-tight">
+              <h3 className="text-sm font-bold text-slate-900 dark:text-[#e3e3e3] leading-tight">
                 Anwendungseinstellungen
               </h3>
-              <p className="text-[11px] text-slate-500">
-                Zentrale Konfiguration für Kartendienste, Isochronen-Berechnung, ÖPNV-Netze, API-Keys und Heatmaps.
+              <p className="text-[11px] text-slate-500 dark:text-[#9aa0a6]">
+                Zentrale Konfiguration für Erscheinungsbild, Kartendienste, Isochronen, ÖPNV, API-Keys und Heatmaps.
               </p>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+            className="text-slate-400 hover:text-slate-700 dark:text-[#9aa0a6] dark:hover:text-[#e3e3e3] p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-[#282a2c] transition-colors cursor-pointer"
             title="Schließen"
           >
             <X className="w-4 h-4" />
@@ -319,9 +331,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         {/* Modal Body: Two-column layout with fixed navigation */}
         <div className="flex flex-col sm:flex-row flex-1 min-h-0 overflow-hidden">
           {/* Fixed Navigation Menu */}
-          <nav className="w-full sm:w-56 bg-slate-50/90 border-b sm:border-b-0 sm:border-r border-slate-200/90 p-2.5 flex sm:flex-col justify-between shrink-0 overflow-x-auto sm:overflow-x-visible select-none gap-1">
+          <nav className="w-full sm:w-56 bg-slate-50/90 dark:bg-[#131314]/90 border-b sm:border-b-0 sm:border-r border-slate-200/90 dark:border-[#3c4043] p-2.5 flex sm:flex-col justify-between shrink-0 overflow-x-auto sm:overflow-x-visible select-none gap-1">
             <div className="flex sm:flex-col gap-1 w-full">
-              <div className="hidden sm:block px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+              <div className="hidden sm:block px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-[#747775]">
                 Kategorien
               </div>
 
@@ -339,16 +351,16 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       isSelected
                         ? isHeatmap
                           ? 'bg-amber-500 text-white font-bold shadow-xs'
-                          : 'bg-blue-600 text-white font-bold shadow-xs'
-                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 font-medium'
+                          : 'bg-blue-600 dark:bg-[#8ab4f8] text-white dark:text-[#131314] font-bold shadow-xs'
+                        : 'text-slate-600 dark:text-[#9aa0a6] hover:text-slate-900 dark:hover:text-[#e3e3e3] hover:bg-slate-200/60 dark:hover:bg-[#282a2c] font-medium'
                     }`}
                   >
-                    <Icon className={`w-4 h-4 shrink-0 ${isSelected ? 'text-white' : isHeatmap ? 'text-amber-500' : 'text-slate-500'}`} />
+                    <Icon className={`w-4 h-4 shrink-0 ${isSelected ? 'text-white dark:text-[#131314]' : isHeatmap ? 'text-amber-500' : 'text-slate-500 dark:text-[#9aa0a6]'}`} />
                     <div className="min-w-0">
                       <div className="text-xs leading-tight">{item.label}</div>
                       <div
                         className={`hidden sm:block text-[10px] font-normal leading-tight truncate mt-0.5 ${
-                          isSelected ? 'text-white/80' : 'text-slate-400'
+                          isSelected ? 'text-white/80 dark:text-[#131314]/80' : 'text-slate-400 dark:text-[#747775]'
                         }`}
                       >
                         {item.subLabel}
@@ -360,24 +372,35 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             </div>
 
             {/* Quick Status Pill in Sidebar on desktop */}
-            <div className="hidden sm:block p-2.5 rounded-xl bg-white border border-slate-200/80 text-[10px] text-slate-500 space-y-1">
-              <div className="font-bold text-slate-700 flex items-center justify-between">
+            <div className="hidden sm:block p-2.5 rounded-xl bg-white dark:bg-[#1e1f20] border border-slate-200/80 dark:border-[#3c4043] text-[10px] text-slate-500 dark:text-[#9aa0a6] space-y-1">
+              <div className="font-bold text-slate-700 dark:text-[#e3e3e3] flex items-center justify-between">
                 <span>Konfiguration</span>
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
               </div>
-              <div className="truncate text-slate-600">
-                Karte: <span className="font-semibold">{modalPlatform === 'google' ? 'Google Maps' : modalPlatform === 'carto' ? 'CARTO' : modalPlatform === 'memomaps' || modalPlatform === 'opnv' ? 'MemoMaps' : 'OSM'}</span>
+              <div className="truncate text-slate-600 dark:text-[#9aa0a6]">
+                Theme: <span className="font-semibold text-slate-800 dark:text-[#e3e3e3]">{themePreference === 'system' ? 'System' : themePreference === 'dark' ? 'Dunkel' : 'Hell'}</span>
               </div>
-              <div className="truncate text-slate-600">
-                Engine: <span className="font-semibold">{activeProvider === 'google' ? 'Google API' : activeProvider === 'ors' ? 'ORS' : 'Offline'}</span>
+              <div className="truncate text-slate-600 dark:text-[#9aa0a6]">
+                Karte: <span className="font-semibold text-slate-800 dark:text-[#e3e3e3]">{modalPlatform === 'google' ? 'Google Maps' : modalPlatform === 'carto' ? 'CARTO' : modalPlatform === 'memomaps' || modalPlatform === 'opnv' ? 'MemoMaps' : 'OSM'}</span>
+              </div>
+              <div className="truncate text-slate-600 dark:text-[#9aa0a6]">
+                Engine: <span className="font-semibold text-slate-800 dark:text-[#e3e3e3]">{activeProvider === 'google' ? 'Google API' : activeProvider === 'ors' ? 'ORS' : 'Offline'}</span>
               </div>
             </div>
           </nav>
 
           {/* Main Content & Actions Area */}
-          <div className="flex-1 flex flex-col min-w-0 bg-white">
+          <div className="flex-1 flex flex-col min-w-0 bg-white dark:bg-[#1e1f20]">
             {/* Scrollable Tab Content Pane */}
             <div className="flex-1 overflow-y-auto p-4 sm:p-5">
+              {modalTab === 'appearance' && (
+                <AppearanceTab
+                  themePreference={themePreference}
+                  resolvedTheme={resolvedTheme}
+                  onSelectTheme={setThemePreference}
+                />
+              )}
+
               {modalTab === 'basemap' && (
                 <BasemapTab
                   platform={modalPlatform}
@@ -446,11 +469,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             </div>
 
             {/* Fixed Footer */}
-            <div className="px-5 py-3 border-t border-slate-200 bg-slate-50/70 flex items-center justify-between shrink-0">
+            <div className="px-5 py-3 border-t border-slate-200 dark:border-[#3c4043] bg-slate-50/70 dark:bg-[#131314]/70 flex items-center justify-between shrink-0">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-3.5 py-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 rounded-xl transition-colors cursor-pointer"
+                className="px-3.5 py-1.5 text-xs font-semibold text-slate-600 dark:text-[#9aa0a6] hover:text-slate-900 dark:hover:text-[#e3e3e3] hover:bg-slate-200/60 dark:hover:bg-[#282a2c] rounded-xl transition-colors cursor-pointer"
               >
                 Abbrechen
               </button>
@@ -461,7 +484,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 className={`px-4 py-2 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 shadow-md cursor-pointer ${
                   isSaved
                     ? 'bg-emerald-600 text-white shadow-emerald-500/20'
-                    : 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-500/20'
+                    : 'bg-blue-600 hover:bg-blue-700 dark:bg-[#8ab4f8] dark:hover:bg-[#aecbfa] text-white dark:text-[#131314] shadow-blue-500/20'
                 }`}
               >
                 {isSaved ? <Check className="w-4 h-4" /> : null}

@@ -51,6 +51,7 @@ import {
   createPersonPopupHtml,
 } from './map/mapIcons';
 import { MapLayerControls } from './map/MapLayerControls';
+import { useTheme } from '../hooks/useTheme';
 
 interface MapComponentProps {
   profiles: PersonProfile[];
@@ -119,6 +120,7 @@ export const MapComponent: React.FC<MapComponentProps> = ({
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
+  const { isDark } = useTheme();
 
   // Basemap platform & variant management
   const [activePlatform, setActivePlatform] = useState<BasemapPlatform>(() => getBasemapPlatform());
@@ -522,10 +524,10 @@ export const MapComponent: React.FC<MapComponentProps> = ({
         pane: 'pane-isochrones',
         style: {
           color: profile.color,
-          weight: 2,
-          opacity: 0.85,
+          weight: isDark ? 2.5 : 2,
+          opacity: isDark ? 0.95 : 0.85,
           fillColor: profile.color,
-          fillOpacity: 0.15,
+          fillOpacity: isDark ? 0.22 : 0.15,
           dashArray: '4, 4',
         },
         onEachFeature: (_, fLayer) => {
@@ -552,7 +554,7 @@ export const MapComponent: React.FC<MapComponentProps> = ({
 
       layer.addTo(isochronesGroup);
     });
-  }, [result, profiles, showIndividualIsochrones, hiddenLayers, onSelectInspectionPoint]);
+  }, [result, profiles, showIndividualIsochrones, hiddenLayers, onSelectInspectionPoint, isDark]);
 
   // 4. Render Golden Intersection Layer (Pane: pane-intersection)
   useEffect(() => {
@@ -566,11 +568,17 @@ export const MapComponent: React.FC<MapComponentProps> = ({
     const intersectionLayer = L.geoJSON(result.intersection as any, {
       pane: 'pane-intersection',
       style: {
-        color: onlyResidential ? '#065f46' : '#047857',
-        weight: 3.5,
+        color: isDark
+          ? (onlyResidential ? '#34d399' : '#10b981')
+          : (onlyResidential ? '#065f46' : '#047857'),
+        weight: isDark ? 4 : 3.5,
         opacity: 0.95,
-        fillColor: onlyResidential ? '#059669' : '#10b981',
-        fillOpacity: onlyResidential ? 0.45 : 0.38,
+        fillColor: isDark
+          ? (onlyResidential ? '#10b981' : '#34d399')
+          : (onlyResidential ? '#059669' : '#10b981'),
+        fillOpacity: isDark
+          ? (onlyResidential ? 0.42 : 0.35)
+          : (onlyResidential ? 0.45 : 0.38),
         lineJoin: 'round',
       },
       onEachFeature: (_, fLayer) => {
@@ -583,9 +591,9 @@ export const MapComponent: React.FC<MapComponentProps> = ({
     });
 
     intersectionLayer.bindTooltip(
-      `<div style="font-weight: bold; color: #065f46; font-size: 13px;">${
+      `<div style="font-weight: bold; color: ${isDark ? '#34d399' : '#065f46'}; font-size: 13px;">${
         onlyResidential ? '🏡 Gemeinsamer Wohnbereich' : '🎯 Gemeinsamer Treffbereich'
-      }</div><div style="font-size: 11px; color: #047857;">Fläche: ca. ${
+      }</div><div style="font-size: 11px; color: ${isDark ? '#a7f3d0' : '#047857'};">Fläche: ca. ${
         result.intersectionAreaKm2
       } km²${
         onlyResidential && result.rawIntersectionAreaKm2
@@ -600,7 +608,7 @@ export const MapComponent: React.FC<MapComponentProps> = ({
     );
 
     intersectionLayer.addTo(intersectionGroup);
-  }, [result, showIntersectionLayer, onlyResidential, hiddenLayers, onSelectInspectionPoint]);
+  }, [result, showIntersectionLayer, onlyResidential, hiddenLayers, onSelectInspectionPoint, isDark]);
 
   // 5. Render Priority Heatmap Layer (Pane: pane-heatmap)
   useEffect(() => {
@@ -630,8 +638,8 @@ export const MapComponent: React.FC<MapComponentProps> = ({
           style: {
             stroke: true,
             color: zone.color,
-            weight: 1.5,
-            opacity: Math.min(0.9, (heatmapSettings.intensity ?? 0.65) * 1.1),
+            weight: isDark ? 2 : 1.5,
+            opacity: Math.min(0.95, (heatmapSettings.intensity ?? 0.65) * 1.15),
             fillColor: zone.color,
             fillOpacity: Math.min(
               0.85,
@@ -650,7 +658,7 @@ export const MapComponent: React.FC<MapComponentProps> = ({
         });
 
         zoneLayer.bindTooltip(
-          `<div style="font-weight: bold; font-size: 12px; color: ${zone.color};">${zone.label}</div><div style="font-size: 11px; color: #334155;">${zone.description}</div>`,
+          `<div style="font-weight: bold; font-size: 12px; color: ${zone.color};">${zone.label}</div><div style="font-size: 11px; color: ${isDark ? '#cbd5e1' : '#334155'};">${zone.description}</div>`,
           { sticky: true }
         );
 
@@ -659,7 +667,7 @@ export const MapComponent: React.FC<MapComponentProps> = ({
     } catch (err) {
       console.warn('Error rendering heatmap zones:', err);
     }
-  }, [result, heatmapSettings, hiddenLayers, onSelectInspectionPoint]);
+  }, [result, heatmapSettings, hiddenLayers, onSelectInspectionPoint, isDark]);
 
   // 6. Render POI Station & Highway Badges & Vector Ramps (Pane: pane-poi_icons)
   useEffect(() => {
@@ -704,11 +712,11 @@ export const MapComponent: React.FC<MapComponentProps> = ({
             const polyLayer = L.geoJSON(area as any, {
               pane: 'pane-poi_icons',
               style: {
-                color: '#ea580c',
+                color: isDark ? '#fb923c' : '#ea580c',
                 weight: 1.5,
                 dashArray: '5, 5',
-                fillColor: '#fdba74',
-                fillOpacity: 0.16,
+                fillColor: isDark ? '#ea580c' : '#fdba74',
+                fillOpacity: isDark ? 0.22 : 0.16,
               },
             });
             polyLayer.bindTooltip(
@@ -758,9 +766,9 @@ export const MapComponent: React.FC<MapComponentProps> = ({
             // Casing (outer dark glow for readability over all map basemaps)
             const casing = L.polyline(latLngs, {
               pane: 'pane-poi_icons',
-              color: '#7c2d12',
+              color: isDark ? '#18181b' : '#7c2d12',
               weight: 4.5,
-              opacity: 0.7,
+              opacity: isDark ? 0.9 : 0.7,
               lineCap: 'round',
               lineJoin: 'round',
             });
@@ -769,7 +777,7 @@ export const MapComponent: React.FC<MapComponentProps> = ({
             // Core road line (vibrant orange/amber)
             const line = L.polyline(latLngs, {
               pane: 'pane-poi_icons',
-              color: '#f97316',
+              color: isDark ? '#fb923c' : '#f97316',
               weight: 2.5,
               opacity: 0.95,
               lineCap: 'round',
@@ -778,9 +786,9 @@ export const MapComponent: React.FC<MapComponentProps> = ({
 
             line.bindTooltip(
               `<div style="font-size: 11px;">
-                <strong style="color:#c2410c;">🚗 ${ramp.properties.name}</strong>
-                ${ramp.properties.ref ? `<br/><span style="color:#0f172a; font-weight:600;">${ramp.properties.ref}</span>` : ''}
-                ${ramp.properties.maxspeed ? `<br/><span style="color:#64748b;">Tempo: ${ramp.properties.maxspeed} km/h</span>` : ''}
+                <strong style="color:${isDark ? '#fb923c' : '#c2410c'};">🚗 ${ramp.properties.name}</strong>
+                ${ramp.properties.ref ? `<br/><span style="color:${isDark ? '#e2e8f0' : '#0f172a'}; font-weight:600;">${ramp.properties.ref}</span>` : ''}
+                ${ramp.properties.maxspeed ? `<br/><span style="color:${isDark ? '#94a3b8' : '#64748b'};">Tempo: ${ramp.properties.maxspeed} km/h</span>` : ''}
               </div>`,
               { direction: 'top', sticky: true }
             );
@@ -829,7 +837,7 @@ export const MapComponent: React.FC<MapComponentProps> = ({
           });
           marker.bindTooltip(
             `<div style="font-size: 11px;"><strong>${target.name}</strong><br/>${
-              target.linesOrRoad ? `<span style="color:#64748b">${target.linesOrRoad}</span>` : ''
+              target.linesOrRoad ? `<span style="color:${isDark ? '#94a3b8' : '#64748b'}">${target.linesOrRoad}</span>` : ''
             }</div>`,
             { direction: 'top', offset: [0, -8] }
           );
@@ -847,6 +855,7 @@ export const MapComponent: React.FC<MapComponentProps> = ({
     hiddenLayers,
     onSelectInspectionPoint,
     highwayVersion,
+    isDark,
   ]);
 
   // 7. Render Rental Choropleth Overlay (Pane: pane-rental)
@@ -870,8 +879,8 @@ export const MapComponent: React.FC<MapComponentProps> = ({
         const color = getRentalChoroplethColor(price);
         return {
           color: color,
-          weight: 1.5,
-          opacity: 0.85,
+          weight: isDark ? 2 : 1.5,
+          opacity: isDark ? 0.95 : 0.85,
           fillColor: color,
           fillOpacity: opacity,
           lineJoin: 'round',
@@ -883,19 +892,19 @@ export const MapComponent: React.FC<MapComponentProps> = ({
 
         fLayer.bindTooltip(
           `<div style="font-family: inherit; font-size: 12px; line-height: 1.35; padding: 2px;">
-            <div style="font-weight: 700; color: #0f172a; font-size: 13px;">
-              ${p.name} <span style="font-weight: 400; color: #64748b;">(Bezirk ${p.districtNumber})</span>
+            <div style="font-weight: 700; color: ${isDark ? '#f1f5f9' : '#0f172a'}; font-size: 13px;">
+              ${p.name} <span style="font-weight: 400; color: ${isDark ? '#94a3b8' : '#64748b'};">(Bezirk ${p.districtNumber})</span>
             </div>
             <div style="margin-top: 4px; font-weight: 800; font-size: 14px; color: ${color};">
-              Ø ${p.avgRentColdSqm.toFixed(2)} €/m² <span style="font-size: 11px; font-weight: 500; color: #475569;">Kaltmiete</span>
+              Ø ${p.avgRentColdSqm.toFixed(2)} €/m² <span style="font-size: 11px; font-weight: 500; color: ${isDark ? '#94a3b8' : '#475569'};">Kaltmiete</span>
             </div>
-            <div style="font-size: 11px; color: #64748b; margin-top: 2px;">
+            <div style="font-size: 11px; color: ${isDark ? '#94a3b8' : '#64748b'}; margin-top: 2px;">
               Spanne: ${p.minRentColdSqm.toFixed(2)} – ${p.maxRentColdSqm.toFixed(2)} €/m²
             </div>
-            <div style="font-size: 10px; color: #0369a1; font-weight: 600; margin-top: 3px;">
+            <div style="font-size: 10px; color: ${isDark ? '#38bdf8' : '#0369a1'}; font-weight: 600; margin-top: 3px;">
               ${p.qualityLabel}
             </div>
-            <div style="font-size: 9px; color: #94a3b8; margin-top: 4px; border-top: 1px solid #f1f5f9; padding-top: 2px;">
+            <div style="font-size: 9px; color: ${isDark ? '#64748b' : '#94a3b8'}; margin-top: 4px; border-top: 1px solid ${isDark ? '#334155' : '#f1f5f9'}; padding-top: 2px;">
               ${p.source}
             </div>
           </div>`,
@@ -906,7 +915,7 @@ export const MapComponent: React.FC<MapComponentProps> = ({
           mouseover: (e: any) => {
             const target = e.target;
             target.setStyle({
-              weight: 2.5,
+              weight: isDark ? 3 : 2.5,
               opacity: 1,
               fillOpacity: Math.min(0.85, opacity + 0.15),
             });
@@ -915,8 +924,8 @@ export const MapComponent: React.FC<MapComponentProps> = ({
           mouseout: (e: any) => {
             const target = e.target;
             target.setStyle({
-              weight: 1.5,
-              opacity: 0.85,
+              weight: isDark ? 2 : 1.5,
+              opacity: isDark ? 0.95 : 0.85,
               fillOpacity: opacity,
             });
           },
@@ -934,6 +943,7 @@ export const MapComponent: React.FC<MapComponentProps> = ({
     rentalSettings?.selectedRegionId,
     hiddenLayers,
     onSelectInspectionPoint,
+    isDark,
   ]);
 
   // Center bounds on visible markers / isochrones
@@ -963,12 +973,12 @@ export const MapComponent: React.FC<MapComponentProps> = ({
   return (
     <div className="relative w-full h-full select-none">
       {/* Map DOM Element */}
-      <div ref={mapContainerRef} className="w-full h-full z-0 bg-slate-100" />
+      <div ref={mapContainerRef} className="w-full h-full z-0 bg-slate-100 dark:bg-[#131314]" />
 
       {/* Calculating overlay spinner */}
       {(isCalculating || isPending) && (
-        <div className="absolute top-4 left-4 z-20 bg-white/95 backdrop-blur-md px-3.5 py-2 rounded-2xl shadow-lg border border-slate-200/90 flex items-center gap-2.5 text-xs font-semibold text-slate-800 animate-in fade-in duration-200">
-          <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+        <div className="absolute top-4 left-4 z-20 bg-white/95 dark:bg-[#1e1f20]/95 backdrop-blur-md px-3.5 py-2 rounded-2xl shadow-lg border border-slate-200/90 dark:border-[#3c4043] flex items-center gap-2.5 text-xs font-semibold text-slate-800 dark:text-[#e3e3e3] animate-in fade-in duration-200">
+          <Loader2 className="w-4 h-4 animate-spin text-blue-600 dark:text-blue-400" />
           <span>{isCalculating ? 'Berechne Isochronen...' : 'Aktualisierung ausstehend...'}</span>
         </div>
       )}

@@ -49,7 +49,7 @@ export const TransitSubmodeWidget: React.FC<TransitSubmodeWidgetProps> = ({
   };
 
   const gridContent = (
-    <div className="grid grid-cols-3 sm:grid-cols-6 gap-1 bg-slate-100 p-1 rounded-xl">
+    <div className="grid grid-cols-3 sm:grid-cols-6 gap-1 bg-slate-100 dark:bg-[#131314] p-1 rounded-xl">
       {TRANSIT_SUBMODE_CONFIG.map((item) => {
         const active = activeTransitModes.includes(item.id);
         return (
@@ -60,8 +60,8 @@ export const TransitSubmodeWidget: React.FC<TransitSubmodeWidgetProps> = ({
             title={`${item.label} (${item.description}) – ${active ? 'abwählen' : 'einbeziehen'}`}
             className={`py-1.5 px-1 text-center rounded-lg transition-all text-xs font-medium flex flex-col sm:flex-row items-center justify-center gap-1 cursor-pointer ${
               active
-                ? 'bg-white text-blue-900 shadow-xs font-semibold ring-1 ring-blue-500/20'
-                : 'text-slate-400 hover:text-slate-700 hover:bg-white/50 opacity-60'
+                ? 'bg-white dark:bg-[#282a2c] text-blue-900 dark:text-[#8ab4f8] shadow-xs font-semibold ring-1 ring-blue-500/20 dark:ring-[#8ab4f8]/30'
+                : 'text-slate-400 dark:text-[#9aa0a6] hover:text-slate-700 dark:hover:text-[#e3e3e3] hover:bg-white/50 dark:hover:bg-[#282a2c]/50 opacity-60'
             }`}
           >
             <span>{item.icon}</span>
@@ -74,13 +74,13 @@ export const TransitSubmodeWidget: React.FC<TransitSubmodeWidgetProps> = ({
 
   if (embedded) {
     return (
-      <div className="bg-white p-2.5 rounded-lg border border-slate-200/80 shadow-2xs space-y-1.5">
+      <div className="bg-white dark:bg-[#1e1f20] p-2.5 rounded-lg border border-slate-200/80 dark:border-[#3c4043] shadow-2xs space-y-1.5">
         <div className="flex items-center justify-between">
-          <span className="text-[10px] font-bold text-slate-800 flex items-center gap-1">
-            <Train className="w-3.5 h-3.5 text-blue-600" />
+          <span className="text-[10px] font-bold text-slate-800 dark:text-[#e3e3e3] flex items-center gap-1">
+            <Train className="w-3.5 h-3.5 text-blue-600 dark:text-[#8ab4f8]" />
             {title}
           </span>
-          <span className="text-[10px] font-semibold text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded">
+          <span className="text-[10px] font-semibold text-slate-600 dark:text-[#c4c7c5] bg-slate-100 dark:bg-[#282a2c] px-1.5 py-0.5 rounded">
             {activeTransitModes.length} von {ALL_TRANSIT_SUBMODES.length} aktiv
           </span>
         </div>
@@ -90,27 +90,27 @@ export const TransitSubmodeWidget: React.FC<TransitSubmodeWidgetProps> = ({
   }
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200/90 shadow-2xs overflow-hidden transition-all">
+    <div className="bg-white dark:bg-[#1e1f20] rounded-xl border border-slate-200/90 dark:border-[#3c4043] shadow-2xs overflow-hidden transition-all">
       <div
         onClick={() => setIsCollapsed((prev) => !prev)}
-        className="p-2.5 flex items-center justify-between gap-2 cursor-pointer hover:bg-slate-50/80 transition-colors select-none"
+        className="p-2.5 flex items-center justify-between gap-2 cursor-pointer hover:bg-slate-50/80 dark:hover:bg-[#282a2c]/80 transition-colors select-none"
       >
         <div className="flex items-center gap-2 min-w-0">
-          <div className="p-1 rounded-lg bg-blue-50 text-blue-600 shrink-0">
+          <div className="p-1 rounded-lg bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-[#8ab4f8] shrink-0">
             <Train className="w-3.5 h-3.5" />
           </div>
-          <span className="text-xs font-bold text-slate-800 truncate">
+          <span className="text-xs font-bold text-slate-800 dark:text-[#e3e3e3] truncate">
             {title}
           </span>
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
-          <span className="text-[11px] font-medium bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md">
+          <span className="text-[11px] font-medium bg-slate-100 dark:bg-[#282a2c] text-slate-600 dark:text-[#9aa0a6] px-2 py-0.5 rounded-md">
             {activeTransitModes.length} von {ALL_TRANSIT_SUBMODES.length} aktiv
           </span>
           <button
             type="button"
-            className="text-slate-400 hover:text-slate-600 p-0.5 rounded transition-colors"
+            className="text-slate-400 dark:text-[#9aa0a6] hover:text-slate-600 dark:hover:text-[#e3e3e3] p-0.5 rounded transition-colors"
             title={isCollapsed ? 'Aufklappen' : 'Einklappen'}
           >
             {isCollapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
@@ -119,7 +119,7 @@ export const TransitSubmodeWidget: React.FC<TransitSubmodeWidgetProps> = ({
       </div>
 
       {!isCollapsed && (
-        <div className="p-2.5 pt-0 border-t border-slate-100 mt-1">
+        <div className="p-2.5 pt-0 border-t border-slate-100 dark:border-[#3c4043] mt-1">
           {gridContent}
         </div>
       )}

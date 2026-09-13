@@ -125,9 +125,9 @@ const MinutePicker: React.FC<MinutePickerProps> = ({
         value={localVal}
         onChange={handleChange}
         onBlur={handleBlur}
-        className="w-full bg-slate-50/80 border border-slate-200 rounded-md px-2 py-1 text-xs text-slate-700 focus:outline-none focus:border-blue-500 focus:bg-white transition-colors"
+        className="w-full bg-slate-50/80 dark:bg-[#131314] border border-slate-200 dark:border-[#3c4043] rounded-md px-2 py-1 text-xs text-slate-700 dark:text-[#e3e3e3] focus:outline-none focus:border-blue-500 dark:focus:border-[#8ab4f8] focus:bg-white dark:focus:bg-[#1e1f20] transition-colors"
       />
-      <span className="text-xs text-slate-500 font-medium select-none">Min</span>
+      <span className="text-xs text-slate-500 dark:text-[#9aa0a6] font-medium select-none">Min</span>
     </div>
   );
 };
@@ -201,7 +201,7 @@ export const PersonCard: React.FC<PersonCardProps> = ({
   return (
     <div
       id={`person-card-${profile.id}`}
-      className="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-4 transition-all hover:shadow-md relative"
+      className="bg-white dark:bg-[#1e1f20] rounded-2xl border border-slate-200/90 dark:border-[#3c4043] shadow-sm p-4 transition-all hover:shadow-md relative"
     >
       {/* Header: Name, interactive color badge & popover, toggle & delete */}
       <div className="flex items-center justify-between gap-2 mb-3">
@@ -212,7 +212,7 @@ export const PersonCard: React.FC<PersonCardProps> = ({
               id={`btn-color-picker-${profile.id}`}
               type="button"
               onClick={() => setIsColorPickerOpen((prev) => !prev)}
-              className="w-5 h-5 rounded-full ring-2 ring-white shadow-sm flex items-center justify-center transition-transform hover:scale-110 active:scale-95 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+              className="w-5 h-5 rounded-full ring-2 ring-white dark:ring-[#1e1f20] shadow-sm flex items-center justify-center transition-transform hover:scale-110 active:scale-95 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
               style={{ backgroundColor: profile.color }}
               title="Klicken, um Farbe anzupassen"
             >
@@ -221,13 +221,13 @@ export const PersonCard: React.FC<PersonCardProps> = ({
 
             {/* Color Picker Popover */}
             {isColorPickerOpen && (
-              <div className="absolute top-full left-0 mt-2 z-50 bg-white rounded-2xl shadow-xl border border-slate-200 p-3 w-56 animate-in fade-in zoom-in-95 duration-150">
+              <div className="absolute top-full left-0 mt-2 z-50 bg-white dark:bg-[#282a2c] rounded-2xl shadow-xl border border-slate-200 dark:border-[#3c4043] p-3 w-56 animate-in fade-in zoom-in-95 duration-150">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-[11px] font-bold text-slate-700 flex items-center gap-1">
-                    <Palette className="w-3.5 h-3.5 text-slate-500" />
+                  <span className="text-[11px] font-bold text-slate-700 dark:text-[#e3e3e3] flex items-center gap-1">
+                    <Palette className="w-3.5 h-3.5 text-slate-500 dark:text-[#9aa0a6]" />
                     Farbe wählen
                   </span>
-                  <span className="text-[10px] font-mono text-slate-400 uppercase">
+                  <span className="text-[10px] font-mono text-slate-400 dark:text-[#9aa0a6] uppercase">
                     {profile.color}
                   </span>
                 </div>
@@ -244,7 +244,7 @@ export const PersonCard: React.FC<PersonCardProps> = ({
                           onUpdate({ color });
                           setIsColorPickerOpen(false);
                         }}
-                        className="w-9 h-7 rounded-lg flex items-center justify-center shadow-xs transition-transform hover:scale-105 active:scale-95 border border-black/5"
+                        className="w-9 h-7 rounded-lg flex items-center justify-center shadow-xs transition-transform hover:scale-105 active:scale-95 border border-black/5 dark:border-white/10"
                         style={{ backgroundColor: color }}
                         title={color}
                       >
@@ -255,10 +255,10 @@ export const PersonCard: React.FC<PersonCardProps> = ({
                 </div>
 
                 {/* Custom Color Input */}
-                <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
+                <div className="flex items-center gap-2 pt-2 border-t border-slate-100 dark:border-[#3c4043]">
                   <label
                     htmlFor={`input-custom-color-${profile.id}`}
-                    className="text-[10px] text-slate-500 font-medium whitespace-nowrap"
+                    className="text-[10px] text-slate-500 dark:text-[#9aa0a6] font-medium whitespace-nowrap"
                   >
                     Eigene Farbe:
                   </label>
@@ -274,7 +274,7 @@ export const PersonCard: React.FC<PersonCardProps> = ({
                     type="text"
                     value={profile.color}
                     onChange={(e) => onUpdate({ color: e.target.value })}
-                    className="text-[11px] font-mono px-1.5 py-0.5 border border-slate-200 rounded text-slate-700 w-16 text-center uppercase"
+                    className="text-[11px] font-mono px-1.5 py-0.5 border border-slate-200 dark:border-[#3c4043] rounded text-slate-700 dark:text-[#e3e3e3] bg-white dark:bg-[#1e1f20] w-16 text-center uppercase"
                   />
                 </div>
               </div>
@@ -287,14 +287,14 @@ export const PersonCard: React.FC<PersonCardProps> = ({
             value={profile.name}
             onChange={(e) => onUpdate({ name: e.target.value })}
             placeholder={`Referenzort ${index + 1}`}
-            className="font-semibold text-slate-800 text-sm bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 focus:outline-none px-1 py-0.5 w-full truncate transition-colors"
+            className="font-semibold text-slate-800 dark:text-[#e3e3e3] text-sm bg-transparent border-b border-transparent hover:border-slate-300 dark:hover:border-[#5f6368] focus:border-blue-500 dark:focus:border-[#8ab4f8] focus:outline-none px-1 py-0.5 w-full truncate transition-colors"
           />
           {isCardCollapsed && (
-            <div className="flex items-center gap-1.5 flex-shrink-0 text-[11px] text-slate-500 font-medium">
-              <span className="bg-slate-100 px-2 py-0.5 rounded-md font-semibold text-slate-700">
+            <div className="flex items-center gap-1.5 flex-shrink-0 text-[11px] text-slate-500 dark:text-[#9aa0a6] font-medium">
+              <span className="bg-slate-100 dark:bg-[#282a2c] px-2 py-0.5 rounded-md font-semibold text-slate-700 dark:text-[#c4c7c5]">
                 {profile.travelTimeMinutes} Min
               </span>
-              <span className="text-slate-400">•</span>
+              <span className="text-slate-400 dark:text-[#9aa0a6]">•</span>
               <span className="truncate max-w-[90px]">{profile.mode === 'transit' ? 'ÖPNV' : profile.mode === 'driving' ? 'Pkw' : profile.mode === 'cycling' ? 'Fahrrad' : 'Zu Fuß'}</span>
             </div>
           )}
@@ -307,7 +307,7 @@ export const PersonCard: React.FC<PersonCardProps> = ({
             onClick={() => onUpdate({ visible: !profile.visible })}
             title={profile.visible ? 'Layer auf Karte ausblenden' : 'Layer einblenden'}
             className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
-              profile.visible ? 'text-slate-600 hover:text-slate-950 hover:bg-slate-100' : 'text-slate-300 hover:text-slate-500 hover:bg-slate-100'
+              profile.visible ? 'text-slate-600 dark:text-[#c4c7c5] hover:text-slate-950 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#282a2c]' : 'text-slate-300 dark:text-[#5f6368] hover:text-slate-500 dark:hover:text-[#9aa0a6] hover:bg-slate-100 dark:hover:bg-[#282a2c]'
             }`}
           >
             {profile.visible ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
@@ -319,7 +319,7 @@ export const PersonCard: React.FC<PersonCardProps> = ({
               type="button"
               onClick={onRemove}
               title="Referenzort entfernen"
-              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+              className="p-1.5 rounded-lg text-slate-400 dark:text-[#9aa0a6] hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
             >
               <Trash2 className="w-4 h-4" />
             </button>
@@ -329,7 +329,7 @@ export const PersonCard: React.FC<PersonCardProps> = ({
             type="button"
             onClick={() => setIsCardCollapsed((prev) => !prev)}
             title={isCardCollapsed ? 'Details aufklappen' : 'Karte einklappen'}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+            className="p-1.5 rounded-lg text-slate-400 dark:text-[#9aa0a6] hover:text-slate-700 dark:hover:text-[#e3e3e3] hover:bg-slate-100 dark:hover:bg-[#282a2c] transition-colors cursor-pointer"
           >
             {isCardCollapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
           </button>
@@ -341,7 +341,7 @@ export const PersonCard: React.FC<PersonCardProps> = ({
           {/* Address Search with Autocomplete */}
           <div ref={searchContainerRef} className="relative mb-3">
         <div className="relative">
-          <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
+          <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400 dark:text-[#9aa0a6]">
             <MapPin className="w-4 h-4" />
           </div>
           <input
@@ -354,29 +354,29 @@ export const PersonCard: React.FC<PersonCardProps> = ({
             }}
             onFocus={() => setIsSearchOpen(true)}
             placeholder="Zielort suchen (z. B. Büro, Campus, Straße)..."
-            className="w-full pl-8 pr-8 py-1.5 text-xs bg-slate-50 hover:bg-slate-100/80 focus:bg-white text-slate-800 rounded-xl border border-slate-200 focus:border-blue-500 focus:outline-none transition-all placeholder:text-slate-400"
+            className="w-full pl-8 pr-8 py-1.5 text-xs bg-slate-50 hover:bg-slate-100/80 focus:bg-white dark:bg-[#131314] dark:hover:bg-[#282a2c] dark:focus:bg-[#1e1f20] text-slate-800 dark:text-[#e3e3e3] rounded-xl border border-slate-200 dark:border-[#3c4043] focus:border-blue-500 dark:focus:border-[#8ab4f8] focus:outline-none transition-all placeholder:text-slate-400 dark:placeholder:text-[#9aa0a6]"
           />
           <div className="absolute inset-y-0 right-0 pr-2.5 flex items-center pointer-events-none">
             {isSearching ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-500" />
+              <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-500 dark:text-[#8ab4f8]" />
             ) : (
-              <Search className="w-3.5 h-3.5 text-slate-400" />
+              <Search className="w-3.5 h-3.5 text-slate-400 dark:text-[#9aa0a6]" />
             )}
           </div>
         </div>
 
         {/* Search Results Dropdown */}
         {isSearchOpen && searchResults.length > 0 && (
-          <div className="absolute top-full left-0 right-0 mt-1.5 bg-white rounded-xl shadow-xl border border-slate-200 z-50 overflow-hidden py-1 max-h-56 overflow-y-auto">
+          <div className="absolute top-full left-0 right-0 mt-1.5 bg-white dark:bg-[#282a2c] rounded-xl shadow-xl border border-slate-200 dark:border-[#3c4043] z-50 overflow-hidden py-1 max-h-56 overflow-y-auto">
             {searchResults.map((res) => (
               <button
                 key={res.placeId}
                 type="button"
                 onClick={() => handleSelectResult(res)}
-                className="w-full text-left px-3 py-2 text-xs hover:bg-blue-50 transition-colors flex flex-col gap-0.5 border-b border-slate-100 last:border-0"
+                className="w-full text-left px-3 py-2 text-xs hover:bg-blue-50 dark:hover:bg-[#3c4043] transition-colors flex flex-col gap-0.5 border-b border-slate-100 dark:border-[#3c4043] last:border-0"
               >
-                <span className="font-semibold text-slate-800">{res.shortName}</span>
-                <span className="text-[11px] text-slate-400 truncate">{res.displayName}</span>
+                <span className="font-semibold text-slate-800 dark:text-[#e3e3e3]">{res.shortName}</span>
+                <span className="text-[11px] text-slate-400 dark:text-[#9aa0a6] truncate">{res.displayName}</span>
               </button>
             ))}
           </div>
@@ -385,10 +385,10 @@ export const PersonCard: React.FC<PersonCardProps> = ({
 
       {/* Transport Mode Selection */}
       <div className="mb-3">
-        <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
+        <label className="block text-[11px] font-semibold text-slate-500 dark:text-[#9aa0a6] uppercase tracking-wider mb-1.5">
           Verkehrsmittel
         </label>
-        <div className="grid grid-cols-4 gap-1 bg-slate-100 p-1 rounded-xl">
+        <div className="grid grid-cols-4 gap-1 bg-slate-100 dark:bg-[#131314] p-1 rounded-xl">
           {TRANSPORT_MODES.map((mode) => {
             const Icon = mode.icon;
             const isSelected = profile.mode === mode.id;
@@ -400,8 +400,8 @@ export const PersonCard: React.FC<PersonCardProps> = ({
                 onClick={() => onUpdate({ mode: mode.id })}
                 className={`flex flex-col items-center justify-center py-1.5 px-1 rounded-lg text-xs font-medium transition-all ${
                   isSelected
-                    ? 'bg-white text-blue-600 shadow-sm font-semibold'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+                    ? 'bg-white dark:bg-[#282a2c] text-blue-600 dark:text-[#8ab4f8] shadow-sm font-semibold'
+                    : 'text-slate-600 dark:text-[#9aa0a6] hover:text-slate-900 dark:hover:text-[#e3e3e3] hover:bg-white/60 dark:hover:bg-[#282a2c]/60'
                 }`}
                 title={mode.label}
               >
@@ -417,42 +417,42 @@ export const PersonCard: React.FC<PersonCardProps> = ({
       <div className="mb-2">
         <div className="flex items-center justify-between text-xs mb-1.5">
           <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+            <span className="text-[11px] font-semibold text-slate-500 dark:text-[#9aa0a6] uppercase tracking-wider">
               Max. Reisezeit
             </span>
             {isochroneFeature && (
               <>
                 {isochroneFeature.properties?.isFallback ? (
                   <span
-                    className="text-[9px] font-bold text-rose-700 bg-rose-100 border border-rose-300 px-1.5 py-0.2 rounded-md"
+                    className="text-[9px] font-bold text-rose-700 dark:text-rose-300 bg-rose-100 dark:bg-rose-950/50 border border-rose-300 dark:border-rose-800 px-1.5 py-0.2 rounded-md"
                     title={isochroneFeature.properties?.fallbackReason || 'API-Fehler: Offline-Fallback aktiv'}
                   >
                     ⚠️ Fallback
                   </span>
                 ) : isochroneFeature.properties?.source === 'ors' ? (
                   <span
-                    className="text-[9px] font-bold text-blue-700 bg-blue-100 border border-blue-300 px-1.5 py-0.2 rounded-md"
+                    className="text-[9px] font-bold text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-950/50 border border-blue-300 dark:border-blue-800 px-1.5 py-0.2 rounded-md"
                     title="Berechnet über OpenRouteService (OSM)"
                   >
                     ORS (OSM)
                   </span>
                 ) : isochroneFeature.properties?.source === 'google' || isochroneFeature.properties?.source === 'google_maps_isochrones' ? (
                   <span
-                    className="text-[9px] font-bold text-emerald-700 bg-emerald-100 border border-emerald-300 px-1.5 py-0.2 rounded-md"
+                    className="text-[9px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950/50 border border-emerald-300 dark:border-emerald-800 px-1.5 py-0.2 rounded-md"
                     title="Berechnet über Google Maps Isochrones API"
                   >
                     Google Maps
                   </span>
                 ) : isochroneFeature.properties?.source === 'transit_metro_matrix' ? (
                   <span
-                    className="text-[9px] font-bold text-purple-700 bg-purple-100 border border-purple-300 px-1.5 py-0.2 rounded-md"
+                    className="text-[9px] font-bold text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-950/50 border border-purple-300 dark:border-purple-800 px-1.5 py-0.2 rounded-md"
                     title="Berechnet über regionale ÖPNV-Fahrplanmatrix"
                   >
                     ÖPNV-Matrix
                   </span>
                 ) : (
                   <span
-                    className="text-[9px] font-normal text-slate-500 bg-slate-100 border border-slate-200 px-1.5 py-0.2 rounded-md"
+                    className="text-[9px] font-normal text-slate-500 dark:text-[#9aa0a6] bg-slate-100 dark:bg-[#282a2c] border border-slate-200 dark:border-[#3c4043] px-1.5 py-0.2 rounded-md"
                     title="Integrierte Offline-Heuristik"
                   >
                     Offline
@@ -469,7 +469,7 @@ export const PersonCard: React.FC<PersonCardProps> = ({
           </span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-[11px] text-slate-400">10m</span>
+          <span className="text-[11px] text-slate-400 dark:text-[#9aa0a6]">10m</span>
           <input
             id={`slider-time-${profile.id}`}
             type="range"
@@ -478,9 +478,9 @@ export const PersonCard: React.FC<PersonCardProps> = ({
             step="5"
             value={profile.travelTimeMinutes}
             onChange={(e) => onUpdate({ travelTimeMinutes: parseInt(e.target.value, 10) })}
-            className="w-full accent-blue-600 cursor-pointer h-1.5 bg-slate-200 rounded-lg appearance-none"
+            className="w-full accent-blue-600 dark:accent-[#8ab4f8] cursor-pointer h-1.5 bg-slate-200 dark:bg-[#3c4043] rounded-lg appearance-none"
           />
-          <span className="text-[11px] text-slate-400">90m</span>
+          <span className="text-[11px] text-slate-400 dark:text-[#9aa0a6]">90m</span>
         </div>
       </div>
 
@@ -492,19 +492,19 @@ export const PersonCard: React.FC<PersonCardProps> = ({
             : DEFAULT_TRANSIT_SUBMODES;
 
         return (
-          <div className="mt-2.5 pt-2 border-t border-slate-100">
+          <div className="mt-2.5 pt-2 border-t border-slate-100 dark:border-[#3c4043]">
             <button
               id={`btn-advanced-transit-${profile.id}`}
               type="button"
               onClick={() => setShowAdvanced(!showAdvanced)}
-              className="flex items-center justify-between w-full text-[11px] text-slate-500 hover:text-slate-800 font-medium py-1 cursor-pointer"
+              className="flex items-center justify-between w-full text-[11px] text-slate-500 hover:text-slate-800 dark:text-[#9aa0a6] dark:hover:text-[#e3e3e3] font-medium py-1 cursor-pointer"
             >
               <span className="flex items-center gap-1">
                 <Sliders className="w-3 h-3" />
                 Erweiterte ÖPNV-Filter
               </span>
               <div className="flex items-center gap-1.5">
-                <span className="text-[10px] font-semibold text-blue-700 bg-blue-50 border border-blue-200/60 px-1.5 py-0.5 rounded-md">
+                <span className="text-[10px] font-semibold text-blue-700 dark:text-[#8ab4f8] bg-blue-50 dark:bg-blue-950/40 border border-blue-200/60 dark:border-blue-800/60 px-1.5 py-0.5 rounded-md">
                   {activeTransitModes.length} von {ALL_TRANSIT_SUBMODES.length} aktiv
                 </span>
                 {showAdvanced ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
@@ -512,7 +512,7 @@ export const PersonCard: React.FC<PersonCardProps> = ({
             </button>
 
             {showAdvanced && (
-              <div className="mt-2 bg-slate-50 p-2.5 rounded-xl text-xs space-y-2">
+              <div className="mt-2 bg-slate-50 dark:bg-[#131314] p-2.5 rounded-xl text-xs space-y-2">
                 {/* ÖPNV-Verkehrsträger / Modalitäten (Tram, U-Bahn, Bus, X-Bus, S-Bahn, Regio) */}
                 <TransitSubmodeWidget
                   embedded
@@ -523,16 +523,16 @@ export const PersonCard: React.FC<PersonCardProps> = ({
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {/* 1. First Mile: Wohnort -> Haltestelle */}
-                <div className="bg-white p-2 rounded-lg border border-slate-200/80 shadow-2xs">
+                <div className="bg-white dark:bg-[#1e1f20] p-2 rounded-lg border border-slate-200/80 dark:border-[#3c4043] shadow-2xs">
                   <div className="flex items-center justify-between mb-0.5">
-                    <label htmlFor={`picker-walk-to-station-${profile.id}`} className="text-[10px] font-bold text-slate-800 flex items-center gap-1 cursor-pointer">
+                    <label htmlFor={`picker-walk-to-station-${profile.id}`} className="text-[10px] font-bold text-slate-800 dark:text-[#e3e3e3] flex items-center gap-1 cursor-pointer">
                       <span>🚶 Wohnort ➔ Station</span>
                     </label>
-                    <span className="text-[10px] font-semibold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">
+                    <span className="text-[10px] font-semibold text-blue-600 dark:text-[#8ab4f8] bg-blue-50 dark:bg-blue-950/40 px-1.5 py-0.5 rounded">
                       {profile.maxWalkToStationMin ?? 5} Min
                     </span>
                   </div>
-                  <p className="text-[9px] text-slate-400 mb-1.5 leading-tight">
+                  <p className="text-[9px] text-slate-400 dark:text-[#9aa0a6] mb-1.5 leading-tight">
                     Max. Gehzeit von der Haustür zur Einstiegshaltestelle
                   </p>
                   <MinutePicker
@@ -544,16 +544,16 @@ export const PersonCard: React.FC<PersonCardProps> = ({
                 </div>
 
                 {/* 2. Last Mile: Haltestelle -> Arbeitsplatz / Ziel */}
-                <div className="bg-white p-2 rounded-lg border border-slate-200/80 shadow-2xs">
+                <div className="bg-white dark:bg-[#1e1f20] p-2 rounded-lg border border-slate-200/80 dark:border-[#3c4043] shadow-2xs">
                   <div className="flex items-center justify-between mb-0.5">
-                    <label htmlFor={`picker-walk-from-station-${profile.id}`} className="text-[10px] font-bold text-slate-800 flex items-center gap-1 cursor-pointer">
+                    <label htmlFor={`picker-walk-from-station-${profile.id}`} className="text-[10px] font-bold text-slate-800 dark:text-[#e3e3e3] flex items-center gap-1 cursor-pointer">
                       <span>🏁 Station ➔ Zielort</span>
                     </label>
-                    <span className="text-[10px] font-semibold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">
+                    <span className="text-[10px] font-semibold text-blue-600 dark:text-[#8ab4f8] bg-blue-50 dark:bg-blue-950/40 px-1.5 py-0.5 rounded">
                       {profile.maxWalkFromStationMin ?? 5} Min
                     </span>
                   </div>
-                  <p className="text-[9px] text-slate-400 mb-1.5 leading-tight">
+                  <p className="text-[9px] text-slate-400 dark:text-[#9aa0a6] mb-1.5 leading-tight">
                     Max. Gehzeit von der Ausstiegshaltestelle zum Büro
                   </p>
                   <MinutePicker
@@ -565,16 +565,16 @@ export const PersonCard: React.FC<PersonCardProps> = ({
                 </div>
 
                 {/* 3. Max. Umstiege */}
-                <div className="bg-white p-2 rounded-lg border border-slate-200/80 shadow-2xs">
+                <div className="bg-white dark:bg-[#1e1f20] p-2 rounded-lg border border-slate-200/80 dark:border-[#3c4043] shadow-2xs">
                   <div className="flex items-center justify-between mb-0.5">
-                    <label htmlFor={`select-transfers-${profile.id}`} className="text-[10px] font-bold text-slate-800 cursor-pointer">
+                    <label htmlFor={`select-transfers-${profile.id}`} className="text-[10px] font-bold text-slate-800 dark:text-[#e3e3e3] cursor-pointer">
                       🔄 Max. Umstiege
                     </label>
-                    <span className="text-[10px] font-semibold text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded">
+                    <span className="text-[10px] font-semibold text-slate-600 dark:text-[#c4c7c5] bg-slate-100 dark:bg-[#282a2c] px-1.5 py-0.5 rounded">
                       {profile.maxTransfers !== undefined ? profile.maxTransfers : 'Beliebig'}
                     </span>
                   </div>
-                  <p className="text-[9px] text-slate-400 mb-1.5 leading-tight">
+                  <p className="text-[9px] text-slate-400 dark:text-[#9aa0a6] mb-1.5 leading-tight">
                     Maximal tolerierte Umstiege auf der Gesamtstrecke
                   </p>
                   <select
@@ -585,7 +585,7 @@ export const PersonCard: React.FC<PersonCardProps> = ({
                         maxTransfers: e.target.value === '99' ? undefined : parseInt(e.target.value, 10),
                       })
                     }
-                    className="w-full bg-slate-50/80 border border-slate-200 rounded-md px-2 py-1 text-xs text-slate-700 focus:outline-none focus:border-blue-500 cursor-pointer"
+                    className="w-full bg-slate-50/80 dark:bg-[#131314] border border-slate-200 dark:border-[#3c4043] rounded-md px-2 py-1 text-xs text-slate-700 dark:text-[#e3e3e3] focus:outline-none focus:border-blue-500 dark:focus:border-[#8ab4f8] cursor-pointer"
                   >
                     <option value="0">0 (Nur Direktverbindungen)</option>
                     <option value="1">Max. 1 Umstieg (Standard)</option>
@@ -596,16 +596,16 @@ export const PersonCard: React.FC<PersonCardProps> = ({
                 </div>
 
                 {/* 4. Max. Umstiegszeit */}
-                <div className="bg-white p-2 rounded-lg border border-slate-200/80 shadow-2xs">
+                <div className="bg-white dark:bg-[#1e1f20] p-2 rounded-lg border border-slate-200/80 dark:border-[#3c4043] shadow-2xs">
                   <div className="flex items-center justify-between mb-0.5">
-                    <label htmlFor={`picker-transfer-wait-${profile.id}`} className="text-[10px] font-bold text-slate-800 cursor-pointer">
+                    <label htmlFor={`picker-transfer-wait-${profile.id}`} className="text-[10px] font-bold text-slate-800 dark:text-[#e3e3e3] cursor-pointer">
                       ⏱️ Wartezeit Umstieg
                     </label>
-                    <span className="text-[10px] font-semibold text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded">
+                    <span className="text-[10px] font-semibold text-slate-600 dark:text-[#c4c7c5] bg-slate-100 dark:bg-[#282a2c] px-1.5 py-0.5 rounded">
                       {profile.maxTransferWaitMin ?? 5} Min
                     </span>
                   </div>
-                  <p className="text-[9px] text-slate-400 mb-1.5 leading-tight">
+                  <p className="text-[9px] text-slate-400 dark:text-[#9aa0a6] mb-1.5 leading-tight">
                     Tolerierter Zeitpuffer beim Wechseln der Linie
                   </p>
                   <MinutePicker

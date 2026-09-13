@@ -1,5 +1,16 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Google Material UI Font & Baseline */
+:root {
+  color-scheme: light;
+}
+
+html.dark {
+  color-scheme: dark;
+}
+
 /* Leaflet & Custom Marker Styles */
 .custom-dest-pin,
 .inspect-pin {
@@ -12,6 +23,111 @@
   width: 100%;
   height: 100%;
   background-color: #f8fafc;
+  transition: background-color 0.2s ease;
+}
+
+.dark .leaflet-container {
+  background-color: #131314;
+}
+
+/* Leaflet Controls - Google Material Dark Theming */
+.dark .leaflet-bar {
+  border: 1px solid #3c4043 !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
+  border-radius: 12px !important;
+  overflow: hidden;
+}
+
+.dark .leaflet-bar a {
+  background-color: #1e1f20 !important;
+  color: #e3e3e3 !important;
+  border-bottom: 1px solid #3c4043 !important;
+  transition: background-color 0.15s ease;
+}
+
+.dark .leaflet-bar a:hover {
+  background-color: #282a2c !important;
+  color: #8ab4f8 !important;
+}
+
+.dark .leaflet-bar a.leaflet-disabled {
+  background-color: #1a1a1c !important;
+  color: #5f6368 !important;
+}
+
+/* Leaflet Attribution */
+.dark .leaflet-control-attribution {
+  background-color: rgba(30, 31, 32, 0.85) !important;
+  color: #9aa0a6 !important;
+  border-top-left-radius: 8px;
+  backdrop-filter: blur(4px);
+}
+
+.dark .leaflet-control-attribution a {
+  color: #8ab4f8 !important;
+}
+
+/* Leaflet Popups - Google Material Card Style */
+.leaflet-popup-content-wrapper {
+  border-radius: 16px !important;
+  padding: 0 !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
+  transition: background-color 0.15s ease;
+}
+
+.leaflet-popup-content {
+  margin: 12px 14px !important;
+  line-height: 1.4 !important;
+}
+
+.dark .leaflet-popup-content-wrapper {
+  background-color: #1e1f20 !important;
+  color: #e3e3e3 !important;
+  border: 1px solid #3c4043 !important;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6) !important;
+}
+
+.dark .leaflet-popup-tip {
+  background-color: #1e1f20 !important;
+  border: 1px solid #3c4043 !important;
+}
+
+.dark .leaflet-popup-close-button {
+  color: #9aa0a6 !important;
+}
+
+.dark .leaflet-popup-close-button:hover {
+  color: #e3e3e3 !important;
+}
+
+/* Leaflet Tooltips */
+.leaflet-tooltip {
+  border-radius: 8px !important;
+  padding: 6px 10px !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12) !important;
+  font-size: 11px !important;
+  line-height: 1.35 !important;
+}
+
+.dark .leaflet-tooltip {
+  background-color: #1e1f20 !important;
+  color: #e3e3e3 !important;
+  border-color: #3c4043 !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5) !important;
+}
+
+.dark .leaflet-tooltip-top:before {
+  border-top-color: #3c4043 !important;
+}
+.dark .leaflet-tooltip-bottom:before {
+  border-bottom-color: #3c4043 !important;
+}
+.dark .leaflet-tooltip-left:before {
+  border-left-color: #3c4043 !important;
+}
+.dark .leaflet-tooltip-right:before {
+  border-right-color: #3c4043 !important;
 }
 
 /* Custom scrollbars */
@@ -21,6 +137,28 @@
 .no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+/* Slim Google Material Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: #3c4043;
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #5f6368;
 }
 
 @keyframes ping-slow {

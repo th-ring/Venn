@@ -254,18 +254,18 @@ export const LayerManagerPanel: React.FC<LayerManagerPanelProps> = ({
   };
 
   return (
-    <div className="absolute top-4 right-4 bottom-4 z-40 w-88 sm:w-96 bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-slate-200/90 flex flex-col overflow-hidden animate-in fade-in slide-in-from-right-4 duration-200">
+    <div className="absolute top-4 right-4 bottom-4 z-40 w-88 sm:w-96 bg-white/95 dark:bg-[#1e1f20]/95 backdrop-blur-md rounded-2xl shadow-2xl border border-slate-200/90 dark:border-[#3c4043] flex flex-col overflow-hidden animate-in fade-in slide-in-from-right-4 duration-200">
       {/* Header */}
-      <div className="p-3.5 border-b border-slate-200/80 bg-white/80 flex items-center justify-between shrink-0">
+      <div className="p-3.5 border-b border-slate-200/80 dark:border-[#3c4043] bg-white/80 dark:bg-[#1e1f20]/80 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-2">
-          <div className="p-1.5 rounded-xl bg-blue-600 text-white shadow-xs">
+          <div className="p-1.5 rounded-xl bg-blue-600 dark:bg-[#8ab4f8] text-white dark:text-[#131314] shadow-xs">
             <Layers className="w-4 h-4" />
           </div>
           <div>
-            <h3 className="text-xs font-bold text-slate-900 leading-tight">
+            <h3 className="text-xs font-bold text-slate-900 dark:text-[#e3e3e3] leading-tight">
               Karten-Ebenen & Filter
             </h3>
-            <p className="text-[10px] text-slate-500">
+            <p className="text-[10px] text-slate-500 dark:text-[#9aa0a6]">
               Reihenfolge (Z-Index), Sichtbarkeit & Feineinstellungen
             </p>
           </div>
@@ -276,7 +276,7 @@ export const LayerManagerPanel: React.FC<LayerManagerPanelProps> = ({
             type="button"
             onClick={onResetLayerOrder}
             title="Standard-Schichtenreihenfolge wiederherstellen"
-            className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+            className="p-1.5 text-slate-400 dark:text-[#9aa0a6] hover:text-slate-700 dark:hover:text-[#e3e3e3] hover:bg-slate-100 dark:hover:bg-[#282a2c] rounded-lg transition-colors cursor-pointer"
           >
             <RotateCcw className="w-3.5 h-3.5" />
           </button>
@@ -284,7 +284,7 @@ export const LayerManagerPanel: React.FC<LayerManagerPanelProps> = ({
             type="button"
             onClick={onClose}
             title="Schließen"
-            className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+            className="p-1.5 text-slate-400 dark:text-[#9aa0a6] hover:text-slate-700 dark:hover:text-[#e3e3e3] hover:bg-slate-100 dark:hover:bg-[#282a2c] rounded-lg transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -292,9 +292,9 @@ export const LayerManagerPanel: React.FC<LayerManagerPanelProps> = ({
       </div>
 
       {/* Info Notice about Z-Order */}
-      <div className="px-3.5 py-1.5 bg-blue-50/70 border-b border-blue-100 text-[10px] text-blue-900 flex items-center justify-between">
+      <div className="px-3.5 py-1.5 bg-blue-50/70 dark:bg-blue-950/40 border-b border-blue-100 dark:border-blue-900/60 text-[10px] text-blue-900 dark:text-[#8ab4f8] flex items-center justify-between">
         <span className="font-medium">Obere Ebenen liegen im Vordergrund</span>
-        <span className="text-[9px] text-blue-700 font-semibold">Hover-Priorität</span>
+        <span className="text-[9px] text-blue-700 dark:text-[#a8c7fa] font-semibold">Hover-Priorität</span>
       </div>
 
       {/* Scrollable Layer Stack List */}
@@ -312,8 +312,8 @@ export const LayerManagerPanel: React.FC<LayerManagerPanelProps> = ({
               key={layerId}
               className={`rounded-xl border transition-all ${
                 isVisible
-                  ? 'bg-white border-slate-200/90 shadow-2xs'
-                  : 'bg-slate-50/70 border-slate-200/60 opacity-60'
+                  ? 'bg-white dark:bg-[#282a2c] border-slate-200/90 dark:border-[#3c4043] shadow-2xs'
+                  : 'bg-slate-50/70 dark:bg-[#131314]/70 border-slate-200/60 dark:border-[#3c4043]/60 opacity-60'
               }`}
             >
               {/* Layer Title Row */}
@@ -329,8 +329,8 @@ export const LayerManagerPanel: React.FC<LayerManagerPanelProps> = ({
                         title="Nach oben verschieben (höhere Ebene)"
                         className={`p-0.5 rounded transition-colors ${
                           canMoveUp
-                            ? 'text-slate-400 hover:text-blue-600 hover:bg-blue-50 cursor-pointer'
-                            : 'text-slate-200 cursor-not-allowed'
+                            ? 'text-slate-400 dark:text-[#9aa0a6] hover:text-blue-600 dark:hover:text-[#8ab4f8] hover:bg-blue-50 dark:hover:bg-[#3c4043] cursor-pointer'
+                            : 'text-slate-200 dark:text-[#3c4043] cursor-not-allowed'
                         }`}
                       >
                         <ChevronUp className="w-3.5 h-3.5" />
@@ -342,8 +342,8 @@ export const LayerManagerPanel: React.FC<LayerManagerPanelProps> = ({
                         title="Nach unten verschieben (tiefere Ebene)"
                         className={`p-0.5 rounded transition-colors ${
                           canMoveDown
-                            ? 'text-slate-400 hover:text-blue-600 hover:bg-blue-50 cursor-pointer'
-                            : 'text-slate-200 cursor-not-allowed'
+                            ? 'text-slate-400 dark:text-[#9aa0a6] hover:text-blue-600 dark:hover:text-[#8ab4f8] hover:bg-blue-50 dark:hover:bg-[#3c4043] cursor-pointer'
+                            : 'text-slate-200 dark:text-[#3c4043] cursor-not-allowed'
                         }`}
                       >
                         <ChevronDown className="w-3.5 h-3.5" />
@@ -366,10 +366,10 @@ export const LayerManagerPanel: React.FC<LayerManagerPanelProps> = ({
                   </div>
 
                   <div className="min-w-0 flex-1">
-                    <div className="text-xs font-semibold text-slate-800 truncate">
+                    <div className="text-xs font-semibold text-slate-800 dark:text-[#e3e3e3] truncate">
                       {meta.title}
                     </div>
-                    <div className="text-[10px] text-slate-500 truncate">
+                    <div className="text-[10px] text-slate-500 dark:text-[#9aa0a6] truncate">
                       {meta.subtitle}
                     </div>
                   </div>
@@ -383,8 +383,8 @@ export const LayerManagerPanel: React.FC<LayerManagerPanelProps> = ({
                     title={isVisible ? 'Ebene ausblenden' : 'Ebene einblenden'}
                     className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
                       isVisible
-                        ? 'text-blue-600 hover:bg-blue-50'
-                        : 'text-slate-400 hover:bg-slate-200/60'
+                        ? 'text-blue-600 dark:text-[#8ab4f8] hover:bg-blue-50 dark:hover:bg-[#3c4043]'
+                        : 'text-slate-400 dark:text-[#9aa0a6] hover:bg-slate-200/60 dark:hover:bg-[#3c4043]'
                     }`}
                   >
                     {isVisible ? (
@@ -398,7 +398,7 @@ export const LayerManagerPanel: React.FC<LayerManagerPanelProps> = ({
                     type="button"
                     onClick={() => toggleExpand(layerId)}
                     title={isExpanded ? 'Einstellungen einklappen' : 'Einstellungen aufklappen'}
-                    className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                    className="p-1.5 text-slate-400 dark:text-[#9aa0a6] hover:text-slate-700 dark:hover:text-[#e3e3e3] hover:bg-slate-100 dark:hover:bg-[#3c4043] rounded-lg transition-colors cursor-pointer"
                   >
                     {isExpanded ? (
                       <ChevronUp className="w-4 h-4" />
@@ -411,11 +411,11 @@ export const LayerManagerPanel: React.FC<LayerManagerPanelProps> = ({
 
               {/* Collapsible Layer-Specific Settings Pane */}
               {isExpanded && (
-                <div className="px-3 pb-3 pt-1 border-t border-slate-100 bg-slate-50/50 rounded-b-xl text-xs space-y-2.5 animate-in fade-in duration-150">
+                <div className="px-3 pb-3 pt-1 border-t border-slate-100 dark:border-[#3c4043] bg-slate-50/50 dark:bg-[#131314]/50 rounded-b-xl text-xs space-y-2.5 animate-in fade-in duration-150">
                   {/* 1. HEATMAP SETTINGS */}
                   {layerId === 'heatmap' && onUpdateHeatmap && (
                     <div className="space-y-2">
-                      <div className="flex items-center justify-between text-[11px] font-semibold text-slate-700">
+                      <div className="flex items-center justify-between text-[11px] font-semibold text-slate-700 dark:text-[#e3e3e3]">
                         <span>Ziel-Infrastruktur</span>
                       </div>
 
@@ -436,7 +436,7 @@ export const LayerManagerPanel: React.FC<LayerManagerPanelProps> = ({
                             className={`py-1 px-1.5 rounded-lg text-[10px] font-bold text-center transition-all cursor-pointer ${
                               (heatmapSettings?.mode || 'none') === m.id
                                 ? 'bg-amber-500 text-white shadow-2xs'
-                                : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
+                                : 'bg-white dark:bg-[#1e1f20] text-slate-600 dark:text-[#c4c7c5] border border-slate-200 dark:border-[#3c4043] hover:bg-slate-100 dark:hover:bg-[#282a2c]'
                             }`}
                           >
                             {m.label}
@@ -448,9 +448,9 @@ export const LayerManagerPanel: React.FC<LayerManagerPanelProps> = ({
                         <>
                           {/* Radius Slider */}
                           <div className="space-y-1">
-                            <div className="flex items-center justify-between text-[10px] text-slate-600">
+                            <div className="flex items-center justify-between text-[10px] text-slate-600 dark:text-[#9aa0a6]">
                               <span>Maximaler Fußweg / Puffer-Radius:</span>
-                              <span className="font-bold text-amber-700">
+                              <span className="font-bold text-amber-700 dark:text-amber-400">
                                 {heatmapSettings.radiusKm || 1.5} km
                               </span>
                             </div>
@@ -463,15 +463,15 @@ export const LayerManagerPanel: React.FC<LayerManagerPanelProps> = ({
                               onChange={(e) =>
                                 onUpdateHeatmap({ radiusKm: parseFloat(e.target.value) })
                               }
-                              className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-amber-500"
+                              className="w-full h-1.5 bg-slate-200 dark:bg-[#3c4043] rounded-lg appearance-none cursor-pointer accent-amber-500"
                             />
                           </div>
 
                           {/* Intensity Slider */}
                           <div className="space-y-1">
-                            <div className="flex items-center justify-between text-[10px] text-slate-600">
+                            <div className="flex items-center justify-between text-[10px] text-slate-600 dark:text-[#9aa0a6]">
                               <span>Heatmap-Deckkraft:</span>
-                              <span className="font-bold text-amber-700">
+                              <span className="font-bold text-amber-700 dark:text-amber-400">
                                 {Math.round((heatmapSettings.intensity ?? 0.65) * 100)}%
                               </span>
                             </div>
@@ -484,7 +484,7 @@ export const LayerManagerPanel: React.FC<LayerManagerPanelProps> = ({
                               onChange={(e) =>
                                 onUpdateHeatmap({ intensity: parseFloat(e.target.value) })
                               }
-                              className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-amber-500"
+                              className="w-full h-1.5 bg-slate-200 dark:bg-[#3c4043] rounded-lg appearance-none cursor-pointer accent-amber-500"
                             />
                           </div>
                         </>
@@ -495,7 +495,7 @@ export const LayerManagerPanel: React.FC<LayerManagerPanelProps> = ({
                   {/* 2. POI ICONS SETTINGS */}
                   {layerId === 'poi_icons' && (
                     <div className="space-y-2">
-                      <div className="text-[11px] font-semibold text-slate-700">
+                      <div className="text-[11px] font-semibold text-slate-700 dark:text-[#c4c7c5]">
                         Angezeigte Haltestellen- & Knoten-Typen
                       </div>
 
@@ -507,8 +507,8 @@ export const LayerManagerPanel: React.FC<LayerManagerPanelProps> = ({
                           }
                           className={`py-1 px-2 rounded-lg text-[10px] font-bold border transition-all flex items-center justify-center gap-1 cursor-pointer ${
                             poiIconSettings.showUbahn
-                              ? 'bg-blue-50 border-blue-300 text-blue-800'
-                              : 'bg-white border-slate-200 text-slate-400'
+                              ? 'bg-blue-50 dark:bg-blue-950/40 border-blue-300 dark:border-blue-700 text-blue-800 dark:text-blue-300'
+                              : 'bg-white dark:bg-[#1e1f20] border-slate-200 dark:border-[#3c4043] text-slate-400 dark:text-[#9aa0a6]'
                           }`}
                         >
                           <span className="w-2 h-2 rounded-full bg-blue-600" />
@@ -522,8 +522,8 @@ export const LayerManagerPanel: React.FC<LayerManagerPanelProps> = ({
                           }
                           className={`py-1 px-2 rounded-lg text-[10px] font-bold border transition-all flex items-center justify-center gap-1 cursor-pointer ${
                             poiIconSettings.showSbahn
-                              ? 'bg-emerald-50 border-emerald-300 text-emerald-800'
-                              : 'bg-white border-slate-200 text-slate-400'
+                              ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-700 text-emerald-800 dark:text-emerald-300'
+                              : 'bg-white dark:bg-[#1e1f20] border-slate-200 dark:border-[#3c4043] text-slate-400 dark:text-[#9aa0a6]'
                           }`}
                         >
                           <span className="w-2 h-2 rounded-full bg-emerald-600" />
@@ -537,8 +537,8 @@ export const LayerManagerPanel: React.FC<LayerManagerPanelProps> = ({
                           }
                           className={`py-1 px-2 rounded-lg text-[10px] font-bold border transition-all flex items-center justify-center gap-1 cursor-pointer ${
                             poiIconSettings.showHighway
-                              ? 'bg-orange-50 border-orange-300 text-orange-800'
-                              : 'bg-white border-slate-200 text-slate-400'
+                              ? 'bg-orange-50 dark:bg-orange-950/40 border-orange-300 dark:border-orange-700 text-orange-800 dark:text-orange-300'
+                              : 'bg-white dark:bg-[#1e1f20] border-slate-200 dark:border-[#3c4043] text-slate-400 dark:text-[#9aa0a6]'
                           }`}
                         >
                           <span className="w-2 h-2 rounded-full bg-orange-600" />
@@ -547,8 +547,8 @@ export const LayerManagerPanel: React.FC<LayerManagerPanelProps> = ({
                       </div>
 
                       {poiIconSettings.showHighway && (
-                        <div className="pt-2 pb-1 border-t border-slate-100 space-y-1.5 pl-0.5">
-                          <label className="flex items-center gap-2 text-[10px] text-slate-700 cursor-pointer">
+                        <div className="pt-2 pb-1 border-t border-slate-100 dark:border-[#3c4043] space-y-1.5 pl-0.5">
+                          <label className="flex items-center gap-2 text-[10px] text-slate-700 dark:text-[#c4c7c5] cursor-pointer">
                             <input
                               type="checkbox"
                               checked={poiIconSettings.showHighwayRamps !== false}
@@ -562,7 +562,7 @@ export const LayerManagerPanel: React.FC<LayerManagerPanelProps> = ({
                             <span>🚗 Rampen als Straßenlinien</span>
                           </label>
 
-                          <label className="flex items-center gap-2 text-[10px] text-slate-700 cursor-pointer">
+                          <label className="flex items-center gap-2 text-[10px] text-slate-700 dark:text-[#c4c7c5] cursor-pointer">
                             <input
                               type="checkbox"
                               checked={poiIconSettings.showHighwayAreas !== false}
@@ -578,7 +578,7 @@ export const LayerManagerPanel: React.FC<LayerManagerPanelProps> = ({
                         </div>
                       )}
 
-                      <label className="flex items-center gap-2 text-[10px] text-slate-600 cursor-pointer pt-1">
+                      <label className="flex items-center gap-2 text-[10px] text-slate-600 dark:text-[#9aa0a6] cursor-pointer pt-1">
                         <input
                           type="checkbox"
                           checked={poiIconSettings.onlyWithinIntersection}
@@ -597,10 +597,10 @@ export const LayerManagerPanel: React.FC<LayerManagerPanelProps> = ({
                   {/* 3. INTERSECTION SETTINGS */}
                   {layerId === 'intersection' && (
                     <div className="space-y-2">
-                      <div className="flex items-center justify-between text-[11px] font-semibold text-slate-700">
+                      <div className="flex items-center justify-between text-[11px] font-semibold text-slate-700 dark:text-[#c4c7c5]">
                         <span>Treffbereichs-Modus</span>
                         {intersectionAreaKm2 !== undefined && (
-                          <span className="text-[10px] font-bold text-emerald-700">
+                          <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400">
                             ca. {intersectionAreaKm2} km²
                           </span>
                         )}
@@ -612,22 +612,22 @@ export const LayerManagerPanel: React.FC<LayerManagerPanelProps> = ({
                         onClick={onToggleOnlyResidential}
                         className={`w-full p-2 rounded-xl border text-left transition-all flex items-center justify-between cursor-pointer ${
                           onlyResidential
-                            ? 'bg-emerald-50 border-emerald-300 text-emerald-900 font-semibold ring-1 ring-emerald-300'
-                            : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+                            ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-700 text-emerald-900 dark:text-emerald-200 font-semibold ring-1 ring-emerald-300 dark:ring-emerald-700'
+                            : 'bg-white dark:bg-[#1e1f20] border-slate-200 dark:border-[#3c4043] text-slate-700 dark:text-[#c4c7c5] hover:bg-slate-50 dark:hover:bg-[#282a2c]'
                         }`}
                       >
                         <div className="flex items-center gap-2">
                           <Home className="w-4 h-4 text-emerald-600" />
                           <div>
                             <div className="text-[11px] font-bold">Auf Wohnbereiche begrenzen</div>
-                            <div className="text-[9px] text-slate-500">
+                            <div className="text-[9px] text-slate-500 dark:text-[#9aa0a6]">
                               Filtert Forste, Seen & reine Industriegebiete aus
                             </div>
                           </div>
                         </div>
                         <span
                           className={`text-[9px] px-1.5 py-0.5 rounded font-bold ${
-                            onlyResidential ? 'bg-emerald-200 text-emerald-900' : 'bg-slate-100 text-slate-500'
+                            onlyResidential ? 'bg-emerald-200 dark:bg-emerald-900/60 text-emerald-900 dark:text-emerald-200' : 'bg-slate-100 dark:bg-[#282a2c] text-slate-500 dark:text-[#9aa0a6]'
                           }`}
                         >
                           {onlyResidential ? 'Aktiv' : 'Aus'}
@@ -640,22 +640,22 @@ export const LayerManagerPanel: React.FC<LayerManagerPanelProps> = ({
                         onClick={onToggleOnlyIntersection}
                         className={`w-full p-2 rounded-xl border text-left transition-all flex items-center justify-between cursor-pointer ${
                           showOnlyIntersection
-                            ? 'bg-blue-50 border-blue-300 text-blue-900 font-semibold ring-1 ring-blue-300'
-                            : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+                            ? 'bg-blue-50 dark:bg-blue-950/40 border-blue-300 dark:border-blue-700 text-blue-900 dark:text-blue-200 font-semibold ring-1 ring-blue-300 dark:ring-blue-700'
+                            : 'bg-white dark:bg-[#1e1f20] border-slate-200 dark:border-[#3c4043] text-slate-700 dark:text-[#c4c7c5] hover:bg-slate-50 dark:hover:bg-[#282a2c]'
                         }`}
                       >
                         <div className="flex items-center gap-2">
                           <Focus className="w-4 h-4 text-blue-600" />
                           <div>
                             <div className="text-[11px] font-bold">Fokus: Nur Treffbereich</div>
-                            <div className="text-[9px] text-slate-500">
+                            <div className="text-[9px] text-slate-500 dark:text-[#9aa0a6]">
                               Blendet Einzel-Isochronen vorübergehend aus
                             </div>
                           </div>
                         </div>
                         <span
                           className={`text-[9px] px-1.5 py-0.5 rounded font-bold ${
-                            showOnlyIntersection ? 'bg-blue-200 text-blue-900' : 'bg-slate-100 text-slate-500'
+                            showOnlyIntersection ? 'bg-blue-200 dark:bg-blue-900/60 text-blue-900 dark:text-blue-200' : 'bg-slate-100 dark:bg-[#282a2c] text-slate-500 dark:text-[#9aa0a6]'
                           }`}
                         >
                           {showOnlyIntersection ? 'Aktiv' : 'Aus'}
@@ -667,9 +667,9 @@ export const LayerManagerPanel: React.FC<LayerManagerPanelProps> = ({
                   {/* 4. RENTAL SETTINGS */}
                   {layerId === 'rental' && onUpdateRentalOverlay && (
                     <div className="space-y-2">
-                      <div className="flex items-center justify-between text-[11px] font-semibold text-slate-700">
+                      <div className="flex items-center justify-between text-[11px] font-semibold text-slate-700 dark:text-[#c4c7c5]">
                         <span>Mietspiegel München (Open Data)</span>
-                        <span className="text-[10px] text-purple-700 font-bold">
+                        <span className="text-[10px] text-purple-700 dark:text-purple-400 font-bold">
                           Ø {Math.round((rentalSettings?.opacity ?? 0.35) * 100)}% Deckkraft
                         </span>
                       </div>
@@ -683,12 +683,12 @@ export const LayerManagerPanel: React.FC<LayerManagerPanelProps> = ({
                         onChange={(e) =>
                           onUpdateRentalOverlay({ opacity: parseFloat(e.target.value) })
                         }
-                        className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-purple-600"
+                        className="w-full h-1.5 bg-slate-200 dark:bg-[#3c4043] rounded-lg appearance-none cursor-pointer accent-purple-600"
                       />
 
-                      <div className="p-2 bg-white rounded-lg border border-slate-200 text-[10px] text-slate-600 flex items-center justify-between">
+                      <div className="p-2 bg-white dark:bg-[#1e1f20] rounded-lg border border-slate-200 dark:border-[#3c4043] text-[10px] text-slate-600 dark:text-[#9aa0a6] flex items-center justify-between">
                         <span>Datensatz:</span>
-                        <span className="font-semibold text-slate-800">25 Münchner Stadtbezirke</span>
+                        <span className="font-semibold text-slate-800 dark:text-[#e3e3e3]">25 Münchner Stadtbezirke</span>
                       </div>
                     </div>
                   )}
@@ -696,7 +696,7 @@ export const LayerManagerPanel: React.FC<LayerManagerPanelProps> = ({
                   {/* 5. ISOCHRONES (INDIVIDUAL) */}
                   {layerId === 'isochrones' && (
                     <div className="space-y-1.5">
-                      <div className="text-[11px] font-semibold text-slate-700 mb-1">
+                      <div className="text-[11px] font-semibold text-slate-700 dark:text-[#c4c7c5] mb-1">
                         Sichtbarkeit je Person ({profiles.length})
                       </div>
                       <div className="max-h-36 overflow-y-auto space-y-1 pr-1">
@@ -704,18 +704,18 @@ export const LayerManagerPanel: React.FC<LayerManagerPanelProps> = ({
                           <div
                             key={p.id}
                             onClick={() => onToggleProfileVisibility?.(p.id)}
-                            className="flex items-center justify-between p-1.5 bg-white rounded-lg border border-slate-200 hover:bg-slate-50 cursor-pointer"
+                            className="flex items-center justify-between p-1.5 bg-white dark:bg-[#1e1f20] rounded-lg border border-slate-200 dark:border-[#3c4043] hover:bg-slate-50 dark:hover:bg-[#282a2c] cursor-pointer"
                           >
                             <div className="flex items-center gap-2 truncate">
                               <span
                                 className="w-2.5 h-2.5 rounded-full shrink-0"
                                 style={{ backgroundColor: p.color }}
                               />
-                              <span className="font-medium text-slate-800 truncate">
+                              <span className="font-medium text-slate-800 dark:text-[#e3e3e3] truncate">
                                 {p.name}
                               </span>
                             </div>
-                            <span className="text-[9px] text-slate-500 shrink-0 font-medium">
+                            <span className="text-[9px] text-slate-500 dark:text-[#9aa0a6] shrink-0 font-medium">
                               {p.travelTimeMinutes} Min
                             </span>
                           </div>
@@ -726,11 +726,11 @@ export const LayerManagerPanel: React.FC<LayerManagerPanelProps> = ({
 
                   {/* 6. PERSONS PINS */}
                   {layerId === 'persons' && (
-                    <div className="p-2 bg-white rounded-lg border border-slate-200 text-[10px] text-slate-600 space-y-1">
-                      <p className="font-medium text-slate-800">
+                    <div className="p-2 bg-white dark:bg-[#1e1f20] rounded-lg border border-slate-200 dark:border-[#3c4043] text-[10px] text-slate-600 dark:text-[#9aa0a6] space-y-1">
+                      <p className="font-medium text-slate-800 dark:text-[#e3e3e3]">
                         📍 Draggable Pins auf der Karte
                       </p>
-                      <p className="text-slate-500">
+                      <p className="text-slate-500 dark:text-[#9aa0a6]">
                         Jeder Pin kann per Drag & Drop verschoben werden, um sofort eine neue Isochrone zu berechnen.
                       </p>
                     </div>
@@ -738,11 +738,11 @@ export const LayerManagerPanel: React.FC<LayerManagerPanelProps> = ({
 
                   {/* 7. INSPECTION PIN */}
                   {layerId === 'inspection' && (
-                    <div className="p-2 bg-white rounded-lg border border-slate-200 text-[10px] text-slate-600 space-y-1">
-                      <p className="font-medium text-slate-800">
+                    <div className="p-2 bg-white dark:bg-[#1e1f20] rounded-lg border border-slate-200 dark:border-[#3c4043] text-[10px] text-slate-600 dark:text-[#9aa0a6] space-y-1">
+                      <p className="font-medium text-slate-800 dark:text-[#e3e3e3]">
                         🎯 Klick-Inspektor für jeden Ort
                       </p>
-                      <p className="text-slate-500">
+                      <p className="text-slate-500 dark:text-[#9aa0a6]">
                         Klicke an eine beliebige Stelle auf der Karte, um die exakten Fahrzeiten aller Personen und die Kaltmiete dort anzuzeigen.
                       </p>
                     </div>
@@ -751,22 +751,22 @@ export const LayerManagerPanel: React.FC<LayerManagerPanelProps> = ({
                   {/* 8. BASEMAP SETTINGS */}
                   {layerId === 'basemap' && (
                     <div className="space-y-2.5">
-                      <div className="flex items-center justify-between text-[11px] font-semibold text-slate-700">
+                      <div className="flex items-center justify-between text-[11px] font-semibold text-slate-700 dark:text-[#c4c7c5]">
                         <span>Anbieter (Hintergrundkarte)</span>
-                        <span className="text-[9px] text-slate-400 font-normal">
+                        <span className="text-[9px] text-slate-400 dark:text-[#9aa0a6] font-normal">
                           {activePlatform === 'google' ? 'Maps JS API' : '100% Kostenlos'}
                         </span>
                       </div>
 
                       {/* 4-way Provider Tabs */}
-                      <div className="grid grid-cols-4 gap-1 bg-slate-200/70 p-1 rounded-lg">
+                      <div className="grid grid-cols-4 gap-1 bg-slate-200/70 dark:bg-[#131314] p-1 rounded-lg">
                         <button
                           type="button"
                           onClick={() => onSelectPlatform('osm')}
                           className={`py-1.5 px-1 rounded-md text-[10px] font-bold text-center transition-all cursor-pointer flex items-center justify-center gap-1 ${
                             activePlatform === 'osm'
-                              ? 'bg-white text-blue-900 shadow-2xs'
-                              : 'text-slate-600 hover:text-slate-900'
+                              ? 'bg-white dark:bg-[#282a2c] text-blue-900 dark:text-blue-300 shadow-2xs'
+                              : 'text-slate-600 dark:text-[#9aa0a6] hover:text-slate-900 dark:hover:text-[#e3e3e3]'
                           }`}
                         >
                           <Globe className="w-3 h-3 shrink-0 text-blue-600" />
@@ -778,8 +778,8 @@ export const LayerManagerPanel: React.FC<LayerManagerPanelProps> = ({
                           onClick={() => onSelectPlatform('memomaps')}
                           className={`py-1.5 px-1 rounded-md text-[10px] font-bold text-center transition-all cursor-pointer flex items-center justify-center gap-1 ${
                             activePlatform === 'memomaps' || activePlatform === 'opnv'
-                              ? 'bg-white text-emerald-900 shadow-2xs'
-                              : 'text-slate-600 hover:text-slate-900'
+                              ? 'bg-white dark:bg-[#282a2c] text-emerald-900 dark:text-emerald-300 shadow-2xs'
+                              : 'text-slate-600 dark:text-[#9aa0a6] hover:text-slate-900 dark:hover:text-[#e3e3e3]'
                           }`}
                         >
                           <Train className="w-3 h-3 shrink-0 text-emerald-600" />
@@ -791,8 +791,8 @@ export const LayerManagerPanel: React.FC<LayerManagerPanelProps> = ({
                           onClick={() => onSelectPlatform('carto')}
                           className={`py-1.5 px-1 rounded-md text-[10px] font-bold text-center transition-all cursor-pointer flex items-center justify-center gap-1 ${
                             activePlatform === 'carto'
-                              ? 'bg-white text-purple-900 shadow-2xs'
-                              : 'text-slate-600 hover:text-slate-900'
+                              ? 'bg-white dark:bg-[#282a2c] text-purple-900 dark:text-purple-300 shadow-2xs'
+                              : 'text-slate-600 dark:text-[#9aa0a6] hover:text-slate-900 dark:hover:text-[#e3e3e3]'
                           }`}
                         >
                           <Palette className="w-3 h-3 shrink-0 text-purple-600" />
@@ -804,8 +804,8 @@ export const LayerManagerPanel: React.FC<LayerManagerPanelProps> = ({
                           onClick={() => onSelectPlatform('google')}
                           className={`py-1.5 px-1 rounded-md text-[10px] font-bold text-center transition-all cursor-pointer flex items-center justify-center gap-1 ${
                             activePlatform === 'google'
-                              ? 'bg-white text-blue-900 shadow-2xs'
-                              : 'text-slate-600 hover:text-slate-900'
+                              ? 'bg-white dark:bg-[#282a2c] text-blue-900 dark:text-blue-300 shadow-2xs'
+                              : 'text-slate-600 dark:text-[#9aa0a6] hover:text-slate-900 dark:hover:text-[#e3e3e3]'
                           }`}
                         >
                           <MapIcon className="w-3 h-3 shrink-0 text-amber-600" />
@@ -815,7 +815,7 @@ export const LayerManagerPanel: React.FC<LayerManagerPanelProps> = ({
 
                       {/* Map Variant Selection tailored to activePlatform */}
                       <div className="space-y-1.5 pt-0.5">
-                        <div className="flex items-center justify-between text-[10px] text-slate-500 font-medium">
+                        <div className="flex items-center justify-between text-[10px] text-slate-500 dark:text-[#9aa0a6] font-medium">
                           <span>
                             Optionen für{' '}
                             <strong>
@@ -829,7 +829,7 @@ export const LayerManagerPanel: React.FC<LayerManagerPanelProps> = ({
                             </strong>
                           </span>
                           {activePlatform !== 'google' && (
-                            <span className="text-[9px] bg-emerald-50 text-emerald-700 font-semibold px-1.5 py-0.2 rounded border border-emerald-200/60">
+                            <span className="text-[9px] bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 font-semibold px-1.5 py-0.2 rounded border border-emerald-200/60 dark:border-emerald-800">
                               Ohne API-Key
                             </span>
                           )}
@@ -854,11 +854,11 @@ export const LayerManagerPanel: React.FC<LayerManagerPanelProps> = ({
                                 title={v.subLabel}
                                 className={`p-1.5 rounded-lg border text-left transition-all cursor-pointer flex items-center gap-1.5 ${
                                   isSel
-                                    ? 'bg-blue-50 border-blue-400 text-blue-900 font-bold ring-1 ring-blue-300'
-                                    : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+                                    ? 'bg-blue-50 dark:bg-blue-950/40 border-blue-400 dark:border-blue-600 text-blue-900 dark:text-blue-200 font-bold ring-1 ring-blue-300 dark:ring-blue-800'
+                                    : 'bg-white dark:bg-[#1e1f20] border-slate-200 dark:border-[#3c4043] text-slate-700 dark:text-[#c4c7c5] hover:bg-slate-50 dark:hover:bg-[#282a2c]'
                                 }`}
                               >
-                                <VIcon className="w-3 h-3 shrink-0 text-slate-600" />
+                                <VIcon className="w-3 h-3 shrink-0 text-slate-600 dark:text-[#9aa0a6]" />
                                 <span className="text-[10px] truncate">{v.label}</span>
                               </button>
                             );
@@ -868,14 +868,14 @@ export const LayerManagerPanel: React.FC<LayerManagerPanelProps> = ({
 
                       {/* OpenRailwayMap Overlay Toggle */}
                       {onToggleRailwayOverlay && (
-                        <div className="pt-1.5 border-t border-slate-100">
+                        <div className="pt-1.5 border-t border-slate-100 dark:border-[#3c4043]">
                           <button
                             type="button"
                             onClick={onToggleRailwayOverlay}
                             className={`w-full p-2 rounded-xl border text-left transition-all flex items-center justify-between cursor-pointer ${
                               showRailwayOverlay
-                                ? 'bg-amber-50 border-amber-300 text-amber-950 ring-1 ring-amber-300'
-                                : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+                                ? 'bg-amber-50 dark:bg-amber-950/40 border-amber-300 dark:border-amber-700 text-amber-950 dark:text-amber-200 ring-1 ring-amber-300 dark:ring-amber-700'
+                                : 'bg-white dark:bg-[#1e1f20] border-slate-200 dark:border-[#3c4043] text-slate-700 dark:text-[#c4c7c5] hover:bg-slate-50 dark:hover:bg-[#282a2c]'
                             }`}
                           >
                             <div className="flex items-center gap-2">
@@ -883,11 +883,11 @@ export const LayerManagerPanel: React.FC<LayerManagerPanelProps> = ({
                               <div>
                                 <div className="text-[11px] font-bold flex items-center gap-1.5">
                                   <span>Schienennetz-Overlay</span>
-                                  <span className="text-[9px] font-normal text-amber-800 bg-amber-100 px-1 py-0.2 rounded">
+                                  <span className="text-[9px] font-normal text-amber-800 dark:text-amber-300 bg-amber-100 dark:bg-amber-900/60 px-1 py-0.2 rounded">
                                     OpenRailwayMap
                                   </span>
                                 </div>
-                                <div className="text-[9px] text-slate-500">
+                                <div className="text-[9px] text-slate-500 dark:text-[#9aa0a6]">
                                   Gleise, S-/U-Bahn & Tram über jede Basemap legen
                                 </div>
                               </div>
@@ -895,8 +895,8 @@ export const LayerManagerPanel: React.FC<LayerManagerPanelProps> = ({
                             <span
                               className={`text-[9px] px-1.5 py-0.5 rounded font-bold shrink-0 ${
                                 showRailwayOverlay
-                                  ? 'bg-amber-200 text-amber-900'
-                                  : 'bg-slate-100 text-slate-500'
+                                  ? 'bg-amber-200 dark:bg-amber-900/60 text-amber-900 dark:text-amber-200'
+                                  : 'bg-slate-100 dark:bg-[#282a2c] text-slate-500 dark:text-[#9aa0a6]'
                               }`}
                             >
                               {showRailwayOverlay ? 'Aktiv' : 'Aus'}
@@ -906,12 +906,12 @@ export const LayerManagerPanel: React.FC<LayerManagerPanelProps> = ({
                       )}
 
                       {activePlatform === 'google' && !hasGoogleMapsKey && onOpenApiKeySettings && (
-                        <div className="pt-1 flex items-center justify-between text-[10px] text-amber-700 bg-amber-50 p-1.5 rounded border border-amber-200">
+                        <div className="pt-1 flex items-center justify-between text-[10px] text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 p-1.5 rounded border border-amber-200 dark:border-amber-800">
                           <span>Google Key fehlt</span>
                           <button
                             type="button"
                             onClick={onOpenApiKeySettings}
-                            className="underline font-bold text-amber-900 cursor-pointer"
+                            className="underline font-bold text-amber-900 dark:text-amber-200 cursor-pointer"
                           >
                             Eintragen
                           </button>
@@ -927,13 +927,13 @@ export const LayerManagerPanel: React.FC<LayerManagerPanelProps> = ({
       </div>
 
       {/* Footer info bar */}
-      <div className="px-3.5 py-2 border-t border-slate-200/80 bg-white/90 text-[10px] text-slate-500 flex items-center justify-between shrink-0">
+      <div className="px-3.5 py-2 border-t border-slate-200/80 dark:border-[#3c4043] bg-white/90 dark:bg-[#1e1f20]/90 text-[10px] text-slate-500 dark:text-[#9aa0a6] flex items-center justify-between shrink-0">
         <span>Karten-Schichten frei sortierbar</span>
         {onOpenApiKeySettings && (
           <button
             type="button"
             onClick={onOpenApiKeySettings}
-            className="text-blue-600 hover:text-blue-800 font-semibold cursor-pointer"
+            className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-semibold cursor-pointer"
           >
             Einstellungen ⚙
           </button>

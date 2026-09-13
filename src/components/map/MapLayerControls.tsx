@@ -235,16 +235,16 @@ export const MapLayerControls: React.FC<MapLayerControlsProps> = ({
             className={`p-2 sm:px-3 sm:py-2 rounded-xl shadow-md border transition-all flex items-center gap-2 backdrop-blur-xs text-xs font-bold cursor-pointer ${
               isLayerPanelOpen
                 ? 'bg-blue-600 text-white border-blue-500 shadow-blue-500/20 ring-2 ring-blue-400/40'
-                : 'bg-white/95 hover:bg-white text-slate-800 border-slate-200/90 hover:shadow-lg'
+                : 'bg-white/95 dark:bg-[#1e1f20]/95 hover:bg-white dark:hover:bg-[#282a2c] text-slate-800 dark:text-[#e3e3e3] border-slate-200/90 dark:border-[#3c4043] hover:shadow-lg'
             }`}
           >
-            <Layers className={`w-4 h-4 ${isLayerPanelOpen ? 'text-white' : 'text-blue-600'}`} />
+            <Layers className={`w-4 h-4 ${isLayerPanelOpen ? 'text-white' : 'text-blue-600 dark:text-[#8ab4f8]'}`} />
             <span className="hidden sm:inline">Ebenen & Filter</span>
             <span
               className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
                 isLayerPanelOpen
                   ? 'bg-white text-blue-700'
-                  : 'bg-blue-100 text-blue-800'
+                  : 'bg-blue-100 dark:bg-blue-950/60 text-blue-800 dark:text-[#8ab4f8]'
               }`}
             >
               {activeLayersCount}
@@ -269,7 +269,7 @@ export const MapLayerControls: React.FC<MapLayerControlsProps> = ({
                 className={`p-2.5 rounded-xl shadow-md border transition-all flex items-center justify-center backdrop-blur-xs hover:shadow-lg cursor-pointer ${
                   onlyResidential
                     ? 'bg-emerald-700 hover:bg-emerald-800 text-white border-emerald-600 ring-2 ring-emerald-400/50'
-                    : 'bg-white/95 hover:bg-white text-slate-600 hover:text-slate-900 border-slate-200/80'
+                    : 'bg-white/95 dark:bg-[#1e1f20]/95 hover:bg-white dark:hover:bg-[#282a2c] text-slate-600 dark:text-[#9aa0a6] hover:text-slate-900 dark:hover:text-[#e3e3e3] border-slate-200/80 dark:border-[#3c4043]'
                 }`}
               >
                 <Home className="w-5 h-5" />
@@ -307,7 +307,7 @@ export const MapLayerControls: React.FC<MapLayerControlsProps> = ({
                 className={`p-2.5 rounded-xl shadow-md border transition-all flex items-center justify-center backdrop-blur-xs hover:shadow-lg cursor-pointer ${
                   heatmapSettings && heatmapSettings.mode !== 'none'
                     ? 'bg-amber-500 hover:bg-amber-600 text-white border-amber-400 ring-2 ring-amber-300/50'
-                    : 'bg-white/95 hover:bg-white text-slate-600 hover:text-slate-900 border-slate-200/80'
+                    : 'bg-white/95 dark:bg-[#1e1f20]/95 hover:bg-white dark:hover:bg-[#282a2c] text-slate-600 dark:text-[#9aa0a6] hover:text-slate-900 dark:hover:text-[#e3e3e3] border-slate-200/80 dark:border-[#3c4043]'
                 }`}
               >
                 <Flame className="w-5 h-5" />
@@ -332,7 +332,7 @@ export const MapLayerControls: React.FC<MapLayerControlsProps> = ({
                 className={`p-2.5 rounded-xl shadow-md border transition-all flex items-center justify-center backdrop-blur-xs hover:shadow-lg cursor-pointer ${
                   rentalSettings?.enabled
                     ? 'bg-purple-700 hover:bg-purple-800 text-white border-purple-600 ring-2 ring-purple-400/50'
-                    : 'bg-white/95 hover:bg-white text-slate-600 hover:text-slate-900 border-slate-200/80'
+                    : 'bg-white/95 dark:bg-[#1e1f20]/95 hover:bg-white dark:hover:bg-[#282a2c] text-slate-600 dark:text-[#9aa0a6] hover:text-slate-900 dark:hover:text-[#e3e3e3] border-slate-200/80 dark:border-[#3c4043]'
                 }`}
               >
                 <Euro className="w-5 h-5" />
@@ -345,9 +345,9 @@ export const MapLayerControls: React.FC<MapLayerControlsProps> = ({
               type="button"
               onClick={onFitBounds}
               title="Gesamten Suchbereich zentrieren"
-              className="bg-white/95 hover:bg-white text-slate-700 hover:text-slate-950 p-2.5 rounded-xl shadow-md border border-slate-200/80 transition-all flex items-center justify-center backdrop-blur-xs hover:shadow-lg cursor-pointer"
+              className="bg-white/95 dark:bg-[#1e1f20]/95 hover:bg-white dark:hover:bg-[#282a2c] text-slate-700 dark:text-[#c4c7c5] hover:text-slate-950 dark:hover:text-white p-2.5 rounded-xl shadow-md border border-slate-200/80 dark:border-[#3c4043] transition-all flex items-center justify-center backdrop-blur-xs hover:shadow-lg cursor-pointer"
             >
-              <Crosshair className="w-5 h-5 text-slate-700" />
+              <Crosshair className="w-5 h-5 text-slate-700 dark:text-[#c4c7c5]" />
             </button>
           </div>
         )}
@@ -393,13 +393,13 @@ export const MapLayerControls: React.FC<MapLayerControlsProps> = ({
 
       {/* Active "Nur überlagerter Treffbereich" Floating Banner */}
       {isOnlyIntersectionActive && hasIntersection && onToggleOnlyIntersection && (
-        <div className="absolute bottom-6 left-4 z-20 bg-white/95 backdrop-blur-md px-3.5 py-2 rounded-xl shadow-md border border-emerald-300 flex items-center gap-2.5 text-xs text-emerald-950 animate-in fade-in duration-150">
-          <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-emerald-300" />
+        <div className="absolute bottom-6 left-4 z-20 bg-white/95 dark:bg-[#1e1f20]/95 backdrop-blur-md px-3.5 py-2 rounded-xl shadow-md border border-emerald-300 dark:border-emerald-700 flex items-center gap-2.5 text-xs text-emerald-950 dark:text-emerald-300 animate-in fade-in duration-150">
+          <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-emerald-300 dark:ring-emerald-700" />
           <span className="font-semibold">Nur überlagerter Treffbereich (Grün)</span>
           <button
             type="button"
             onClick={onToggleOnlyIntersection}
-            className="text-[11px] font-bold text-emerald-700 hover:text-emerald-950 underline cursor-pointer ml-1"
+            className="text-[11px] font-bold text-emerald-700 dark:text-emerald-400 hover:text-emerald-950 dark:hover:text-emerald-200 underline cursor-pointer ml-1"
           >
             Alle Bereiche einblenden
           </button>
@@ -413,14 +413,14 @@ export const MapLayerControls: React.FC<MapLayerControlsProps> = ({
             isOnlyIntersectionActive && hasIntersection && onToggleOnlyIntersection
               ? 'bottom-20'
               : 'bottom-6'
-          } left-4 z-20 bg-white/95 backdrop-blur-md px-3 py-2 rounded-2xl shadow-lg border border-slate-200/90 flex flex-col gap-1.5 text-xs text-slate-800 animate-in fade-in slide-in-from-bottom-2 duration-150 max-w-xs`}
+          } left-4 z-20 bg-white/95 dark:bg-[#1e1f20]/95 backdrop-blur-md px-3 py-2 rounded-2xl shadow-lg border border-slate-200/90 dark:border-[#3c4043] flex flex-col gap-1.5 text-xs text-slate-800 dark:text-[#e3e3e3] animate-in fade-in slide-in-from-bottom-2 duration-150 max-w-xs`}
         >
-          <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-1">
-            <div className="flex items-center gap-1.5 font-bold text-slate-900 text-[11px]">
-              <Euro className="w-3.5 h-3.5 text-purple-600" />
+          <div className="flex items-center justify-between gap-2 border-b border-slate-100 dark:border-[#3c4043] pb-1">
+            <div className="flex items-center gap-1.5 font-bold text-slate-900 dark:text-[#e3e3e3] text-[11px]">
+              <Euro className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
               <span>Mietspiegel München</span>
             </div>
-            <span className="text-[10px] text-slate-400">Ø Kaltmiete</span>
+            <span className="text-[10px] text-slate-400 dark:text-[#9aa0a6]">Ø Kaltmiete</span>
           </div>
 
           <div className="grid grid-cols-5 gap-1 text-[9px] font-semibold text-center">
@@ -430,7 +430,7 @@ export const MapLayerControls: React.FC<MapLayerControlsProps> = ({
                   className="w-full h-2 rounded-full shadow-2xs"
                   style={{ backgroundColor: tier.color }}
                 />
-                <span className="text-slate-600 leading-tight truncate w-full" title={tier.label}>
+                <span className="text-slate-600 dark:text-[#9aa0a6] leading-tight truncate w-full" title={tier.label}>
                   {tier.label}
                 </span>
               </div>

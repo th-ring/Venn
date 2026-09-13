@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { IsochroneFallbackAlert, TransportMode } from '../types';
 import {
   AlertOctagon,
@@ -13,7 +13,7 @@ import {
 
 interface FallbackWarningBannerProps {
   alerts?: IsochroneFallbackAlert[];
-  onOpenSettings: (tab?: 'basemap' | 'isochrones' | 'mvv' | 'keys' | 'heatmap') => void;
+  onOpenSettings: (tab?: 'appearance' | 'basemap' | 'isochrones' | 'mvv' | 'keys' | 'heatmap') => void;
   onRetry: () => void;
 }
 
@@ -49,11 +49,11 @@ export const FallbackWarningBanner: React.FC<FallbackWarningBannerProps> = ({
     <aside
       id="fallback-warning-banner"
       aria-label="API-Fehler Fallback-Warnung"
-      className="absolute top-4 left-1/2 -translate-x-1/2 z-30 w-[94%] max-w-2xl bg-rose-600 border-2 border-rose-300 text-white rounded-2xl shadow-2xl p-4 sm:p-5 animate-in slide-in-from-top-4 duration-300 pointer-events-auto"
+      className="absolute top-4 left-1/2 -translate-x-1/2 z-30 w-[94%] max-w-2xl bg-rose-600 dark:bg-rose-900/90 border-2 border-rose-300 dark:border-rose-700 text-white rounded-2xl shadow-2xl p-4 sm:p-5 animate-in slide-in-from-top-4 duration-300 pointer-events-auto"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-start gap-3 min-w-0">
-          <div className="p-2 bg-white text-rose-600 rounded-xl shadow-md shrink-0 mt-0.5">
+          <div className="p-2 bg-white dark:bg-[#1e1f20] text-rose-600 dark:text-rose-400 rounded-xl shadow-md shrink-0 mt-0.5">
             <AlertOctagon className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.5]" />
           </div>
 
@@ -62,7 +62,7 @@ export const FallbackWarningBanner: React.FC<FallbackWarningBannerProps> = ({
               <h3 className="text-sm sm:text-base font-extrabold text-white tracking-tight">
                 Achtung: API-Fehler bei Isochrone – Offline-Fallback aktiv!
               </h3>
-              <span className="text-[10px] uppercase font-black tracking-wider bg-rose-950/40 text-rose-100 px-2 py-0.5 rounded-md border border-rose-400/40">
+              <span className="text-[10px] uppercase font-black tracking-wider bg-rose-950/40 text-rose-100 px-2 py-0.5 rounded-md border border-rose-400/40 dark:border-rose-700/50">
                 Warnung
               </span>
             </div>
@@ -73,7 +73,7 @@ export const FallbackWarningBanner: React.FC<FallbackWarningBannerProps> = ({
             </p>
 
             {/* Error details list */}
-            <div className="mt-2.5 space-y-1.5 bg-rose-700/80 rounded-xl p-2.5 border border-rose-500/60 text-xs">
+            <div className="mt-2.5 space-y-1.5 bg-rose-700/80 dark:bg-rose-950/60 rounded-xl p-2.5 border border-rose-500/60 dark:border-rose-800/60 text-xs">
               {alerts.map((alert, idx) => {
                 const ModeIcon = MODE_ICONS[alert.mode] || Car;
                 return (
@@ -93,9 +93,9 @@ export const FallbackWarningBanner: React.FC<FallbackWarningBannerProps> = ({
               <button
                 type="button"
                 onClick={() => onOpenSettings('keys')}
-                className="bg-white hover:bg-rose-50 text-rose-700 font-bold text-xs px-3.5 py-1.5 rounded-xl shadow-md transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
+                className="bg-white dark:bg-[#282a2c] hover:bg-rose-50 dark:hover:bg-[#3c4043] text-rose-700 dark:text-rose-300 font-bold text-xs px-3.5 py-1.5 rounded-xl shadow-md transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
               >
-                <Settings className="w-3.5 h-3.5 text-rose-600" />
+                <Settings className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
                 <span>API-Keys & Einstellungen prüfen</span>
               </button>
 
@@ -103,7 +103,7 @@ export const FallbackWarningBanner: React.FC<FallbackWarningBannerProps> = ({
                 type="button"
                 onClick={handleRetryClick}
                 disabled={isRetrying}
-                className="bg-rose-800/80 hover:bg-rose-800 text-white font-semibold text-xs px-3 py-1.5 rounded-xl border border-rose-400/60 shadow-sm transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                className="bg-rose-800/80 dark:bg-rose-950/80 hover:bg-rose-800 dark:hover:bg-rose-900 text-white font-semibold text-xs px-3 py-1.5 rounded-xl border border-rose-400/60 dark:border-rose-700/60 shadow-sm transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${isRetrying ? 'animate-spin' : ''}`} />
                 <span>{isRetrying ? 'Wird berechnet...' : 'Erneut versuchen'}</span>
