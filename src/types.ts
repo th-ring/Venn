@@ -21,7 +21,7 @@ export interface PersonProfile {
 
 export type PolygonFidelity = 'AUTOMATIC' | 'LOW' | 'MEDIUM' | 'HIGH';
 
-export type BasemapPlatform = 'osm' | 'opnv' | 'carto' | 'google';
+export type BasemapPlatform = 'osm' | 'memomaps' | 'carto' | 'google' | 'opnv';
 
 export type MapVariant =
   | 'normal'
@@ -37,6 +37,7 @@ export type MapVariant =
 
 export type BasemapProvider =
   | 'osm'
+  | 'memomaps'
   | 'opnv'
   | 'carto'
   | 'google_roadmap'
@@ -48,6 +49,7 @@ export type BasemapProvider =
   | 'osm_transit'
   | 'osm_memomaps'
   | 'osm_topo'
+  | 'memomaps_memomaps'
   | 'opnv_memomaps'
   | 'opnv_transit'
   | 'opnv_railway'

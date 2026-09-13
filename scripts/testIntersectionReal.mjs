@@ -16,8 +16,8 @@ async function main() {
     },
   };
 
-  const p1 = DEFAULT_MUNICH_PROFILES[0]; // Gilching, driving
-  const p2 = DEFAULT_MUNICH_PROFILES[1]; // Domagk, transit
+  const p1 = DEFAULT_MUNICH_PROFILES[0]; // BMW Vierzylinder, driving
+  const p2 = DEFAULT_MUNICH_PROFILES[1]; // Marienplatz, transit
 
   const poly1 = await generateIsochrone(p1, schedule);
   const poly2 = await generateIsochrone(p2, schedule);
@@ -28,13 +28,11 @@ async function main() {
   console.log('Raw intersection area km2:', calculateAreaKm2(rawIntersect));
   console.log('Masked intersection area km2:', calculateAreaKm2(maskedIntersect));
 
-  // The click point in Image 2:
-  // Let's check if the click point in Gräfelfing is in poly1, poly2, rawIntersect, or maskedIntersect
-  // Gräfelfing click point in Image 2 is: lat ~48.125, lng ~11.425 (near Gräfelfing / Lochham)
-  const clickPt = turf.point([11.425, 48.125]);
+  // Test point in Schwabing / Maxvorstadt (between BMW and Marienplatz)
+  const clickPt = turf.point([11.565, 48.155]);
 
-  console.log('In poly1 (Gilching Driving)?', turf.booleanPointInPolygon(clickPt, poly1));
-  console.log('In poly2 (Domagk Transit)?', turf.booleanPointInPolygon(clickPt, poly2));
+  console.log('In poly1 (BMW Driving)?', turf.booleanPointInPolygon(clickPt, poly1));
+  console.log('In poly2 (Marienplatz Transit)?', turf.booleanPointInPolygon(clickPt, poly2));
   if (rawIntersect) {
     console.log('In rawIntersect?', turf.booleanPointInPolygon(clickPt, rawIntersect));
   }

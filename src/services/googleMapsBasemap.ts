@@ -260,6 +260,9 @@ export function createBasemapLayer(platform: BasemapPlatform, variant: MapVarian
   if (platform === 'carto') {
     return createCartoBasemapLayer(variant);
   }
+  if (platform === 'memomaps') {
+    return createMemomapsBasemapLayer();
+  }
   if (platform === 'opnv') {
     return createOpnvBasemapLayer(variant);
   }

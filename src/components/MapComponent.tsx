@@ -140,28 +140,25 @@ export const MapComponent: React.FC<MapComponentProps> = ({
     if (externalBasemap) {
       const isGoogle = externalBasemap.startsWith('google');
       const isCarto = externalBasemap.startsWith('carto');
-      const isOpnv = externalBasemap.startsWith('opnv');
+      const isMemomaps = externalBasemap.startsWith('memomaps') || externalBasemap.startsWith('opnv');
       const platform: BasemapPlatform = isGoogle
         ? 'google'
         : isCarto
         ? 'carto'
-        : isOpnv
-        ? 'opnv'
+        : isMemomaps
+        ? 'memomaps'
         : 'osm';
       let variant: MapVariant = 'normal';
       if (platform === 'carto') {
         if (externalBasemap.includes('dark')) variant = 'carto_dark';
         else if (externalBasemap.includes('voyager')) variant = 'carto_voyager';
         else variant = 'carto_light';
-      } else if (platform === 'opnv') {
-        if (externalBasemap.includes('transit')) variant = 'transit';
-        else if (externalBasemap.includes('railway')) variant = 'railway';
-        else variant = 'memomaps';
+      } else if (platform === 'memomaps') {
+        variant = 'memomaps';
       } else {
         if (externalBasemap.includes('satellite')) variant = 'satellite';
         else if (externalBasemap.includes('transit')) variant = 'transit';
         else if (externalBasemap.includes('streets') || externalBasemap.includes('terrain')) variant = 'streets';
-        else if (externalBasemap.includes('memomaps')) variant = 'memomaps';
         else if (externalBasemap.includes('topo')) variant = 'topo';
         else variant = 'normal';
       }
@@ -353,8 +350,8 @@ export const MapComponent: React.FC<MapComponentProps> = ({
           }
         } else if (activePlatform === 'carto') {
           newLayer = createBasemapLayer('carto', activeVariant);
-        } else if (activePlatform === 'opnv') {
-          newLayer = createBasemapLayer('opnv', activeVariant);
+        } else if (activePlatform === 'memomaps' || activePlatform === 'opnv') {
+          newLayer = createBasemapLayer('memomaps', activeVariant);
         } else {
           newLayer = createBasemapLayer('osm', activeVariant);
         }
@@ -414,11 +411,11 @@ export const MapComponent: React.FC<MapComponentProps> = ({
       nextVariant = 'carto_light';
       setActiveVariant('carto_light');
       setMapVariant('carto_light');
-    } else if (platform === 'opnv' && !['memomaps', 'transit', 'railway'].includes(activeVariant)) {
+    } else if ((platform === 'memomaps' || platform === 'opnv') && activeVariant !== 'memomaps') {
       nextVariant = 'memomaps';
       setActiveVariant('memomaps');
       setMapVariant('memomaps');
-    } else if (platform === 'osm' && ['carto_light', 'carto_dark', 'carto_voyager'].includes(activeVariant)) {
+    } else if (platform === 'osm' && ['carto_light', 'carto_dark', 'carto_voyager', 'memomaps'].includes(activeVariant)) {
       nextVariant = 'normal';
       setActiveVariant('normal');
       setMapVariant('normal');
