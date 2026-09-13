@@ -6,6 +6,7 @@ import {
   ALL_HEATMAP_ITEMS,
 } from '../../types';
 import { Flame, ChevronDown, ChevronUp } from 'lucide-react';
+import { getHighwayMetadata } from '../../services/highwayService';
 
 interface PriorityHeatmapWidgetProps {
   heatmap?: HeatmapSettings;
@@ -16,6 +17,7 @@ export const PriorityHeatmapWidget: React.FC<PriorityHeatmapWidgetProps> = ({
   heatmap: incomingHeatmap,
   onUpdateHeatmap,
 }) => {
+  const highwayMeta = getHighwayMetadata();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -258,7 +260,7 @@ export const PriorityHeatmapWidget: React.FC<PriorityHeatmapWidgetProps> = ({
                           {
                             id: 'highway' as PriorityHeatmapItem,
                             label: '🚗 Autobahn-Anschlussstellen',
-                            desc: 'A8, A9, A94, A95, A96, A99 Zufahrten',
+                            desc: `${highwayMeta.junctionCount} AS & ${highwayMeta.rampCount} Rampen (OSM Vektordaten)`,
                           },
                         ].map((opt) => {
                           const isChecked = activeHeatmapItems.includes(opt.id);
@@ -287,6 +289,20 @@ export const PriorityHeatmapWidget: React.FC<PriorityHeatmapWidgetProps> = ({
                           );
                         })}
                       </div>
+
+                      {activeHeatmapItems.includes('highway') && (
+                        <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] text-amber-900/80 px-1">
+                          <span>Stand: {(() => {
+                            try {
+                              const d = new Date(highwayMeta.lastUpdated);
+                              return isNaN(d.getTime()) ? highwayMeta.lastUpdated : d.toLocaleDateString('de-DE');
+                            } catch {
+                              return highwayMeta.lastUpdated;
+                            }
+                          })()} (OSM)</span>
+                          <span className="font-semibold text-amber-800">Echte Rampen-Puffer</span>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

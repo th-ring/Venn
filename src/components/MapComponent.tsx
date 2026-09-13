@@ -21,6 +21,11 @@ import {
   getPriorityTargets,
 } from '../services/priorityHeatmapEngine';
 import {
+  getHighwayRamps,
+  getHighwayAreas,
+  subscribeHighwayData,
+} from '../services/highwayService';
+import {
   getRentalGeoJsonForRegion,
   getRentalChoroplethColor,
 } from '../services/rentalService';
@@ -31,10 +36,13 @@ import {
   setBasemapPlatform,
   setMapVariant,
   setSelectedBasemap,
+  getRailwayOverlayEnabled,
+  setRailwayOverlayEnabled,
 } from '../services/isochroneEngine';
 import {
   loadGoogleMapsJsApi,
   createBasemapLayer,
+  createRailwayOverlayLayer,
 } from '../services/googleMapsBasemap';
 import {
   createPersonPinIcon,
@@ -115,19 +123,36 @@ export const MapComponent: React.FC<MapComponentProps> = ({
   // Basemap platform & variant management
   const [activePlatform, setActivePlatform] = useState<BasemapPlatform>(() => getBasemapPlatform());
   const [activeVariant, setActiveVariant] = useState<MapVariant>(() => getMapVariant());
+  const [showRailwayOverlay, setShowRailwayOverlay] = useState<boolean>(() => getRailwayOverlayEnabled());
   const [isBasemapLoading, setIsBasemapLoading] = useState(false);
   const [basemapError, setBasemapError] = useState<string | null>(null);
+  const [highwayVersion, setHighwayVersion] = useState(0);
+
+  // Subscribe to live highway dataset updates
+  useEffect(() => {
+    return subscribeHighwayData(() => {
+      setHighwayVersion((v) => v + 1);
+    });
+  }, []);
 
   // Sync if external composite basemap prop changes
   useEffect(() => {
     if (externalBasemap) {
       const isGoogle = externalBasemap.startsWith('google');
-      const platform: BasemapPlatform = isGoogle ? 'google' : 'osm';
+      const isCarto = externalBasemap.startsWith('carto');
+      const platform: BasemapPlatform = isGoogle ? 'google' : isCarto ? 'carto' : 'osm';
       let variant: MapVariant = 'normal';
-      if (externalBasemap.includes('satellite')) variant = 'satellite';
-      else if (externalBasemap.includes('transit')) variant = 'transit';
-      else if (externalBasemap.includes('streets') || externalBasemap.includes('terrain')) variant = 'streets';
-      else variant = 'normal';
+      if (platform === 'carto') {
+        if (externalBasemap.includes('dark')) variant = 'carto_dark';
+        else if (externalBasemap.includes('voyager')) variant = 'carto_voyager';
+        else variant = 'carto_light';
+      } else {
+        if (externalBasemap.includes('satellite')) variant = 'satellite';
+        else if (externalBasemap.includes('transit')) variant = 'transit';
+        else if (externalBasemap.includes('streets') || externalBasemap.includes('terrain')) variant = 'streets';
+        else if (externalBasemap.includes('topo')) variant = 'topo';
+        else variant = 'normal';
+      }
 
       if (platform !== activePlatform || variant !== activeVariant) {
         setActivePlatform(platform);
@@ -138,6 +163,7 @@ export const MapComponent: React.FC<MapComponentProps> = ({
 
   // Leaflet Layer groups & Panes
   const basemapLayerRef = useRef<L.Layer | null>(null);
+  const railwayLayerRef = useRef<L.Layer | null>(null);
   const rentalLayerRef = useRef<L.LayerGroup | null>(null);
   const isochronesLayerRef = useRef<L.LayerGroup | null>(null);
   const heatmapLayerRef = useRef<L.LayerGroup | null>(null);
@@ -164,6 +190,13 @@ export const MapComponent: React.FC<MapComponentProps> = ({
       .addTo(map);
 
     // Create custom Leaflet panes for deterministic z-ordering and hover hierarchy
+    map.createPane('pane-railway');
+    const rPane = map.getPane('pane-railway');
+    if (rPane) {
+      rPane.style.zIndex = '310';
+      rPane.style.pointerEvents = 'none';
+    }
+
     map.createPane('pane-rental');
     map.createPane('pane-isochrones');
     map.createPane('pane-heatmap');
@@ -214,6 +247,12 @@ export const MapComponent: React.FC<MapComponentProps> = ({
       map.remove();
       mapRef.current = null;
       basemapLayerRef.current = null;
+      if (railwayLayerRef.current) {
+        try {
+          map.removeLayer(railwayLayerRef.current);
+        } catch (_) {}
+        railwayLayerRef.current = null;
+      }
       rentalLayerRef.current = null;
       isochronesLayerRef.current = null;
       heatmapLayerRef.current = null;
@@ -242,6 +281,38 @@ export const MapComponent: React.FC<MapComponentProps> = ({
     });
   }, [layerOrder]);
 
+  // OpenRailwayMap overlay toggle
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    if (showRailwayOverlay) {
+      if (!railwayLayerRef.current) {
+        const railwayLayer = createRailwayOverlayLayer();
+        (railwayLayer as any).options.pane = 'pane-railway';
+        railwayLayer.addTo(map);
+        railwayLayerRef.current = railwayLayer;
+      }
+    } else {
+      if (railwayLayerRef.current) {
+        try {
+          map.removeLayer(railwayLayerRef.current);
+        } catch (e) {
+          console.warn('Error removing railway layer:', e);
+        }
+        railwayLayerRef.current = null;
+      }
+    }
+  }, [showRailwayOverlay]);
+
+  const handleToggleRailwayOverlay = () => {
+    setShowRailwayOverlay((prev) => {
+      const next = !prev;
+      setRailwayOverlayEnabled(next);
+      return next;
+    });
+  };
+
   // Switch basemap layer dynamically
   useEffect(() => {
     const map = mapRef.current;
@@ -262,12 +333,14 @@ export const MapComponent: React.FC<MapComponentProps> = ({
             setBasemapError(
               'Kein Google Maps API-Schlüssel hinterlegt. Bitte hinterlege deinen Key in den Einstellungen.'
             );
-            newLayer = createBasemapLayer('osm', activeVariant);
+            newLayer = createBasemapLayer('osm', 'normal');
           } else {
             await loadGoogleMapsJsApi(apiKey);
             if (isCancelled) return;
             newLayer = createBasemapLayer('google', activeVariant);
           }
+        } else if (activePlatform === 'carto') {
+          newLayer = createBasemapLayer('carto', activeVariant);
         } else {
           newLayer = createBasemapLayer('osm', activeVariant);
         }
@@ -321,7 +394,23 @@ export const MapComponent: React.FC<MapComponentProps> = ({
   const handleSelectPlatform = (platform: BasemapPlatform) => {
     setActivePlatform(platform);
     setBasemapPlatform(platform);
-    const composite = `${platform}_${activeVariant}` as BasemapProvider;
+
+    let nextVariant = activeVariant;
+    if (platform === 'carto' && !['carto_light', 'carto_dark', 'carto_voyager'].includes(activeVariant)) {
+      nextVariant = 'carto_light';
+      setActiveVariant('carto_light');
+      setMapVariant('carto_light');
+    } else if (platform === 'osm' && ['carto_light', 'carto_dark', 'carto_voyager'].includes(activeVariant)) {
+      nextVariant = 'normal';
+      setActiveVariant('normal');
+      setMapVariant('normal');
+    } else if (platform === 'google' && ['carto_light', 'carto_dark', 'carto_voyager', 'topo'].includes(activeVariant)) {
+      nextVariant = 'normal';
+      setActiveVariant('normal');
+      setMapVariant('normal');
+    }
+
+    const composite = `${platform}_${nextVariant}` as BasemapProvider;
     setSelectedBasemap(composite);
     if (onBasemapChange) {
       onBasemapChange(composite);
@@ -554,7 +643,7 @@ export const MapComponent: React.FC<MapComponentProps> = ({
     }
   }, [result, heatmapSettings, hiddenLayers, onSelectInspectionPoint]);
 
-  // 6. Render POI Station & Highway Badges (Pane: pane-poi_icons)
+  // 6. Render POI Station & Highway Badges & Vector Ramps (Pane: pane-poi_icons)
   useEffect(() => {
     const poiGroup = poiIconsLayerRef.current;
     if (!poiGroup || !mapRef.current) return;
@@ -571,48 +660,176 @@ export const MapComponent: React.FC<MapComponentProps> = ({
 
     if (activeTypes.length === 0) return;
 
-    const targets = getPriorityTargets(activeTypes);
-    if (targets.length === 0) return;
-
-    targets.forEach((target) => {
-      let isVisible = true;
-
-      // Filter by intersection proximity if requested
-      if (poiIconSettings.onlyWithinIntersection && result?.intersection) {
-        try {
-          const pt = turf.point([target.lng, target.lat]);
-          const distToIntersection = turf.pointToPolygonDistance(
-            pt,
-            result.intersection as any,
-            { units: 'kilometers' }
-          );
-          if (distToIntersection > (heatmapSettings?.radiusKm || 1.5)) {
-            isVisible = false;
+    // A. If Highway is active, render Area Enclosures (Umkreisung)
+    if (activeTypes.includes('highway') && poiIconSettings.showHighwayAreas !== false) {
+      try {
+        const areas = getHighwayAreas();
+        areas.forEach((area) => {
+          let isAreaVisible = true;
+          if (poiIconSettings.onlyWithinIntersection && result?.intersection) {
+            try {
+              const center = turf.center(area as any);
+              const dist = turf.pointToPolygonDistance(
+                center,
+                result.intersection as any,
+                { units: 'kilometers' }
+              );
+              if (dist > (heatmapSettings?.radiusKm || 1.5)) {
+                isAreaVisible = false;
+              }
+            } catch {
+              isAreaVisible = true;
+            }
           }
-        } catch {
-          isVisible = true;
-        }
-      }
 
-      if (isVisible) {
-        const markerIcon = createPriorityTargetIcon(target.type);
-        const marker = L.marker([target.lat, target.lng], {
-          icon: markerIcon,
-          pane: 'pane-poi_icons',
+          if (isAreaVisible) {
+            const polyLayer = L.geoJSON(area as any, {
+              pane: 'pane-poi_icons',
+              style: {
+                color: '#ea580c',
+                weight: 1.5,
+                dashArray: '5, 5',
+                fillColor: '#fdba74',
+                fillOpacity: 0.16,
+              },
+            });
+            polyLayer.bindTooltip(
+              `<div style="font-size: 11px;">
+                <strong>⭕ Autobahnanschluss-Areal</strong><br/>
+                ${area.properties.name}${area.properties.ref ? ` (AS ${area.properties.ref})` : ''}
+              </div>`,
+              { direction: 'center', opacity: 0.95 }
+            );
+            polyLayer.addTo(poiGroup);
+          }
         });
-        marker.bindTooltip(
-          `<div style="font-size: 11px;"><strong>${target.name}</strong><br/>${
-            target.linesOrRoad ? `<span style="color:#64748b">${target.linesOrRoad}</span>` : ''
-          }</div>`,
-          { direction: 'top', offset: [0, -8] }
-        );
-        marker.on('click', () => {
-          onSelectInspectionPoint(target.lat, target.lng);
-        });
-        marker.addTo(poiGroup);
+      } catch (err) {
+        console.warn('[MapComponent] Error rendering highway areas:', err);
       }
-    });
-  }, [poiIconSettings, result, heatmapSettings?.radiusKm, hiddenLayers, onSelectInspectionPoint]);
+    }
+
+    // B. If Highway is active, render Ramp Vector Lines (straßenmäßig)
+    if (activeTypes.includes('highway') && poiIconSettings.showHighwayRamps !== false) {
+      try {
+        const ramps = getHighwayRamps();
+        ramps.forEach((ramp) => {
+          const coords = ramp.geometry.coordinates;
+          if (!coords || coords.length < 2) return;
+
+          let isRampVisible = true;
+          if (poiIconSettings.onlyWithinIntersection && result?.intersection) {
+            try {
+              const midCoord = coords[Math.floor(coords.length / 2)];
+              const midPt = turf.point(midCoord);
+              const dist = turf.pointToPolygonDistance(
+                midPt,
+                result.intersection as any,
+                { units: 'kilometers' }
+              );
+              if (dist > (heatmapSettings?.radiusKm || 1.5)) {
+                isRampVisible = false;
+              }
+            } catch {
+              isRampVisible = true;
+            }
+          }
+
+          if (isRampVisible) {
+            const latLngs = coords.map(([lng, lat]) => [lat, lng] as [number, number]);
+
+            // Casing (outer dark glow for readability over all map basemaps)
+            const casing = L.polyline(latLngs, {
+              pane: 'pane-poi_icons',
+              color: '#7c2d12',
+              weight: 4.5,
+              opacity: 0.7,
+              lineCap: 'round',
+              lineJoin: 'round',
+            });
+            casing.addTo(poiGroup);
+
+            // Core road line (vibrant orange/amber)
+            const line = L.polyline(latLngs, {
+              pane: 'pane-poi_icons',
+              color: '#f97316',
+              weight: 2.5,
+              opacity: 0.95,
+              lineCap: 'round',
+              lineJoin: 'round',
+            });
+
+            line.bindTooltip(
+              `<div style="font-size: 11px;">
+                <strong style="color:#c2410c;">🚗 ${ramp.properties.name}</strong>
+                ${ramp.properties.ref ? `<br/><span style="color:#0f172a; font-weight:600;">${ramp.properties.ref}</span>` : ''}
+                ${ramp.properties.maxspeed ? `<br/><span style="color:#64748b;">Tempo: ${ramp.properties.maxspeed} km/h</span>` : ''}
+              </div>`,
+              { direction: 'top', sticky: true }
+            );
+
+            line.on('click', (e) => {
+              L.DomEvent.stopPropagation(e);
+              const mid = coords[Math.floor(coords.length / 2)];
+              onSelectInspectionPoint(mid[1], mid[0]);
+            });
+
+            line.addTo(poiGroup);
+          }
+        });
+      } catch (err) {
+        console.warn('[MapComponent] Error rendering highway ramps:', err);
+      }
+    }
+
+    // C. Render Target Node Pins (Station & Junction Badges)
+    const targets = getPriorityTargets(activeTypes);
+    if (targets.length > 0) {
+      targets.forEach((target) => {
+        let isVisible = true;
+
+        if (poiIconSettings.onlyWithinIntersection && result?.intersection) {
+          try {
+            const pt = turf.point([target.lng, target.lat]);
+            const distToIntersection = turf.pointToPolygonDistance(
+              pt,
+              result.intersection as any,
+              { units: 'kilometers' }
+            );
+            if (distToIntersection > (heatmapSettings?.radiusKm || 1.5)) {
+              isVisible = false;
+            }
+          } catch {
+            isVisible = true;
+          }
+        }
+
+        if (isVisible) {
+          const markerIcon = createPriorityTargetIcon(target.type);
+          const marker = L.marker([target.lat, target.lng], {
+            icon: markerIcon,
+            pane: 'pane-poi_icons',
+          });
+          marker.bindTooltip(
+            `<div style="font-size: 11px;"><strong>${target.name}</strong><br/>${
+              target.linesOrRoad ? `<span style="color:#64748b">${target.linesOrRoad}</span>` : ''
+            }</div>`,
+            { direction: 'top', offset: [0, -8] }
+          );
+          marker.on('click', () => {
+            onSelectInspectionPoint(target.lat, target.lng);
+          });
+          marker.addTo(poiGroup);
+        }
+      });
+    }
+  }, [
+    poiIconSettings,
+    result,
+    heatmapSettings?.radiusKm,
+    hiddenLayers,
+    onSelectInspectionPoint,
+    highwayVersion,
+  ]);
 
   // 7. Render Rental Choropleth Overlay (Pane: pane-rental)
   useEffect(() => {
@@ -788,6 +1005,8 @@ export const MapComponent: React.FC<MapComponentProps> = ({
         poiIconSettings={poiIconSettings}
         onUpdatePoiIcons={onUpdatePoiIcons}
         intersectionAreaKm2={result?.intersectionAreaKm2}
+        showRailwayOverlay={showRailwayOverlay}
+        onToggleRailwayOverlay={handleToggleRailwayOverlay}
       />
     </div>
   );

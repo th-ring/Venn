@@ -1,7 +1,8 @@
 import * as turf from '@turf/turf';
 import { PriorityHeatmapMode, PriorityHeatmapItem, HeatmapSettings } from '../types';
 import { getTransitRegion } from './mvvMatrixService';
-import { MUNICH_HIGHWAY_JUNCTIONS, HighwayJunction } from '../data/highwayJunctions';
+import { MUNICH_HIGHWAY_JUNCTIONS } from '../data/highwayJunctions';
+import { getHighwayJunctions, getHighwayRamps } from './highwayService';
 
 export interface PriorityTarget {
   id: string;
@@ -61,16 +62,45 @@ export function getPriorityTargets(
   }
 
   if (items.includes('highway')) {
-    targets.push(
-      ...MUNICH_HIGHWAY_JUNCTIONS.map((j) => ({
-        id: j.id,
-        name: j.name,
-        lat: j.lat,
-        lng: j.lng,
-        type: 'highway' as const,
-        linesOrRoad: j.autobahn,
-      }))
-    );
+    try {
+      const osmJunctions = getHighwayJunctions();
+      if (osmJunctions && osmJunctions.length > 0) {
+        targets.push(
+          ...osmJunctions.map((j) => ({
+            id: j.properties.id,
+            name: j.properties.name,
+            lat: j.properties.lat,
+            lng: j.properties.lng,
+            type: 'highway' as const,
+            linesOrRoad: j.properties.ref
+              ? `AS ${j.properties.ref}${j.properties.motorway ? ` (${j.properties.motorway})` : ''}`
+              : j.properties.motorway || 'Autobahnanschluss',
+          }))
+        );
+      } else {
+        targets.push(
+          ...MUNICH_HIGHWAY_JUNCTIONS.map((j) => ({
+            id: j.id,
+            name: j.name,
+            lat: j.lat,
+            lng: j.lng,
+            type: 'highway' as const,
+            linesOrRoad: j.autobahn,
+          }))
+        );
+      }
+    } catch {
+      targets.push(
+        ...MUNICH_HIGHWAY_JUNCTIONS.map((j) => ({
+          id: j.id,
+          name: j.name,
+          lat: j.lat,
+          lng: j.lng,
+          type: 'highway' as const,
+          linesOrRoad: j.autobahn,
+        }))
+      );
+    }
   }
 
   return targets;
@@ -116,7 +146,27 @@ function generateSingleItemZones(
       t.lat <= searchBbox[3]
   );
 
-  if (relevantTargets.length === 0) {
+  // For highway, also find all ramp LineStrings within searchBbox for exact corridor buffering
+  let relevantRampLines: GeoJSON.Feature<GeoJSON.LineString>[] = [];
+  if (itemType === 'highway') {
+    try {
+      const allRamps = getHighwayRamps();
+      relevantRampLines = allRamps
+        .filter((r) => {
+          const coords = r.geometry.coordinates;
+          return coords.some(
+            ([lng, lat]) =>
+              lng >= searchBbox[0] &&
+              lng <= searchBbox[2] &&
+              lat >= searchBbox[1] &&
+              lat <= searchBbox[3]
+          );
+        })
+        .map((r) => turf.lineString(r.geometry.coordinates));
+    } catch {}
+  }
+
+  if (relevantTargets.length === 0 && relevantRampLines.length === 0) {
     return [];
   }
 
@@ -126,11 +176,26 @@ function generateSingleItemZones(
   const r3 = maxRadius * 1.00; // e.g. 1.50 km
 
   const makeTierBuffer = (radiusKm: number): GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon> | null => {
+    const shapes: Array<GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon>> = [];
+
+    if (relevantRampLines.length > 0) {
+      try {
+        const fcRamps = turf.featureCollection(relevantRampLines);
+        const bufferedRamps = turf.buffer(fcRamps, radiusKm, { units: 'kilometers' });
+        if (bufferedRamps && bufferedRamps.features) {
+          shapes.push(...(bufferedRamps.features as any));
+        }
+      } catch {}
+    }
+
     const circles = relevantTargets.map((t) =>
       turf.circle(turf.point([t.lng, t.lat]), radiusKm, { steps: 20, units: 'kilometers' })
     );
+    shapes.push(...circles);
 
-    let current: Array<GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon>> = [...circles];
+    if (shapes.length === 0) return null;
+
+    let current: Array<GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon>> = [...shapes];
     while (current.length > 1) {
       const next: Array<GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon>> = [];
       for (let i = 0; i < current.length; i += 2) {

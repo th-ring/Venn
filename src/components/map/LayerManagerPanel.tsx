@@ -8,7 +8,12 @@ import {
   BasemapPlatform,
   MapVariant,
 } from '../../types';
-import { MAP_VARIANTS } from './MapLayerControls';
+import {
+  MAP_VARIANTS,
+  OSM_VARIANTS,
+  CARTO_VARIANTS,
+  GOOGLE_VARIANTS,
+} from './MapLayerControls';
 import {
   Layers,
   ChevronUp,
@@ -26,6 +31,7 @@ import {
   Map as MapIcon,
   Globe,
   Home,
+  Palette,
 } from 'lucide-react';
 
 interface LayerManagerPanelProps {
@@ -61,6 +67,8 @@ interface LayerManagerPanelProps {
   hasOrsKey: boolean;
   onOpenApiKeySettings?: () => void;
   intersectionAreaKm2?: number;
+  showRailwayOverlay?: boolean;
+  onToggleRailwayOverlay?: () => void;
 }
 
 export const LayerManagerPanel: React.FC<LayerManagerPanelProps> = ({
@@ -95,6 +103,8 @@ export const LayerManagerPanel: React.FC<LayerManagerPanelProps> = ({
   hasGoogleMapsKey,
   onOpenApiKeySettings,
   intersectionAreaKm2,
+  showRailwayOverlay = false,
+  onToggleRailwayOverlay,
 }) => {
   const [expandedLayer, setExpandedLayer] = useState<LayerId | null>('heatmap');
 
@@ -184,16 +194,34 @@ export const LayerManagerPanel: React.FC<LayerManagerPanelProps> = ({
           color: 'text-purple-600 bg-purple-50 border-purple-200',
           canMove: true,
         };
-      case 'basemap':
+      case 'basemap': {
+        const platformLabel =
+          activePlatform === 'google'
+            ? 'Google Maps'
+            : activePlatform === 'carto'
+            ? 'CARTO'
+            : 'OpenStreetMap';
+
+        const currentVariants =
+          activePlatform === 'google'
+            ? GOOGLE_VARIANTS
+            : activePlatform === 'carto'
+            ? CARTO_VARIANTS
+            : OSM_VARIANTS;
+
+        const variantLabel =
+          currentVariants.find((v) => v.id === activeVariant)?.label || 'Standard';
+
+        const railwaySuffix = showRailwayOverlay ? ' + Bahnnetz' : '';
+
         return {
           title: 'Hintergrundkarte',
-          subtitle: `${activePlatform === 'google' ? 'Google Maps' : 'OpenStreetMap'} • ${
-            MAP_VARIANTS.find((v) => v.id === activeVariant)?.label || 'Normal'
-          }`,
+          subtitle: `${platformLabel} • ${variantLabel}${railwaySuffix}`,
           icon: MapIcon,
           color: 'text-slate-600 bg-slate-100 border-slate-200',
           canMove: false,
         };
+      }
     }
   };
 
@@ -513,6 +541,38 @@ export const LayerManagerPanel: React.FC<LayerManagerPanelProps> = ({
                         </button>
                       </div>
 
+                      {poiIconSettings.showHighway && (
+                        <div className="pt-2 pb-1 border-t border-slate-100 space-y-1.5 pl-0.5">
+                          <label className="flex items-center gap-2 text-[10px] text-slate-700 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={poiIconSettings.showHighwayRamps !== false}
+                              onChange={(e) =>
+                                onUpdatePoiIcons({
+                                  showHighwayRamps: e.target.checked,
+                                })
+                              }
+                              className="rounded text-orange-600 focus:ring-orange-500 cursor-pointer"
+                            />
+                            <span>🚗 Rampen als Straßenlinien</span>
+                          </label>
+
+                          <label className="flex items-center gap-2 text-[10px] text-slate-700 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={poiIconSettings.showHighwayAreas !== false}
+                              onChange={(e) =>
+                                onUpdatePoiIcons({
+                                  showHighwayAreas: e.target.checked,
+                                })
+                              }
+                              className="rounded text-orange-600 focus:ring-orange-500 cursor-pointer"
+                            />
+                            <span>⭕ Knotenpunkte umkreisen</span>
+                          </label>
+                        </div>
+                      )}
+
                       <label className="flex items-center gap-2 text-[10px] text-slate-600 cursor-pointer pt-1">
                         <input
                           type="checkbox"
@@ -685,59 +745,143 @@ export const LayerManagerPanel: React.FC<LayerManagerPanelProps> = ({
 
                   {/* 8. BASEMAP SETTINGS */}
                   {layerId === 'basemap' && (
-                    <div className="space-y-2">
-                      <div className="text-[11px] font-semibold text-slate-700">
-                        Kartendienst (Hintergrund)
+                    <div className="space-y-2.5">
+                      <div className="flex items-center justify-between text-[11px] font-semibold text-slate-700">
+                        <span>Anbieter (Hintergrundkarte)</span>
+                        <span className="text-[9px] text-slate-400 font-normal">
+                          {activePlatform === 'google' ? 'Maps JS API' : '100% Kostenlos'}
+                        </span>
                       </div>
-                      <div className="grid grid-cols-2 gap-1 bg-slate-200/70 p-1 rounded-lg">
+
+                      {/* 3-way Provider Tabs */}
+                      <div className="grid grid-cols-3 gap-1 bg-slate-200/70 p-1 rounded-lg">
                         <button
                           type="button"
                           onClick={() => onSelectPlatform('osm')}
-                          className={`py-1.5 px-2 rounded-md text-[10px] font-bold text-center transition-all cursor-pointer flex items-center justify-center gap-1 ${
+                          className={`py-1.5 px-1 rounded-md text-[10px] font-bold text-center transition-all cursor-pointer flex items-center justify-center gap-1 ${
                             activePlatform === 'osm'
                               ? 'bg-white text-blue-900 shadow-2xs'
                               : 'text-slate-600 hover:text-slate-900'
                           }`}
                         >
-                          <Globe className="w-3 h-3" />
-                          <span>OpenStreetMap</span>
+                          <Globe className="w-3 h-3 shrink-0 text-blue-600" />
+                          <span className="truncate">OSM</span>
                         </button>
+
+                        <button
+                          type="button"
+                          onClick={() => onSelectPlatform('carto')}
+                          className={`py-1.5 px-1 rounded-md text-[10px] font-bold text-center transition-all cursor-pointer flex items-center justify-center gap-1 ${
+                            activePlatform === 'carto'
+                              ? 'bg-white text-purple-900 shadow-2xs'
+                              : 'text-slate-600 hover:text-slate-900'
+                          }`}
+                        >
+                          <Palette className="w-3 h-3 shrink-0 text-purple-600" />
+                          <span className="truncate">CARTO</span>
+                        </button>
+
                         <button
                           type="button"
                           onClick={() => onSelectPlatform('google')}
-                          className={`py-1.5 px-2 rounded-md text-[10px] font-bold text-center transition-all cursor-pointer flex items-center justify-center gap-1 ${
+                          className={`py-1.5 px-1 rounded-md text-[10px] font-bold text-center transition-all cursor-pointer flex items-center justify-center gap-1 ${
                             activePlatform === 'google'
                               ? 'bg-white text-blue-900 shadow-2xs'
                               : 'text-slate-600 hover:text-slate-900'
                           }`}
                         >
-                          <MapIcon className="w-3 h-3 text-blue-600" />
-                          <span>Google Maps</span>
+                          <MapIcon className="w-3 h-3 shrink-0 text-amber-600" />
+                          <span className="truncate">Google</span>
                         </button>
                       </div>
 
-                      {/* Map Variant Selection */}
-                      <div className="grid grid-cols-2 gap-1 pt-1">
-                        {MAP_VARIANTS.map((v) => {
-                          const VIcon = v.icon;
-                          const isSel = activeVariant === v.id;
-                          return (
-                            <button
-                              key={v.id}
-                              type="button"
-                              onClick={() => onSelectVariant(v.id)}
-                              className={`p-1.5 rounded-lg border text-left transition-all cursor-pointer flex items-center gap-1.5 ${
-                                isSel
-                                  ? 'bg-blue-50 border-blue-400 text-blue-900 font-bold ring-1 ring-blue-300'
-                                  : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+                      {/* Map Variant Selection tailored to activePlatform */}
+                      <div className="space-y-1.5 pt-0.5">
+                        <div className="flex items-center justify-between text-[10px] text-slate-500 font-medium">
+                          <span>
+                            Optionen für{' '}
+                            <strong>
+                              {activePlatform === 'google'
+                                ? 'Google Maps'
+                                : activePlatform === 'carto'
+                                ? 'CARTO'
+                                : 'OpenStreetMap'}
+                            </strong>
+                          </span>
+                          {activePlatform !== 'google' && (
+                            <span className="text-[9px] bg-emerald-50 text-emerald-700 font-semibold px-1.5 py-0.2 rounded border border-emerald-200/60">
+                              Ohne API-Key
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-1">
+                          {(activePlatform === 'google'
+                            ? GOOGLE_VARIANTS
+                            : activePlatform === 'carto'
+                            ? CARTO_VARIANTS
+                            : OSM_VARIANTS
+                          ).map((v) => {
+                            const VIcon = v.icon;
+                            const isSel = activeVariant === v.id;
+                            return (
+                              <button
+                                key={v.id}
+                                type="button"
+                                onClick={() => onSelectVariant(v.id)}
+                                title={v.subLabel}
+                                className={`p-1.5 rounded-lg border text-left transition-all cursor-pointer flex items-center gap-1.5 ${
+                                  isSel
+                                    ? 'bg-blue-50 border-blue-400 text-blue-900 font-bold ring-1 ring-blue-300'
+                                    : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+                                }`}
+                              >
+                                <VIcon className="w-3 h-3 shrink-0 text-slate-600" />
+                                <span className="text-[10px] truncate">{v.label}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* OpenRailwayMap Overlay Toggle */}
+                      {onToggleRailwayOverlay && (
+                        <div className="pt-1.5 border-t border-slate-100">
+                          <button
+                            type="button"
+                            onClick={onToggleRailwayOverlay}
+                            className={`w-full p-2 rounded-xl border text-left transition-all flex items-center justify-between cursor-pointer ${
+                              showRailwayOverlay
+                                ? 'bg-amber-50 border-amber-300 text-amber-950 ring-1 ring-amber-300'
+                                : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2">
+                              <Train className="w-4 h-4 text-amber-600 shrink-0" />
+                              <div>
+                                <div className="text-[11px] font-bold flex items-center gap-1.5">
+                                  <span>Schienennetz-Overlay</span>
+                                  <span className="text-[9px] font-normal text-amber-800 bg-amber-100 px-1 py-0.2 rounded">
+                                    OpenRailwayMap
+                                  </span>
+                                </div>
+                                <div className="text-[9px] text-slate-500">
+                                  Gleise, S-/U-Bahn & Tram über jede Basemap legen
+                                </div>
+                              </div>
+                            </div>
+                            <span
+                              className={`text-[9px] px-1.5 py-0.5 rounded font-bold shrink-0 ${
+                                showRailwayOverlay
+                                  ? 'bg-amber-200 text-amber-900'
+                                  : 'bg-slate-100 text-slate-500'
                               }`}
                             >
-                              <VIcon className="w-3 h-3 shrink-0 text-slate-600" />
-                              <span className="text-[10px] truncate">{v.label}</span>
-                            </button>
-                          );
-                        })}
-                      </div>
+                              {showRailwayOverlay ? 'Aktiv' : 'Aus'}
+                            </span>
+                          </button>
+                        </div>
+                      )}
 
                       {activePlatform === 'google' && !hasGoogleMapsKey && onOpenApiKeySettings && (
                         <div className="pt-1 flex items-center justify-between text-[10px] text-amber-700 bg-amber-50 p-1.5 rounded border border-amber-200">
