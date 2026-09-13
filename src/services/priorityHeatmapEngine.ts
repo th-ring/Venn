@@ -1,6 +1,6 @@
 import * as turf from '@turf/turf';
 import { PriorityHeatmapMode, PriorityHeatmapItem, HeatmapSettings } from '../types';
-import { DEFAULT_MVV_DATASET, MvvStation } from '../data/mvvDataset';
+import { getTransitRegion } from './mvvMatrixService';
 import { MUNICH_HIGHWAY_JUNCTIONS, HighwayJunction } from '../data/highwayJunctions';
 
 export interface PriorityTarget {
@@ -28,10 +28,11 @@ export function getPriorityTargets(
   if (items.length === 0) return [];
 
   const targets: PriorityTarget[] = [];
+  const activeRegion = getTransitRegion();
 
   if (items.includes('ubahn')) {
     targets.push(
-      ...DEFAULT_MVV_DATASET.stations
+      ...activeRegion.stations
         .filter((s) => s.types.includes('ubahn'))
         .map((s) => ({
           id: s.id,
@@ -46,7 +47,7 @@ export function getPriorityTargets(
 
   if (items.includes('sbahn')) {
     targets.push(
-      ...DEFAULT_MVV_DATASET.stations
+      ...activeRegion.stations
         .filter((s) => s.types.includes('sbahn'))
         .map((s) => ({
           id: s.id,

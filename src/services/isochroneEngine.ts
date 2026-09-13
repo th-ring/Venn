@@ -8,8 +8,7 @@ import {
   MapVariant,
   CommuteRouteDetails,
 } from '../types';
-import { generateMvvTransitIsochrone, calculateReachableStations, findShortestTransitTrip } from './mvvMatrixService';
-import { DEFAULT_MVV_DATASET } from '../data/mvvDataset';
+import { generateMvvTransitIsochrone, calculateReachableStations, findShortestTransitTrip, getTransitRegion } from './mvvMatrixService';
 
 interface IsochroneCacheKey {
   lat: number;
@@ -30,7 +29,8 @@ interface IsochroneCacheKey {
 const isochroneCache = new Map<string, GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon>>();
 
 function makeCacheKey(k: IsochroneCacheKey): string {
-  return `${DEFAULT_MVV_DATASET.version}_${k.lat.toFixed(4)}_${k.lng.toFixed(4)}_${k.time}_${k.mode}_${k.direction}_${k.transfers ?? 'any'}_wTo:${k.walkToStation ?? 10}_wFrom:${k.walkFromStation ?? 10}_${k.transferWait ?? 'any'}_lt:${k.liveTraffic ? 1 : 0}_sm:${k.smoothing ? 1 : 0}_fi:${k.fidelity ?? 'auto'}_tm:${k.transitModes ?? 'all'}`;
+  const currentRegion = getTransitRegion();
+  return `${currentRegion.id}_${currentRegion.version}_${k.lat.toFixed(4)}_${k.lng.toFixed(4)}_${k.time}_${k.mode}_${k.direction}_${k.transfers ?? 'any'}_wTo:${k.walkToStation ?? 10}_wFrom:${k.walkFromStation ?? 10}_${k.transferWait ?? 'any'}_lt:${k.liveTraffic ? 1 : 0}_sm:${k.smoothing ? 1 : 0}_fi:${k.fidelity ?? 'auto'}_tm:${k.transitModes ?? 'all'}`;
 }
 
 export type IsochroneProvider = 'calibrated' | 'google' | 'ors';

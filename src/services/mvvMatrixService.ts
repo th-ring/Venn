@@ -118,7 +118,7 @@ export async function initializeTransitStorage(): Promise<TransitRegion> {
   try {
     const activeId = await getActiveRegionId();
 
-    if (activeId) {
+    if (activeId && activeId !== DEFAULT_MVV_DATASET.id) {
       const stored = await loadRegionFromStorage(activeId);
       if (stored && stored.stations && stored.stations.length > 0) {
         activeTransitRegion = stored;
@@ -126,24 +126,23 @@ export async function initializeTransitStorage(): Promise<TransitRegion> {
       }
     }
 
-    // Attempt to load full Munich Metropolitan Package from public packages
-    try {
-      const res = await fetch('/transit-packages/munich.json');
-      if (res.ok) {
-        const fullMunich = (await res.json()) as TransitRegion;
-        if (fullMunich && fullMunich.stations && fullMunich.stations.length > 0) {
-          activeTransitRegion = fullMunich;
-          await saveRegionToStorage(fullMunich);
-          await setActiveRegionId(fullMunich.id);
-          return activeTransitRegion;
-        }
+    if (activeId === DEFAULT_MVV_DATASET.id) {
+      const stored = await loadRegionFromStorage(activeId);
+      if (
+        stored &&
+        stored.version === DEFAULT_MVV_DATASET.version &&
+        stored.stations &&
+        stored.stations.length >= DEFAULT_MVV_DATASET.stations.length
+      ) {
+        activeTransitRegion = stored;
+        return activeTransitRegion;
       }
-    } catch {
-      // Fallback
     }
 
-    // Default fallback to built-in dataset
+    // Default to built-in full Munich dataset and ensure it is saved in storage
     activeTransitRegion = DEFAULT_MVV_DATASET;
+    await saveRegionToStorage(DEFAULT_MVV_DATASET);
+    await setActiveRegionId(DEFAULT_MVV_DATASET.id);
     return activeTransitRegion;
   } catch {
     activeTransitRegion = DEFAULT_MVV_DATASET;
