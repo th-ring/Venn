@@ -21,12 +21,21 @@ export interface PersonProfile {
 
 export type PolygonFidelity = 'AUTOMATIC' | 'LOW' | 'MEDIUM' | 'HIGH';
 
-export type BasemapPlatform = 'osm' | 'google';
+export type BasemapPlatform = 'osm' | 'carto' | 'google';
 
-export type MapVariant = 'normal' | 'satellite' | 'streets' | 'transit';
+export type MapVariant =
+  | 'normal'
+  | 'satellite'
+  | 'streets'
+  | 'transit'
+  | 'topo'
+  | 'carto_light'
+  | 'carto_dark'
+  | 'carto_voyager';
 
 export type BasemapProvider =
   | 'osm'
+  | 'carto'
   | 'google_roadmap'
   | 'google_satellite'
   | 'google_terrain'
@@ -34,6 +43,13 @@ export type BasemapProvider =
   | 'osm_satellite'
   | 'osm_streets'
   | 'osm_transit'
+  | 'osm_topo'
+  | 'carto_carto_light'
+  | 'carto_carto_dark'
+  | 'carto_carto_voyager'
+  | 'carto_light'
+  | 'carto_dark'
+  | 'carto_voyager'
   | 'google_normal'
   | 'google_streets'
   | 'google_transit';
@@ -125,6 +141,8 @@ export interface PoiIconSettings {
   showUbahn: boolean;
   showSbahn: boolean;
   showHighway: boolean;
+  showHighwayRamps?: boolean;
+  showHighwayAreas?: boolean;
   onlyWithinIntersection: boolean;
 }
 
@@ -133,6 +151,8 @@ export const DEFAULT_POI_ICON_SETTINGS: PoiIconSettings = {
   showUbahn: true,
   showSbahn: true,
   showHighway: true,
+  showHighwayRamps: true,
+  showHighwayAreas: true,
   onlyWithinIntersection: true,
 };
 
@@ -270,3 +290,98 @@ export interface PresetScenario {
   zoom: number;
   profiles: PersonProfile[];
 }
+
+// --------------------------------------------------------
+// Highway / Autobahn & OpenStreetMap Data Models
+// --------------------------------------------------------
+export interface HighwayDatasetMetadata {
+  source: string;
+  sourceUrl: string;
+  license: string;
+  region: string;
+  regionId: string;
+  lastUpdated: string;
+  bbox: [number, number, number, number];
+  junctionCount: number;
+  rampCount: number;
+  areaCount: number;
+}
+
+export interface HighwayJunctionFeature {
+  type: 'Feature';
+  id: string;
+  geometry: {
+    type: 'Point';
+    coordinates: [number, number]; // [lng, lat]
+  };
+  properties: {
+    id: string;
+    name: string;
+    ref: string;
+    motorway: string;
+    lat: number;
+    lng: number;
+  };
+}
+
+export interface HighwayRampFeature {
+  type: 'Feature';
+  id: string;
+  geometry: {
+    type: 'LineString';
+    coordinates: [number, number][]; // [[lng, lat], ...]
+  };
+  properties: {
+    id: string;
+    name: string;
+    ref: string;
+    oneway: boolean;
+    maxspeed?: string | null;
+  };
+}
+
+export interface HighwayAreaFeature {
+  type: 'Feature';
+  id: string;
+  geometry: GeoJSON.Polygon | GeoJSON.MultiPolygon;
+  properties: {
+    junctionId: string;
+    name: string;
+    ref: string;
+  };
+}
+
+export interface HighwayDataset {
+  metadata: HighwayDatasetMetadata;
+  junctions: HighwayJunctionFeature[];
+  ramps: HighwayRampFeature[];
+  areas: HighwayAreaFeature[];
+}
+
+// --------------------------------------------------------
+// Central City Data Packages Architecture
+// --------------------------------------------------------
+export interface CityPackageArtifact {
+  id: 'highway' | 'transit' | 'rental';
+  title: string;
+  category: 'Autobahn & Auffahrten' | 'Öffentlicher Nahverkehr' | 'Mietspiegel & Wohnlagen';
+  source: string;
+  sourceUrl?: string;
+  license?: string;
+  lastUpdated: string;
+  status: 'available' | 'planned';
+  itemCountSummary: string;
+  canSync: boolean;
+  syncLabel?: string;
+}
+
+export interface CityDataPackage {
+  id: string;
+  cityName: string;
+  name: string;
+  isCurrentActive: boolean;
+  bbox: [number, number, number, number];
+  description: string;
+  artifacts: CityPackageArtifact[];
+}
+

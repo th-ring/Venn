@@ -35,7 +35,7 @@ import {
 } from '../../services/mvvMatrixService';
 import { BasemapTab } from './tabs/BasemapTab';
 import { IsochroneEngineTab } from './tabs/IsochroneEngineTab';
-import { MvvMatrixTab } from './tabs/MvvMatrixTab';
+import { DataPackagesTab } from './tabs/DataPackagesTab';
 import { ApiKeysTab } from './tabs/ApiKeysTab';
 import { PriorityHeatmapTab } from './tabs/PriorityHeatmapTab';
 import { RentalOverlayTab } from './tabs/RentalOverlayTab';
@@ -62,7 +62,7 @@ const SETTINGS_MENU: Array<{
 }> = [
   { id: 'basemap', label: '1. Kartendienst', subLabel: 'OSM & Google Maps', icon: MapIcon },
   { id: 'isochrones', label: '2. Isochronen', subLabel: 'Engine & Parameter', icon: Globe },
-  { id: 'mvv', label: '3. ÖPNV & Regionen', subLabel: 'Netze & Verkehrsmittel', icon: Train },
+  { id: 'mvv', label: '3. Datenpakete & Regionen', subLabel: 'Autobahn, ÖPNV & Mietspiegel', icon: Layers },
   { id: 'keys', label: '4. API-Keys', subLabel: 'Google & ORS Keys', icon: Key },
   { id: 'heatmap', label: '5. Heatmap', subLabel: 'Prioritäts-Infrastruktur', icon: Flame },
   { id: 'rental', label: '6. Mietspiegel', subLabel: 'München & Open Data', icon: Euro },
@@ -385,7 +385,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               )}
 
               {modalTab === 'mvv' && (
-                <MvvMatrixTab
+                <DataPackagesTab
                   mvvMeta={mvvMeta}
                   isSyncingMvv={isSyncingMvv}
                   mvvSyncMessage={mvvSyncMessage}

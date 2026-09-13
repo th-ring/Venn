@@ -5,7 +5,8 @@ import {
   PriorityHeatmapMode,
   ALL_HEATMAP_ITEMS,
 } from '../../../types';
-import { Flame } from 'lucide-react';
+import { Flame, Car } from 'lucide-react';
+import { getHighwayMetadata } from '../../../services/highwayService';
 
 interface PriorityHeatmapTabProps {
   heatmap: HeatmapSettings;
@@ -16,6 +17,7 @@ export const PriorityHeatmapTab: React.FC<PriorityHeatmapTabProps> = ({
   heatmap,
   onUpdateHeatmap,
 }) => {
+  const highwayMeta = getHighwayMetadata();
   const activeItems: PriorityHeatmapItem[] =
     heatmap.selectedItems && heatmap.selectedItems.length > 0
       ? heatmap.selectedItems
@@ -159,6 +161,31 @@ export const PriorityHeatmapTab: React.FC<PriorityHeatmapTabProps> = ({
                 className="w-full accent-amber-600 h-1.5 bg-amber-100 rounded-lg cursor-pointer"
               />
             </div>
+
+            {/* Autobahn OSM Data Source Info Badge */}
+            {activeItems.includes('highway') && (
+              <div className="bg-orange-50 border border-orange-200/80 rounded-xl p-2.5 text-[11px] text-orange-950 flex items-start gap-2 animate-in fade-in">
+                <Car className="w-4 h-4 text-orange-600 shrink-0 mt-0.5" />
+                <div className="space-y-0.5">
+                  <div className="font-bold flex items-center gap-1.5">
+                    <span>Datenbasis Autobahn: OpenStreetMap (ODbL)</span>
+                    <span className="text-[9px] font-normal px-1.5 py-0.2 rounded bg-orange-100 text-orange-800">
+                      Stand: {(() => {
+                        try {
+                          const d = new Date(highwayMeta.lastUpdated);
+                          return isNaN(d.getTime()) ? highwayMeta.lastUpdated : d.toLocaleDateString('de-DE');
+                        } catch {
+                          return highwayMeta.lastUpdated;
+                        }
+                      })()}
+                    </span>
+                  </div>
+                  <p className="text-orange-900/80 text-[10px] leading-tight">
+                    Enthält {highwayMeta.junctionCount} Anschlussstellen und {highwayMeta.rampCount} Auffahrts- & Abfahrtsrampen. Die Heatmap puffert entlang der echten Rampenkorridore. Aktualisierung zentral in Tab „3. Datenpakete & Regionen“.
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
