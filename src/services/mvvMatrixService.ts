@@ -300,8 +300,8 @@ export function calculateReachableStations(
     lng,
     travelTimeMinutes,
     maxTransfers = 3,
-    maxWalkFromStationMin = 10,
-    maxTransferWaitMin = 10,
+    maxWalkFromStationMin = 5,
+    maxTransferWaitMin = 5,
   } = profile;
 
   const allowedModes = new Set<TransitSubMode>(
@@ -318,7 +318,7 @@ export function calculateReachableStations(
   // 1. Find entry stations accessible from workplace/destination (Last Mile in reverse)
   const walkSpeedKmPerMin = 0.082; // ~4.9 km/h
   const detourFactor = 1.2;
-  const effectiveMaxWalkMin = Math.max(maxWalkFromStationMin, 5);
+  const effectiveMaxWalkMin = Math.max(maxWalkFromStationMin, 1);
 
   const entryStations: { station: TransitStation; walkTimeMin: number }[] = [];
 
@@ -512,8 +512,8 @@ export function findShortestTransitTrip(
 
   const directDistanceKm = turf.distance(originPoint, destPoint, { units: 'kilometers' });
 
-  const maxWalkToStation = profile.maxWalkToStationMin ?? 10;
-  const maxWalkFromStation = profile.maxWalkFromStationMin ?? 10;
+  const maxWalkToStation = profile.maxWalkToStationMin ?? 5;
+  const maxWalkFromStation = profile.maxWalkFromStationMin ?? 5;
 
   // Direct walk shortcut if very close
   if (directDistanceKm <= 0.8) {
@@ -709,7 +709,7 @@ export function findShortestTransitTrip(
       }
 
       const isCoreRail = edge.type === 'sbahn' || edge.type === 'ubahn' || edge.type === 'train';
-      const transferPenalty = isLineChange ? Math.min(profile.maxTransferWaitMin || 10, isCoreRail ? 1.5 : 2.5) : 0;
+      const transferPenalty = isLineChange ? Math.min(profile.maxTransferWaitMin ?? 5, isCoreRail ? 1.5 : 2.5) : 0;
       const nextGTime = curr.gTime + edge.minutes + transferPenalty;
 
       const destStation = dataset.stations.find((s) => s.id === edge.to);
@@ -755,8 +755,8 @@ export function generateMvvTransitIsochrone(
     lat,
     lng,
     travelTimeMinutes,
-    maxWalkToStationMin = 10,
-    maxWalkFromStationMin = 10,
+    maxWalkToStationMin = 5,
+    maxWalkFromStationMin = 5,
   } = profile;
   const origin = turf.point([lng, lat]);
 

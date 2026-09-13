@@ -66,6 +66,72 @@ const TRANSPORT_MODES: Array<{
   { id: 'walking', label: 'Zu Fuß', shortLabel: 'Zu Fuß', icon: Footprints },
 ];
 
+interface MinutePickerProps {
+  id?: string;
+  value: number | undefined;
+  defaultValue?: number;
+  min?: number;
+  max?: number;
+  step?: number;
+  onChange: (val: number) => void;
+}
+
+const MinutePicker: React.FC<MinutePickerProps> = ({
+  id,
+  value,
+  defaultValue = 5,
+  min = 0,
+  max = 60,
+  step = 1,
+  onChange,
+}) => {
+  const currentVal = value ?? defaultValue;
+  const [localVal, setLocalVal] = useState<string>(String(currentVal));
+
+  useEffect(() => {
+    setLocalVal(String(value ?? defaultValue));
+  }, [value, defaultValue]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value;
+    setLocalVal(raw);
+    if (raw === '') return;
+    const num = parseInt(raw, 10);
+    if (!isNaN(num)) {
+      onChange(Math.max(min, Math.min(max, num)));
+    }
+  };
+
+  const handleBlur = () => {
+    const num = parseInt(localVal, 10);
+    if (isNaN(num)) {
+      setLocalVal(String(defaultValue));
+      onChange(defaultValue);
+    } else {
+      const clamped = Math.max(min, Math.min(max, num));
+      setLocalVal(String(clamped));
+      onChange(clamped);
+    }
+  };
+
+  return (
+    <div className="flex items-center gap-1.5">
+      <input
+        id={id}
+        type="number"
+        min={min}
+        max={max}
+        step={step}
+        value={localVal}
+        onChange={handleChange}
+        onBlur={handleBlur}
+        className="w-full bg-slate-50/80 border border-slate-200 rounded-md px-2 py-1 text-xs text-slate-700 focus:outline-none focus:border-blue-500 focus:bg-white transition-colors"
+      />
+      <span className="text-xs text-slate-500 font-medium select-none">Min</span>
+    </div>
+  );
+};
+
 export const PersonCard: React.FC<PersonCardProps> = ({
   profile,
   index,
@@ -459,65 +525,49 @@ export const PersonCard: React.FC<PersonCardProps> = ({
                 {/* 1. First Mile: Wohnort -> Haltestelle */}
                 <div className="bg-white p-2 rounded-lg border border-slate-200/80 shadow-2xs">
                   <div className="flex items-center justify-between mb-0.5">
-                    <label className="text-[10px] font-bold text-slate-800 flex items-center gap-1">
+                    <label htmlFor={`picker-walk-to-station-${profile.id}`} className="text-[10px] font-bold text-slate-800 flex items-center gap-1 cursor-pointer">
                       <span>🚶 Wohnort ➔ Station</span>
                     </label>
                     <span className="text-[10px] font-semibold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">
-                      {profile.maxWalkToStationMin ?? 10} Min
+                      {profile.maxWalkToStationMin ?? 5} Min
                     </span>
                   </div>
                   <p className="text-[9px] text-slate-400 mb-1.5 leading-tight">
                     Max. Gehzeit von der Haustür zur Einstiegshaltestelle
                   </p>
-                  <select
-                    value={profile.maxWalkToStationMin ?? 10}
-                    onChange={(e) =>
-                      onUpdate({
-                        maxWalkToStationMin: parseInt(e.target.value, 10),
-                      })
-                    }
-                    className="w-full bg-slate-50/80 border border-slate-200 rounded-md px-2 py-1 text-xs text-slate-700 focus:outline-none focus:border-blue-500 cursor-pointer"
-                  >
-                    <option value="5">5 Min (sehr nah)</option>
-                    <option value="10">10 Min (Standard)</option>
-                    <option value="15">15 Min (erweitert)</option>
-                    <option value="20">20 Min (weit)</option>
-                  </select>
+                  <MinutePicker
+                    id={`picker-walk-to-station-${profile.id}`}
+                    value={profile.maxWalkToStationMin}
+                    defaultValue={5}
+                    onChange={(val) => onUpdate({ maxWalkToStationMin: val })}
+                  />
                 </div>
 
                 {/* 2. Last Mile: Haltestelle -> Arbeitsplatz / Ziel */}
                 <div className="bg-white p-2 rounded-lg border border-slate-200/80 shadow-2xs">
                   <div className="flex items-center justify-between mb-0.5">
-                    <label className="text-[10px] font-bold text-slate-800 flex items-center gap-1">
+                    <label htmlFor={`picker-walk-from-station-${profile.id}`} className="text-[10px] font-bold text-slate-800 flex items-center gap-1 cursor-pointer">
                       <span>🏁 Station ➔ Zielort</span>
                     </label>
                     <span className="text-[10px] font-semibold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">
-                      {profile.maxWalkFromStationMin ?? 10} Min
+                      {profile.maxWalkFromStationMin ?? 5} Min
                     </span>
                   </div>
                   <p className="text-[9px] text-slate-400 mb-1.5 leading-tight">
                     Max. Gehzeit von der Ausstiegshaltestelle zum Büro
                   </p>
-                  <select
-                    value={profile.maxWalkFromStationMin ?? 10}
-                    onChange={(e) =>
-                      onUpdate({
-                        maxWalkFromStationMin: parseInt(e.target.value, 10),
-                      })
-                    }
-                    className="w-full bg-slate-50/80 border border-slate-200 rounded-md px-2 py-1 text-xs text-slate-700 focus:outline-none focus:border-blue-500 cursor-pointer"
-                  >
-                    <option value="5">5 Min (direkt vor der Tür)</option>
-                    <option value="10">10 Min (Standard)</option>
-                    <option value="15">15 Min (erweitert)</option>
-                    <option value="20">20 Min (weit)</option>
-                  </select>
+                  <MinutePicker
+                    id={`picker-walk-from-station-${profile.id}`}
+                    value={profile.maxWalkFromStationMin}
+                    defaultValue={5}
+                    onChange={(val) => onUpdate({ maxWalkFromStationMin: val })}
+                  />
                 </div>
 
                 {/* 3. Max. Umstiege */}
                 <div className="bg-white p-2 rounded-lg border border-slate-200/80 shadow-2xs">
                   <div className="flex items-center justify-between mb-0.5">
-                    <label className="text-[10px] font-bold text-slate-800">
+                    <label htmlFor={`select-transfers-${profile.id}`} className="text-[10px] font-bold text-slate-800 cursor-pointer">
                       🔄 Max. Umstiege
                     </label>
                     <span className="text-[10px] font-semibold text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded">
@@ -528,6 +578,7 @@ export const PersonCard: React.FC<PersonCardProps> = ({
                     Maximal tolerierte Umstiege auf der Gesamtstrecke
                   </p>
                   <select
+                    id={`select-transfers-${profile.id}`}
                     value={profile.maxTransfers ?? 3}
                     onChange={(e) =>
                       onUpdate({
@@ -547,30 +598,22 @@ export const PersonCard: React.FC<PersonCardProps> = ({
                 {/* 4. Max. Umstiegszeit */}
                 <div className="bg-white p-2 rounded-lg border border-slate-200/80 shadow-2xs">
                   <div className="flex items-center justify-between mb-0.5">
-                    <label className="text-[10px] font-bold text-slate-800">
+                    <label htmlFor={`picker-transfer-wait-${profile.id}`} className="text-[10px] font-bold text-slate-800 cursor-pointer">
                       ⏱️ Wartezeit Umstieg
                     </label>
                     <span className="text-[10px] font-semibold text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded">
-                      {profile.maxTransferWaitMin ?? 10} Min
+                      {profile.maxTransferWaitMin ?? 5} Min
                     </span>
                   </div>
                   <p className="text-[9px] text-slate-400 mb-1.5 leading-tight">
                     Tolerierter Zeitpuffer beim Wechseln der Linie
                   </p>
-                  <select
-                    value={profile.maxTransferWaitMin ?? 10}
-                    onChange={(e) =>
-                      onUpdate({
-                        maxTransferWaitMin: parseInt(e.target.value, 10),
-                      })
-                    }
-                    className="w-full bg-slate-50/80 border border-slate-200 rounded-md px-2 py-1 text-xs text-slate-700 focus:outline-none focus:border-blue-500 cursor-pointer"
-                  >
-                    <option value="5">5 Min (Sportlich/Knapp)</option>
-                    <option value="10">10 Min (Standard)</option>
-                    <option value="15">15 Min (Komfortabel)</option>
-                    <option value="20">20 Min (Hoher Puffer)</option>
-                  </select>
+                  <MinutePicker
+                    id={`picker-transfer-wait-${profile.id}`}
+                    value={profile.maxTransferWaitMin}
+                    defaultValue={5}
+                    onChange={(val) => onUpdate({ maxTransferWaitMin: val })}
+                  />
                 </div>
               </div>
             </div>
