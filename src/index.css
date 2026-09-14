@@ -2,13 +2,27 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* Google Material UI Font & Baseline */
+/* Venn Brand Design Tokens & Colors */
 :root {
   color-scheme: light;
+  --venn-sky: #38bdf8;
+  --venn-mint: #34d399;
+  --venn-sweetspot: #ffffff;
+  --venn-obsidian: #020617;
+  --mode-transit: #0284c7;
+  --mode-car: #4f46e5;
+  --mode-bike: #059669;
+  --mode-walk: #d97706;
 }
 
 html.dark {
   color-scheme: dark;
+  --venn-sky: #38bdf8;
+  --venn-mint: #34d399;
+  --mode-transit: #38bdf8;
+  --mode-car: #818cf8;
+  --mode-bike: #34d399;
+  --mode-walk: #fbbf24;
 }
 
 /* Leaflet & Custom Marker Styles */
