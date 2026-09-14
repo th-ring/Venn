@@ -75,10 +75,10 @@ const SETTINGS_MENU: Array<{
   { id: 'appearance', label: 'Erscheinungsbild', subLabel: 'Design & Theme', icon: Palette },
   { id: 'basemap', label: 'Kartendienst', subLabel: 'OSM, MemoMaps, CARTO & Google', icon: MapIcon },
   { id: 'isochrones', label: 'Isochronen', subLabel: 'Berechnung & Parameter', icon: Globe },
-  { id: 'mvv', label: 'Datenpakete & Regionen', subLabel: 'Autobahn, ÖPNV & Mietspiegel', icon: Layers },
+  { id: 'mvv', label: 'Datenpakete & Regionen', subLabel: 'Lokale Verkehrsdaten', icon: Layers },
   { id: 'keys', label: 'API-Schlüssel', subLabel: 'Google & ORS Zugangsdaten', icon: Key },
   { id: 'heatmap', label: 'Prioritäts-Heatmap', subLabel: 'Infrastruktur-Puffer', icon: Flame },
-  { id: 'rental', label: 'Mietspiegel', subLabel: 'München & Open Data', icon: Euro },
+  { id: 'rental', label: 'Mietspiegel', subLabel: 'Kaltmieten & Wohnlagen', icon: Euro },
 ];
 
 interface SettingsModalProps {

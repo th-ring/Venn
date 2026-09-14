@@ -50,19 +50,19 @@ export const IsochroneEngineTab: React.FC<IsochroneEngineTabProps> = ({
               onChange={() => onSelectProvider('google')}
               className="text-blue-600 dark:text-[#8ab4f8]"
             />
-            <div>
+            <div className="flex items-center gap-2 flex-wrap">
               <span className="text-xs font-bold text-slate-900 dark:text-[#e3e3e3]">
                 Google Maps Isochrones API
               </span>
-              <span className="ml-2 text-[10px] font-semibold bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 px-1.5 py-0.5 rounded-full">
+              <span className="text-[10px] font-medium bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 px-1.5 py-0.5 rounded whitespace-nowrap">
                 Public Preview
               </span>
               {hasGoogleMapsApiKey() ? (
-                <span className="ml-1.5 text-[10px] font-semibold bg-emerald-100 dark:bg-emerald-900/50 text-emerald-800 dark:text-emerald-300 px-1.5 py-0.5 rounded-full">
+                <span className="text-[10px] font-medium bg-emerald-100 dark:bg-emerald-900/50 text-emerald-800 dark:text-emerald-300 px-1.5 py-0.5 rounded whitespace-nowrap">
                   Aktiv
                 </span>
               ) : (
-                <span className="ml-1.5 text-[10px] font-semibold bg-slate-100 dark:bg-[#303134] text-slate-600 dark:text-[#9aa0a6] px-1.5 py-0.5 rounded-full">
+                <span className="text-[10px] font-medium bg-slate-100 dark:bg-[#303134] text-slate-600 dark:text-[#9aa0a6] px-1.5 py-0.5 rounded whitespace-nowrap">
                   Nicht konfiguriert
                 </span>
               )}
@@ -72,7 +72,7 @@ export const IsochroneEngineTab: React.FC<IsochroneEngineTabProps> = ({
             href="https://developers.google.com/maps/documentation/isochrones"
             target="_blank"
             rel="noreferrer"
-            className="text-[11px] text-blue-600 dark:text-[#8ab4f8] hover:underline flex items-center gap-1"
+            className="text-[11px] text-blue-600 dark:text-[#8ab4f8] hover:underline flex items-center gap-1 shrink-0"
             onClick={(e) => e.stopPropagation()}
           >
             <span>Doku</span>
@@ -102,13 +102,13 @@ export const IsochroneEngineTab: React.FC<IsochroneEngineTabProps> = ({
             name="provider"
             checked={activeProvider === 'calibrated'}
             onChange={() => onSelectProvider('calibrated')}
-            className="text-blue-600 dark:text-[#8ab4f8]"
+            className="text-blue-600 dark:text-[#8ab4f8] shrink-0"
           />
-          <div>
+          <div className="flex items-center gap-2 flex-wrap">
             <span className="text-xs font-bold text-slate-900 dark:text-[#e3e3e3]">
               Integrierte Multimodale Engine (Standard)
             </span>
-            <span className="ml-2 text-[10px] font-semibold bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 px-1.5 py-0.5 rounded-full">
+            <span className="text-[10px] font-medium bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 px-1.5 py-0.5 rounded whitespace-nowrap">
               Lokal • Ohne API-Key
             </span>
           </div>
@@ -128,28 +128,28 @@ export const IsochroneEngineTab: React.FC<IsochroneEngineTabProps> = ({
             : 'border-slate-200 dark:border-[#3c4043] bg-white dark:bg-[#282a2c] hover:border-slate-300 dark:hover:border-[#5f6368]'
         }`}
       >
-        <div className="flex items-start justify-between">
+        <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-2">
             <input
               type="radio"
               name="provider"
               checked={activeProvider === 'ors'}
               onChange={() => onSelectProvider('ors')}
-              className="text-blue-600 dark:text-[#8ab4f8]"
+              className="text-blue-600 dark:text-[#8ab4f8] shrink-0"
             />
-            <div>
+            <div className="flex items-center gap-2 flex-wrap">
               <span className="text-xs font-bold text-slate-900 dark:text-[#e3e3e3]">
                 OpenRouteService (ORS)
               </span>
-              <span className="ml-2 text-[10px] font-semibold bg-slate-100 dark:bg-[#303134] text-slate-700 dark:text-[#e3e3e3] px-1.5 py-0.5 rounded-full">
+              <span className="text-[10px] font-medium bg-slate-100 dark:bg-[#303134] text-slate-700 dark:text-[#e3e3e3] px-1.5 py-0.5 rounded whitespace-nowrap">
                 Open Source API
               </span>
               {hasOrsApiKey() ? (
-                <span className="ml-1.5 text-[10px] font-semibold bg-emerald-100 dark:bg-emerald-900/50 text-emerald-800 dark:text-emerald-300 px-1.5 py-0.5 rounded-full">
+                <span className="text-[10px] font-medium bg-emerald-100 dark:bg-emerald-900/50 text-emerald-800 dark:text-emerald-300 px-1.5 py-0.5 rounded whitespace-nowrap">
                   Aktiv
                 </span>
               ) : (
-                <span className="ml-1.5 text-[10px] font-semibold bg-slate-100 dark:bg-[#303134] text-slate-600 dark:text-[#9aa0a6] px-1.5 py-0.5 rounded-full">
+                <span className="text-[10px] font-medium bg-slate-100 dark:bg-[#303134] text-slate-600 dark:text-[#9aa0a6] px-1.5 py-0.5 rounded whitespace-nowrap">
                   Nicht konfiguriert
                 </span>
               )}

@@ -40,7 +40,7 @@ export const RentalOverlayTab: React.FC<RentalOverlayTabProps> = ({
       {/* Tab Header */}
       <div>
         <h3 className="text-base font-bold text-slate-900 dark:text-[#e3e3e3] flex items-center gap-2">
-          <Euro className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+          <Euro className="w-5 h-5 text-blue-600 dark:text-[#8ab4f8]" />
           <span>Mietspiegel & Kaltquadratmeterpreise</span>
         </h3>
         <p className="text-xs text-slate-500 dark:text-[#9aa0a6] mt-1">
@@ -56,7 +56,7 @@ export const RentalOverlayTab: React.FC<RentalOverlayTabProps> = ({
             <div
               className={`p-2.5 rounded-xl shrink-0 transition-colors ${
                 rentalSettings.enabled
-                  ? 'bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300'
+                  ? 'bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-[#8ab4f8]'
                   : 'bg-slate-100 dark:bg-[#303134] text-slate-500 dark:text-[#9aa0a6]'
               }`}
             >
@@ -79,7 +79,7 @@ export const RentalOverlayTab: React.FC<RentalOverlayTabProps> = ({
               onChange={(e) => handleUpdate({ enabled: e.target.checked })}
               className="sr-only peer"
             />
-            <div className="w-11 h-6 bg-slate-200 dark:bg-[#3c4043] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600 dark:peer-checked:bg-purple-500" />
+            <div className="w-11 h-6 bg-slate-200 dark:bg-[#3c4043] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600 dark:peer-checked:bg-blue-500" />
           </label>
         </div>
 
@@ -99,7 +99,7 @@ export const RentalOverlayTab: React.FC<RentalOverlayTabProps> = ({
               step="0.05"
               value={rentalSettings.opacity ?? 0.35}
               onChange={(e) => handleUpdate({ opacity: parseFloat(e.target.value) })}
-              className="w-44 h-2 bg-slate-200 dark:bg-[#3c4043] rounded-lg appearance-none cursor-pointer accent-purple-600 dark:accent-purple-400"
+              className="w-44 h-2 bg-slate-200 dark:bg-[#3c4043] rounded-lg appearance-none cursor-pointer accent-blue-600 dark:accent-blue-400"
             />
           </div>
         )}
@@ -140,7 +140,7 @@ export const RentalOverlayTab: React.FC<RentalOverlayTabProps> = ({
               key={entry.id}
               className={`p-3.5 rounded-2xl border transition-all ${
                 entry.available
-                  ? 'bg-purple-50/40 dark:bg-purple-950/20 border-purple-200 dark:border-purple-800/60 shadow-2xs'
+                  ? 'bg-blue-50/30 dark:bg-blue-950/20 border-blue-200/70 dark:border-blue-800/50 shadow-2xs'
                   : 'bg-white dark:bg-[#282a2c] border-slate-200 dark:border-[#3c4043] opacity-80'
               }`}
             >
@@ -149,7 +149,7 @@ export const RentalOverlayTab: React.FC<RentalOverlayTabProps> = ({
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-bold text-slate-900 dark:text-[#e3e3e3]">{entry.name}</span>
                     {entry.available ? (
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-900/50 text-purple-800 dark:text-purple-300 flex items-center gap-1">
+                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/50 flex items-center gap-1">
                         <CheckCircle2 className="w-3 h-3" />
                         <span>Aktiv integriert</span>
                       </span>
@@ -174,7 +174,7 @@ export const RentalOverlayTab: React.FC<RentalOverlayTabProps> = ({
                     href={entry.sourceUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="text-purple-600 dark:text-purple-400 hover:text-purple-800 font-semibold flex items-center gap-1 underline"
+                    className="text-blue-600 dark:text-[#8ab4f8] hover:underline font-semibold flex items-center gap-1"
                   >
                     <span>Portal öffnen</span>
                     <ExternalLink className="w-3 h-3" />

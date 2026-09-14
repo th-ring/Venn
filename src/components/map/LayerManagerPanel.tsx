@@ -433,9 +433,11 @@ export const LayerManagerPanel: React.FC<LayerManagerPanelProps> = ({
                             key={m.id}
                             type="button"
                             onClick={() => onUpdateHeatmap({ mode: m.id })}
-                            className={`py-1 px-1.5 rounded-lg text-[10px] font-bold text-center transition-all cursor-pointer ${
+                            className={`py-1 px-1.5 rounded-lg text-[10px] font-semibold text-center transition-colors cursor-pointer ${
                               (heatmapSettings?.mode || 'none') === m.id
-                                ? 'bg-amber-500 text-white shadow-2xs'
+                                ? m.id === 'none'
+                                  ? 'bg-slate-800 dark:bg-[#3c4043] text-white dark:text-[#e3e3e3] shadow-2xs'
+                                  : 'bg-amber-600 text-white shadow-2xs'
                                 : 'bg-white dark:bg-[#1e1f20] text-slate-600 dark:text-[#c4c7c5] border border-slate-200 dark:border-[#3c4043] hover:bg-slate-100 dark:hover:bg-[#282a2c]'
                             }`}
                           >
