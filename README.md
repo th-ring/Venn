@@ -1,10 +1,21 @@
-# Venn 🗺️ 🚆 🚗
+<p align="center">
+  <img src="public/venn-logo.svg" alt="Venn Logo" width="380" />
+</p>
 
-[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![React](https://img.shields.io/badge/React-19-61dafb.svg?logo=react&logoColor=black)](https://react.dev/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.8-3178c6.svg?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Vite](https://img.shields.io/badge/Vite-6-646cff.svg?logo=vite&logoColor=white)](https://vitejs.dev/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-38bdf8.svg?logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
+<p align="center">
+  <strong>Finding common ground</strong><br>
+  <em>Interactive Travel-Time Isochrone Residential Zone Finder</em>
+</p>
+
+<p align="center">
+  <a href="https://opensource.org/licenses/Apache-2.0"><img src="https://img.shields.io/badge/License-Apache_2.0-blue.svg" alt="License" /></a>
+  <a href="https://react.dev/"><img src="https://img.shields.io/badge/React-19-61dafb.svg?logo=react&logoColor=black" alt="React" /></a>
+  <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-5.8-3178c6.svg?logo=typescript&logoColor=white" alt="TypeScript" /></a>
+  <a href="https://vitejs.dev/"><img src="https://img.shields.io/badge/Vite-6-646cff.svg?logo=vite&logoColor=white" alt="Vite" /></a>
+  <a href="https://tailwindcss.com/"><img src="https://img.shields.io/badge/Tailwind_CSS-4-38bdf8.svg?logo=tailwindcss&logoColor=white" alt="Tailwind CSS" /></a>
+</p>
+
+---
 
 **Venn** is an interactive web application for finding a shared place to live — built for couples, flatmates, and families. Using **travel-time isochrones** for different modes of transport (public transit, car, bicycle, and walking), the app calculates precise geometric intersections to identify ideal residential areas.
 
@@ -32,8 +43,8 @@
 ### Local installation
 ```bash
 # 1. Clone the repository
-git clone https://github.com/th-ring/LivingAreaFinder.git
-cd LivingAreaFinder
+git clone https://github.com/th-ring/Venn.git
+cd Venn
 
 # 2. Install dependencies
 npm install
@@ -98,5 +109,5 @@ Venn
 Copyright 2026 Tobias Häring (th-ring)
 
 Licensed under the Apache License, Version 2.0.
-Original Repository: https://github.com/th-ring/LivingAreaFinder
+Repository: https://github.com/th-ring/Venn
 ```

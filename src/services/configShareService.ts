@@ -22,7 +22,8 @@ export interface FullShareConfig {
   activeScenarioId?: string;
 }
 
-const LOCAL_STORAGE_STATE_KEY = 'living_area_finder_saved_state';
+const LOCAL_STORAGE_STATE_KEY = 'venn_saved_state';
+const LEGACY_STORAGE_STATE_KEY = 'living_area_finder_saved_state';
 
 /**
  * Compact representation for URL-Hash payload (saves URL character length)
@@ -258,7 +259,7 @@ export function saveLocalProfileState(config: FullShareConfig): void {
  */
 export function loadLocalProfileState(): FullShareConfig | null {
   try {
-    const saved = localStorage.getItem(LOCAL_STORAGE_STATE_KEY);
+    const saved = localStorage.getItem(LOCAL_STORAGE_STATE_KEY) || localStorage.getItem(LEGACY_STORAGE_STATE_KEY);
     if (!saved) return null;
     const parsed = JSON.parse(saved);
     return fromCompactPayload(parsed);
@@ -274,6 +275,7 @@ export function loadLocalProfileState(): FullShareConfig | null {
 export function clearLocalProfileState(): void {
   try {
     localStorage.removeItem(LOCAL_STORAGE_STATE_KEY);
+    localStorage.removeItem(LEGACY_STORAGE_STATE_KEY);
   } catch (e) {
     console.warn('Failed to clear state from localStorage:', e);
   }
