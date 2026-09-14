@@ -183,10 +183,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </div>
             <div>
               <h1 className="text-sm font-bold text-slate-900 dark:text-[#e3e3e3] leading-tight">
-                Commute-Zone Finder
+                Venn
               </h1>
               <p className="text-[11px] text-slate-500 dark:text-[#9aa0a6]">
-                Isochronen-Wohnortsuche für Paare & WGs
+                Finding common ground
               </p>
             </div>
           </div>

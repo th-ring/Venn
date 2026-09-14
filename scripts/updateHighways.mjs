@@ -29,7 +29,7 @@ async function fetchFromMirrors() {
         method: 'POST',
         body: query,
         headers: {
-          'User-Agent': 'LivingAreaFinder-Updater/1.0 (contact: info@livingareafinder.local)',
+          'User-Agent': 'Venn-Updater/1.0 (contact: info@livingareafinder.local)',
         },
       });
       const text = await res.text();

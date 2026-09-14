@@ -1,4 +1,4 @@
-# LivingAreaFinder 🗺️ 🚆 🚗
+# Venn 🗺️ 🚆 🚗
 
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![React](https://img.shields.io/badge/React-19-61dafb.svg?logo=react&logoColor=black)](https://react.dev/)
@@ -6,7 +6,7 @@
 [![Vite](https://img.shields.io/badge/Vite-6-646cff.svg?logo=vite&logoColor=white)](https://vitejs.dev/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-38bdf8.svg?logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
 
-**LivingAreaFinder** is an interactive web application for finding a shared place to live — built for couples, flatmates, and families. Using **travel-time isochrones** for different modes of transport (public transit, car, bicycle, and walking), the app calculates precise geometric intersections to identify ideal residential areas.
+**Venn** is an interactive web application for finding a shared place to live — built for couples, flatmates, and families. Using **travel-time isochrones** for different modes of transport (public transit, car, bicycle, and walking), the app calculates precise geometric intersections to identify ideal residential areas.
 
 ---
 
@@ -54,7 +54,7 @@ npm run preview
 
 ## 🔑 Map & Routing Providers (BYOK)
 
-LivingAreaFinder is **fully usable without registration or API keys**:
+Venn is **fully usable without registration or API keys**:
 - **Default**: Free OpenStreetMap map tiles and the built-in offline public-transit model.
 - **Optional providers** can be configured in the app's settings menu ("Bring Your Own Key") or via environment variables (`.env`):
   - **OpenRouteService (HeiGIT)**: For car, cycling, and pedestrian isochrones via the Heidelberg Geoinformatics API ([Free key](https://account.heigit.org/manage/key)).
@@ -94,7 +94,7 @@ This project uses and processes data and technologies from the following provide
 This project is licensed under the **Apache License, Version 2.0**. See the [LICENSE](LICENSE) and [NOTICE](NOTICE) files for details.
 
 ```text
-LivingAreaFinder
+Venn
 Copyright 2026 Tobias Häring (th-ring)
 
 Licensed under the Apache License, Version 2.0.

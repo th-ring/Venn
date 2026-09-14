@@ -1,6 +1,6 @@
 {
-  "name": "Multi-Person Commute-Zone Finder",
-  "description": "Multi-Person Commute-Zone Finder zur gemeinsamen Wohnortsuche anhand von Reisezeit-Isochronen (ÖPNV, Pkw, Fahrrad, Fuß) und geometrischer Schnittmengenberechnung.",
+  "name": "Venn",
+  "description": "Venn – interaktive Wohnortsuche für mehrere Personen anhand von Reisezeit-Isochronen (ÖPNV, Pkw, Fahrrad, Fuß) und geometrischer Schnittmengenberechnung.",
   "requestFramePermissions": ["geolocation"],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

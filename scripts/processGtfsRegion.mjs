@@ -2,7 +2,7 @@
  * GTFS Regional Extraction & Compression Pipeline
  *
  * Converts raw GTFS transit feeds (DELFI Bundesfeed or Verbund GTFS) into
- * ultra-compact Level-2 Metropolitan Region packages for LivingAreaFinder.
+ * ultra-compact Level-2 Metropolitan Region packages for Venn.
  *
  * Usage:
  *   node scripts/processGtfsRegion.mjs [regionId] [gtfsPathOrUrl]

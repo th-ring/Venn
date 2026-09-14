@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Guidelines and best practices for agents in this repository (`LivingAreaFinder`).
+Guidelines and best practices for agents in this repository (`Venn`).
 
 ## 1. Project Context
 - **Tech stack**: React 19, TypeScript, Vite, Tailwind CSS v4, Leaflet, Turf.js

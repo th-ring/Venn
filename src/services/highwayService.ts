@@ -117,7 +117,7 @@ out skel qt;`;
         method: 'POST',
         body: query,
         headers: {
-          'User-Agent': 'LivingAreaFinder-Web/1.0 (OpenStreetMap highway sync)',
+          'User-Agent': 'Venn/1.0 (OpenStreetMap highway sync)',
         },
       });
       const text = await res.text();

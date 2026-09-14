@@ -123,7 +123,7 @@ export const ApiKeyGuideSection: React.FC<ApiKeyGuideSectionProps> = ({
                     </div>
                   </div>
                   <div className="text-[10px] text-amber-700 dark:text-amber-300 mt-1.5 bg-amber-50/70 dark:bg-amber-950/40 border border-amber-200/60 dark:border-amber-800/60 p-1.5 rounded-md">
-                    ℹ <strong>ÖPNV-Hinweis:</strong> Google Isochrones unterstützt prinzipbedingt keinen ÖPNV. LivingAreaFinder nutzt für Bus & Bahn automatisch die integrierte MVV/MVG-Haltestellenmatrix.
+                    ℹ <strong>ÖPNV-Hinweis:</strong> Google Isochrones unterstützt prinzipbedingt keinen ÖPNV. Venn nutzt für Bus & Bahn automatisch die integrierte MVV/MVG-Haltestellenmatrix.
                   </div>
                 </div>
               </div>
@@ -231,7 +231,7 @@ export const ApiKeyGuideSection: React.FC<ApiKeyGuideSectionProps> = ({
                     <div className="bg-slate-50 dark:bg-[#282a2c] p-2 rounded-lg border border-slate-200/80 dark:border-[#3c4043]">
                       <strong className="text-slate-800 dark:text-[#e3e3e3]">Token name:</strong> Beliebigen Namen
                       eingeben (z.&nbsp;B.{' '}
-                      <code className="bg-white dark:bg-[#1e1f20] px-1 py-0.2 rounded border border-slate-200 dark:border-[#3c4043]">LivingAreaFinder</code>).
+                      <code className="bg-white dark:bg-[#1e1f20] px-1 py-0.2 rounded border border-slate-200 dark:border-[#3c4043]">Venn</code>).
                     </div>
                   </div>
                 </div>
