@@ -273,7 +273,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
         <div className="flex items-center justify-between text-xs text-slate-400 dark:text-[#9aa0a6] pt-3 mt-4 border-t border-slate-100 dark:border-[#3c4043]">
           <span className="flex items-center gap-1 text-[11px]">
             <Globe className="w-3.5 h-3.5 text-slate-400 dark:text-[#9aa0a6]" />
-            100% Client-Side & datenschutzkonform
+            Client-Side & datenschutzkonform
           </span>
           <button
             type="button"

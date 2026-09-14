@@ -800,8 +800,8 @@ export function estimateCommuteTime(
       details = {
         summary: `Zu Fuß (${roadDistanceKm.toFixed(1)} km)`,
         steps: [
-          `🚶 ca. ${Math.round(travelTimeMin)} Min Fußweg bei ~4.8 km/h`,
-          `📍 Direkter Fußgängerpfad (${roadDistanceKm.toFixed(1)} km)`,
+          `ca. ${Math.round(travelTimeMin)} Min Fußweg bei ~4.8 km/h`,
+          `Direkter Fußgängerpfad (${roadDistanceKm.toFixed(1)} km)`,
         ],
       };
       break;
@@ -812,8 +812,8 @@ export function estimateCommuteTime(
       details = {
         summary: `Fahrrad / E-Bike (${roadDistanceKm.toFixed(1)} km)`,
         steps: [
-          `🚲 ca. ${Math.round(travelTimeMin)} Min bei ~16.5 km/h`,
-          `🌿 Befestigte Radwege & Nebenstraßen (${roadDistanceKm.toFixed(1)} km)`,
+          `ca. ${Math.round(travelTimeMin)} Min bei ~16.5 km/h`,
+          `Befestigte Radwege & Nebenstraßen (${roadDistanceKm.toFixed(1)} km)`,
         ],
       };
       break;
@@ -833,9 +833,9 @@ export function estimateCommuteTime(
       details = {
         summary: `Pkw über Straßennetz (${roadDistanceKm.toFixed(1)} km)`,
         steps: [
-          `🚗 ca. ${Math.round(driveTimeOnly)} Min reine Fahrzeit (${roadDistanceKm.toFixed(1)} km)`,
-          isRushHour ? `⏱️ Berufsverkehr-Verzögerung einberechnet` : `🟢 Normaler Verkehrsfluss`,
-          `🅿️ +3 Min Puffer für Parkplatzsuche & Ampelstopps`,
+          `ca. ${Math.round(driveTimeOnly)} Min reine Fahrzeit (${roadDistanceKm.toFixed(1)} km)`,
+          isRushHour ? `Berufsverkehr-Verzögerung einberechnet` : `Normaler Verkehrsfluss`,
+          `+3 Min Zeitpuffer für Parkplatzsuche & Ampelschaltungen`,
         ],
       };
       break;
@@ -847,7 +847,7 @@ export function estimateCommuteTime(
         travelTimeMin = (straightDistKm / 0.082) * 1.25;
         details = {
           summary: `Fußweg (< 800m)`,
-          steps: [`🚶 Direkter Fußweg (${Math.round(straightDistKm * 1000)} m, ca. ${Math.round(travelTimeMin)} Min)`],
+          steps: [`Direkter Fußweg (${Math.round(straightDistKm * 1000)} m, ca. ${Math.round(travelTimeMin)} Min)`],
         };
         break;
       }
@@ -918,9 +918,9 @@ export function estimateCommuteTime(
         lastMileWalkMin: walkDestTime,
         lastMileWalkLimitMin: maxWalkFromStationMin,
         steps: [
-          `🚶 ca. ${walkAccessTime} Min Fußweg zur Einstiegshaltestelle (max. ${maxWalkToStationMin} Min)`,
-          `🚆 ca. ${Math.round(inVehicleTime)} Min Fahrt (${transfers} ${transfers === 1 ? 'Umstieg' : 'Umstiege'})`,
-          `🚶 ca. ${walkDestTime} Min Fußweg zum Zielort (max. ${maxWalkFromStationMin} Min)`,
+          `ca. ${walkAccessTime} Min Fußweg zur Einstiegshaltestelle (max. ${maxWalkToStationMin} Min)`,
+          `ca. ${Math.round(inVehicleTime)} Min Fahrt (${transfers} ${transfers === 1 ? 'Umstieg' : 'Umstiege'})`,
+          `ca. ${walkDestTime} Min Fußweg zum Zielort (max. ${maxWalkFromStationMin} Min)`,
         ],
       };
       break;

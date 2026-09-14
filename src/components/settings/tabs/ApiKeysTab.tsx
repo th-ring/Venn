@@ -136,7 +136,7 @@ export const ApiKeysTab: React.FC<ApiKeysTabProps> = ({
                     }`}
                   >
                     {googleCheckResult.detailedGoogle.mapsJsApi.status === 'valid'
-                      ? 'Aktiviert ✔'
+                      ? 'Aktiv'
                       : 'Fehlt / Beschränkt'}
                   </span>
                 </div>
@@ -178,7 +178,7 @@ export const ApiKeysTab: React.FC<ApiKeysTabProps> = ({
                       }`}
                     >
                       {googleCheckResult.detailedGoogle.isochronesApi.status === 'valid'
-                        ? 'Aktiviert ✔'
+                        ? 'Aktiv'
                         : 'Deaktiviert'}
                     </span>
                   </div>

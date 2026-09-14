@@ -226,7 +226,7 @@ export const ApiKeyGuideSection: React.FC<ApiKeyGuideSectionProps> = ({
                       <span className="font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/50 px-1 py-0.2 rounded border border-emerald-200 dark:border-emerald-800">
                         Standard
                       </span>{' '}
-                      (100% kostenloser Free-Tier mit 2.000 Requests/Tag & 40 Isochronen/Minute).
+                      (Kostenfreier Tarif mit 2.000 Anfragen/Tag & 40 Isochronen/Minute).
                     </div>
                     <div className="bg-slate-50 dark:bg-[#282a2c] p-2 rounded-lg border border-slate-200/80 dark:border-[#3c4043]">
                       <strong className="text-slate-800 dark:text-[#e3e3e3]">Token name:</strong> Beliebigen Namen

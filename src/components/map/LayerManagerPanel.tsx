@@ -559,7 +559,7 @@ export const LayerManagerPanel: React.FC<LayerManagerPanelProps> = ({
                               }
                               className="rounded text-orange-600 focus:ring-orange-500 cursor-pointer"
                             />
-                            <span>🚗 Rampen als Straßenlinien</span>
+                            <span>Rampen als Straßenlinien</span>
                           </label>
 
                           <label className="flex items-center gap-2 text-[10px] text-slate-700 dark:text-[#c4c7c5] cursor-pointer">
@@ -573,7 +573,7 @@ export const LayerManagerPanel: React.FC<LayerManagerPanelProps> = ({
                               }
                               className="rounded text-orange-600 focus:ring-orange-500 cursor-pointer"
                             />
-                            <span>⭕ Knotenpunkte umkreisen</span>
+                            <span>Knotenpunkte hervorheben</span>
                           </label>
                         </div>
                       )}
@@ -728,7 +728,7 @@ export const LayerManagerPanel: React.FC<LayerManagerPanelProps> = ({
                   {layerId === 'persons' && (
                     <div className="p-2 bg-white dark:bg-[#1e1f20] rounded-lg border border-slate-200 dark:border-[#3c4043] text-[10px] text-slate-600 dark:text-[#9aa0a6] space-y-1">
                       <p className="font-medium text-slate-800 dark:text-[#e3e3e3]">
-                        📍 Draggable Pins auf der Karte
+                        Interaktive Standort-Pins
                       </p>
                       <p className="text-slate-500 dark:text-[#9aa0a6]">
                         Jeder Pin kann per Drag & Drop verschoben werden, um sofort eine neue Isochrone zu berechnen.
@@ -740,7 +740,7 @@ export const LayerManagerPanel: React.FC<LayerManagerPanelProps> = ({
                   {layerId === 'inspection' && (
                     <div className="p-2 bg-white dark:bg-[#1e1f20] rounded-lg border border-slate-200 dark:border-[#3c4043] text-[10px] text-slate-600 dark:text-[#9aa0a6] space-y-1">
                       <p className="font-medium text-slate-800 dark:text-[#e3e3e3]">
-                        🎯 Klick-Inspektor für jeden Ort
+                        Standort-Inspektor
                       </p>
                       <p className="text-slate-500 dark:text-[#9aa0a6]">
                         Klicke an eine beliebige Stelle auf der Karte, um die exakten Fahrzeiten aller Personen und die Kaltmiete dort anzuzeigen.
@@ -754,7 +754,7 @@ export const LayerManagerPanel: React.FC<LayerManagerPanelProps> = ({
                       <div className="flex items-center justify-between text-[11px] font-semibold text-slate-700 dark:text-[#c4c7c5]">
                         <span>Anbieter (Hintergrundkarte)</span>
                         <span className="text-[9px] text-slate-400 dark:text-[#9aa0a6] font-normal">
-                          {activePlatform === 'google' ? 'Maps JS API' : '100% Kostenlos'}
+                          {activePlatform === 'google' ? 'Maps JS API' : 'OpenStreetMap'}
                         </span>
                       </div>
 
@@ -933,9 +933,9 @@ export const LayerManagerPanel: React.FC<LayerManagerPanelProps> = ({
           <button
             type="button"
             onClick={onOpenApiKeySettings}
-            className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-semibold cursor-pointer"
+            className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium cursor-pointer"
           >
-            Einstellungen ⚙
+            Einstellungen
           </button>
         )}
       </div>

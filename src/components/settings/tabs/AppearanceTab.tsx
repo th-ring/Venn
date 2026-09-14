@@ -1,6 +1,6 @@
 import React from 'react';
 import { ThemePreference, ResolvedTheme } from '../../../services/themeService';
-import { Monitor, Sun, Moon, Check, Sparkles } from 'lucide-react';
+import { Monitor, Sun, Moon, Check, Info } from 'lucide-react';
 
 interface AppearanceTabProps {
   themePreference: ThemePreference;
@@ -146,7 +146,7 @@ export const AppearanceTab: React.FC<AppearanceTabProps> = ({
       {/* Info Callout */}
       <div className="p-3 rounded-xl bg-slate-50 dark:bg-[#202124] border border-slate-200/80 dark:border-[#3c4043] flex items-center justify-between text-xs text-slate-600 dark:text-[#9aa0a6]">
         <div className="flex items-center gap-2">
-          <Sparkles className="w-4 h-4 text-blue-600 dark:text-[#8ab4f8] shrink-0" />
+          <Info className="w-4 h-4 text-blue-600 dark:text-[#8ab4f8] shrink-0" />
           <span>
             Aktiver Modus:{' '}
             <strong className="text-slate-900 dark:text-[#e3e3e3]">

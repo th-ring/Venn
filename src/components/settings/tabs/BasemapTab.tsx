@@ -45,10 +45,10 @@ export const BasemapTab: React.FC<BasemapTabProps> = ({
         Karten von <em>OpenStreetMap</em>, <em>MemoMaps</em> und <em>CARTO</em> funktionieren sofort und ohne API-Key.
       </div>
 
-      {/* STUFE 1: KARTENDIENST WÄHLEN */}
+      {/* Basis-Kartendienst */}
       <div>
         <div className="text-[11px] font-bold text-slate-500 dark:text-[#9aa0a6] uppercase tracking-wider mb-2 flex items-center justify-between">
-          <span>1. Basis-Kartendienst</span>
+          <span>Basis-Kartendienst</span>
           {hasGoogleKey && (
             <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 px-2 py-0.5 rounded-full">
               Google Key aktiv
@@ -82,13 +82,10 @@ export const BasemapTab: React.FC<BasemapTabProps> = ({
                   OpenStreetMap
                 </div>
                 <div className="text-[10px] text-slate-500 dark:text-[#9aa0a6] mt-0.5">
-                  100% frei, Open-Source & ohne Key.
+                  Klassische Open-Source-Kartografie.
                 </div>
               </div>
             </div>
-            <span className="text-[9px] font-semibold bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-300 px-1.5 py-0.5 rounded-full shrink-0">
-              Frei
-            </span>
           </div>
 
           {/* Option: MemoMaps */}
@@ -116,13 +113,10 @@ export const BasemapTab: React.FC<BasemapTabProps> = ({
                   MemoMaps
                 </div>
                 <div className="text-[10px] text-slate-500 dark:text-[#9aa0a6] mt-0.5">
-                  Reine ÖPNVkarte (Bus & Bahn).
+                  Fokussiertes ÖPNV-Liniennetz (Bus & Bahn).
                 </div>
               </div>
             </div>
-            <span className="text-[9px] font-semibold bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-300 px-1.5 py-0.5 rounded-full shrink-0">
-              Frei
-            </span>
           </div>
 
           {/* Option: CARTO */}
@@ -150,13 +144,10 @@ export const BasemapTab: React.FC<BasemapTabProps> = ({
                   CARTO
                 </div>
                 <div className="text-[10px] text-slate-500 dark:text-[#9aa0a6] mt-0.5">
-                  Ultra-clean (Light & Dark) ohne Key.
+                  Minimalistischer Datenfokus (Hell & Dunkel).
                 </div>
               </div>
             </div>
-            <span className="text-[9px] font-semibold bg-purple-100 dark:bg-purple-900/60 text-purple-800 dark:text-purple-300 px-1.5 py-0.5 rounded-full shrink-0">
-              Frei
-            </span>
           </div>
 
           {/* Option: Google Maps */}
@@ -176,7 +167,7 @@ export const BasemapTab: React.FC<BasemapTabProps> = ({
                 onChange={() => onSelectPlatform('google')}
                 className="mt-0.5 text-blue-600 dark:text-[#8ab4f8] cursor-pointer"
               />
-              <div className="p-1.5 bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 rounded-lg shrink-0">
+              <div className="p-1.5 bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-[#8ab4f8] rounded-lg shrink-0">
                 <MapIcon className="w-4 h-4" />
               </div>
               <div>
@@ -184,13 +175,15 @@ export const BasemapTab: React.FC<BasemapTabProps> = ({
                   Google Maps
                 </div>
                 <div className="text-[10px] text-slate-500 dark:text-[#9aa0a6] mt-0.5">
-                  Offizielle Google Maps JS API.
+                  Google Maps JavaScript API.
                 </div>
               </div>
             </div>
-            <span className="text-[9px] font-semibold bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-300 px-1.5 py-0.5 rounded-full shrink-0">
-              API-Key
-            </span>
+            {!hasGoogleKey && (
+              <span className="text-[9px] font-semibold bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-300 px-1.5 py-0.5 rounded-full shrink-0">
+                Key nötig
+              </span>
+            )}
           </div>
         </div>
 
@@ -211,19 +204,11 @@ export const BasemapTab: React.FC<BasemapTabProps> = ({
         )}
       </div>
 
-      {/* STUFE 2: KARTENTYP SEPARAT WÄHLEN */}
+      {/* Kartentyp */}
       <div className="pt-2 border-t border-slate-100 dark:border-[#3c4043]">
         <div className="text-[11px] font-bold text-slate-500 dark:text-[#9aa0a6] uppercase tracking-wider mb-2 flex items-center justify-between">
           <span>
-            2. Kartentyp auswählen (
-            {platform === 'google'
-              ? 'Google Maps'
-              : platform === 'carto'
-              ? 'CARTO'
-              : platform === 'memomaps' || platform === 'opnv'
-              ? 'MemoMaps'
-              : 'OpenStreetMap'}
-            )
+            Kartentyp ({platform === 'google' ? 'Google Maps' : platform === 'carto' ? 'CARTO' : platform === 'memomaps' || platform === 'opnv' ? 'MemoMaps' : 'OpenStreetMap'})
           </span>
           <span className="text-[10px] text-slate-400 dark:text-[#747775] font-normal">
             {currentVariants.length} Varianten verfügbar
@@ -268,11 +253,11 @@ export const BasemapTab: React.FC<BasemapTabProps> = ({
         </div>
       </div>
 
-      {/* STUFE 3: ZUSATZ-OVERLAYS */}
+      {/* Zusatz-Overlays */}
       {onToggleRailwayOverlay && (
         <div className="pt-2 border-t border-slate-100 dark:border-[#3c4043]">
           <div className="text-[11px] font-bold text-slate-500 dark:text-[#9aa0a6] uppercase tracking-wider mb-2">
-            3. Zusatz-Overlays (über Basemap gelegt)
+            Zusätzliche Ebenen
           </div>
 
           <button

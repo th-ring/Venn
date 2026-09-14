@@ -69,7 +69,7 @@ export const ScheduleControls: React.FC<ScheduleControlsProps> = ({
               className={`p-1.5 rounded-lg border text-xs font-semibold shadow-2xs transition-all cursor-pointer ${
                 isCalculating
                   ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-500 dark:text-[#8ab4f8] border-blue-200 dark:border-blue-800 cursor-not-allowed'
-                  : 'bg-white dark:bg-[#282a2c] hover:bg-blue-50 dark:hover:bg-[#3c4043] text-slate-600 dark:text-[#c4c7c5] hover:text-blue-700 dark:hover:text-[#8ab4f8] border-slate-200 dark:border-[#3c4043] hover:border-blue-200 dark:hover:border-[#5f6368] active:scale-95'
+                  : 'bg-white dark:bg-[#282a2c] hover:bg-blue-50 dark:hover:bg-[#3c4043] text-slate-600 dark:text-[#c4c7c5] hover:text-blue-700 dark:hover:text-[#8ab4f8] border-slate-200 dark:border-[#3c4043] hover:border-blue-200 dark:hover:border-[#5f6368]'
               }`}
               title="Isochronen jetzt manuell neu berechnen"
             >

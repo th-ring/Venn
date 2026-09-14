@@ -69,9 +69,9 @@ export const InspectionPanel: React.FC<InspectionPanelProps> = ({ inspection, on
         <div className="flex items-start gap-2.5 min-w-0">
           <div className="mt-0.5">
             {isIdealLocation ? (
-              <ShieldCheck className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+              <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
             ) : (
-              <ShieldAlert className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0" />
+              <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0" />
             )}
           </div>
           <div className="min-w-0">
@@ -82,18 +82,18 @@ export const InspectionPanel: React.FC<InspectionPanelProps> = ({ inspection, on
                 }`}
               >
                 {isIdealLocation
-                  ? 'Gemeinsamer Wohnort (Ideal)'
+                  ? 'Gemeinsamer Treffbereich'
                   : 'Außerhalb der Schnittmenge'}
               </h4>
               <span
-                className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
                   isIdealLocation
-                    ? 'bg-emerald-200/80 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-200'
-                    : 'bg-amber-200/80 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200'
+                    ? 'bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-200'
+                    : 'bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200'
                 }`}
               >
                 {isIdealLocation
-                  ? '100% Match'
+                  ? 'Alle im Zeitbudget'
                   : `${inspection.withinLimitCount}/${inspection.activePersonsCount} im Limit`}
               </span>
             </div>
@@ -291,7 +291,7 @@ export const InspectionPanel: React.FC<InspectionPanelProps> = ({ inspection, on
                     {est.details?.firstMileStationName && (
                       <div className="grid grid-cols-3 gap-1.5 pt-1 text-[10px] text-slate-600 dark:text-[#c4c7c5] bg-white dark:bg-[#1e1f20] p-2 rounded-lg border border-slate-200/80 dark:border-[#3c4043]">
                         <div>
-                          <div className="text-slate-400 dark:text-[#9aa0a6] font-medium">1. Start-Fußweg</div>
+                          <div className="text-slate-400 dark:text-[#9aa0a6] font-medium">Zustieg (Fußweg)</div>
                           <div className="flex items-baseline gap-1 mt-0.5">
                             <span
                               className={`font-bold ${
@@ -316,7 +316,7 @@ export const InspectionPanel: React.FC<InspectionPanelProps> = ({ inspection, on
                         </div>
 
                         <div>
-                          <div className="text-slate-400 dark:text-[#9aa0a6] font-medium">2. Fahrt & Umstieg</div>
+                          <div className="text-slate-400 dark:text-[#9aa0a6] font-medium">ÖPNV-Fahrt</div>
                           <div className="font-bold text-slate-800 dark:text-[#e3e3e3] mt-0.5">{est.details.inVehicleMin} Min</div>
                           <div className="text-slate-500 dark:text-[#9aa0a6] text-[9px] mt-0.5">
                             {est.details.transfersCount === 0
@@ -326,7 +326,7 @@ export const InspectionPanel: React.FC<InspectionPanelProps> = ({ inspection, on
                         </div>
 
                         <div>
-                          <div className="text-slate-400 dark:text-[#9aa0a6] font-medium">3. Ziel-Fußweg</div>
+                          <div className="text-slate-400 dark:text-[#9aa0a6] font-medium">Ausstieg (Fußweg)</div>
                           <div className="flex items-baseline gap-1 mt-0.5">
                             <span
                               className={`font-bold ${

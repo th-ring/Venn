@@ -59,11 +59,11 @@ export const IsochroneEngineTab: React.FC<IsochroneEngineTabProps> = ({
               </span>
               {hasGoogleMapsApiKey() ? (
                 <span className="ml-1.5 text-[10px] font-semibold bg-emerald-100 dark:bg-emerald-900/50 text-emerald-800 dark:text-emerald-300 px-1.5 py-0.5 rounded-full">
-                  Key aktiv ✔
+                  Aktiv
                 </span>
               ) : (
-                <span className="ml-1.5 text-[10px] font-semibold bg-amber-100 dark:bg-amber-900/50 text-amber-800 dark:text-amber-300 px-1.5 py-0.5 rounded-full">
-                  Key fehlt
+                <span className="ml-1.5 text-[10px] font-semibold bg-slate-100 dark:bg-[#303134] text-slate-600 dark:text-[#9aa0a6] px-1.5 py-0.5 rounded-full">
+                  Nicht konfiguriert
                 </span>
               )}
             </div>
@@ -81,8 +81,8 @@ export const IsochroneEngineTab: React.FC<IsochroneEngineTabProps> = ({
         </div>
         <p className="text-[11px] text-slate-600 dark:text-[#9aa0a6] mt-1 pl-5 leading-relaxed">
           Offizielle Google Maps Erreichbarkeits-Polygone für <strong>Pkw, Fahrrad und Fußwege</strong>.
-          <span className="text-amber-700 dark:text-amber-300 block mt-0.5">
-            (Hinweis: Für ÖPNV wird automatisch die MVV/MVG-Haltestellenmatrix genutzt, da Google keine ÖPNV-Isochronen bereitstellt.)
+          <span className="text-slate-500 dark:text-[#9aa0a6] block mt-0.5">
+            (Hinweis: Für ÖPNV wird die MVV/MVG-Haltestellenmatrix genutzt, da Google Maps keine ÖPNV-Isochronen bereitstellt.)
           </span>
         </p>
       </div>
@@ -109,7 +109,7 @@ export const IsochroneEngineTab: React.FC<IsochroneEngineTabProps> = ({
               Integrierte Multimodale Engine (Standard)
             </span>
             <span className="ml-2 text-[10px] font-semibold bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 px-1.5 py-0.5 rounded-full">
-              100% Kostenfrei & Ohne Key
+              Lokal • Ohne API-Key
             </span>
           </div>
         </div>
@@ -146,11 +146,11 @@ export const IsochroneEngineTab: React.FC<IsochroneEngineTabProps> = ({
               </span>
               {hasOrsApiKey() ? (
                 <span className="ml-1.5 text-[10px] font-semibold bg-emerald-100 dark:bg-emerald-900/50 text-emerald-800 dark:text-emerald-300 px-1.5 py-0.5 rounded-full">
-                  Key aktiv ✔
+                  Aktiv
                 </span>
               ) : (
-                <span className="ml-1.5 text-[10px] font-semibold bg-amber-100 dark:bg-amber-900/50 text-amber-800 dark:text-amber-300 px-1.5 py-0.5 rounded-full">
-                  Key fehlt
+                <span className="ml-1.5 text-[10px] font-semibold bg-slate-100 dark:bg-[#303134] text-slate-600 dark:text-[#9aa0a6] px-1.5 py-0.5 rounded-full">
+                  Nicht konfiguriert
                 </span>
               )}
             </div>

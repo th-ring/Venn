@@ -5,7 +5,7 @@ import {
   PriorityHeatmapMode,
   ALL_HEATMAP_ITEMS,
 } from '../../types';
-import { Flame, ChevronDown, ChevronUp } from 'lucide-react';
+import { Flame, ChevronDown, ChevronUp, TrainFrontTunnel, TrainFront, Car } from 'lucide-react';
 import { getHighwayMetadata } from '../../services/highwayService';
 
 interface PriorityHeatmapWidgetProps {
@@ -192,7 +192,7 @@ export const PriorityHeatmapWidget: React.FC<PriorityHeatmapWidgetProps> = ({
                           return (
                             <span
                               key={item}
-                              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold border ${
+                              className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-semibold border ${
                                 isUbahn
                                   ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-[#8ab4f8] border-blue-200 dark:border-blue-800'
                                   : isSbahn
@@ -200,7 +200,14 @@ export const PriorityHeatmapWidget: React.FC<PriorityHeatmapWidgetProps> = ({
                                   : 'bg-orange-50 dark:bg-orange-950/40 text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-800'
                               }`}
                             >
-                              <span>{isUbahn ? '🚇 U-Bahn' : isSbahn ? '🚆 S-Bahn' : '🚗 Autobahn'}</span>
+                              {isUbahn ? (
+                                <TrainFrontTunnel className="w-3.5 h-3.5 shrink-0" />
+                              ) : isSbahn ? (
+                                <TrainFront className="w-3.5 h-3.5 shrink-0" />
+                              ) : (
+                                <Car className="w-3.5 h-3.5 shrink-0" />
+                              )}
+                              <span>{isUbahn ? 'U-Bahn' : isSbahn ? 'S-Bahn' : 'Autobahn'}</span>
                               <span
                                 onClick={(e) => {
                                   e.stopPropagation();
@@ -227,7 +234,7 @@ export const PriorityHeatmapWidget: React.FC<PriorityHeatmapWidgetProps> = ({
                   {isDropdownOpen && (
                     <div className="absolute top-full left-0 right-0 mt-1.5 z-40 bg-white dark:bg-[#282a2c] rounded-xl shadow-xl border border-slate-200 dark:border-[#3c4043] p-2.5 space-y-2">
                       <div className="flex items-center justify-between text-[11px] font-semibold text-slate-700 dark:text-[#e3e3e3] pb-1.5 border-b border-slate-100 dark:border-[#3c4043]">
-                        <span>Kategorien wählen (z.B. zwei kombinieren):</span>
+                        <span>Kategorien wählen:</span>
                         <div className="flex items-center gap-2">
                           <button
                             type="button"
@@ -251,21 +258,25 @@ export const PriorityHeatmapWidget: React.FC<PriorityHeatmapWidgetProps> = ({
                         {[
                           {
                             id: 'ubahn' as PriorityHeatmapItem,
-                            label: '🚇 U-Bahn Stationen',
+                            label: 'U-Bahn Stationen',
+                            icon: TrainFrontTunnel,
                             desc: 'U1 – U8 Haltestellen im MVV/MVG Netz',
                           },
                           {
                             id: 'sbahn' as PriorityHeatmapItem,
-                            label: '🚆 S-Bahn Stationen',
+                            label: 'S-Bahn Stationen',
+                            icon: TrainFront,
                             desc: 'S1 – S8 Stammstrecke und Außenäste',
                           },
                           {
                             id: 'highway' as PriorityHeatmapItem,
-                            label: '🚗 Autobahn-Anschlussstellen',
-                            desc: `${highwayMeta.junctionCount} AS & ${highwayMeta.rampCount} Rampen (OSM Vektordaten)`,
+                            label: 'Autobahn-Anschlussstellen',
+                            icon: Car,
+                            desc: `${highwayMeta.junctionCount} AS & ${highwayMeta.rampCount} Rampen`,
                           },
                         ].map((opt) => {
                           const isChecked = activeHeatmapItems.includes(opt.id);
+                          const OptIcon = opt.icon;
                           return (
                             <label
                               key={opt.id}
@@ -281,6 +292,7 @@ export const PriorityHeatmapWidget: React.FC<PriorityHeatmapWidgetProps> = ({
                                 onChange={() => handleToggleHeatmapItem(opt.id)}
                                 className="rounded text-amber-600 focus:ring-amber-500 border-slate-300 dark:border-[#5f6368] cursor-pointer"
                               />
+                              <OptIcon className="w-4 h-4 text-slate-500 dark:text-[#9aa0a6] shrink-0" />
                               <div className="flex-1 min-w-0">
                                 <div className="text-xs">{opt.label}</div>
                                 <div className="text-[10px] text-slate-400 dark:text-[#9aa0a6] font-normal truncate">

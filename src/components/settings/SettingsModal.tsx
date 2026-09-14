@@ -72,13 +72,13 @@ const SETTINGS_MENU: Array<{
   subLabel: string;
   icon: React.ComponentType<{ className?: string }>;
 }> = [
-  { id: 'appearance', label: '1. Erscheinungsbild', subLabel: 'System, Hell & Dunkel', icon: Palette },
-  { id: 'basemap', label: '2. Kartendienst', subLabel: 'OSM, MemoMaps, CARTO & Google', icon: MapIcon },
-  { id: 'isochrones', label: '3. Isochronen', subLabel: 'Engine & Parameter', icon: Globe },
-  { id: 'mvv', label: '4. Datenpakete & Regionen', subLabel: 'Autobahn, ÖPNV & Mietspiegel', icon: Layers },
-  { id: 'keys', label: '5. API-Keys', subLabel: 'Google & ORS Keys', icon: Key },
-  { id: 'heatmap', label: '6. Heatmap', subLabel: 'Prioritäts-Infrastruktur', icon: Flame },
-  { id: 'rental', label: '7. Mietspiegel', subLabel: 'München & Open Data', icon: Euro },
+  { id: 'appearance', label: 'Erscheinungsbild', subLabel: 'Design & Theme', icon: Palette },
+  { id: 'basemap', label: 'Kartendienst', subLabel: 'OSM, MemoMaps, CARTO & Google', icon: MapIcon },
+  { id: 'isochrones', label: 'Isochronen', subLabel: 'Berechnung & Parameter', icon: Globe },
+  { id: 'mvv', label: 'Datenpakete & Regionen', subLabel: 'Autobahn, ÖPNV & Mietspiegel', icon: Layers },
+  { id: 'keys', label: 'API-Schlüssel', subLabel: 'Google & ORS Zugangsdaten', icon: Key },
+  { id: 'heatmap', label: 'Prioritäts-Heatmap', subLabel: 'Infrastruktur-Puffer', icon: Flame },
+  { id: 'rental', label: 'Mietspiegel', subLabel: 'München & Open Data', icon: Euro },
 ];
 
 interface SettingsModalProps {
@@ -340,22 +340,19 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               {SETTINGS_MENU.map((item) => {
                 const Icon = item.icon;
                 const isSelected = modalTab === item.id;
-                const isHeatmap = item.id === 'heatmap';
 
                 return (
                   <button
                     key={item.id}
                     type="button"
                     onClick={() => setModalTab(item.id)}
-                    className={`px-3 py-2 rounded-xl text-left transition-all flex items-center gap-2.5 cursor-pointer whitespace-nowrap shrink-0 sm:shrink ${
+                    className={`px-3 py-2 rounded-xl text-left transition-colors flex items-center gap-2.5 cursor-pointer whitespace-nowrap shrink-0 sm:shrink ${
                       isSelected
-                        ? isHeatmap
-                          ? 'bg-amber-500 text-white font-bold shadow-xs'
-                          : 'bg-blue-600 dark:bg-[#8ab4f8] text-white dark:text-[#131314] font-bold shadow-xs'
+                        ? 'bg-blue-600 dark:bg-[#8ab4f8] text-white dark:text-[#131314] font-bold shadow-xs'
                         : 'text-slate-600 dark:text-[#9aa0a6] hover:text-slate-900 dark:hover:text-[#e3e3e3] hover:bg-slate-200/60 dark:hover:bg-[#282a2c] font-medium'
                     }`}
                   >
-                    <Icon className={`w-4 h-4 shrink-0 ${isSelected ? 'text-white dark:text-[#131314]' : isHeatmap ? 'text-amber-500' : 'text-slate-500 dark:text-[#9aa0a6]'}`} />
+                    <Icon className={`w-4 h-4 shrink-0 ${isSelected ? 'text-white dark:text-[#131314]' : 'text-slate-500 dark:text-[#9aa0a6]'}`} />
                     <div className="min-w-0">
                       <div className="text-xs leading-tight">{item.label}</div>
                       <div

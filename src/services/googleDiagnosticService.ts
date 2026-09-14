@@ -33,7 +33,7 @@ async function checkMapsJsApi(key: string): Promise<GoogleServiceStatus> {
       id: 'maps_js',
       name: 'Maps JavaScript API',
       status: 'valid',
-      message: 'Aktiv & einsatzbereit ✔',
+      message: 'Aktiv & einsatzbereit',
       details: 'Google Maps JavaScript SDK ist geladen. Kartenanzeige, Satellit und Basemap funktionieren einwandfrei.',
       statusCode: 200,
     };
@@ -79,7 +79,7 @@ async function checkMapsJsApi(key: string): Promise<GoogleServiceStatus> {
           id: 'maps_js',
           name: 'Maps JavaScript API',
           status: 'valid',
-          message: 'Aktiv & einsatzbereit ✔',
+          message: 'Aktiv & einsatzbereit',
           details: 'Maps JavaScript API ist für diesen API-Schlüssel freigeschaltet.',
           statusCode: 200,
         });

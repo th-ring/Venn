@@ -530,7 +530,7 @@ export function findShortestTransitTrip(
       lastMileWalkMin: 0,
       lastMileStationName: 'Ziel',
       lastMileWalkLimitMin: maxWalkFromStation,
-      steps: [`🚶 Direkter Fußweg (${Math.round(directDistanceKm * 1000)} m, ca. ${walkMin} Min)`],
+      steps: [`Direkter Fußweg (${Math.round(directDistanceKm * 1000)} m, ca. ${walkMin} Min)`],
     };
   }
 
@@ -653,11 +653,11 @@ export function findShortestTransitTrip(
         const entryWalkMin = Math.round(curr.entryWalkTime);
         const exitWalkMin = Math.round(exitMatch.walkToDestTime);
         const steps = [
-          `🚶 ${entryWalkMin} Min Fußweg zu ${curr.entryStationName} (Wohnort ➔ Station, max. ${maxWalkToStation} Min)`,
-          `🚆 ${inVehicle} Min Fahrt mit ${uniqueLines.join(', ') || 'ÖPNV'} (${curr.transfers} ${
+          `${entryWalkMin} Min Fußweg zu ${curr.entryStationName} (Zustieg, max. ${maxWalkToStation} Min)`,
+          `${inVehicle} Min Fahrt mit ${uniqueLines.join(', ') || 'ÖPNV'} (${curr.transfers} ${
             curr.transfers === 1 ? 'Umstieg' : 'Umstiege'
           })`,
-          `🚶 ${exitWalkMin} Min Fußweg von ${exitMatch.station.name} zum Ziel (Station ➔ Zielort, max. ${maxWalkFromStation} Min)`,
+          `${exitWalkMin} Min Fußweg von ${exitMatch.station.name} zum Ziel (Ausstieg, max. ${maxWalkFromStation} Min)`,
         ];
 
         bestResult = {

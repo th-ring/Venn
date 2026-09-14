@@ -24,6 +24,9 @@ import {
   Loader2,
   Check,
   Palette,
+  AlertTriangle,
+  ArrowRightLeft,
+  Clock,
 } from 'lucide-react';
 
 const COLOR_PRESETS = [
@@ -212,7 +215,7 @@ export const PersonCard: React.FC<PersonCardProps> = ({
               id={`btn-color-picker-${profile.id}`}
               type="button"
               onClick={() => setIsColorPickerOpen((prev) => !prev)}
-              className="w-5 h-5 rounded-full ring-2 ring-white dark:ring-[#1e1f20] shadow-sm flex items-center justify-center transition-transform hover:scale-110 active:scale-95 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+              className="w-5 h-5 rounded-full ring-2 ring-white dark:ring-[#1e1f20] shadow-sm flex items-center justify-center transition-all opacity-90 hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
               style={{ backgroundColor: profile.color }}
               title="Klicken, um Farbe anzupassen"
             >
@@ -244,7 +247,7 @@ export const PersonCard: React.FC<PersonCardProps> = ({
                           onUpdate({ color });
                           setIsColorPickerOpen(false);
                         }}
-                        className="w-9 h-7 rounded-lg flex items-center justify-center shadow-xs transition-transform hover:scale-105 active:scale-95 border border-black/5 dark:border-white/10"
+                        className="w-9 h-7 rounded-lg flex items-center justify-center shadow-xs transition-opacity hover:opacity-90 border border-black/5 dark:border-white/10 cursor-pointer"
                         style={{ backgroundColor: color }}
                         title={color}
                       >
@@ -424,10 +427,11 @@ export const PersonCard: React.FC<PersonCardProps> = ({
               <>
                 {isochroneFeature.properties?.isFallback ? (
                   <span
-                    className="text-[9px] font-bold text-rose-700 dark:text-rose-300 bg-rose-100 dark:bg-rose-950/50 border border-rose-300 dark:border-rose-800 px-1.5 py-0.2 rounded-md"
+                    className="text-[9px] font-bold text-rose-700 dark:text-rose-300 bg-rose-100 dark:bg-rose-950/50 border border-rose-300 dark:border-rose-800 px-1.5 py-0.5 rounded-md inline-flex items-center gap-1"
                     title={isochroneFeature.properties?.fallbackReason || 'API-Fehler: Offline-Fallback aktiv'}
                   >
-                    ⚠️ Fallback
+                    <AlertTriangle className="w-2.5 h-2.5 text-rose-600 dark:text-rose-400 shrink-0" />
+                    <span>Fallback</span>
                   </span>
                 ) : isochroneFeature.properties?.source === 'ors' ? (
                   <span
@@ -526,7 +530,8 @@ export const PersonCard: React.FC<PersonCardProps> = ({
                 <div className="bg-white dark:bg-[#1e1f20] p-2 rounded-lg border border-slate-200/80 dark:border-[#3c4043] shadow-2xs">
                   <div className="flex items-center justify-between mb-0.5">
                     <label htmlFor={`picker-walk-to-station-${profile.id}`} className="text-[10px] font-bold text-slate-800 dark:text-[#e3e3e3] flex items-center gap-1 cursor-pointer">
-                      <span>🚶 Wohnort ➔ Station</span>
+                      <Footprints className="w-3.5 h-3.5 text-slate-500 dark:text-[#9aa0a6] shrink-0" />
+                      <span>Fußweg zur Haltestelle</span>
                     </label>
                     <span className="text-[10px] font-semibold text-blue-600 dark:text-[#8ab4f8] bg-blue-50 dark:bg-blue-950/40 px-1.5 py-0.5 rounded">
                       {profile.maxWalkToStationMin ?? 5} Min
@@ -547,7 +552,8 @@ export const PersonCard: React.FC<PersonCardProps> = ({
                 <div className="bg-white dark:bg-[#1e1f20] p-2 rounded-lg border border-slate-200/80 dark:border-[#3c4043] shadow-2xs">
                   <div className="flex items-center justify-between mb-0.5">
                     <label htmlFor={`picker-walk-from-station-${profile.id}`} className="text-[10px] font-bold text-slate-800 dark:text-[#e3e3e3] flex items-center gap-1 cursor-pointer">
-                      <span>🏁 Station ➔ Zielort</span>
+                      <MapPin className="w-3.5 h-3.5 text-slate-500 dark:text-[#9aa0a6] shrink-0" />
+                      <span>Fußweg ab Zielhaltestelle</span>
                     </label>
                     <span className="text-[10px] font-semibold text-blue-600 dark:text-[#8ab4f8] bg-blue-50 dark:bg-blue-950/40 px-1.5 py-0.5 rounded">
                       {profile.maxWalkFromStationMin ?? 5} Min
@@ -567,8 +573,9 @@ export const PersonCard: React.FC<PersonCardProps> = ({
                 {/* 3. Max. Umstiege */}
                 <div className="bg-white dark:bg-[#1e1f20] p-2 rounded-lg border border-slate-200/80 dark:border-[#3c4043] shadow-2xs">
                   <div className="flex items-center justify-between mb-0.5">
-                    <label htmlFor={`select-transfers-${profile.id}`} className="text-[10px] font-bold text-slate-800 dark:text-[#e3e3e3] cursor-pointer">
-                      🔄 Max. Umstiege
+                    <label htmlFor={`select-transfers-${profile.id}`} className="text-[10px] font-bold text-slate-800 dark:text-[#e3e3e3] flex items-center gap-1 cursor-pointer">
+                      <ArrowRightLeft className="w-3.5 h-3.5 text-slate-500 dark:text-[#9aa0a6] shrink-0" />
+                      <span>Max. Umstiege</span>
                     </label>
                     <span className="text-[10px] font-semibold text-slate-600 dark:text-[#c4c7c5] bg-slate-100 dark:bg-[#282a2c] px-1.5 py-0.5 rounded">
                       {profile.maxTransfers !== undefined ? profile.maxTransfers : 'Beliebig'}
@@ -598,8 +605,9 @@ export const PersonCard: React.FC<PersonCardProps> = ({
                 {/* 4. Max. Umstiegszeit */}
                 <div className="bg-white dark:bg-[#1e1f20] p-2 rounded-lg border border-slate-200/80 dark:border-[#3c4043] shadow-2xs">
                   <div className="flex items-center justify-between mb-0.5">
-                    <label htmlFor={`picker-transfer-wait-${profile.id}`} className="text-[10px] font-bold text-slate-800 dark:text-[#e3e3e3] cursor-pointer">
-                      ⏱️ Wartezeit Umstieg
+                    <label htmlFor={`picker-transfer-wait-${profile.id}`} className="text-[10px] font-bold text-slate-800 dark:text-[#e3e3e3] flex items-center gap-1 cursor-pointer">
+                      <Clock className="w-3.5 h-3.5 text-slate-500 dark:text-[#9aa0a6] shrink-0" />
+                      <span>Puffer beim Umstieg</span>
                     </label>
                     <span className="text-[10px] font-semibold text-slate-600 dark:text-[#c4c7c5] bg-slate-100 dark:bg-[#282a2c] px-1.5 py-0.5 rounded">
                       {profile.maxTransferWaitMin ?? 5} Min

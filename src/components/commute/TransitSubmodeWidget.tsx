@@ -1,21 +1,30 @@
 import React, { useState } from 'react';
 import { TransitSubMode, ALL_TRANSIT_SUBMODES, DEFAULT_TRANSIT_SUBMODES } from '../../types';
-import { Train, ChevronDown, ChevronUp } from 'lucide-react';
+import {
+  Train,
+  ChevronDown,
+  ChevronUp,
+  TramFront,
+  TrainFrontTunnel,
+  Bus,
+  Zap,
+  TrainFront,
+} from 'lucide-react';
 
 export interface TransitSubmodeItem {
   id: TransitSubMode;
   label: string;
-  icon: string;
+  icon: React.ComponentType<{ className?: string }>;
   description: string;
 }
 
 export const TRANSIT_SUBMODE_CONFIG: TransitSubmodeItem[] = [
-  { id: 'tram', label: 'Tram', icon: '🚋', description: 'Straßenbahnlinien' },
-  { id: 'ubahn', label: 'U-Bahn', icon: '🚇', description: 'U-Bahn Kernnetz' },
-  { id: 'bus', label: 'Bus', icon: '🚌', description: 'Stadt- & Regionalbusse' },
-  { id: 'expressbus', label: 'X-Bus', icon: '⚡', description: 'Expressbusse (z.B. X30, X80)' },
-  { id: 'sbahn', label: 'S-Bahn', icon: '🚆', description: 'S-Bahn (Stammstrecke & Außenäste)' },
-  { id: 'train', label: 'Regio', icon: '🚄', description: 'Regionalbahn (RB / RE / BRB)' },
+  { id: 'tram', label: 'Tram', icon: TramFront, description: 'Straßenbahnlinien' },
+  { id: 'ubahn', label: 'U-Bahn', icon: TrainFrontTunnel, description: 'U-Bahn Kernnetz' },
+  { id: 'bus', label: 'Bus', icon: Bus, description: 'Stadt- & Regionalbusse' },
+  { id: 'expressbus', label: 'X-Bus', icon: Zap, description: 'Expressbusse (z.B. X30, X80)' },
+  { id: 'sbahn', label: 'S-Bahn', icon: TrainFront, description: 'S-Bahn (Stammstrecke & Außenäste)' },
+  { id: 'train', label: 'Regio', icon: Train, description: 'Regionalbahn (RB / RE / BRB)' },
 ];
 
 export interface TransitSubmodeWidgetProps {
@@ -51,6 +60,7 @@ export const TransitSubmodeWidget: React.FC<TransitSubmodeWidgetProps> = ({
   const gridContent = (
     <div className="grid grid-cols-3 sm:grid-cols-6 gap-1 bg-slate-100 dark:bg-[#131314] p-1 rounded-xl">
       {TRANSIT_SUBMODE_CONFIG.map((item) => {
+        const Icon = item.icon;
         const active = activeTransitModes.includes(item.id);
         return (
           <button
@@ -64,7 +74,7 @@ export const TransitSubmodeWidget: React.FC<TransitSubmodeWidgetProps> = ({
                 : 'text-slate-400 dark:text-[#9aa0a6] hover:text-slate-700 dark:hover:text-[#e3e3e3] hover:bg-white/50 dark:hover:bg-[#282a2c]/50 opacity-60'
             }`}
           >
-            <span>{item.icon}</span>
+            <Icon className="w-3.5 h-3.5 shrink-0" />
             <span className="truncate">{item.label}</span>
           </button>
         );

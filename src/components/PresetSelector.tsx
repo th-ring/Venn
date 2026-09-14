@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { PresetScenario } from '../types';
 import { PRESET_SCENARIOS } from '../data/presets';
-import { MapPin, ChevronDown, Check, Sparkles } from 'lucide-react';
+import { MapPin, ChevronDown, Check, Compass } from 'lucide-react';
 
 interface PresetSelectorProps {
   onSelectScenario: (scenario: PresetScenario) => void;
@@ -38,7 +38,7 @@ export const PresetSelector: React.FC<PresetSelectorProps> = ({
         title="Beispielszenario für eine Stadt laden"
       >
         <div className="flex items-center gap-1.5 min-w-0">
-          <Sparkles className="w-3.5 h-3.5 text-blue-600 dark:text-[#8ab4f8] shrink-0" />
+          <Compass className="w-3.5 h-3.5 text-blue-600 dark:text-[#8ab4f8] shrink-0" />
           <span className="text-slate-500 dark:text-[#9aa0a6] font-medium">Szenario:</span>
           <span className="text-slate-800 dark:text-[#e3e3e3] font-bold truncate">
             {activeScenario ? activeScenario.name : 'München & Region (Standard)'}

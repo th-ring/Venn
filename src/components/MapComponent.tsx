@@ -591,8 +591,8 @@ export const MapComponent: React.FC<MapComponentProps> = ({
     });
 
     intersectionLayer.bindTooltip(
-      `<div style="font-weight: bold; color: ${isDark ? '#34d399' : '#065f46'}; font-size: 13px;">${
-        onlyResidential ? '🏡 Gemeinsamer Wohnbereich' : '🎯 Gemeinsamer Treffbereich'
+      `<div style="font-weight: 600; color: ${isDark ? '#34d399' : '#065f46'}; font-size: 12px;">${
+        onlyResidential ? 'Gemeinsamer Wohnbereich' : 'Gemeinsamer Schnittbereich'
       }</div><div style="font-size: 11px; color: ${isDark ? '#a7f3d0' : '#047857'};">Fläche: ca. ${
         result.intersectionAreaKm2
       } km²${
@@ -601,8 +601,8 @@ export const MapComponent: React.FC<MapComponentProps> = ({
           : ''
       }<br/>${
         onlyResidential
-          ? 'Reduziert auf reale Siedlungs- & Wohnflächen'
-          : 'Für alle erreichbar!'
+          ? 'Gefiltert auf Wohn- und Siedlungsflächen'
+          : 'Erreichbar für alle Profile'
       }</div>`,
       { sticky: true }
     );
@@ -786,7 +786,7 @@ export const MapComponent: React.FC<MapComponentProps> = ({
 
             line.bindTooltip(
               `<div style="font-size: 11px;">
-                <strong style="color:${isDark ? '#fb923c' : '#c2410c'};">🚗 ${ramp.properties.name}</strong>
+                <strong style="color:${isDark ? '#fb923c' : '#c2410c'};">${ramp.properties.name}</strong>
                 ${ramp.properties.ref ? `<br/><span style="color:${isDark ? '#e2e8f0' : '#0f172a'}; font-weight:600;">${ramp.properties.ref}</span>` : ''}
                 ${ramp.properties.maxspeed ? `<br/><span style="color:${isDark ? '#94a3b8' : '#64748b'};">Tempo: ${ramp.properties.maxspeed} km/h</span>` : ''}
               </div>`,

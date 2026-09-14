@@ -19,8 +19,12 @@ import {
   MapPin,
   Info,
   Layers,
-  Sparkles,
   HardDrive,
+  TrainFront,
+  TrainFrontTunnel,
+  TramFront,
+  Bus,
+  Zap,
 } from 'lucide-react';
 
 interface MvvMatrixTabProps {
@@ -272,15 +276,16 @@ export const MvvMatrixTab: React.FC<MvvMatrixTabProps> = ({
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-1">
           {(
             [
-              { id: 'sbahn', label: 'S-Bahn', icon: '🚆', desc: 'Stammstrecke & Außenäste' },
-              { id: 'ubahn', label: 'U-Bahn', icon: '🚇', desc: 'U-Bahn Kernnetz' },
-              { id: 'train', label: 'Regionalbahn', icon: '🚄', desc: 'RE / BRB / Regionalzüge' },
-              { id: 'tram', label: 'Tram', icon: '🚋', desc: 'Straßenbahnlinien' },
-              { id: 'expressbus', label: 'Expressbus', icon: '⚡', desc: 'X-Busse (z.B. X30, X80)' },
-              { id: 'bus', label: 'Bus', icon: '🚌', desc: 'Stadt- & Regionalbusse' },
+              { id: 'sbahn', label: 'S-Bahn', icon: TrainFront, desc: 'Stammstrecke & Außenäste' },
+              { id: 'ubahn', label: 'U-Bahn', icon: TrainFrontTunnel, desc: 'U-Bahn Kernnetz' },
+              { id: 'train', label: 'Regionalbahn', icon: Train, desc: 'RE / BRB / Regionalzüge' },
+              { id: 'tram', label: 'Tram', icon: TramFront, desc: 'Straßenbahnlinien' },
+              { id: 'expressbus', label: 'Expressbus', icon: Zap, desc: 'X-Busse (z.B. X30, X80)' },
+              { id: 'bus', label: 'Bus', icon: Bus, desc: 'Stadt- & Regionalbusse' },
             ] as const
           ).map((modeItem) => {
             const isChecked = activeTransitModes.includes(modeItem.id as TransitSubMode);
+            const Icon = modeItem.icon;
             return (
               <label
                 key={modeItem.id}
@@ -298,7 +303,7 @@ export const MvvMatrixTab: React.FC<MvvMatrixTabProps> = ({
                 />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5 font-semibold text-xs text-slate-800">
-                    <span>{modeItem.icon}</span>
+                    <Icon className="w-3.5 h-3.5 text-slate-600" />
                     <span>{modeItem.label}</span>
                   </div>
                   <div className="text-[10px] text-slate-500 mt-0.5 leading-tight truncate">

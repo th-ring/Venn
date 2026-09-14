@@ -4,7 +4,7 @@ import {
   PriorityHeatmapItem,
   PriorityHeatmapMode,
 } from '../../../types';
-import { Flame, Car } from 'lucide-react';
+import { Flame, Car, TrainFrontTunnel, TrainFront } from 'lucide-react';
 import { getHighwayMetadata } from '../../../services/highwayService';
 
 interface PriorityHeatmapTabProps {
@@ -95,28 +95,32 @@ export const PriorityHeatmapTab: React.FC<PriorityHeatmapTabProps> = ({
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 {[
-                  { id: 'ubahn' as PriorityHeatmapItem, label: '🚇 U-Bahn', desc: 'Haltestellen U1–U8' },
-                  { id: 'sbahn' as PriorityHeatmapItem, label: '🚆 S-Bahn', desc: 'Stammstrecke & Äste' },
-                  { id: 'highway' as PriorityHeatmapItem, label: '🚗 Autobahn', desc: 'A99, A8, A96 etc.' },
+                  { id: 'ubahn' as PriorityHeatmapItem, label: 'U-Bahn', icon: TrainFrontTunnel, desc: 'Haltestellen U1–U8' },
+                  { id: 'sbahn' as PriorityHeatmapItem, label: 'S-Bahn', icon: TrainFront, desc: 'Stammstrecke & Äste' },
+                  { id: 'highway' as PriorityHeatmapItem, label: 'Autobahn', icon: Car, desc: 'A99, A8, A96 etc.' },
                 ].map((item) => {
                   const checked = activeItems.includes(item.id);
+                  const Icon = item.icon;
                   return (
                     <label
                       key={item.id}
                       className={`flex items-start gap-2 p-2 rounded-xl border transition-all cursor-pointer select-none ${
                         checked
-                          ? 'bg-white dark:bg-[#282a2c] border-amber-300 dark:border-amber-700 shadow-2xs font-semibold text-slate-900 dark:text-[#e3e3e3]'
-                          : 'bg-amber-50/50 dark:bg-[#1e1f20]/50 border-amber-200/60 dark:border-[#3c4043] text-slate-600 dark:text-[#9aa0a6] opacity-70'
+                          ? 'bg-white dark:bg-[#282a2c] border-blue-500/50 dark:border-blue-400/50 shadow-2xs font-semibold text-slate-900 dark:text-[#e3e3e3]'
+                          : 'bg-slate-50/50 dark:bg-[#1e1f20]/50 border-slate-200/60 dark:border-[#3c4043] text-slate-600 dark:text-[#9aa0a6] opacity-70'
                       }`}
                     >
                       <input
                         type="checkbox"
                         checked={checked}
                         onChange={() => handleToggleItem(item.id)}
-                        className="mt-0.5 rounded text-amber-600 focus:ring-amber-500 border-slate-300 dark:border-[#3c4043] cursor-pointer"
+                        className="mt-0.5 rounded text-blue-600 focus:ring-blue-500 border-slate-300 dark:border-[#3c4043] cursor-pointer"
                       />
-                      <div>
-                        <div className="text-xs font-bold">{item.label}</div>
+                      <div className="min-w-0">
+                        <div className="text-xs font-semibold flex items-center gap-1.5">
+                          <Icon className="w-3.5 h-3.5 shrink-0 text-slate-600 dark:text-[#9aa0a6]" />
+                          <span>{item.label}</span>
+                        </div>
                         <div className="text-[10px] text-slate-500 dark:text-[#9aa0a6] font-normal">{item.desc}</div>
                       </div>
                     </label>

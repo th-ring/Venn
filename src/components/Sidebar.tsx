@@ -305,7 +305,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               ) : (
                 <div className="flex items-center gap-1.5 text-amber-700 dark:text-amber-400 font-semibold bg-amber-50 dark:bg-amber-950/40 px-2.5 py-1 rounded-xl border border-amber-200 dark:border-amber-800/60">
                   <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-                  <span>Keine Überlappung (∅)</span>
+                  <span>Keine Überschneidung</span>
                 </div>
               )}
             </div>
@@ -446,7 +446,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                           key={item}
                           className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100/90 dark:bg-amber-900/50 text-amber-800 dark:text-amber-300"
                         >
-                          {item === 'ubahn' ? '🚇 U' : item === 'sbahn' ? '🚆 S' : '🚗 A'}
+                          {item === 'ubahn' ? 'U-Bahn' : item === 'sbahn' ? 'S-Bahn' : 'Autobahn'}
                         </span>
                       ))}
                   </div>

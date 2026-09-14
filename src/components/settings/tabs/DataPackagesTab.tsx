@@ -31,6 +31,11 @@ import {
   ChevronUp,
   RotateCcw,
   ShieldCheck,
+  TrainFront,
+  TrainFrontTunnel,
+  TramFront,
+  Bus,
+  Zap,
 } from 'lucide-react';
 
 interface DataPackagesTabProps {
@@ -340,26 +345,27 @@ export const DataPackagesTab: React.FC<DataPackagesTabProps> = ({
             </span>
             <div className="flex flex-wrap gap-1.5">
               {[
-                { id: 'sbahn' as TransitSubMode, label: 'S-Bahn', icon: '🚆' },
-                { id: 'ubahn' as TransitSubMode, label: 'U-Bahn', icon: '🚇' },
-                { id: 'train' as TransitSubMode, label: 'Regionalbahn', icon: '🚄' },
-                { id: 'tram' as TransitSubMode, label: 'Tram', icon: '🚋' },
-                { id: 'expressbus' as TransitSubMode, label: 'Expressbus', icon: '⚡' },
-                { id: 'bus' as TransitSubMode, label: 'Bus', icon: '🚌' },
+                { id: 'sbahn' as TransitSubMode, label: 'S-Bahn', icon: TrainFront },
+                { id: 'ubahn' as TransitSubMode, label: 'U-Bahn', icon: TrainFrontTunnel },
+                { id: 'train' as TransitSubMode, label: 'Regionalbahn', icon: Train },
+                { id: 'tram' as TransitSubMode, label: 'Tram', icon: TramFront },
+                { id: 'expressbus' as TransitSubMode, label: 'Expressbus', icon: Zap },
+                { id: 'bus' as TransitSubMode, label: 'Bus', icon: Bus },
               ].map((sub) => {
                 const isActive = activeTransitModes.includes(sub.id);
+                const Icon = sub.icon;
                 return (
                   <button
                     key={sub.id}
                     type="button"
                     onClick={() => onToggleTransitMode(sub.id)}
-                    className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
+                    className={`px-2.5 py-1 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer ${
                       isActive
                         ? 'bg-blue-600 dark:bg-[#8ab4f8] text-white dark:text-[#131314] shadow-2xs'
-                        : 'bg-white dark:bg-[#282a2c] text-slate-500 dark:text-[#9aa0a6] border border-slate-200 dark:border-[#3c4043] hover:border-slate-300 dark:hover:border-[#5f6368]'
+                        : 'bg-white dark:bg-[#282a2c] text-slate-600 dark:text-[#9aa0a6] border border-slate-200 dark:border-[#3c4043] hover:border-slate-300 dark:hover:border-[#5f6368]'
                     }`}
                   >
-                    <span>{sub.icon}</span>
+                    <Icon className="w-3.5 h-3.5" />
                     <span>{sub.label}</span>
                   </button>
                 );

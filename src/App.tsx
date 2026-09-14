@@ -189,7 +189,7 @@ export default function App() {
                   localStorage.setItem('commute_sidebar_open', 'true');
                 } catch {}
               }}
-              className="bg-white/95 dark:bg-[#1e1f20]/95 hover:bg-blue-50/90 dark:hover:bg-[#282a2c] text-slate-800 dark:text-[#e3e3e3] hover:text-blue-700 dark:hover:text-[#8ab4f8] px-3 py-2 rounded-xl shadow-md border border-slate-200/90 dark:border-[#3c4043] backdrop-blur-md flex items-center gap-2 text-xs font-bold cursor-pointer transition-all hover:scale-102 active:scale-98 group"
+              className="bg-white/95 dark:bg-[#1e1f20]/95 hover:bg-slate-50 dark:hover:bg-[#282a2c] text-slate-800 dark:text-[#e3e3e3] hover:text-blue-700 dark:hover:text-[#8ab4f8] px-3 py-2 rounded-xl shadow-md border border-slate-200/90 dark:border-[#3c4043] backdrop-blur-md flex items-center gap-2 text-xs font-bold cursor-pointer transition-colors group"
               title="Seitenleiste einblenden (Strg+B)"
             >
               <div className="p-1 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-[#8ab4f8] group-hover:bg-blue-600 group-hover:text-white dark:group-hover:bg-[#8ab4f8] dark:group-hover:text-[#131314] transition-colors">
@@ -209,8 +209,8 @@ export default function App() {
                   Berechne...
                 </span>
               ) : (
-                <span className="text-[10px] font-semibold bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 px-2 py-0.5 rounded-full border border-amber-200/80 dark:border-amber-800/80">
-                  ∅
+                <span className="text-[10px] font-medium bg-slate-100 dark:bg-[#282a2c] text-slate-600 dark:text-[#9aa0a6] px-2 py-0.5 rounded-full border border-slate-200 dark:border-[#3c4043]">
+                  0 km²
                 </span>
               )}
             </button>
