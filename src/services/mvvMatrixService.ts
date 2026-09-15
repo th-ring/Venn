@@ -907,9 +907,12 @@ export function generateMvvTransitIsochrone(
     const stPoint = turf.point([item.station.lng, item.station.lat]);
 
     // Walking dispersal around reached station into residential area (Wohnort ➔ Station)
-    const dispersalMinutes = Math.min(item.remainingTimeMin, maxWalkToStationMin);
-    const minRadius = item.station.types.includes('sbahn') || item.station.types.includes('train') ? 0.30 : 0.20;
-    const radiusKm = Math.max(minRadius, (dispersalMinutes * walkSpeedKmPerMin) / detourFactor);
+    const dispersalMinutes = Math.min(Math.max(0, item.remainingTimeMin), maxWalkToStationMin);
+    if (dispersalMinutes <= 0.1) continue;
+
+    // Strictly limit radius to what can be walked in the remaining time and walk budget
+    const radiusKm = (dispersalMinutes * walkSpeedKmPerMin) / detourFactor;
+    if (radiusKm < 0.05) continue;
 
     const stationBuffer = turf.circle(stPoint, radiusKm, {
       steps: 20,
