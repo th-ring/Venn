@@ -32,6 +32,7 @@ import {
   calculateMultiIntersection,
   calculateAreaKm2,
   generateEmptyIntersectionSuggestions,
+  isPointInPolygon,
 } from '../services/geometry';
 import { maskByResidentialAreas } from '../data/residentialZones';
 import { reverseGeocode } from '../services/geocoding';
@@ -99,11 +100,17 @@ export function useCommuteFinder() {
   });
 
   const [result, setResult] = useState<CalculationResult | null>(null);
+  const resultRef = useRef<CalculationResult | null>(null);
+  resultRef.current = result;
+
   const [isCalculating, setIsCalculating] = useState(false);
   const [isPending, setIsPending] = useState(false);
   const [autoUpdate, setAutoUpdate] = useState(true);
   const [lastCalculatedAt, setLastCalculatedAt] = useState<Date | null>(null);
   const [inspectionPoint, setInspectionPoint] = useState<InspectionPoint | null>(null);
+  const inspectionPointRef = useRef<InspectionPoint | null>(null);
+  inspectionPointRef.current = inspectionPoint;
+  const handleSelectInspectionPointRef = useRef<(lat: number, lng: number) => Promise<void>>(() => Promise.resolve());
   const [showIntersectionLayer, setShowIntersectionLayer] = useState(
     initialConfig?.showIntersectionLayer ?? true
   );

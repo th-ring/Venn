@@ -746,18 +746,18 @@ function generateCalibratedIsochrone(
       const corridorWave1 = Math.cos(4 * angle) * 0.18;
       const corridorWave2 = Math.sin(2 * angle + lat) * 0.12;
       const microVariance = Math.cos(8 * angle + lng) * 0.06;
-      radialMultiplier = 1.0 + corridorWave1 + corridorWave2 + microVariance;
+      radialMultiplier = Math.min(1.0, 1.0 + corridorWave1 + corridorWave2 + microVariance);
 
       if (mode === 'transit') {
         const railBoost = Math.pow(Math.cos(2 * angle - 0.4), 4) * 0.35;
-        radialMultiplier += railBoost;
+        radialMultiplier = Math.min(1.0, radialMultiplier + railBoost);
       }
     } else if (mode === 'cycling') {
       const cycleWave = Math.sin(3 * angle) * 0.12 + Math.cos(5 * angle) * 0.05;
-      radialMultiplier = 1.0 + cycleWave;
+      radialMultiplier = Math.min(1.0, 1.0 + cycleWave);
     } else {
       const walkWave = Math.sin(4 * angle) * 0.06 + Math.cos(2 * angle) * 0.04;
-      radialMultiplier = 1.0 + walkWave;
+      radialMultiplier = Math.min(1.0, 1.0 + walkWave);
     }
 
     let rayDistanceKm = baseRadiusKm * Math.max(0.65, radialMultiplier);
@@ -809,7 +809,9 @@ export function estimateCommuteTime(
   const to = turf.point([destination.lng, destination.lat]);
   const straightDistKm = turf.distance(from, to, { units: 'kilometers' });
 
+  const liveTraffic = schedule.options?.liveTraffic ?? false;
   const isRushHour =
+    liveTraffic &&
     schedule.dayOfWeek === 'workday' &&
     ((schedule.time >= '07:30' && schedule.time <= '09:30') || (schedule.time >= '16:30' && schedule.time <= '18:30'));
 
@@ -847,14 +849,13 @@ export function estimateCommuteTime(
     }
     case 'driving': {
       const parkingBuffer = schedule.options?.drivingParkingBufferMin ?? DEFAULT_ROUTING_PARAMETERS.drivingParkingBufferMin;
+      const trafficMultiplier = isRushHour ? 0.74 : (liveTraffic ? 0.88 : 1.0);
       roadDistanceKm = straightDistKm * 1.28;
       let speedKmh = 38;
       if (roadDistanceKm > 6) {
         speedKmh = Math.min(85, 38 + (roadDistanceKm - 6) * 3.5);
       }
-      if (isRushHour) {
-        speedKmh *= 0.78;
-      }
+      speedKmh *= trafficMultiplier;
       const driveTimeOnly = (roadDistanceKm / speedKmh) * 60;
       travelTimeMin = driveTimeOnly + parkingBuffer;
 
@@ -862,7 +863,11 @@ export function estimateCommuteTime(
         summary: `Pkw über Straßennetz (${roadDistanceKm.toFixed(1)} km)`,
         steps: [
           `ca. ${Math.round(driveTimeOnly)} Min reine Fahrzeit (${roadDistanceKm.toFixed(1)} km)`,
-          isRushHour ? `Berufsverkehr-Verzögerung einberechnet` : `Normaler Verkehrsfluss`,
+          isRushHour
+            ? `Berufsverkehr-Verzögerung einberechnet`
+            : liveTraffic
+            ? `Leichte Verkehrsverzögerung einberechnet`
+            : `Normaler Verkehrsfluss`,
           `+${parkingBuffer.toFixed(0)} Min Zeitpuffer für Parkplatzsuche & Ampelschaltungen`,
         ],
       };
