@@ -25,6 +25,10 @@ html.dark {
   --mode-walk: #fbbf24;
 }
 
+body {
+  font-family: 'Roboto', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
 /* Leaflet & Custom Marker Styles */
 .custom-dest-pin,
 .inspect-pin {
@@ -33,7 +37,7 @@ html.dark {
 }
 
 .leaflet-container {
-  font-family: inherit;
+  font-family: 'Roboto', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   width: 100%;
   height: 100%;
   background-color: #f8fafc;
@@ -44,7 +48,26 @@ html.dark {
   background-color: #131314;
 }
 
-/* Leaflet Controls - Google Material Dark Theming */
+/* Leaflet Controls - Google Material 3 Theming */
+.leaflet-bar {
+  border: 1px solid #e0e2e6 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+  border-radius: 12px !important;
+  overflow: hidden;
+}
+
+.leaflet-bar a {
+  background-color: #ffffff !important;
+  color: #3c4043 !important;
+  border-bottom: 1px solid #f1f3f4 !important;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.leaflet-bar a:hover {
+  background-color: #f8fafd !important;
+  color: #1a73e8 !important;
+}
+
 .dark .leaflet-bar {
   border: 1px solid #3c4043 !important;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;

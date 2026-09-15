@@ -52,7 +52,7 @@ export const FallbackAlert: React.FC<FallbackAlertProps> = ({
                   id={`btn-apply-suggestion-${sugg.id}`}
                   type="button"
                   onClick={() => onApplySuggestion(sugg)}
-                  className="flex-shrink-0 bg-amber-600 hover:bg-amber-700 dark:bg-amber-600 dark:hover:bg-amber-500 text-white font-medium text-xs px-3 py-1.5 rounded-lg shadow-xs transition-colors flex items-center gap-1 cursor-pointer"
+                  className="flex-shrink-0 bg-amber-600 hover:bg-amber-700 dark:bg-amber-600 dark:hover:bg-amber-500 text-white font-medium text-xs px-3.5 py-1.5 rounded-full shadow-2xs transition-colors flex items-center gap-1 cursor-pointer"
                 >
                   <span>Anwenden</span>
                   <ArrowUpRight className="w-3.5 h-3.5" />

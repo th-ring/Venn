@@ -126,12 +126,12 @@ export const ScheduleControls: React.FC<ScheduleControlsProps> = ({
               <span className="text-xs font-medium text-slate-600 dark:text-[#9aa0a6]">
                 Richtung:
               </span>
-              <div className="flex bg-slate-100 dark:bg-[#131314] p-0.5 rounded-lg">
+              <div className="flex bg-slate-100 dark:bg-[#131314] p-0.5 rounded-xl">
                 <button
                   id="btn-direction-to-work"
                   type="button"
                   onClick={() => onChangeSchedule({ direction: 'to_work' })}
-                  className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer ${
+                  className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
                     schedule.direction === 'to_work'
                       ? 'bg-white dark:bg-[#282a2c] text-blue-700 dark:text-[#8ab4f8] shadow-xs'
                       : 'text-slate-600 dark:text-[#9aa0a6] hover:text-slate-900 dark:hover:text-[#e8eaed]'
@@ -145,7 +145,7 @@ export const ScheduleControls: React.FC<ScheduleControlsProps> = ({
                   id="btn-direction-from-work"
                   type="button"
                   onClick={() => onChangeSchedule({ direction: 'from_work' })}
-                  className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer ${
+                  className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
                     schedule.direction === 'from_work'
                       ? 'bg-white dark:bg-[#282a2c] text-blue-700 dark:text-[#8ab4f8] shadow-xs'
                       : 'text-slate-600 dark:text-[#9aa0a6] hover:text-slate-900 dark:hover:text-[#e8eaed]'
@@ -163,12 +163,12 @@ export const ScheduleControls: React.FC<ScheduleControlsProps> = ({
               <span className="text-xs font-medium text-slate-600 dark:text-[#9aa0a6]">
                 Tag:
               </span>
-              <div className="flex bg-slate-100 dark:bg-[#131314] p-0.5 rounded-lg">
+              <div className="flex bg-slate-100 dark:bg-[#131314] p-0.5 rounded-xl">
                 <button
                   id="btn-day-workday"
                   type="button"
                   onClick={() => onChangeSchedule({ dayOfWeek: 'workday' })}
-                  className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer ${
+                  className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
                     schedule.dayOfWeek === 'workday'
                       ? 'bg-white dark:bg-[#282a2c] text-blue-700 dark:text-[#8ab4f8] shadow-xs'
                       : 'text-slate-600 dark:text-[#9aa0a6] hover:text-slate-900 dark:hover:text-[#e8eaed]'
@@ -181,7 +181,7 @@ export const ScheduleControls: React.FC<ScheduleControlsProps> = ({
                   id="btn-day-weekend"
                   type="button"
                   onClick={() => onChangeSchedule({ dayOfWeek: 'weekend' })}
-                  className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer ${
+                  className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
                     schedule.dayOfWeek === 'weekend'
                       ? 'bg-white dark:bg-[#282a2c] text-blue-700 dark:text-[#8ab4f8] shadow-xs'
                       : 'text-slate-600 dark:text-[#9aa0a6] hover:text-slate-900 dark:hover:text-[#e8eaed]'

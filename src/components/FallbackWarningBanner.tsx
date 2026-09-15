@@ -50,11 +50,11 @@ export const FallbackWarningBanner: React.FC<FallbackWarningBannerProps> = ({
     <aside
       id="fallback-warning-banner"
       aria-label="Hinweis: Eingeschränkte Isochronen-Berechnung"
-      className="absolute top-4 left-1/2 -translate-x-1/2 z-30 w-[94%] max-w-xl bg-white dark:bg-[#282a2c] border border-amber-200/80 dark:border-amber-700/50 text-slate-800 dark:text-[#e3e3e3] rounded-xl shadow-lg p-3.5 sm:p-4 animate-in slide-in-from-top-3 duration-200 pointer-events-auto"
+      className="absolute top-4 left-1/2 -translate-x-1/2 z-30 w-[94%] max-w-xl bg-white dark:bg-[#282a2c] border border-amber-200/80 dark:border-amber-700/50 text-slate-800 dark:text-[#e3e3e3] rounded-2xl shadow-xl p-3.5 sm:p-4 animate-in slide-in-from-top-3 duration-200 pointer-events-auto"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-start gap-3 min-w-0">
-          <div className="p-1.5 bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 rounded-lg shrink-0 mt-0.5 border border-amber-200/60 dark:border-amber-800/40">
+          <div className="p-1.5 bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 rounded-xl shrink-0 mt-0.5 border border-amber-200/60 dark:border-amber-800/40">
             <AlertOctagon className="w-4 h-4 stroke-2" />
           </div>
 
@@ -63,7 +63,7 @@ export const FallbackWarningBanner: React.FC<FallbackWarningBannerProps> = ({
               <h3 className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-white tracking-tight">
                 Eingeschränkte Isochronen-Berechnung
               </h3>
-              <span className="text-[10px] font-medium bg-amber-100/70 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 px-1.5 py-0.5 rounded border border-amber-200/80 dark:border-amber-800/60">
+              <span className="text-[10px] font-medium bg-amber-100/70 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 px-2 py-0.5 rounded-full border border-amber-200/80 dark:border-amber-800/60">
                 Offline-Modell
               </span>
             </div>
@@ -74,7 +74,7 @@ export const FallbackWarningBanner: React.FC<FallbackWarningBannerProps> = ({
             </p>
 
             {/* Error details list */}
-            <div className="mt-2.5 space-y-1.5 bg-slate-50 dark:bg-[#1e1f20] rounded-lg p-2 border border-slate-200/70 dark:border-[#3c4043] text-xs">
+            <div className="mt-2.5 space-y-1.5 bg-slate-50 dark:bg-[#1e1f20] rounded-xl p-2.5 border border-slate-200/70 dark:border-[#3c4043] text-xs">
               {alerts.map((alert, idx) => {
                 const ModeIcon = MODE_ICONS[alert.mode] || Car;
                 return (
@@ -94,7 +94,7 @@ export const FallbackWarningBanner: React.FC<FallbackWarningBannerProps> = ({
               <button
                 type="button"
                 onClick={() => onOpenSettings('keys')}
-                className="bg-white dark:bg-[#202124] hover:bg-slate-50 dark:hover:bg-[#303134] text-slate-700 dark:text-[#e3e3e3] font-medium text-xs px-3 py-1.5 rounded-lg border border-slate-300 dark:border-[#5f6368] shadow-2xs transition-colors flex items-center gap-1.5 cursor-pointer"
+                className="bg-white dark:bg-[#202124] hover:bg-slate-50 dark:hover:bg-[#303134] text-slate-700 dark:text-[#e3e3e3] font-medium text-xs px-3.5 py-1.5 rounded-full border border-slate-300 dark:border-[#5f6368] shadow-2xs transition-colors flex items-center gap-1.5 cursor-pointer"
               >
                 <Settings className="w-3.5 h-3.5 text-slate-500 dark:text-[#9aa0a6]" />
                 <span>API-Keys konfigurieren</span>
@@ -104,7 +104,7 @@ export const FallbackWarningBanner: React.FC<FallbackWarningBannerProps> = ({
                 type="button"
                 onClick={handleRetryClick}
                 disabled={isRetrying}
-                className="bg-[#1a73e8] hover:bg-[#1557b0] dark:bg-[#8ab4f8] dark:hover:bg-[#aecbfa] text-white dark:text-[#202124] font-medium text-xs px-3 py-1.5 rounded-lg shadow-2xs transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                className="bg-[#1a73e8] hover:bg-[#1557b0] dark:bg-[#8ab4f8] dark:hover:bg-[#aecbfa] text-white dark:text-[#202124] font-medium text-xs px-3.5 py-1.5 rounded-full shadow-2xs transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${isRetrying ? 'animate-spin' : ''}`} />
                 <span>{isRetrying ? 'Wird berechnet...' : 'Erneut versuchen'}</span>
