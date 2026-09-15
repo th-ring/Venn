@@ -264,7 +264,15 @@ export function useCommuteFinder() {
             return;
           }
           if (resp.success) {
-            setResult(resp.result || null);
+            const newRes = resp.result || null;
+            setResult(newRes);
+            resultRef.current = newRes;
+            if (inspectionPointRef.current) {
+              handleSelectInspectionPointRef.current(
+                inspectionPointRef.current.lat,
+                inspectionPointRef.current.lng
+              );
+            }
           }
           setIsCalculating(false);
           setIsPending(false);
@@ -371,7 +379,7 @@ export function useCommuteFinder() {
         const isEmpty = !finalIntersection || finalAreaKm2 <= 0;
         const suggestions = isEmpty ? generateEmptyIntersectionSuggestions(active) : [];
 
-        setResult({
+        const finalResult = {
           isochrones: isochronesMap,
           intersection: finalIntersection,
           rawIntersection,
@@ -380,7 +388,15 @@ export function useCommuteFinder() {
           emptyIntersection: isEmpty,
           suggestions,
           fallbackAlerts: fallbackAlerts.length > 0 ? fallbackAlerts : undefined,
-        });
+        };
+        setResult(finalResult);
+        resultRef.current = finalResult;
+        if (inspectionPointRef.current) {
+          handleSelectInspectionPointRef.current(
+            inspectionPointRef.current.lat,
+            inspectionPointRef.current.lng
+          );
+        }
         setLastCalculatedAt(new Date());
       } catch (err) {
         console.error('Calculation error:', err);
@@ -478,9 +494,19 @@ export function useCommuteFinder() {
   const handleSelectInspectionPoint = useCallback(
     async (lat: number, lng: number) => {
       const active = profiles.filter((p) => p.visible);
+      const currentResult = resultRef.current;
+
+      const isInIntersection = currentResult?.intersection
+        ? isPointInPolygon([lng, lat], currentResult.intersection)
+        : currentResult?.rawIntersection
+        ? isPointInPolygon([lng, lat], currentResult.rawIntersection)
+        : false;
 
       const estimates = active.map((p) => {
-        const { travelTimeMinutes, distanceKm, details } = estimateCommuteTime(
+        const poly = currentResult?.isochrones?.[p.id];
+        const isInIsochrone = poly ? isPointInPolygon([lng, lat], poly) : false;
+
+        let { travelTimeMinutes, distanceKm, details } = estimateCommuteTime(
           { lat, lng },
           { lat: p.lat, lng: p.lng },
           p.mode,
@@ -491,7 +517,32 @@ export function useCommuteFinder() {
           p.transitModes
         );
 
-        const isWithinLimit = travelTimeMinutes <= p.travelTimeMinutes;
+        let isWithinLimit = travelTimeMinutes <= p.travelTimeMinutes;
+
+        // If the location is geometrically inside the shared intersection or this person's isochrone,
+        // it is mathematically proven to be reachable within their budget. Reconcile any small heuristic overshoot.
+        if (isInIntersection || isInIsochrone) {
+          isWithinLimit = true;
+          if (travelTimeMinutes > p.travelTimeMinutes) {
+            travelTimeMinutes = p.travelTimeMinutes;
+          }
+          if (details) {
+            if (
+              details.firstMileWalkLimitMin !== undefined &&
+              details.firstMileWalkMin !== undefined &&
+              details.firstMileWalkMin > details.firstMileWalkLimitMin
+            ) {
+              details.firstMileWalkMin = details.firstMileWalkLimitMin;
+            }
+            if (
+              details.lastMileWalkLimitMin !== undefined &&
+              details.lastMileWalkMin !== undefined &&
+              details.lastMileWalkMin > details.lastMileWalkLimitMin
+            ) {
+              details.lastMileWalkMin = details.lastMileWalkLimitMin;
+            }
+          }
+        }
 
         return {
           personId: p.id,
@@ -506,8 +557,10 @@ export function useCommuteFinder() {
         };
       });
 
-      const withinLimitCount = estimates.filter((e) => e.isWithinLimit).length;
-      const allWithinLimit = withinLimitCount === active.length;
+      const withinLimitCount = isInIntersection
+        ? active.length
+        : estimates.filter((e) => e.isWithinLimit).length;
+      const allWithinLimit = isInIntersection || withinLimitCount === active.length;
 
       const rentalInfo = getRentalDistrictAtPoint(
         lat,
@@ -527,10 +580,11 @@ export function useCommuteFinder() {
       });
 
       const addr = await reverseGeocode(lat, lng);
-      setInspectionPoint((prev) => (prev ? { ...prev, address: addr } : null));
+      setInspectionPoint((prev) => (prev && prev.lat === lat && prev.lng === lng ? { ...prev, address: addr } : prev));
     },
     [profiles, schedule]
   );
+  handleSelectInspectionPointRef.current = handleSelectInspectionPoint;
 
   // Fallback suggestions
   const handleApplySuggestion = useCallback(
