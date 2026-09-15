@@ -9,6 +9,7 @@ import {
   CommuteRouteDetails,
   DEFAULT_TRANSIT_SUBMODES,
   TransitSubMode,
+  DEFAULT_ROUTING_PARAMETERS,
 } from '../types';
 import { generateMvvTransitIsochrone, calculateReachableStations, findShortestTransitTrip, getTransitRegion } from './mvvMatrixService';
 import { fillPolygonHoles } from './geometry';
@@ -28,6 +29,13 @@ interface IsochroneCacheKey {
   fidelity?: string;
   fillHoles?: boolean;
   transitModes?: string;
+  walkingSpeedKmh?: number;
+  urbanDetourFactor?: number;
+  minTransferBufferMin?: number;
+  transferRiskBufferMin?: number;
+  enableHeadwayPenalty?: boolean;
+  cyclingSpeedKmh?: number;
+  drivingParkingBufferMin?: number;
 }
 
 const isochroneCache = new Map<string, GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon>>();
@@ -38,7 +46,7 @@ export function clearIsochroneCache(): void {
 
 function makeCacheKey(k: IsochroneCacheKey): string {
   const currentRegion = getTransitRegion();
-  return `${currentRegion.id}_${currentRegion.version}_${k.lat.toFixed(4)}_${k.lng.toFixed(4)}_${k.time}_${k.mode}_${k.direction}_${k.transfers ?? 'any'}_wTo:${k.walkToStation ?? 5}_wFrom:${k.walkFromStation ?? 5}_${k.transferWait ?? 'any'}_lt:${k.liveTraffic ? 1 : 0}_sm:${k.smoothing ? 1 : 0}_fi:${k.fidelity ?? 'auto'}_fh:${k.fillHoles !== false ? 1 : 0}_tm:${k.transitModes ?? 'all'}`;
+  return `${currentRegion.id}_${currentRegion.version}_${k.lat.toFixed(4)}_${k.lng.toFixed(4)}_${k.time}_${k.mode}_${k.direction}_${k.transfers ?? 'any'}_wTo:${k.walkToStation ?? 5}_wFrom:${k.walkFromStation ?? 5}_${k.transferWait ?? 'any'}_lt:${k.liveTraffic ? 1 : 0}_sm:${k.smoothing ? 1 : 0}_fi:${k.fidelity ?? 'auto'}_fh:${k.fillHoles !== false ? 1 : 0}_tm:${k.transitModes ?? 'all'}_wsk:${k.walkingSpeedKmh ?? 'd'}_udf:${k.urbanDetourFactor ?? 'd'}_mtb:${k.minTransferBufferMin ?? 'd'}_trb:${k.transferRiskBufferMin ?? 'd'}_ehp:${k.enableHeadwayPenalty !== false ? 1 : 0}_csk:${k.cyclingSpeedKmh ?? 'd'}_dpb:${k.drivingParkingBufferMin ?? 'd'}`;
 }
 
 export type IsochroneProvider = 'calibrated' | 'google' | 'ors';
@@ -496,6 +504,13 @@ export async function generateIsochrone(
     fidelity: opts.fidelity,
     fillHoles: opts.fillHoles !== false,
     transitModes: transitModesStr,
+    walkingSpeedKmh: opts.walkingSpeedKmh,
+    urbanDetourFactor: opts.urbanDetourFactor,
+    minTransferBufferMin: opts.minTransferBufferMin,
+    transferRiskBufferMin: opts.transferRiskBufferMin,
+    enableHeadwayPenalty: opts.enableHeadwayPenalty,
+    cyclingSpeedKmh: opts.cyclingSpeedKmh,
+    drivingParkingBufferMin: opts.drivingParkingBufferMin,
   }) + `_${provider}_${googleKey ? 'g' : ''}_${orsKey ? 'o' : ''}`;
 
   if (isochroneCache.has(cacheKey)) {
@@ -505,7 +520,7 @@ export async function generateIsochrone(
   // 1. For Transit: Use official MVV/MVG Haltestellen- & Fahrzeitmatrix
   if (profile.mode === 'transit') {
     try {
-      const mvvPolygon = generateMvvTransitIsochrone(profile, effectiveTransitModes);
+      const mvvPolygon = generateMvvTransitIsochrone(profile, effectiveTransitModes, opts);
       if (mvvPolygon && mvvPolygon.geometry) {
         mvvPolygon.properties = {
           ...mvvPolygon.properties,
@@ -666,30 +681,31 @@ function generateCalibratedIsochrone(
 
   switch (mode) {
     case 'walking': {
-      // 4.0 km/h = 0.067 km/min
-      const speedKmPerMin = 0.067;
-      detourFactor = 1.35;
+      const walkSpeedKmh = opts.walkingSpeedKmh ?? DEFAULT_ROUTING_PARAMETERS.walkingSpeedKmh;
+      const speedKmPerMin = walkSpeedKmh / 60;
+      detourFactor = opts.urbanDetourFactor ?? DEFAULT_ROUTING_PARAMETERS.urbanDetourFactor;
       baseRadiusKm = (travelTimeMinutes * speedKmPerMin) / detourFactor;
       break;
     }
     case 'cycling': {
-      // 16.5 km/h = 0.275 km/min
-      const speedKmPerMin = 0.275;
+      const cycleSpeedKmh = opts.cyclingSpeedKmh ?? DEFAULT_ROUTING_PARAMETERS.cyclingSpeedKmh;
+      const speedKmPerMin = cycleSpeedKmh / 60;
       detourFactor = 1.25;
       baseRadiusKm = (travelTimeMinutes * speedKmPerMin) / detourFactor;
       break;
     }
     case 'driving': {
-      // Base urban 38 km/h = 0.63 km/min, highway reach expands with longer times
+      const parkingBuffer = opts.drivingParkingBufferMin ?? DEFAULT_ROUTING_PARAMETERS.drivingParkingBufferMin;
+      const effectiveDrivingTime = Math.max(1, travelTimeMinutes - parkingBuffer);
       const trafficMultiplier = isRushHour ? 0.74 : (opts.liveTraffic ? 0.88 : 1.0);
       let effectiveSpeedKmh = 38;
-      if (travelTimeMinutes > 20) {
+      if (effectiveDrivingTime > 20) {
         // Longer travel time taps into autobahns/expressways (speeds up to 80 km/h)
-        const highwayPortion = Math.min((travelTimeMinutes - 20) / 40, 1.0);
+        const highwayPortion = Math.min((effectiveDrivingTime - 20) / 40, 1.0);
         effectiveSpeedKmh = 38 + highwayPortion * 42; // Up to 80 km/h
       }
       detourFactor = 1.28;
-      baseRadiusKm = ((travelTimeMinutes / 60) * effectiveSpeedKmh * trafficMultiplier) / detourFactor;
+      baseRadiusKm = ((effectiveDrivingTime / 60) * effectiveSpeedKmh * trafficMultiplier) / detourFactor;
       break;
     }
     case 'transit': {
@@ -697,9 +713,12 @@ function generateCalibratedIsochrone(
       const walkTime = Math.min(maxWalkToStationMin, travelTimeMinutes * 0.35);
       const remainingTime = Math.max(0, travelTimeMinutes - walkTime);
 
-      // Deduct transfer penalties using the configured maxTransferWaitMin buffer per transfer
+      // Deduct transfer penalties using configured buffers and headway toggle
       const estimatedTransfers = Math.min(maxTransfers, Math.floor(travelTimeMinutes / 25));
-      const transferPenaltyPerChange = Math.min(maxTransferWaitMin, 12);
+      const minTransfer = opts.minTransferBufferMin ?? DEFAULT_ROUTING_PARAMETERS.minTransferBufferMin;
+      const riskBuffer = opts.transferRiskBufferMin ?? DEFAULT_ROUTING_PARAMETERS.transferRiskBufferMin;
+      const headwayAdd = opts.enableHeadwayPenalty !== false ? 2.5 : 0;
+      const transferPenaltyPerChange = Math.min(maxTransferWaitMin, minTransfer + riskBuffer + headwayAdd);
       const effectiveRideTime = Math.max(4, remainingTime - estimatedTransfers * transferPenaltyPerChange);
 
       // Composite transit speed (U/S-Bahn lines vs. bus grid)
@@ -800,30 +819,34 @@ export function estimateCommuteTime(
 
   switch (mode) {
     case 'walking': {
-      roadDistanceKm = straightDistKm * 1.35;
-      travelTimeMin = (roadDistanceKm / 4.0) * 60; // 4.0 km/h = 15 min per km
+      const walkSpeedKmh = schedule.options?.walkingSpeedKmh ?? DEFAULT_ROUTING_PARAMETERS.walkingSpeedKmh;
+      const detour = schedule.options?.urbanDetourFactor ?? DEFAULT_ROUTING_PARAMETERS.urbanDetourFactor;
+      roadDistanceKm = straightDistKm * detour;
+      travelTimeMin = (roadDistanceKm / walkSpeedKmh) * 60;
       details = {
         summary: `Zu Fuß (${roadDistanceKm.toFixed(1)} km)`,
         steps: [
-          `ca. ${Math.round(travelTimeMin)} Min Fußweg bei ~4.0 km/h`,
-          `Fußgängerpfad & Straßenquerungen (Detour 1.35, ${roadDistanceKm.toFixed(1)} km)`,
+          `ca. ${Math.round(travelTimeMin)} Min Fußweg bei ~${walkSpeedKmh.toFixed(1)} km/h`,
+          `Fußgängerpfad & Straßenquerungen (Detour ${detour.toFixed(2)}, ${roadDistanceKm.toFixed(1)} km)`,
         ],
       };
       break;
     }
     case 'cycling': {
+      const cycleSpeedKmh = schedule.options?.cyclingSpeedKmh ?? DEFAULT_ROUTING_PARAMETERS.cyclingSpeedKmh;
       roadDistanceKm = straightDistKm * 1.25;
-      travelTimeMin = roadDistanceKm * 3.65;
+      travelTimeMin = (roadDistanceKm / cycleSpeedKmh) * 60;
       details = {
         summary: `Fahrrad / E-Bike (${roadDistanceKm.toFixed(1)} km)`,
         steps: [
-          `ca. ${Math.round(travelTimeMin)} Min bei ~16.5 km/h`,
+          `ca. ${Math.round(travelTimeMin)} Min bei ~${cycleSpeedKmh.toFixed(1)} km/h`,
           `Befestigte Radwege & Nebenstraßen (${roadDistanceKm.toFixed(1)} km)`,
         ],
       };
       break;
     }
     case 'driving': {
+      const parkingBuffer = schedule.options?.drivingParkingBufferMin ?? DEFAULT_ROUTING_PARAMETERS.drivingParkingBufferMin;
       roadDistanceKm = straightDistKm * 1.28;
       let speedKmh = 38;
       if (roadDistanceKm > 6) {
@@ -833,26 +856,28 @@ export function estimateCommuteTime(
         speedKmh *= 0.78;
       }
       const driveTimeOnly = (roadDistanceKm / speedKmh) * 60;
-      travelTimeMin = driveTimeOnly + 3; // +3 min for parking/signals
+      travelTimeMin = driveTimeOnly + parkingBuffer;
 
       details = {
         summary: `Pkw über Straßennetz (${roadDistanceKm.toFixed(1)} km)`,
         steps: [
           `ca. ${Math.round(driveTimeOnly)} Min reine Fahrzeit (${roadDistanceKm.toFixed(1)} km)`,
           isRushHour ? `Berufsverkehr-Verzögerung einberechnet` : `Normaler Verkehrsfluss`,
-          `+3 Min Zeitpuffer für Parkplatzsuche & Ampelschaltungen`,
+          `+${parkingBuffer.toFixed(0)} Min Zeitpuffer für Parkplatzsuche & Ampelschaltungen`,
         ],
       };
       break;
     }
     case 'transit': {
       roadDistanceKm = straightDistKm * 1.22;
+      const walkSpeedKmh = schedule.options?.walkingSpeedKmh ?? DEFAULT_ROUTING_PARAMETERS.walkingSpeedKmh;
+      const detour = schedule.options?.urbanDetourFactor ?? DEFAULT_ROUTING_PARAMETERS.urbanDetourFactor;
       // Direct walking if very close (< 800m)
       if (straightDistKm <= 0.8) {
-        travelTimeMin = (straightDistKm / 0.067) * 1.35;
+        travelTimeMin = ((straightDistKm * detour) / walkSpeedKmh) * 60;
         details = {
           summary: `Fußweg (< 800m)`,
-          steps: [`Direkter Fußweg (${Math.round(straightDistKm * 1000)} m, ca. ${Math.round(travelTimeMin)} Min bei ~4 km/h)`],
+          steps: [`Direkter Fußweg (${Math.round(straightDistKm * 1000)} m, ca. ${Math.round(travelTimeMin)} Min bei ~${walkSpeedKmh.toFixed(1)} km/h)`],
         };
         break;
       }
@@ -881,7 +906,8 @@ export function estimateCommuteTime(
             ? transitModes
             : schedule.options?.transitModes && schedule.options.transitModes.length > 0
             ? schedule.options.transitModes
-            : DEFAULT_TRANSIT_SUBMODES
+            : DEFAULT_TRANSIT_SUBMODES,
+          schedule.options
         );
 
         if (directTrip && directTrip.routeFound) {

@@ -15,6 +15,7 @@ interface IsochroneEngineTabProps {
   onToggleOption: (key: 'liveTraffic' | 'enableSmoothing' | 'fillHoles') => void;
   showOnlyIntersection?: boolean;
   onToggleOnlyIntersection?: () => void;
+  onOpenRoutingTab?: () => void;
 }
 
 export const IsochroneEngineTab: React.FC<IsochroneEngineTabProps> = ({
@@ -25,6 +26,7 @@ export const IsochroneEngineTab: React.FC<IsochroneEngineTabProps> = ({
   onToggleOption,
   showOnlyIntersection,
   onToggleOnlyIntersection,
+  onOpenRoutingTab,
 }) => {
   return (
     <div className="space-y-3">
@@ -169,6 +171,27 @@ export const IsochroneEngineTab: React.FC<IsochroneEngineTabProps> = ({
         <p className="text-[11px] text-slate-600 dark:text-[#9aa0a6] mt-1 pl-5 leading-relaxed">
           OpenStreetMap-basierte Isochronen für Auto, Fahrrad und Fußgänger (kostenloser API-Key erforderlich).
         </p>
+      </div>
+
+      {/* Quick link to Routing Parameters */}
+      <div className="flex items-center justify-between p-3 bg-blue-50/60 dark:bg-blue-950/30 border border-blue-200/70 dark:border-blue-800/60 rounded-xl">
+        <div className="text-xs text-slate-700 dark:text-[#c4c7c5] pr-2">
+          <span className="font-semibold text-slate-900 dark:text-[#e3e3e3] block">
+            Geschwindigkeiten & Puffer anpassen?
+          </span>
+          <span className="text-[11px] text-slate-500 dark:text-[#9aa0a6] mt-0.5 block">
+            Gehgeschwindigkeit, Detour-Faktor, Umsteigepuffer & Taktzeit-Malus konfigurieren.
+          </span>
+        </div>
+        {onOpenRoutingTab && (
+          <button
+            type="button"
+            onClick={onOpenRoutingTab}
+            className="text-xs font-medium text-blue-600 dark:text-[#8ab4f8] hover:underline px-2.5 py-1.5 rounded-lg hover:bg-blue-100/50 dark:hover:bg-blue-900/30 shrink-0 cursor-pointer"
+          >
+            Zu den Routing-Parametern →
+          </button>
+        )}
       </div>
 
       {/* Berechnungsparameter: Detailgrad, Live-Verkehr & Glättung */}

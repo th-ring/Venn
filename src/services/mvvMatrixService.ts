@@ -596,7 +596,8 @@ export function findShortestTransitTrip(
   origin: { lat: number; lng: number },
   destination: { lat: number; lng: number },
   profile: PersonProfile,
-  transitModes?: TransitSubMode[]
+  transitModes?: TransitSubMode[],
+  options?: IsochroneOptions
 ): TransitTripResult | null {
   const allowedModes = new Set<TransitSubMode>(
     transitModes && transitModes.length > 0
@@ -605,6 +606,13 @@ export function findShortestTransitTrip(
       ? profile.transitModes
       : DEFAULT_TRANSIT_SUBMODES
   );
+
+  const walkingSpeedKmh = options?.walkingSpeedKmh ?? DEFAULT_ROUTING_PARAMETERS.walkingSpeedKmh;
+  const detourFactor = options?.urbanDetourFactor ?? DEFAULT_ROUTING_PARAMETERS.urbanDetourFactor;
+  const walkSpeedKmPerMin = walkingSpeedKmh / 60;
+  const minTransferBuffer = options?.minTransferBufferMin ?? DEFAULT_ROUTING_PARAMETERS.minTransferBufferMin;
+  const transferRiskBuffer = options?.transferRiskBufferMin ?? DEFAULT_ROUTING_PARAMETERS.transferRiskBufferMin;
+  const enableHeadway = options?.enableHeadwayPenalty ?? DEFAULT_ROUTING_PARAMETERS.enableHeadwayPenalty;
 
   const dataset = getTransitRegion();
   const originPoint = turf.point([origin.lng, origin.lat]);
@@ -617,7 +625,7 @@ export function findShortestTransitTrip(
 
   // Direct walk shortcut if very close
   if (directDistanceKm <= 0.8) {
-    const walkMin = Math.round((directDistanceKm / 0.067) * 1.35);
+    const walkMin = Math.round((directDistanceKm / walkSpeedKmPerMin) * detourFactor);
     return {
       travelTimeMinutes: walkMin,
       routeFound: true,
@@ -630,12 +638,9 @@ export function findShortestTransitTrip(
       lastMileWalkMin: 0,
       lastMileStationName: 'Ziel',
       lastMileWalkLimitMin: maxWalkFromStation,
-      steps: [`Direkter Fußweg (${Math.round(directDistanceKm * 1000)} m, ca. ${walkMin} Min bei ~4 km/h)`],
+      steps: [`Direkter Fußweg (${Math.round(directDistanceKm * 1000)} m, ca. ${walkMin} Min bei ~${walkingSpeedKmh.toFixed(1)} km/h)`],
     };
   }
-
-  const walkSpeedKmPerMin = 0.067;
-  const detourFactor = 1.35;
 
   // Find candidate entry stations near origin (Wohnort ➔ Station)
   const entryStations: { station: TransitStation; walkTime: number }[] = [];
@@ -718,7 +723,7 @@ export function findShortestTransitTrip(
   const bestGTime = new Map<string, number>();
 
   for (const entry of entryStations) {
-    const initialWait = getInitialDepartureWaitMinutes(entry.station, allowedModes);
+    const initialWait = getInitialDepartureWaitMinutes(entry.station, allowedModes, enableHeadway);
     const gTime = entry.walkTime + initialWait;
     const distToTargetKm = turf.distance(turf.point([entry.station.lng, entry.station.lat]), destPoint, {
       units: 'kilometers',
@@ -811,7 +816,14 @@ export function findShortestTransitTrip(
       }
 
       const transferPenalty = isLineChange
-        ? calculateTransferPenalty(edge.type, edge.lines, profile.maxTransferWaitMin ?? 5)
+        ? calculateTransferPenalty(
+            edge.type,
+            edge.lines,
+            profile.maxTransferWaitMin ?? 5,
+            minTransferBuffer,
+            transferRiskBuffer,
+            enableHeadway
+          )
         : 0;
       const nextGTime = curr.gTime + edge.minutes + transferPenalty;
 
@@ -853,7 +865,8 @@ export function findShortestTransitTrip(
  */
 export function generateMvvTransitIsochrone(
   profile: PersonProfile,
-  transitModes?: TransitSubMode[]
+  transitModes?: TransitSubMode[],
+  options?: IsochroneOptions
 ): GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon> {
   const {
     lat,
@@ -872,14 +885,15 @@ export function generateMvvTransitIsochrone(
       : DEFAULT_TRANSIT_SUBMODES
   );
 
-  const walkSpeedKmPerMin = 0.067; // ~4.0 km/h (calibrated for real urban pedestrian conditions)
-  const detourFactor = 1.35; // Urban block & pedestrian crossing detour factor
+  const walkingSpeedKmh = options?.walkingSpeedKmh ?? DEFAULT_ROUTING_PARAMETERS.walkingSpeedKmh;
+  const detourFactor = options?.urbanDetourFactor ?? DEFAULT_ROUTING_PARAMETERS.urbanDetourFactor;
+  const walkSpeedKmPerMin = walkingSpeedKmh / 60;
 
   const polygonsToUnion: GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon>[] = [];
 
   // 1. Direct Walking Polygon from origin (workplace) without transit
   const directWalkTime = Math.min(travelTimeMinutes, maxWalkFromStationMin);
-  const directWalkRadiusKm = Math.max(0.25, (directWalkTime * walkSpeedKmPerMin) / detourFactor);
+  const directWalkRadiusKm = Math.max(0.20, (directWalkTime * walkSpeedKmPerMin) / detourFactor);
   const originWalkCircle = turf.circle(origin, directWalkRadiusKm, {
     steps: 24,
     units: 'kilometers',
@@ -887,7 +901,7 @@ export function generateMvvTransitIsochrone(
   polygonsToUnion.push(originWalkCircle);
 
   // 2. Solve Reachable Stations via Transit matrix
-  const reachableStations = calculateReachableStations(profile, transitModes);
+  const reachableStations = calculateReachableStations(profile, transitModes, options);
 
   for (const item of reachableStations) {
     const stPoint = turf.point([item.station.lng, item.station.lat]);

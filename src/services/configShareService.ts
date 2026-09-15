@@ -57,6 +57,13 @@ interface CompactPayloadV2 {
     hm?: any;
     ro?: any;
     tsm?: any[];
+    wsk?: number;
+    udf?: number;
+    mtb?: number;
+    trb?: number;
+    ehp?: boolean;
+    csk?: number;
+    dpb?: number;
   };
   b?: BasemapProvider;
   lo?: LayerId[];
@@ -101,6 +108,13 @@ function toCompactPayload(config: FullShareConfig): CompactPayloadV2 {
       hm: config.schedule.options?.heatmap,
       ro: config.schedule.options?.rentalOverlay,
       tsm: config.schedule.options?.transitModes,
+      wsk: config.schedule.options?.walkingSpeedKmh,
+      udf: config.schedule.options?.urbanDetourFactor,
+      mtb: config.schedule.options?.minTransferBufferMin,
+      trb: config.schedule.options?.transferRiskBufferMin,
+      ehp: config.schedule.options?.enableHeadwayPenalty,
+      csk: config.schedule.options?.cyclingSpeedKmh,
+      dpb: config.schedule.options?.drivingParkingBufferMin,
     },
     b: config.basemap,
     lo: config.layerOrder,
@@ -154,6 +168,13 @@ function fromCompactPayload(parsed: any): FullShareConfig | null {
       heatmap: s.hm,
       rentalOverlay: s.ro,
       transitModes: s.tsm,
+      walkingSpeedKmh: s.wsk,
+      urbanDetourFactor: s.udf,
+      minTransferBufferMin: s.mtb,
+      transferRiskBufferMin: s.trb,
+      enableHeadwayPenalty: s.ehp,
+      cyclingSpeedKmh: s.csk,
+      drivingParkingBufferMin: s.dpb,
     },
   };
 

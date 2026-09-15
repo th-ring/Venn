@@ -8,6 +8,7 @@ import {
   TransitSubMode,
   DEFAULT_TRANSIT_SUBMODES,
   HeatmapSettings,
+  IsochroneOptions,
 } from '../../types';
 import {
   IsochroneProvider,
@@ -38,6 +39,7 @@ import {
 import { AppearanceTab } from './tabs/AppearanceTab';
 import { BasemapTab } from './tabs/BasemapTab';
 import { IsochroneEngineTab } from './tabs/IsochroneEngineTab';
+import { RoutingParametersTab } from './tabs/RoutingParametersTab';
 import { DataPackagesTab } from './tabs/DataPackagesTab';
 import { ApiKeysTab } from './tabs/ApiKeysTab';
 import { PriorityHeatmapTab } from './tabs/PriorityHeatmapTab';
@@ -48,6 +50,7 @@ import {
   Layers,
   Map as MapIcon,
   Globe,
+  SlidersHorizontal,
   Train,
   Key,
   Flame,
@@ -61,6 +64,7 @@ export type SettingsTabId =
   | 'appearance'
   | 'basemap'
   | 'isochrones'
+  | 'routing'
   | 'mvv'
   | 'keys'
   | 'heatmap'
@@ -74,7 +78,8 @@ const SETTINGS_MENU: Array<{
 }> = [
   { id: 'appearance', label: 'Erscheinungsbild', subLabel: 'Design & Theme', icon: Palette },
   { id: 'basemap', label: 'Kartendienst', subLabel: 'OSM, MemoMaps, CARTO & Google', icon: MapIcon },
-  { id: 'isochrones', label: 'Isochronen', subLabel: 'Berechnung & Parameter', icon: Globe },
+  { id: 'isochrones', label: 'Isochronen', subLabel: 'Engine & Detailgrad', icon: Globe },
+  { id: 'routing', label: 'Routing & Mobilität', subLabel: 'Geschwindigkeit, Detour & Puffer', icon: SlidersHorizontal },
   { id: 'mvv', label: 'Datenpakete & Regionen', subLabel: 'Lokale Verkehrsdaten', icon: Layers },
   { id: 'keys', label: 'API-Schlüssel', subLabel: 'Google & ORS Zugangsdaten', icon: Key },
   { id: 'heatmap', label: 'Prioritäts-Heatmap', subLabel: 'Infrastruktur-Puffer', icon: Flame },
@@ -281,6 +286,15 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     });
   };
 
+  const handleUpdateOptions = (updated: Partial<IsochroneOptions>) => {
+    onChangeSchedule({
+      options: {
+        ...options,
+        ...updated,
+      },
+    });
+  };
+
   const heatmap: HeatmapSettings = options.heatmap ?? {
     mode: 'none',
     selectedItems: [],
@@ -415,6 +429,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   onToggleOption={handleToggleOption}
                   showOnlyIntersection={showOnlyIntersection}
                   onToggleOnlyIntersection={onToggleOnlyIntersection}
+                  onOpenRoutingTab={() => setModalTab('routing')}
+                />
+              )}
+
+              {modalTab === 'routing' && (
+                <RoutingParametersTab
+                  options={options}
+                  onUpdateOptions={handleUpdateOptions}
                 />
               )}
 
