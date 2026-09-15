@@ -175,41 +175,44 @@ export const Sidebar: React.FC<SidebarProps> = ({
           width: !isMobileScreen ? `${sidebarWidth}px` : '100%',
         }}
       >
-        {/* App Header */}
-        <div className="p-4 bg-white dark:bg-[#1e1f20] border-b border-slate-200 dark:border-[#3c4043] flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl overflow-hidden shadow-md shadow-cyan-500/20 flex items-center justify-center shrink-0">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 320" className="w-full h-full">
+        {/* App Header (Google M3 App Bar) */}
+        <div className="h-14 px-4 bg-white dark:bg-[#1e1f20] border-b border-slate-200 dark:border-[#3c4043] flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-3">
+            {/* Standalone Brand Vector Mark (No glowing box, no card frame) */}
+            <div className="w-10 h-7 flex items-center justify-center shrink-0">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 44 28" className="w-full h-full" fill="none">
                 <defs>
                   <clipPath id="sb-venn-clip">
-                    <circle cx="120" cy="160" r="88" />
+                    <circle cx="16" cy="14" r="12" />
                   </clipPath>
                 </defs>
-                <circle cx="120" cy="160" r="88" fill="#38BDF8" />
-                <circle cx="200" cy="160" r="88" fill="#34D399" />
-                <circle cx="200" cy="160" r="88" clipPath="url(#sb-venn-clip)" fill="#FFFFFF" />
-                <g transform="translate(126.4, 126.4) scale(2.8)">
-                  <path fill="#020617" d="M10 19v-5h4v5c0 .55.45 1 1 1h3c.55 0 1-.45 1-1v-7h1.7c.46 0 .68-.57.33-.87L12.67 3.6c-.38-.34-.96-.34-1.34 0l-8.36 7.53c-.35.3-.13.87.33.87H5v7c0 .55.45 1 1 1h3c.55 0 1-.45 1-1z" />
+                {/* Left Circle: Google Blue */}
+                <circle cx="16" cy="14" r="12" fill="#4285F4" className="dark:fill-[#4285F4] fill-[#1A73E8]" />
+                {/* Right Circle: Google Green */}
+                <circle cx="28" cy="14" r="12" fill="#34A853" className="dark:fill-[#34A853] fill-[#1E8E3E]" />
+                {/* Overlap Intersection: Teal Lens */}
+                <circle cx="28" cy="14" r="12" clipPath="url(#sb-venn-clip)" fill="#00897B" className="dark:fill-[#00897B] fill-[#00796B]" />
+                {/* Home Silhouette: Crisp White */}
+                <g transform="translate(15.76, 7.76) scale(0.52)">
+                  <path
+                    fill="#FFFFFF"
+                    d="M10 19v-5h4v5c0 .55.45 1 1 1h3c.55 0 1-.45 1-1v-7h1.7c.46 0 .68-.57.33-.87L12.67 3.6c-.38-.34-.96-.34-1.34 0l-8.36 7.53c-.35.3-.13.87.33.87H5v7c0 .55.45 1 1 1h3c.55 0 1-.45 1-1z"
+                  />
                 </g>
               </svg>
             </div>
-            <div>
-              <h1 className="text-sm font-bold text-slate-900 dark:text-[#e3e3e3] leading-tight">
-                Venn
-              </h1>
-              <p className="text-[11px] text-slate-500 dark:text-[#9aa0a6]">
-                Finding common ground
-              </p>
-            </div>
+            <span className="text-[18px] font-medium tracking-tight text-slate-900 dark:text-[#e8eaed]">
+              Venn
+            </span>
           </div>
 
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-0.5">
             {/* Quick Theme Toggle Button */}
             <button
               id="btn-toggle-theme-quick"
               type="button"
               onClick={toggleTheme}
-              className="p-2 rounded-xl text-slate-600 dark:text-[#9aa0a6] hover:text-blue-600 dark:hover:text-[#8ab4f8] hover:bg-blue-50 dark:hover:bg-[#282a2c] transition-colors border border-slate-200/80 dark:border-[#3c4043] shadow-2xs cursor-pointer"
+              className="w-9 h-9 flex items-center justify-center rounded-full text-slate-500 dark:text-[#9aa0a6] hover:text-slate-900 dark:hover:text-[#e8eaed] hover:bg-slate-100 dark:hover:bg-[#282a2c] transition-colors cursor-pointer"
               title={`Design wechseln (Aktuell: ${themePreference === 'system' ? 'System' : themePreference === 'dark' ? 'Dunkel' : 'Hell'})`}
             >
               {themePreference === 'system' ? (
@@ -225,7 +228,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               id="btn-open-share"
               type="button"
               onClick={onOpenShareModal}
-              className="p-2 rounded-xl text-slate-600 dark:text-[#9aa0a6] hover:text-blue-600 dark:hover:text-[#8ab4f8] hover:bg-blue-50 dark:hover:bg-[#282a2c] transition-colors border border-slate-200/80 dark:border-[#3c4043] shadow-2xs cursor-pointer"
+              className="w-9 h-9 flex items-center justify-center rounded-full text-slate-500 dark:text-[#9aa0a6] hover:text-slate-900 dark:hover:text-[#e8eaed] hover:bg-slate-100 dark:hover:bg-[#282a2c] transition-colors cursor-pointer"
               title="Suche als Link teilen"
             >
               <Share2 className="w-4 h-4" />
@@ -236,7 +239,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 id="btn-open-settings"
                 type="button"
                 onClick={() => onOpenSettings('appearance')}
-                className="p-2 rounded-xl text-slate-600 dark:text-[#9aa0a6] hover:text-blue-600 dark:hover:text-[#8ab4f8] hover:bg-blue-50 dark:hover:bg-[#282a2c] transition-colors border border-slate-200/80 dark:border-[#3c4043] shadow-2xs cursor-pointer"
+                className="w-9 h-9 flex items-center justify-center rounded-full text-slate-500 dark:text-[#9aa0a6] hover:text-slate-900 dark:hover:text-[#e8eaed] hover:bg-slate-100 dark:hover:bg-[#282a2c] transition-colors cursor-pointer"
                 title="Zentrale Anwendungseinstellungen (Design, Karten, APIs, ÖPNV, Heatmap)"
               >
                 <Settings className="w-4 h-4" />
@@ -249,7 +252,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 id="btn-collapse-sidebar"
                 type="button"
                 onClick={onToggleDesktopCollapse}
-                className="hidden md:flex p-2 rounded-xl text-slate-600 dark:text-[#9aa0a6] hover:text-blue-600 dark:hover:text-[#8ab4f8] hover:bg-blue-50 dark:hover:bg-[#282a2c] transition-colors border border-slate-200/80 dark:border-[#3c4043] shadow-2xs cursor-pointer"
+                className="hidden md:flex w-9 h-9 items-center justify-center rounded-full text-slate-500 dark:text-[#9aa0a6] hover:text-slate-900 dark:hover:text-[#e8eaed] hover:bg-slate-100 dark:hover:bg-[#282a2c] transition-colors cursor-pointer"
                 title="Seitenleiste einklappen (Strg+B)"
               >
                 <PanelLeftClose className="w-4 h-4" />
@@ -260,7 +263,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <button
               type="button"
               onClick={onToggleMobile}
-              className="md:hidden p-2 text-slate-500 hover:text-slate-800 dark:text-[#9aa0a6] dark:hover:text-[#e3e3e3]"
+              className="md:hidden w-9 h-9 flex items-center justify-center rounded-full text-slate-500 hover:text-slate-800 dark:text-[#9aa0a6] dark:hover:text-[#e3e3e3] hover:bg-slate-100 dark:hover:bg-[#282a2c] transition-colors cursor-pointer"
+              title="Schließen"
             >
               <ChevronRight className="w-5 h-5" />
             </button>
