@@ -1,5 +1,9 @@
 <p align="center">
-  <img src="public/venn-logo.svg" alt="Venn Logo" width="380" />
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="public/venn-logo-dark.svg">
+    <source media="(prefers-color-scheme: light)" srcset="public/venn-logo.svg">
+    <img src="public/venn-logo.svg" alt="Venn Logo" width="380" />
+  </picture>
 </p>
 
 <p align="center">

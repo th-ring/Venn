@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 160" width="100%" height="100%" fill="none">
   <defs>
-    <clipPath id="venn-logo-clip">
+    <clipPath id="venn-logo-clip-dark">
       <circle cx="85" cy="80" r="54" />
     </clipPath>
   </defs>
@@ -13,7 +13,7 @@
     <circle cx="140" cy="80" r="54" fill="#34A853" />
 
     <!-- Overlap Intersection: Teal Lens -->
-    <circle cx="140" cy="80" r="54" clip-path="url(#venn-logo-clip)" fill="#00897B" />
+    <circle cx="140" cy="80" r="54" clip-path="url(#venn-logo-clip-dark)" fill="#00897B" />
 
     <!-- Home Silhouette: Crisp White -->
     <g transform="translate(84, 52) scale(2.35)">
@@ -21,26 +21,14 @@
     </g>
   </g>
 
-  <style>
-    .venn-brand-text {
-      fill: #1F1F1F;
-    }
-    @media (prefers-color-scheme: dark) {
-      .venn-brand-text {
-        fill: #F1F3F4;
-      }
-    }
-  </style>
-
-  <!-- Typography -->
+  <!-- Typography: Bright white/light-grey for Dark Mode -->
   <text
     x="225"
     y="102"
-    class="venn-brand-text"
     font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif"
     font-size="76"
     font-weight="600"
     letter-spacing="-1.5px"
-    fill="#1F1F1F"
+    fill="#F1F3F4"
   >Venn</text>
 </svg>
