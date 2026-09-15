@@ -165,6 +165,26 @@ export const DEFAULT_POI_ICON_SETTINGS: PoiIconSettings = {
   onlyWithinIntersection: true,
 };
 
+export interface RoutingParameters {
+  walkingSpeedKmh?: number; // Standard: 4.0 km/h (Bereich: 2.5 - 6.5)
+  urbanDetourFactor?: number; // Standard: 1.35 (Bereich: 1.10 - 1.60)
+  minTransferBufferMin?: number; // Standard: 4.0 min (Bereich: 1.0 - 8.0)
+  transferRiskBufferMin?: number; // Standard: 2.0 min (Bereich: 0.0 - 5.0)
+  enableHeadwayPenalty?: boolean; // Standard: true (Halbe Taktzeit Headway/2 als Puffer)
+  cyclingSpeedKmh?: number; // Standard: 16.5 km/h (Bereich: 10.0 - 25.0)
+  drivingParkingBufferMin?: number; // Standard: 3.0 min (Bereich: 0.0 - 10.0)
+}
+
+export const DEFAULT_ROUTING_PARAMETERS: Required<RoutingParameters> = {
+  walkingSpeedKmh: 4.0,
+  urbanDetourFactor: 1.35,
+  minTransferBufferMin: 4.0,
+  transferRiskBufferMin: 2.0,
+  enableHeadwayPenalty: true,
+  cyclingSpeedKmh: 16.5,
+  drivingParkingBufferMin: 3.0,
+};
+
 export interface IsochroneOptions {
   liveTraffic: boolean;
   enableSmoothing: boolean;
@@ -175,6 +195,14 @@ export interface IsochroneOptions {
   transitModes?: TransitSubMode[];
   poiIcons?: PoiIconSettings;
   layerOrder?: LayerId[];
+  // Central Routing & Calibration Parameters
+  walkingSpeedKmh?: number;
+  urbanDetourFactor?: number;
+  minTransferBufferMin?: number;
+  transferRiskBufferMin?: number;
+  enableHeadwayPenalty?: boolean;
+  cyclingSpeedKmh?: number;
+  drivingParkingBufferMin?: number;
 }
 
 export interface CommuteSchedule {

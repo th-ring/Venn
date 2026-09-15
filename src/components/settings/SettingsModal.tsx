@@ -305,23 +305,18 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       <div className="bg-white dark:bg-[#1e1f20] rounded-2xl w-full max-w-3xl h-[620px] max-h-[92vh] shadow-2xl border border-slate-200 dark:border-[#3c4043] flex flex-col overflow-hidden">
         {/* Header - Fixed */}
         <div className="px-5 py-3.5 border-b border-slate-200 dark:border-[#3c4043] bg-white dark:bg-[#1e1f20] flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-[#8ab4f8] flex items-center justify-center border border-blue-200/60 dark:border-blue-800/60 shadow-2xs">
-              <Settings className="w-4 h-4" />
-            </div>
-            <div>
-              <h3 className="text-sm font-bold text-slate-900 dark:text-[#e3e3e3] leading-tight">
-                Anwendungseinstellungen
-              </h3>
-              <p className="text-[11px] text-slate-500 dark:text-[#9aa0a6]">
-                Zentrale Konfiguration für Erscheinungsbild, Kartendienste, Isochronen, ÖPNV, API-Keys und Heatmaps.
-              </p>
-            </div>
+          <div>
+            <h3 className="text-base font-medium text-slate-900 dark:text-[#e3e3e3] leading-tight">
+              Einstellungen
+            </h3>
+            <p className="text-xs text-slate-500 dark:text-[#9aa0a6] mt-0.5">
+              Erscheinungsbild, Kartendienste, Isochronen, ÖPNV, API-Keys und Heatmaps
+            </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-700 dark:text-[#9aa0a6] dark:hover:text-[#e3e3e3] p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-[#282a2c] transition-colors cursor-pointer"
+            className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-700 dark:text-[#9aa0a6] dark:hover:text-[#e3e3e3] hover:bg-slate-100 dark:hover:bg-[#282a2c] transition-colors cursor-pointer"
             title="Schließen"
           >
             <X className="w-4 h-4" />
@@ -333,7 +328,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           {/* Fixed Navigation Menu */}
           <nav className="w-full sm:w-56 bg-slate-50/90 dark:bg-[#131314]/90 border-b sm:border-b-0 sm:border-r border-slate-200/90 dark:border-[#3c4043] p-2.5 flex sm:flex-col justify-between shrink-0 overflow-x-auto sm:overflow-x-visible select-none gap-1">
             <div className="flex sm:flex-col gap-1 w-full">
-              <div className="hidden sm:block px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-[#747775]">
+              <div className="hidden sm:block px-3 py-1.5 text-xs font-medium text-slate-500 dark:text-[#9aa0a6]">
                 Kategorien
               </div>
 
@@ -346,18 +341,18 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     key={item.id}
                     type="button"
                     onClick={() => setModalTab(item.id)}
-                    className={`px-3 py-2 rounded-xl text-left transition-colors flex items-center gap-2.5 cursor-pointer whitespace-nowrap shrink-0 sm:shrink ${
+                    className={`px-3.5 py-2 rounded-full text-left transition-colors flex items-center gap-3 cursor-pointer whitespace-nowrap shrink-0 sm:shrink ${
                       isSelected
-                        ? 'bg-blue-600 dark:bg-[#8ab4f8] text-white dark:text-[#131314] font-bold shadow-xs'
-                        : 'text-slate-600 dark:text-[#9aa0a6] hover:text-slate-900 dark:hover:text-[#e3e3e3] hover:bg-slate-200/60 dark:hover:bg-[#282a2c] font-medium'
+                        ? 'bg-blue-100/80 dark:bg-blue-950/60 text-blue-900 dark:text-[#8ab4f8] font-medium'
+                        : 'text-slate-600 dark:text-[#9aa0a6] hover:text-slate-900 dark:hover:text-[#e3e3e3] hover:bg-slate-200/60 dark:hover:bg-[#282a2c] font-normal'
                     }`}
                   >
-                    <Icon className={`w-4 h-4 shrink-0 ${isSelected ? 'text-white dark:text-[#131314]' : 'text-slate-500 dark:text-[#9aa0a6]'}`} />
+                    <Icon className={`w-4 h-4 shrink-0 ${isSelected ? 'text-blue-700 dark:text-[#8ab4f8]' : 'text-slate-500 dark:text-[#9aa0a6]'}`} />
                     <div className="min-w-0">
                       <div className="text-xs leading-tight">{item.label}</div>
                       <div
                         className={`hidden sm:block text-[10px] font-normal leading-tight truncate mt-0.5 ${
-                          isSelected ? 'text-white/80 dark:text-[#131314]/80' : 'text-slate-400 dark:text-[#747775]'
+                          isSelected ? 'text-blue-800/80 dark:text-[#8ab4f8]/80' : 'text-slate-400 dark:text-[#747775]'
                         }`}
                       >
                         {item.subLabel}
@@ -369,19 +364,19 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             </div>
 
             {/* Quick Status Pill in Sidebar on desktop */}
-            <div className="hidden sm:block p-2.5 rounded-xl bg-white dark:bg-[#1e1f20] border border-slate-200/80 dark:border-[#3c4043] text-[10px] text-slate-500 dark:text-[#9aa0a6] space-y-1">
-              <div className="font-bold text-slate-700 dark:text-[#e3e3e3] flex items-center justify-between">
+            <div className="hidden sm:block p-2.5 rounded-2xl bg-white dark:bg-[#1e1f20] border border-slate-200/80 dark:border-[#3c4043] text-[10px] text-slate-500 dark:text-[#9aa0a6] space-y-1">
+              <div className="font-medium text-slate-700 dark:text-[#e3e3e3] flex items-center justify-between">
                 <span>Konfiguration</span>
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
               </div>
               <div className="truncate text-slate-600 dark:text-[#9aa0a6]">
-                Theme: <span className="font-semibold text-slate-800 dark:text-[#e3e3e3]">{themePreference === 'system' ? 'System' : themePreference === 'dark' ? 'Dunkel' : 'Hell'}</span>
+                Theme: <span className="font-medium text-slate-800 dark:text-[#e3e3e3]">{themePreference === 'system' ? 'System' : themePreference === 'dark' ? 'Dunkel' : 'Hell'}</span>
               </div>
               <div className="truncate text-slate-600 dark:text-[#9aa0a6]">
-                Karte: <span className="font-semibold text-slate-800 dark:text-[#e3e3e3]">{modalPlatform === 'google' ? 'Google Maps' : modalPlatform === 'carto' ? 'CARTO' : modalPlatform === 'memomaps' || modalPlatform === 'opnv' ? 'MemoMaps' : 'OSM'}</span>
+                Karte: <span className="font-medium text-slate-800 dark:text-[#e3e3e3]">{modalPlatform === 'google' ? 'Google Maps' : modalPlatform === 'carto' ? 'CARTO' : modalPlatform === 'memomaps' || modalPlatform === 'opnv' ? 'MemoMaps' : 'OSM'}</span>
               </div>
               <div className="truncate text-slate-600 dark:text-[#9aa0a6]">
-                Engine: <span className="font-semibold text-slate-800 dark:text-[#e3e3e3]">{activeProvider === 'google' ? 'Google API' : activeProvider === 'ors' ? 'ORS' : 'Offline'}</span>
+                Engine: <span className="font-medium text-slate-800 dark:text-[#e3e3e3]">{activeProvider === 'google' ? 'Google API' : activeProvider === 'ors' ? 'ORS' : 'Offline'}</span>
               </div>
             </div>
           </nav>
@@ -470,7 +465,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               <button
                 type="button"
                 onClick={onClose}
-                className="px-3.5 py-1.5 text-xs font-semibold text-slate-600 dark:text-[#9aa0a6] hover:text-slate-900 dark:hover:text-[#e3e3e3] hover:bg-slate-200/60 dark:hover:bg-[#282a2c] rounded-xl transition-colors cursor-pointer"
+                className="px-4 py-2 text-xs font-medium text-slate-600 dark:text-[#9aa0a6] hover:text-slate-900 dark:hover:text-[#e3e3e3] hover:bg-slate-200/60 dark:hover:bg-[#282a2c] rounded-full transition-colors cursor-pointer"
               >
                 Abbrechen
               </button>
@@ -478,10 +473,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               <button
                 type="button"
                 onClick={handleSaveSettings}
-                className={`px-4 py-2 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 shadow-md cursor-pointer ${
+                className={`px-5 py-2 text-xs font-medium rounded-full transition-all flex items-center gap-1.5 cursor-pointer ${
                   isSaved
-                    ? 'bg-emerald-600 text-white shadow-emerald-500/20'
-                    : 'bg-blue-600 hover:bg-blue-700 dark:bg-[#8ab4f8] dark:hover:bg-[#aecbfa] text-white dark:text-[#131314] shadow-blue-500/20'
+                    ? 'bg-emerald-600 text-white'
+                    : 'bg-blue-600 hover:bg-blue-700 dark:bg-[#8ab4f8] dark:hover:bg-[#aecbfa] text-white dark:text-[#131314]'
                 }`}
               >
                 {isSaved ? <Check className="w-4 h-4" /> : null}

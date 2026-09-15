@@ -320,110 +320,45 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </div>
           </div>
 
-          {/* Schnell-Filter: Nur überlagerten Treffbereich & Wohnbereich anzeigen */}
+          {/* Schnell-Filter: Google M3 Filter Chips */}
           {hasIntersection && (onToggleOnlyIntersection || onToggleOnlyResidential) && (
-            <div className="grid grid-cols-2 gap-2">
+            <div className="flex items-center gap-2 pt-0.5">
               {onToggleOnlyIntersection && (
-                <div
+                <button
+                  id="btn-sidebar-only-intersection"
+                  type="button"
                   onClick={onToggleOnlyIntersection}
-                  className={`border rounded-xl px-2.5 py-1.5 flex items-center justify-between gap-1.5 cursor-pointer transition-colors select-none ${
+                  className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium transition-colors cursor-pointer ${
                     showOnlyIntersection
-                      ? 'bg-emerald-50/90 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-700 text-emerald-900 dark:text-emerald-300'
-                      : 'bg-slate-50 dark:bg-[#131314] hover:bg-slate-100/80 dark:hover:bg-[#282a2c] border-slate-200/90 dark:border-[#3c4043] text-slate-700 dark:text-[#c4c7c5]'
+                      ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700 font-semibold'
+                      : 'bg-transparent text-slate-700 dark:text-[#c4c7c5] border-slate-300 dark:border-[#5f6368] hover:bg-slate-100 dark:hover:bg-[#282a2c]'
                   }`}
                   title={
                     showOnlyIntersection
                       ? 'Klicken, um Einzel-Isochronen wieder einzublenden'
-                      : 'Klicken, um nur den überlagerten Treffbereich (grün) anzuzeigen'
+                      : 'Klicken, um nur den überlagerten Treffbereich anzuzeigen'
                   }
                 >
-                  <div className="flex items-center gap-1.5 min-w-0">
-                    <div
-                      className={`p-1 rounded-md shrink-0 ${
-                        showOnlyIntersection ? 'bg-emerald-600 text-white' : 'bg-slate-200 dark:bg-[#282a2c] text-slate-600 dark:text-[#9aa0a6]'
-                      }`}
-                    >
-                      <Focus className="w-3 h-3" />
-                    </div>
-                    <div className="flex flex-col min-w-0">
-                      <span className="font-semibold text-[11px] leading-tight truncate">
-                        Nur Treffbereich
-                      </span>
-                      <span className="text-[9px] opacity-75 truncate">
-                        {showOnlyIntersection ? 'Aktiv (Grün)' : 'Alle Isochronen'}
-                      </span>
-                    </div>
-                  </div>
-
-                  <button
-                    id="switch-sidebar-only-intersection"
-                    type="button"
-                    role="switch"
-                    aria-checked={showOnlyIntersection}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onToggleOnlyIntersection();
-                    }}
-                    className={`relative inline-flex h-4 w-7 shrink-0 cursor-pointer rounded-full border border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden ${
-                      showOnlyIntersection ? 'bg-emerald-600' : 'bg-slate-300 dark:bg-[#3c4043]'
-                    }`}
-                  >
-                    <span
-                      className={`pointer-events-none inline-block h-3 w-3 transform rounded-full bg-white shadow-xs ring-0 transition duration-200 ease-in-out ${
-                        showOnlyIntersection ? 'translate-x-3' : 'translate-x-0'
-                      }`}
-                    />
-                  </button>
-                </div>
+                  <Focus className="w-3.5 h-3.5 shrink-0" />
+                  <span className="truncate">Nur Treffbereich</span>
+                </button>
               )}
 
               {onToggleOnlyResidential && (
-                <div
+                <button
+                  id="btn-sidebar-only-residential"
+                  type="button"
                   onClick={onToggleOnlyResidential}
-                  className={`border rounded-xl px-2.5 py-1.5 flex items-center justify-between gap-1.5 cursor-pointer transition-colors select-none ${
+                  className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium transition-colors cursor-pointer ${
                     onlyResidential
-                      ? 'bg-emerald-50/90 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-700 text-emerald-900 dark:text-emerald-300'
-                      : 'bg-slate-50 dark:bg-[#131314] hover:bg-slate-100/80 dark:hover:bg-[#282a2c] border-slate-200/90 dark:border-[#3c4043] text-slate-700 dark:text-[#c4c7c5]'
+                      ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700 font-semibold'
+                      : 'bg-transparent text-slate-700 dark:text-[#c4c7c5] border-slate-300 dark:border-[#5f6368] hover:bg-slate-100 dark:hover:bg-[#282a2c]'
                   }`}
                   title="Filtert Forste, Gewässer & Industriegebiete aus dem Treffbereich"
                 >
-                  <div className="flex items-center gap-1.5 min-w-0">
-                    <div
-                      className={`p-1 rounded-md shrink-0 ${
-                        onlyResidential ? 'bg-emerald-600 text-white' : 'bg-slate-200 dark:bg-[#282a2c] text-slate-600 dark:text-[#9aa0a6]'
-                      }`}
-                    >
-                      <Home className="w-3 h-3" />
-                    </div>
-                    <div className="flex flex-col min-w-0">
-                      <span className="font-semibold text-[11px] leading-tight truncate">
-                        Wohnbereich
-                      </span>
-                      <span className="text-[9px] opacity-75 truncate">
-                        {onlyResidential ? 'Gefiltert' : 'Ungefiltert'}
-                      </span>
-                    </div>
-                  </div>
-
-                  <button
-                    type="button"
-                    role="switch"
-                    aria-checked={onlyResidential}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onToggleOnlyResidential();
-                    }}
-                    className={`relative inline-flex h-4 w-7 shrink-0 cursor-pointer rounded-full border border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden ${
-                      onlyResidential ? 'bg-emerald-600' : 'bg-slate-300 dark:bg-[#3c4043]'
-                    }`}
-                  >
-                    <span
-                      className={`pointer-events-none inline-block h-3 w-3 transform rounded-full bg-white shadow-xs ring-0 transition duration-200 ease-in-out ${
-                        onlyResidential ? 'translate-x-3' : 'translate-x-0'
-                      }`}
-                    />
-                  </button>
-                </div>
+                  <Home className="w-3.5 h-3.5 shrink-0" />
+                  <span className="truncate">Nur Wohnbereich</span>
+                </button>
               )}
             </div>
           )}

@@ -121,21 +121,21 @@ export const RentalOverlayTab: React.FC<RentalOverlayTabProps> = ({
 
       {/* Legend & Price Range Scale */}
       <div className="bg-slate-50/80 dark:bg-[#202124] border border-slate-200/80 dark:border-[#3c4043] rounded-2xl p-4">
-        <div className="text-xs font-bold text-slate-700 dark:text-[#e3e3e3] uppercase tracking-wider mb-3">
+        <div className="text-xs font-medium text-slate-700 dark:text-[#e3e3e3] mb-3">
           Legende: Farbskala Kaltmiete (€/m²)
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           {RENTAL_LEGEND_TIERS.map((tier) => (
             <div
               key={tier.label}
-              className="bg-white dark:bg-[#282a2c] border border-slate-200/80 dark:border-[#3c4043] rounded-xl p-2.5 flex items-center gap-3 shadow-2xs"
+              className="bg-white dark:bg-[#282a2c] border border-slate-200/80 dark:border-[#3c4043] rounded-xl p-2.5 flex items-center gap-3"
             >
               <div
                 className="w-4 h-4 rounded-md shrink-0 shadow-xs ring-1 ring-black/10"
                 style={{ backgroundColor: tier.color }}
               />
               <div className="min-w-0 flex-1">
-                <div className="text-xs font-bold text-slate-900 dark:text-[#e3e3e3]">{tier.label}</div>
+                <div className="text-xs font-semibold text-slate-900 dark:text-[#e3e3e3]">{tier.label}</div>
                 <div className="text-[10px] text-slate-500 dark:text-[#9aa0a6] truncate">{tier.subLabel}</div>
               </div>
             </div>
@@ -145,7 +145,7 @@ export const RentalOverlayTab: React.FC<RentalOverlayTabProps> = ({
 
       {/* Municipal Open Data Regions Catalog */}
       <div>
-        <div className="text-xs font-bold text-slate-700 dark:text-[#e3e3e3] uppercase tracking-wider mb-2">
+        <div className="text-xs font-medium text-slate-700 dark:text-[#e3e3e3] mb-2">
           Städtische Open-Data-Quellen & Regionen
         </div>
         <div className="space-y-2.5">
@@ -154,14 +154,14 @@ export const RentalOverlayTab: React.FC<RentalOverlayTabProps> = ({
               key={entry.id}
               className={`p-3.5 rounded-2xl border transition-all ${
                 entry.available
-                  ? 'bg-blue-50/30 dark:bg-blue-950/20 border-blue-200/70 dark:border-blue-800/50 shadow-2xs'
+                  ? 'bg-blue-50/30 dark:bg-blue-950/20 border-blue-200/70 dark:border-blue-800/50'
                   : 'bg-white dark:bg-[#282a2c] border-slate-200 dark:border-[#3c4043] opacity-80'
               }`}
             >
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold text-slate-900 dark:text-[#e3e3e3]">{entry.name}</span>
+                    <span className="text-sm font-semibold text-slate-900 dark:text-[#e3e3e3]">{entry.name}</span>
                     {entry.available ? (
                       <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/50 flex items-center gap-1">
                         <CheckCircle2 className="w-3 h-3" />

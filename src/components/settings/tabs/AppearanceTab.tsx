@@ -58,7 +58,7 @@ export const AppearanceTab: React.FC<AppearanceTabProps> = ({
   return (
     <div className="space-y-5">
       <div>
-        <h4 className="text-xs font-bold text-slate-900 dark:text-[#e3e3e3] uppercase tracking-wider mb-1">
+        <h4 className="text-sm font-medium text-slate-900 dark:text-[#e3e3e3] mb-1">
           Erscheinungsbild & Theme
         </h4>
         <p className="text-xs text-slate-500 dark:text-[#9aa0a6] leading-relaxed">
@@ -80,8 +80,8 @@ export const AppearanceTab: React.FC<AppearanceTabProps> = ({
               onClick={() => onSelectTheme(opt.id)}
               className={`p-3.5 rounded-2xl border text-left transition-all relative flex flex-col justify-between cursor-pointer group select-none ${
                 isSelected
-                  ? 'border-blue-600 dark:border-[#8ab4f8] bg-blue-50/60 dark:bg-blue-950/30 ring-2 ring-blue-500/30 dark:ring-blue-400/30 shadow-sm'
-                  : 'border-slate-200 dark:border-[#3c4043] bg-white dark:bg-[#1e1f20] hover:border-slate-300 dark:hover:border-[#5f6368] hover:shadow-xs'
+                  ? 'border-2 border-blue-600 dark:border-[#8ab4f8] bg-blue-50/50 dark:bg-blue-950/30 shadow-xs'
+                  : 'border border-slate-200 dark:border-[#3c4043] bg-white dark:bg-[#1e1f20] hover:border-slate-300 dark:hover:border-[#5f6368] hover:shadow-xs'
               }`}
             >
               <div>
@@ -99,12 +99,12 @@ export const AppearanceTab: React.FC<AppearanceTabProps> = ({
 
                   <div className="flex items-center gap-1.5">
                     {opt.badge && (
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300 border border-blue-200/70 dark:border-blue-700/50">
+                      <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300 border border-blue-200/70 dark:border-blue-700/50">
                         {opt.badge}
                       </span>
                     )}
                     {isSelected && (
-                      <div className="w-5 h-5 rounded-full bg-blue-600 dark:bg-[#8ab4f8] text-white dark:text-[#131314] flex items-center justify-center shadow-2xs">
+                      <div className="w-5 h-5 rounded-full bg-blue-600 dark:bg-[#8ab4f8] text-white dark:text-[#131314] flex items-center justify-center">
                         <Check className="w-3 h-3 stroke-[3]" />
                       </div>
                     )}
@@ -112,7 +112,7 @@ export const AppearanceTab: React.FC<AppearanceTabProps> = ({
                 </div>
 
                 {/* Title & Description */}
-                <div className="text-sm font-bold text-slate-900 dark:text-[#e3e3e3] mb-1">
+                <div className="text-sm font-semibold text-slate-900 dark:text-[#e3e3e3] mb-1">
                   {opt.label}
                 </div>
                 <p className="text-[11px] text-slate-500 dark:text-[#9aa0a6] leading-snug">
@@ -132,7 +132,7 @@ export const AppearanceTab: React.FC<AppearanceTabProps> = ({
                   <div
                     className={`w-3 h-3 rounded-full ${
                       opt.id === 'system'
-                        ? 'bg-gradient-to-r from-blue-500 to-blue-400'
+                        ? 'bg-blue-600 dark:bg-[#8ab4f8]'
                         : opt.previewAccent
                     }`}
                   />

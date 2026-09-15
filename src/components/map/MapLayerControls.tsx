@@ -224,27 +224,27 @@ export const MapLayerControls: React.FC<MapLayerControlsProps> = ({
   return (
     <>
       {/* Floating Map Controls Top-Right */}
-      <div className="absolute top-4 right-4 z-20 flex flex-col items-end gap-2">
-        {/* Main Layer Panel Trigger Button */}
+      <div className="absolute top-4 right-4 z-20 flex flex-col items-end gap-2.5">
+        {/* Main Layer Panel Trigger Button (Google M3 Pill) */}
         <div className="relative">
           <button
             id="btn-layer-manager-toggle"
             type="button"
             onClick={() => setIsLayerPanelOpen((prev) => !prev)}
             title="Karten-Ebenen, Reihenfolge & Filter anpassen"
-            className={`p-2 sm:px-3 sm:py-2 rounded-xl shadow-md border transition-all flex items-center gap-2 backdrop-blur-xs text-xs font-bold cursor-pointer ${
+            className={`px-3 py-2 rounded-full shadow-md border transition-colors flex items-center gap-2 backdrop-blur-md text-xs font-medium cursor-pointer ${
               isLayerPanelOpen
-                ? 'bg-blue-600 text-white border-blue-500 shadow-blue-500/20 ring-2 ring-blue-400/40'
-                : 'bg-white/95 dark:bg-[#1e1f20]/95 hover:bg-white dark:hover:bg-[#282a2c] text-slate-800 dark:text-[#e3e3e3] border-slate-200/90 dark:border-[#3c4043] hover:shadow-lg'
+                ? 'bg-blue-600 text-white border-blue-600 dark:bg-[#8ab4f8] dark:text-[#131314] dark:border-[#8ab4f8]'
+                : 'bg-white/95 dark:bg-[#1e1f20]/95 hover:bg-slate-50 dark:hover:bg-[#282a2c] text-slate-800 dark:text-[#e8eaed] border-slate-200/90 dark:border-[#3c4043]'
             }`}
           >
-            <Layers className={`w-4 h-4 ${isLayerPanelOpen ? 'text-white' : 'text-blue-600 dark:text-[#8ab4f8]'}`} />
+            <Layers className={`w-4 h-4 ${isLayerPanelOpen ? 'text-white dark:text-[#131314]' : 'text-blue-600 dark:text-[#8ab4f8]'}`} />
             <span className="hidden sm:inline">Ebenen & Filter</span>
             <span
-              className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+              className={`text-[11px] px-1.5 py-0.2 rounded-full font-semibold ${
                 isLayerPanelOpen
-                  ? 'bg-white text-blue-700'
-                  : 'bg-blue-100 dark:bg-blue-950/60 text-blue-800 dark:text-[#8ab4f8]'
+                  ? 'bg-white/20 text-white dark:bg-[#131314]/20 dark:text-[#131314]'
+                  : 'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-[#8ab4f8]'
               }`}
             >
               {activeLayersCount}
@@ -252,9 +252,9 @@ export const MapLayerControls: React.FC<MapLayerControlsProps> = ({
           </button>
         </div>
 
-        {/* Action Controls Column (Quick Actions) */}
+        {/* Action Controls Column (Google Maps Unified Floating Dock) */}
         {!isLayerPanelOpen && (
-          <div className="flex flex-col gap-2 animate-in fade-in duration-150">
+          <div className="bg-white/95 dark:bg-[#1e1f20]/95 rounded-2xl shadow-md border border-slate-200/80 dark:border-[#3c4043] flex flex-col divide-y divide-slate-100 dark:divide-[#3c4043] overflow-hidden backdrop-blur-md animate-in fade-in duration-150">
             {/* Quick-Toggle: Wohnbereich-Filter */}
             {onToggleOnlyResidential && hasIntersection && (
               <button
@@ -266,13 +266,13 @@ export const MapLayerControls: React.FC<MapLayerControlsProps> = ({
                     ? 'Wohngebiets-Filter aktiv (Klicken für gesamte Fläche)'
                     : 'Auf Wohnbereich reduzieren (Forste, Seen & Industrie ausfiltern)'
                 }
-                className={`p-2.5 rounded-xl shadow-md border transition-all flex items-center justify-center backdrop-blur-xs hover:shadow-lg cursor-pointer ${
+                className={`w-10 h-10 flex items-center justify-center transition-colors cursor-pointer ${
                   onlyResidential
-                    ? 'bg-emerald-700 hover:bg-emerald-800 text-white border-emerald-600 ring-2 ring-emerald-400/50'
-                    : 'bg-white/95 dark:bg-[#1e1f20]/95 hover:bg-white dark:hover:bg-[#282a2c] text-slate-600 dark:text-[#9aa0a6] hover:text-slate-900 dark:hover:text-[#e3e3e3] border-slate-200/80 dark:border-[#3c4043]'
+                    ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400'
+                    : 'text-slate-600 dark:text-[#9aa0a6] hover:bg-slate-100 dark:hover:bg-[#282a2c] hover:text-slate-900 dark:hover:text-[#e8eaed]'
                 }`}
               >
-                <Home className="w-5 h-5" />
+                <Home className="w-4 h-4" />
               </button>
             )}
 
@@ -304,13 +304,13 @@ export const MapLayerControls: React.FC<MapLayerControlsProps> = ({
                       } aktiv (Klicken zum Durchschalten)`
                     : 'Prioritäts-Heatmap aktivieren (U-Bahn / S-Bahn / Autobahn)'
                 }
-                className={`p-2.5 rounded-xl shadow-md border transition-all flex items-center justify-center backdrop-blur-xs hover:shadow-lg cursor-pointer ${
+                className={`w-10 h-10 flex items-center justify-center transition-colors cursor-pointer ${
                   heatmapSettings && heatmapSettings.mode !== 'none'
-                    ? 'bg-amber-500 hover:bg-amber-600 text-white border-amber-400 ring-2 ring-amber-300/50'
-                    : 'bg-white/95 dark:bg-[#1e1f20]/95 hover:bg-white dark:hover:bg-[#282a2c] text-slate-600 dark:text-[#9aa0a6] hover:text-slate-900 dark:hover:text-[#e3e3e3] border-slate-200/80 dark:border-[#3c4043]'
+                    ? 'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400'
+                    : 'text-slate-600 dark:text-[#9aa0a6] hover:bg-slate-100 dark:hover:bg-[#282a2c] hover:text-slate-900 dark:hover:text-[#e8eaed]'
                 }`}
               >
-                <Flame className="w-5 h-5" />
+                <Flame className="w-4 h-4" />
               </button>
             )}
 
@@ -329,13 +329,13 @@ export const MapLayerControls: React.FC<MapLayerControlsProps> = ({
                     ? 'Mietspiegel-Choropleth ausblenden (München)'
                     : 'Mietspiegel & Kaltmiete (€/m²) einblenden (München Open Data)'
                 }
-                className={`p-2.5 rounded-xl shadow-md border transition-all flex items-center justify-center backdrop-blur-xs hover:shadow-lg cursor-pointer ${
+                className={`w-10 h-10 flex items-center justify-center transition-colors cursor-pointer ${
                   rentalSettings?.enabled
-                    ? 'bg-purple-700 hover:bg-purple-800 text-white border-purple-600 ring-2 ring-purple-400/50'
-                    : 'bg-white/95 dark:bg-[#1e1f20]/95 hover:bg-white dark:hover:bg-[#282a2c] text-slate-600 dark:text-[#9aa0a6] hover:text-slate-900 dark:hover:text-[#e3e3e3] border-slate-200/80 dark:border-[#3c4043]'
+                    ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-[#8ab4f8]'
+                    : 'text-slate-600 dark:text-[#9aa0a6] hover:bg-slate-100 dark:hover:bg-[#282a2c] hover:text-slate-900 dark:hover:text-[#e8eaed]'
                 }`}
               >
-                <Euro className="w-5 h-5" />
+                <Euro className="w-4 h-4" />
               </button>
             )}
 
@@ -345,9 +345,9 @@ export const MapLayerControls: React.FC<MapLayerControlsProps> = ({
               type="button"
               onClick={onFitBounds}
               title="Gesamten Suchbereich zentrieren"
-              className="bg-white/95 dark:bg-[#1e1f20]/95 hover:bg-white dark:hover:bg-[#282a2c] text-slate-700 dark:text-[#c4c7c5] hover:text-slate-950 dark:hover:text-white p-2.5 rounded-xl shadow-md border border-slate-200/80 dark:border-[#3c4043] transition-all flex items-center justify-center backdrop-blur-xs hover:shadow-lg cursor-pointer"
+              className="w-10 h-10 flex items-center justify-center text-slate-600 dark:text-[#9aa0a6] hover:bg-slate-100 dark:hover:bg-[#282a2c] hover:text-slate-900 dark:hover:text-[#e8eaed] transition-colors cursor-pointer"
             >
-              <Crosshair className="w-5 h-5 text-slate-700 dark:text-[#c4c7c5]" />
+              <Crosshair className="w-4 h-4" />
             </button>
           </div>
         )}
@@ -417,7 +417,7 @@ export const MapLayerControls: React.FC<MapLayerControlsProps> = ({
         >
           <div className="flex items-center justify-between gap-2 border-b border-slate-100 dark:border-[#3c4043] pb-1">
             <div className="flex items-center gap-1.5 font-bold text-slate-900 dark:text-[#e3e3e3] text-[11px]">
-              <Euro className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+              <Euro className="w-3.5 h-3.5 text-blue-600 dark:text-[#8ab4f8]" />
               <span>Mietspiegel München</span>
             </div>
             <span className="text-[10px] text-slate-400 dark:text-[#9aa0a6]">Ø Kaltmiete</span>

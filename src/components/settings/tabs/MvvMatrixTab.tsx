@@ -140,20 +140,20 @@ export const MvvMatrixTab: React.FC<MvvMatrixTabProps> = ({
       {/* Network Statistics */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
         <div className="bg-slate-50 border border-slate-200 p-2.5 rounded-xl">
-          <div className="text-[10px] uppercase font-bold text-slate-400">Haltestellen</div>
-          <div className="text-base font-extrabold text-slate-800 mt-0.5">{mvvMeta.stationCount}</div>
+          <div className="text-[11px] font-medium text-slate-500">Haltestellen</div>
+          <div className="text-base font-semibold text-slate-800 mt-0.5">{mvvMeta.stationCount}</div>
           <div className="text-[10px] text-slate-500">Knotenpunkte & Bahnhöfe</div>
         </div>
 
         <div className="bg-slate-50 border border-slate-200 p-2.5 rounded-xl">
-          <div className="text-[10px] uppercase font-bold text-slate-400">Fahrstrecken</div>
-          <div className="text-base font-extrabold text-slate-800 mt-0.5">{mvvMeta.connectionCount}</div>
+          <div className="text-[11px] font-medium text-slate-500">Fahrstrecken</div>
+          <div className="text-base font-semibold text-slate-800 mt-0.5">{mvvMeta.connectionCount}</div>
           <div className="text-[10px] text-slate-500">Fahrzeit-Kanten</div>
         </div>
 
         <div className="bg-slate-50 border border-slate-200 p-2.5 rounded-xl">
-          <div className="text-[10px] uppercase font-bold text-slate-400">Speicher</div>
-          <div className="text-base font-extrabold text-slate-800 mt-0.5 flex items-center gap-1">
+          <div className="text-[11px] font-medium text-slate-500">Speicher</div>
+          <div className="text-base font-semibold text-slate-800 mt-0.5 flex items-center gap-1">
             <HardDrive className="w-3.5 h-3.5 text-blue-600" />
             <span>IndexedDB</span>
           </div>
@@ -161,8 +161,8 @@ export const MvvMatrixTab: React.FC<MvvMatrixTabProps> = ({
         </div>
 
         <div className="bg-slate-50 border border-slate-200 p-2.5 rounded-xl">
-          <div className="text-[10px] uppercase font-bold text-slate-400">Version / Stand</div>
-          <div className="text-xs font-bold text-slate-800 mt-1 truncate">{mvvMeta.version}</div>
+          <div className="text-[11px] font-medium text-slate-500">Version / Stand</div>
+          <div className="text-xs font-semibold text-slate-800 mt-1 truncate">{mvvMeta.version}</div>
           <div className="text-[10px] text-slate-500 truncate">{mvvMeta.lastUpdated}</div>
         </div>
       </div>

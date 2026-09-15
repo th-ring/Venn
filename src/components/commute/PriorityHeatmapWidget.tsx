@@ -115,11 +115,11 @@ export const PriorityHeatmapWidget: React.FC<PriorityHeatmapWidgetProps> = ({
         <div className="flex items-center gap-2 shrink-0">
           {/* Status-Badge */}
           {isHeatmapActive ? (
-            <span className="text-[11px] font-semibold bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border border-amber-200/80 dark:border-amber-800/60 px-2 py-0.5 rounded-md flex items-center gap-1">
+            <span className="text-[11px] font-medium bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-[#8ab4f8] px-2 py-0.5 rounded-full flex items-center gap-1">
               <span>{activeHeatmapItems.length} aktiv</span>
             </span>
           ) : (
-            <span className="text-[11px] font-medium text-slate-400 dark:text-[#9aa0a6] bg-slate-100 dark:bg-[#282a2c] px-2 py-0.5 rounded-md">
+            <span className="text-[11px] font-medium text-slate-400 dark:text-[#9aa0a6] bg-slate-100 dark:bg-[#282a2c] px-2 py-0.5 rounded-full">
               Inaktiv
             </span>
           )}
@@ -137,9 +137,9 @@ export const PriorityHeatmapWidget: React.FC<PriorityHeatmapWidgetProps> = ({
       {/* Content Body */}
       {!isCollapsed && (
         <div className="p-3 pt-0 border-t border-slate-100 dark:border-[#3c4043] mt-1 space-y-3">
-          {/* Master Switch */}
+          {/* Master Switch (Google M3 Switch) */}
           <div className="flex items-center justify-between pt-2">
-            <span className="text-xs font-medium text-slate-700 dark:text-[#e3e3e3]">
+            <span className="text-xs font-medium text-slate-700 dark:text-[#e8eaed]">
               Heatmap im Treffbereich aktivieren
             </span>
             <button
@@ -148,14 +148,14 @@ export const PriorityHeatmapWidget: React.FC<PriorityHeatmapWidgetProps> = ({
               role="switch"
               aria-checked={isHeatmapActive}
               onClick={handleToggleHeatmapActive}
-              className={`w-8 h-4.5 flex items-center rounded-full p-0.5 transition-colors cursor-pointer ${
-                isHeatmapActive ? 'bg-amber-500' : 'bg-slate-200 dark:bg-[#3c4043]'
+              className={`w-9 h-5 flex items-center rounded-full p-0.5 transition-colors cursor-pointer ${
+                isHeatmapActive ? 'bg-blue-600 dark:bg-[#8ab4f8]' : 'bg-slate-300 dark:bg-[#3c4043]'
               }`}
               title={isHeatmapActive ? 'Heatmap deaktivieren' : 'Heatmap aktivieren'}
             >
               <div
-                className={`bg-white w-3.5 h-3.5 rounded-full shadow-xs transform transition-transform ${
-                  isHeatmapActive ? 'translate-x-3.5' : 'translate-x-0'
+                className={`w-4 h-4 rounded-full shadow-xs transform transition-transform ${
+                  isHeatmapActive ? 'translate-x-4 bg-white dark:bg-[#131314]' : 'translate-x-0 bg-white dark:bg-[#e8eaed]'
                 }`}
               />
             </button>

@@ -47,10 +47,10 @@ export const BasemapTab: React.FC<BasemapTabProps> = ({
 
       {/* Basis-Kartendienst */}
       <div>
-        <div className="text-[11px] font-bold text-slate-500 dark:text-[#9aa0a6] uppercase tracking-wider mb-2 flex items-center justify-between">
+        <div className="text-xs font-medium text-slate-600 dark:text-[#9aa0a6] mb-2 flex items-center justify-between">
           <span>Basis-Kartendienst</span>
           {hasGoogleKey && (
-            <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 px-2 py-0.5 rounded-full">
+            <span className="text-[10px] font-medium text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 px-2 py-0.5 rounded-full">
               Google Key aktiv
             </span>
           )}
@@ -62,8 +62,8 @@ export const BasemapTab: React.FC<BasemapTabProps> = ({
             onClick={() => onSelectPlatform('osm')}
             className={`p-3 rounded-xl border cursor-pointer transition-colors flex items-start justify-between ${
               platform === 'osm'
-                ? 'border-blue-600 dark:border-[#8ab4f8] bg-blue-50/60 dark:bg-blue-950/40 ring-1 ring-blue-500/40 shadow-xs'
-                : 'border-slate-200 dark:border-[#3c4043] bg-white dark:bg-[#282a2c] hover:border-slate-300 dark:hover:border-[#5f6368]'
+                ? 'border-2 border-blue-600 dark:border-[#8ab4f8] bg-blue-50/60 dark:bg-blue-950/40 shadow-xs'
+                : 'border border-slate-200 dark:border-[#3c4043] bg-white dark:bg-[#282a2c] hover:border-slate-300 dark:hover:border-[#5f6368]'
             }`}
           >
             <div className="flex items-start gap-2.5 min-w-0">
@@ -206,7 +206,7 @@ export const BasemapTab: React.FC<BasemapTabProps> = ({
 
       {/* Kartentyp */}
       <div className="pt-2 border-t border-slate-100 dark:border-[#3c4043]">
-        <div className="text-[11px] font-bold text-slate-500 dark:text-[#9aa0a6] uppercase tracking-wider mb-2 flex items-center justify-between">
+        <div className="text-xs font-medium text-slate-600 dark:text-[#9aa0a6] mb-2 flex items-center justify-between">
           <span>
             Kartentyp ({platform === 'google' ? 'Google Maps' : platform === 'carto' ? 'CARTO' : platform === 'memomaps' || platform === 'opnv' ? 'MemoMaps' : 'OpenStreetMap'})
           </span>
@@ -225,8 +225,8 @@ export const BasemapTab: React.FC<BasemapTabProps> = ({
                 onClick={() => onSelectVariant(v.id)}
                 className={`p-2.5 rounded-xl border cursor-pointer transition-all ${
                   isSel
-                    ? 'border-blue-500 dark:border-[#8ab4f8] bg-blue-50/50 dark:bg-blue-950/40 ring-2 ring-blue-400/30'
-                    : 'border-slate-200 dark:border-[#3c4043] bg-white dark:bg-[#282a2c] hover:border-slate-300 dark:hover:border-[#5f6368]'
+                    ? 'border-2 border-blue-600 dark:border-[#8ab4f8] bg-blue-50/50 dark:bg-blue-950/40'
+                    : 'border border-slate-200 dark:border-[#3c4043] bg-white dark:bg-[#282a2c] hover:border-slate-300 dark:hover:border-[#5f6368]'
                 }`}
               >
                 <div className="flex items-center justify-between mb-1">
@@ -240,7 +240,7 @@ export const BasemapTab: React.FC<BasemapTabProps> = ({
                     >
                       <VIcon className="w-4 h-4" />
                     </div>
-                    <span className="text-xs font-bold text-slate-900 dark:text-[#e3e3e3]">{v.label}</span>
+                    <span className="text-xs font-semibold text-slate-900 dark:text-[#e3e3e3]">{v.label}</span>
                   </div>
                   {isSel && <Check className="w-4 h-4 text-blue-600 dark:text-[#8ab4f8]" />}
                 </div>
@@ -256,7 +256,7 @@ export const BasemapTab: React.FC<BasemapTabProps> = ({
       {/* Zusatz-Overlays */}
       {onToggleRailwayOverlay && (
         <div className="pt-2 border-t border-slate-100 dark:border-[#3c4043]">
-          <div className="text-[11px] font-bold text-slate-500 dark:text-[#9aa0a6] uppercase tracking-wider mb-2">
+          <div className="text-xs font-medium text-slate-600 dark:text-[#9aa0a6] mb-2">
             Zusätzliche Ebenen
           </div>
 
@@ -265,8 +265,8 @@ export const BasemapTab: React.FC<BasemapTabProps> = ({
             onClick={onToggleRailwayOverlay}
             className={`w-full p-2.5 rounded-xl border text-left transition-all flex items-center justify-between cursor-pointer ${
               showRailwayOverlay
-                ? 'bg-amber-50 dark:bg-amber-950/40 border-amber-300 dark:border-amber-800/60 text-amber-950 dark:text-amber-200 ring-1 ring-amber-300 dark:ring-amber-700'
-                : 'bg-white dark:bg-[#282a2c] border-slate-200 dark:border-[#3c4043] text-slate-700 dark:text-[#e3e3e3] hover:bg-slate-50 dark:hover:bg-[#303134]'
+                ? 'bg-amber-50 dark:bg-amber-950/40 border-2 border-amber-500 dark:border-amber-400 text-amber-950 dark:text-amber-200'
+                : 'bg-white dark:bg-[#282a2c] border border-slate-200 dark:border-[#3c4043] text-slate-700 dark:text-[#e3e3e3] hover:bg-slate-50 dark:hover:bg-[#303134]'
             }`}
           >
             <div className="flex items-center gap-2.5">

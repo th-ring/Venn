@@ -24,6 +24,8 @@ import {
   TransitStation,
   TransitConnection,
   TransitRegionMetadata,
+  IsochroneOptions,
+  DEFAULT_ROUTING_PARAMETERS,
 } from '../types';
 import { PriorityQueue } from './priorityQueue';
 import {
@@ -317,8 +319,12 @@ export function estimateHeadwayMinutes(type: string, lines: string[] = []): numb
  */
 export function getInitialDepartureWaitMinutes(
   station: TransitStation,
-  allowedModes: Set<TransitSubMode>
+  allowedModes: Set<TransitSubMode>,
+  enableHeadwayPenalty: boolean = DEFAULT_ROUTING_PARAMETERS.enableHeadwayPenalty
 ): number {
+  if (!enableHeadwayPenalty) {
+    return 1.0;
+  }
   let minWait = 15;
   for (const t of station.types) {
     if (t === 'ubahn' && allowedModes.has('ubahn')) minWait = Math.min(minWait, 2.5);
@@ -337,20 +343,24 @@ export function getInitialDepartureWaitMinutes(
 /**
  * Calculates realistic transfer penalty when changing lines.
  * Accounts for:
- * 1. Physical walking buffer between platforms / stairs (3.5 - 4.5 min)
+ * 1. Physical walking buffer between platforms / stairs (configurable, minTransferBufferMin)
  * 2. Average waiting time for connecting service (Headway / 2, capped by user's maxTransferWaitMin)
- * 3. Schedule fragility risk buffer (2.0 min) to penalize brittle connections.
+ * 3. Schedule fragility risk buffer (configurable, transferRiskBufferMin) to penalize brittle connections.
  */
 export function calculateTransferPenalty(
   targetType: string,
   targetLines: string[],
-  maxTransferWaitMin: number = 5
+  maxTransferWaitMin: number = 5,
+  minTransferBufferMin: number = DEFAULT_ROUTING_PARAMETERS.minTransferBufferMin,
+  transferRiskBufferMin: number = DEFAULT_ROUTING_PARAMETERS.transferRiskBufferMin,
+  enableHeadwayPenalty: boolean = DEFAULT_ROUTING_PARAMETERS.enableHeadwayPenalty
 ): number {
   const headway = estimateHeadwayMinutes(targetType, targetLines);
-  const averageWait = headway / 2;
-  const effectiveWait = Math.min(averageWait, Math.max(2.0, maxTransferWaitMin));
-  const walkBuffer = targetType === 'ubahn' || targetType === 'sbahn' ? 3.5 : 4.5;
-  const riskBuffer = 2.0; // Deliberate risk penalty against fragile connections
+  const averageWait = enableHeadwayPenalty ? headway / 2 : 1.0;
+  const effectiveWait = Math.min(averageWait, Math.max(1.0, maxTransferWaitMin));
+  const baseWalkBuffer = targetType === 'ubahn' || targetType === 'sbahn' ? minTransferBufferMin - 0.5 : minTransferBufferMin + 0.5;
+  const walkBuffer = Math.max(1.0, baseWalkBuffer);
+  const riskBuffer = transferRiskBufferMin; // Deliberate risk penalty against fragile connections
   return walkBuffer + effectiveWait + riskBuffer;
 }
 
@@ -369,7 +379,8 @@ export interface ReachableStation {
  */
 export function calculateReachableStations(
   profile: PersonProfile,
-  transitModes?: TransitSubMode[]
+  transitModes?: TransitSubMode[],
+  options?: IsochroneOptions
 ): ReachableStation[] {
   const {
     lat,
@@ -379,6 +390,13 @@ export function calculateReachableStations(
     maxWalkFromStationMin = 5,
     maxTransferWaitMin = 5,
   } = profile;
+
+  const walkingSpeedKmh = options?.walkingSpeedKmh ?? DEFAULT_ROUTING_PARAMETERS.walkingSpeedKmh;
+  const detourFactor = options?.urbanDetourFactor ?? DEFAULT_ROUTING_PARAMETERS.urbanDetourFactor;
+  const walkSpeedKmPerMin = walkingSpeedKmh / 60;
+  const minTransferBuffer = options?.minTransferBufferMin ?? DEFAULT_ROUTING_PARAMETERS.minTransferBufferMin;
+  const transferRiskBuffer = options?.transferRiskBufferMin ?? DEFAULT_ROUTING_PARAMETERS.transferRiskBufferMin;
+  const enableHeadway = options?.enableHeadwayPenalty ?? DEFAULT_ROUTING_PARAMETERS.enableHeadwayPenalty;
 
   const allowedModes = new Set<TransitSubMode>(
     transitModes && transitModes.length > 0
@@ -392,9 +410,7 @@ export function calculateReachableStations(
   const originPoint = turf.point([lng, lat]);
 
   // 1. Find entry stations accessible from workplace/destination (Last Mile in reverse)
-  // Calibrated urban pedestrian parameters: 4.0 km/h with 1.35 urban detour factor
-  const walkSpeedKmPerMin = 0.067; // ~4.0 km/h
-  const detourFactor = 1.35; // Urban block & pedestrian crossing detour factor
+  // Configurable urban pedestrian parameters (default: 4.0 km/h with 1.35 detour factor)
   const effectiveMaxWalkMin = Math.max(maxWalkFromStationMin, 1);
 
   const entryStations: { station: TransitStation; walkTimeMin: number }[] = [];
@@ -468,7 +484,7 @@ export function calculateReachableStations(
   const pq = new PriorityQueue<State>((a, b) => a.totalTime - b.totalTime);
 
   for (const entry of entryStations) {
-    const departureWait = getInitialDepartureWaitMinutes(entry.station, allowedModes);
+    const departureWait = getInitialDepartureWaitMinutes(entry.station, allowedModes, enableHeadway);
     const startTime = entry.walkTimeMin + departureWait;
     if (startTime <= travelTimeMinutes) {
       pq.push({
@@ -512,7 +528,14 @@ export function calculateReachableStations(
       }
 
       const transferPenalty = isLineChange
-        ? calculateTransferPenalty(edge.type, edge.lines, maxTransferWaitMin)
+        ? calculateTransferPenalty(
+            edge.type,
+            edge.lines,
+            maxTransferWaitMin,
+            minTransferBuffer,
+            transferRiskBuffer,
+            enableHeadway
+          )
         : 0;
       const nextTime = curr.totalTime + edge.minutes + transferPenalty;
 

@@ -107,7 +107,7 @@ export const ApiKeysTab: React.FC<ApiKeysTabProps> = ({
             {/* Split Diagnosis: Individual API Badges */}
             {googleCheckResult.detailedGoogle && (
               <div className="bg-white dark:bg-[#1e1f20] border border-slate-200 dark:border-[#3c4043] rounded-xl p-3 space-y-2.5 shadow-xs">
-                <div className="text-[11px] font-bold text-slate-700 dark:text-[#e3e3e3] uppercase tracking-wider">
+                <div className="text-xs font-medium text-slate-700 dark:text-[#e3e3e3]">
                   API-Berechtigungen im GCP-Projekt:
                 </div>
 

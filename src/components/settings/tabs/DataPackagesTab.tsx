@@ -505,7 +505,7 @@ export const DataPackagesTab: React.FC<DataPackagesTabProps> = ({
 
                 {isExpanded && (
                   <div className="px-3 pb-3 pt-1 border-t border-slate-100 dark:border-[#3c4043] bg-slate-50/50 dark:bg-[#202124] space-y-2">
-                    <div className="text-[10px] font-bold text-slate-500 dark:text-[#9aa0a6] uppercase tracking-wide">
+                    <div className="text-[11px] font-medium text-slate-600 dark:text-[#9aa0a6]">
                       Artefakte für {city.cityName}:
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">

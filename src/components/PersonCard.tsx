@@ -388,7 +388,7 @@ export const PersonCard: React.FC<PersonCardProps> = ({
 
       {/* Transport Mode Selection */}
       <div className="mb-3">
-        <label className="block text-[11px] font-semibold text-slate-500 dark:text-[#9aa0a6] uppercase tracking-wider mb-1.5">
+        <label className="block text-xs font-medium text-slate-600 dark:text-[#9aa0a6] mb-1.5">
           Verkehrsmittel
         </label>
         <div className="grid grid-cols-4 gap-1 bg-slate-100 dark:bg-[#131314] p-1 rounded-xl">
@@ -401,10 +401,10 @@ export const PersonCard: React.FC<PersonCardProps> = ({
                 id={`btn-mode-${profile.id}-${mode.id}`}
                 type="button"
                 onClick={() => onUpdate({ mode: mode.id })}
-                className={`flex flex-col items-center justify-center py-1.5 px-1 rounded-lg text-xs font-medium transition-all ${
+                className={`flex flex-col items-center justify-center py-1.5 px-1 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
                   isSelected
-                    ? 'bg-white dark:bg-[#282a2c] text-blue-600 dark:text-[#8ab4f8] shadow-sm font-semibold'
-                    : 'text-slate-600 dark:text-[#9aa0a6] hover:text-slate-900 dark:hover:text-[#e3e3e3] hover:bg-white/60 dark:hover:bg-[#282a2c]/60'
+                    ? 'bg-white dark:bg-[#282a2c] text-blue-700 dark:text-[#8ab4f8] shadow-xs font-semibold'
+                    : 'text-slate-600 dark:text-[#9aa0a6] hover:text-slate-900 dark:hover:text-[#e8eaed] hover:bg-white/60 dark:hover:bg-[#282a2c]/60'
                 }`}
                 title={mode.label}
               >
@@ -420,14 +420,14 @@ export const PersonCard: React.FC<PersonCardProps> = ({
       <div className="mb-2">
         <div className="flex items-center justify-between text-xs mb-1.5">
           <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="text-[11px] font-semibold text-slate-500 dark:text-[#9aa0a6] uppercase tracking-wider">
-              Max. Reisezeit
+            <span className="text-xs font-medium text-slate-600 dark:text-[#9aa0a6]">
+              Maximale Reisezeit
             </span>
             {isochroneFeature && (
               <>
                 {isochroneFeature.properties?.isFallback ? (
                   <span
-                    className="text-[9px] font-bold text-rose-700 dark:text-rose-300 bg-rose-100 dark:bg-rose-950/50 border border-rose-300 dark:border-rose-800 px-1.5 py-0.5 rounded-md inline-flex items-center gap-1"
+                    className="text-[9px] font-medium text-rose-700 dark:text-rose-300 bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800 px-1.5 py-0.5 rounded-full inline-flex items-center gap-1"
                     title={isochroneFeature.properties?.fallbackReason || 'API-Fehler: Offline-Fallback aktiv'}
                   >
                     <AlertTriangle className="w-2.5 h-2.5 text-rose-600 dark:text-rose-400 shrink-0" />
@@ -435,28 +435,28 @@ export const PersonCard: React.FC<PersonCardProps> = ({
                   </span>
                 ) : isochroneFeature.properties?.source === 'ors' ? (
                   <span
-                    className="text-[9px] font-bold text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-950/50 border border-blue-300 dark:border-blue-800 px-1.5 py-0.2 rounded-md"
+                    className="text-[9px] font-medium text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800 px-1.5 py-0.2 rounded-full"
                     title="Berechnet über OpenRouteService (OSM)"
                   >
                     ORS (OSM)
                   </span>
                 ) : isochroneFeature.properties?.source === 'google' || isochroneFeature.properties?.source === 'google_maps_isochrones' ? (
                   <span
-                    className="text-[9px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950/50 border border-emerald-300 dark:border-emerald-800 px-1.5 py-0.2 rounded-md"
+                    className="text-[9px] font-medium text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 px-1.5 py-0.2 rounded-full"
                     title="Berechnet über Google Maps Isochrones API"
                   >
                     Google Maps
                   </span>
                 ) : isochroneFeature.properties?.source === 'transit_metro_matrix' ? (
                   <span
-                    className="text-[9px] font-bold text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-950/50 border border-purple-300 dark:border-purple-800 px-1.5 py-0.2 rounded-md"
+                    className="text-[9px] font-medium text-blue-700 dark:text-[#8ab4f8] bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800 px-1.5 py-0.2 rounded-full"
                     title="Berechnet über regionale ÖPNV-Fahrplanmatrix"
                   >
                     ÖPNV-Matrix
                   </span>
                 ) : (
                   <span
-                    className="text-[9px] font-normal text-slate-500 dark:text-[#9aa0a6] bg-slate-100 dark:bg-[#282a2c] border border-slate-200 dark:border-[#3c4043] px-1.5 py-0.2 rounded-md"
+                    className="text-[9px] font-normal text-slate-500 dark:text-[#9aa0a6] bg-slate-100 dark:bg-[#282a2c] border border-slate-200 dark:border-[#3c4043] px-1.5 py-0.2 rounded-full"
                     title="Integrierte Offline-Heuristik"
                   >
                     Offline
@@ -465,10 +465,8 @@ export const PersonCard: React.FC<PersonCardProps> = ({
               </>
             )}
           </div>
-          <span
-            className="font-bold px-2 py-0.5 rounded-md text-xs text-white"
-            style={{ backgroundColor: profile.color }}
-          >
+          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-100 dark:bg-[#282a2c] text-slate-900 dark:text-[#e8eaed]">
+            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: profile.color }} />
             {profile.travelTimeMinutes} Min
           </span>
         </div>
@@ -501,14 +499,14 @@ export const PersonCard: React.FC<PersonCardProps> = ({
               id={`btn-advanced-transit-${profile.id}`}
               type="button"
               onClick={() => setShowAdvanced(!showAdvanced)}
-              className="flex items-center justify-between w-full text-[11px] text-slate-500 hover:text-slate-800 dark:text-[#9aa0a6] dark:hover:text-[#e3e3e3] font-medium py-1 cursor-pointer"
+              className="flex items-center justify-between w-full text-xs text-slate-600 hover:text-slate-900 dark:text-[#9aa0a6] dark:hover:text-[#e8eaed] font-medium py-1 cursor-pointer"
             >
-              <span className="flex items-center gap-1">
-                <Sliders className="w-3 h-3" />
-                Erweiterte ÖPNV-Filter
+              <span className="flex items-center gap-1.5">
+                <Sliders className="w-3.5 h-3.5" />
+                <span>Erweiterte ÖPNV-Einstellungen</span>
               </span>
               <div className="flex items-center gap-1.5">
-                <span className="text-[10px] font-semibold text-blue-700 dark:text-[#8ab4f8] bg-blue-50 dark:bg-blue-950/40 border border-blue-200/60 dark:border-blue-800/60 px-1.5 py-0.5 rounded-md">
+                <span className="text-[10px] font-medium text-blue-700 dark:text-[#8ab4f8] bg-blue-50 dark:bg-blue-950/40 px-2 py-0.5 rounded-full">
                   {activeTransitModes.length} von {ALL_TRANSIT_SUBMODES.length} aktiv
                 </span>
                 {showAdvanced ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
@@ -516,7 +514,7 @@ export const PersonCard: React.FC<PersonCardProps> = ({
             </button>
 
             {showAdvanced && (
-              <div className="mt-2 bg-slate-50 dark:bg-[#131314] p-2.5 rounded-xl text-xs space-y-2">
+              <div className="mt-2 bg-slate-50 dark:bg-[#131314] p-3 rounded-2xl text-xs space-y-3 border border-slate-200/80 dark:border-[#3c4043]">
                 {/* ÖPNV-Verkehrsträger / Modalitäten (Tram, U-Bahn, Bus, X-Bus, S-Bahn, Regio) */}
                 <TransitSubmodeWidget
                   embedded
@@ -525,112 +523,109 @@ export const PersonCard: React.FC<PersonCardProps> = ({
                   title="Verkehrsmittel für diese Adresse"
                 />
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {/* 1. First Mile: Wohnort -> Haltestelle */}
-                <div className="bg-white dark:bg-[#1e1f20] p-2 rounded-lg border border-slate-200/80 dark:border-[#3c4043] shadow-2xs">
-                  <div className="flex items-center justify-between mb-0.5">
-                    <label htmlFor={`picker-walk-to-station-${profile.id}`} className="text-[10px] font-bold text-slate-800 dark:text-[#e3e3e3] flex items-center gap-1 cursor-pointer">
-                      <Footprints className="w-3.5 h-3.5 text-slate-500 dark:text-[#9aa0a6] shrink-0" />
-                      <span>Fußweg zur Haltestelle</span>
-                    </label>
-                    <span className="text-[10px] font-semibold text-blue-600 dark:text-[#8ab4f8] bg-blue-50 dark:bg-blue-950/40 px-1.5 py-0.5 rounded">
-                      {profile.maxWalkToStationMin ?? 5} Min
-                    </span>
+                {/* Sub-settings in unified Google M3 list */}
+                <div className="bg-white dark:bg-[#1e1f20] rounded-xl border border-slate-200/80 dark:border-[#3c4043] divide-y divide-slate-100 dark:divide-[#3c4043] overflow-hidden">
+                  {/* 1. First Mile: Wohnort -> Haltestelle */}
+                  <div className="p-2.5 flex items-center justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <label htmlFor={`picker-walk-to-station-${profile.id}`} className="text-xs font-medium text-slate-800 dark:text-[#e8eaed] flex items-center gap-1.5 cursor-pointer">
+                        <Footprints className="w-3.5 h-3.5 text-slate-500 dark:text-[#9aa0a6] shrink-0" />
+                        <span>Fußweg zur Haltestelle</span>
+                      </label>
+                      <p className="text-[10px] text-slate-500 dark:text-[#9aa0a6] mt-0.5 leading-tight">
+                        Max. Gehzeit von der Haustür zum Einstieg
+                      </p>
+                    </div>
+                    <div className="w-24 shrink-0">
+                      <MinutePicker
+                        id={`picker-walk-to-station-${profile.id}`}
+                        value={profile.maxWalkToStationMin}
+                        defaultValue={5}
+                        onChange={(val) => onUpdate({ maxWalkToStationMin: val })}
+                      />
+                    </div>
                   </div>
-                  <p className="text-[9px] text-slate-400 dark:text-[#9aa0a6] mb-1.5 leading-tight">
-                    Max. Gehzeit von der Haustür zur Einstiegshaltestelle
-                  </p>
-                  <MinutePicker
-                    id={`picker-walk-to-station-${profile.id}`}
-                    value={profile.maxWalkToStationMin}
-                    defaultValue={5}
-                    onChange={(val) => onUpdate({ maxWalkToStationMin: val })}
-                  />
-                </div>
 
-                {/* 2. Last Mile: Haltestelle -> Arbeitsplatz / Ziel */}
-                <div className="bg-white dark:bg-[#1e1f20] p-2 rounded-lg border border-slate-200/80 dark:border-[#3c4043] shadow-2xs">
-                  <div className="flex items-center justify-between mb-0.5">
-                    <label htmlFor={`picker-walk-from-station-${profile.id}`} className="text-[10px] font-bold text-slate-800 dark:text-[#e3e3e3] flex items-center gap-1 cursor-pointer">
-                      <MapPin className="w-3.5 h-3.5 text-slate-500 dark:text-[#9aa0a6] shrink-0" />
-                      <span>Fußweg ab Zielhaltestelle</span>
-                    </label>
-                    <span className="text-[10px] font-semibold text-blue-600 dark:text-[#8ab4f8] bg-blue-50 dark:bg-blue-950/40 px-1.5 py-0.5 rounded">
-                      {profile.maxWalkFromStationMin ?? 5} Min
-                    </span>
+                  {/* 2. Last Mile: Haltestelle -> Arbeitsplatz / Ziel */}
+                  <div className="p-2.5 flex items-center justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <label htmlFor={`picker-walk-from-station-${profile.id}`} className="text-xs font-medium text-slate-800 dark:text-[#e8eaed] flex items-center gap-1.5 cursor-pointer">
+                        <MapPin className="w-3.5 h-3.5 text-slate-500 dark:text-[#9aa0a6] shrink-0" />
+                        <span>Fußweg ab Zielhaltestelle</span>
+                      </label>
+                      <p className="text-[10px] text-slate-500 dark:text-[#9aa0a6] mt-0.5 leading-tight">
+                        Max. Gehzeit vom Ausstieg zum Ziel
+                      </p>
+                    </div>
+                    <div className="w-24 shrink-0">
+                      <MinutePicker
+                        id={`picker-walk-from-station-${profile.id}`}
+                        value={profile.maxWalkFromStationMin}
+                        defaultValue={5}
+                        onChange={(val) => onUpdate({ maxWalkFromStationMin: val })}
+                      />
+                    </div>
                   </div>
-                  <p className="text-[9px] text-slate-400 dark:text-[#9aa0a6] mb-1.5 leading-tight">
-                    Max. Gehzeit von der Ausstiegshaltestelle zum Büro
-                  </p>
-                  <MinutePicker
-                    id={`picker-walk-from-station-${profile.id}`}
-                    value={profile.maxWalkFromStationMin}
-                    defaultValue={5}
-                    onChange={(val) => onUpdate({ maxWalkFromStationMin: val })}
-                  />
-                </div>
 
-                {/* 3. Max. Umstiege */}
-                <div className="bg-white dark:bg-[#1e1f20] p-2 rounded-lg border border-slate-200/80 dark:border-[#3c4043] shadow-2xs">
-                  <div className="flex items-center justify-between mb-0.5">
-                    <label htmlFor={`select-transfers-${profile.id}`} className="text-[10px] font-bold text-slate-800 dark:text-[#e3e3e3] flex items-center gap-1 cursor-pointer">
-                      <ArrowRightLeft className="w-3.5 h-3.5 text-slate-500 dark:text-[#9aa0a6] shrink-0" />
-                      <span>Max. Umstiege</span>
-                    </label>
-                    <span className="text-[10px] font-semibold text-slate-600 dark:text-[#c4c7c5] bg-slate-100 dark:bg-[#282a2c] px-1.5 py-0.5 rounded">
-                      {profile.maxTransfers !== undefined ? profile.maxTransfers : 'Beliebig'}
-                    </span>
+                  {/* 3. Max. Umstiege */}
+                  <div className="p-2.5 flex items-center justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <label htmlFor={`select-transfers-${profile.id}`} className="text-xs font-medium text-slate-800 dark:text-[#e8eaed] flex items-center gap-1.5 cursor-pointer">
+                        <ArrowRightLeft className="w-3.5 h-3.5 text-slate-500 dark:text-[#9aa0a6] shrink-0" />
+                        <span>Max. Umstiege</span>
+                      </label>
+                      <p className="text-[10px] text-slate-500 dark:text-[#9aa0a6] mt-0.5 leading-tight">
+                        Maximal tolerierte Linienwechsel
+                      </p>
+                    </div>
+                    <div className="w-36 shrink-0">
+                      <select
+                        id={`select-transfers-${profile.id}`}
+                        value={profile.maxTransfers ?? 1}
+                        onChange={(e) =>
+                          onUpdate({
+                            maxTransfers: e.target.value === '99' ? undefined : parseInt(e.target.value, 10),
+                          })
+                        }
+                        className="w-full bg-slate-50 dark:bg-[#131314] border border-slate-200 dark:border-[#3c4043] rounded-lg px-2 py-1 text-xs text-slate-700 dark:text-[#e8eaed] focus:outline-none focus:border-blue-600 dark:focus:border-[#8ab4f8] cursor-pointer"
+                      >
+                        <option value="0">Direkt (0 Umstiege)</option>
+                        <option value="1">Max. 1 Umstieg</option>
+                        <option value="2">Max. 2 Umstiege</option>
+                        <option value="3">Max. 3 Umstiege</option>
+                        <option value="99">Beliebig</option>
+                      </select>
+                    </div>
                   </div>
-                  <p className="text-[9px] text-slate-400 dark:text-[#9aa0a6] mb-1.5 leading-tight">
-                    Maximal tolerierte Umstiege auf der Gesamtstrecke
-                  </p>
-                  <select
-                    id={`select-transfers-${profile.id}`}
-                    value={profile.maxTransfers ?? 1}
-                    onChange={(e) =>
-                      onUpdate({
-                        maxTransfers: e.target.value === '99' ? undefined : parseInt(e.target.value, 10),
-                      })
-                    }
-                    className="w-full bg-slate-50/80 dark:bg-[#131314] border border-slate-200 dark:border-[#3c4043] rounded-md px-2 py-1 text-xs text-slate-700 dark:text-[#e3e3e3] focus:outline-none focus:border-blue-500 dark:focus:border-[#8ab4f8] cursor-pointer"
-                  >
-                    <option value="0">0 (Nur Direktverbindungen)</option>
-                    <option value="1">Max. 1 Umstieg (Standard)</option>
-                    <option value="2">Max. 2 Umstiege</option>
-                    <option value="3">Max. 3 Umstiege</option>
-                    <option value="99">Beliebig viele Umstiege</option>
-                  </select>
-                </div>
 
-                {/* 4. Max. Umstiegszeit */}
-                <div className="bg-white dark:bg-[#1e1f20] p-2 rounded-lg border border-slate-200/80 dark:border-[#3c4043] shadow-2xs">
-                  <div className="flex items-center justify-between mb-0.5">
-                    <label htmlFor={`picker-transfer-wait-${profile.id}`} className="text-[10px] font-bold text-slate-800 dark:text-[#e3e3e3] flex items-center gap-1 cursor-pointer">
-                      <Clock className="w-3.5 h-3.5 text-slate-500 dark:text-[#9aa0a6] shrink-0" />
-                      <span>Puffer beim Umstieg</span>
-                    </label>
-                    <span className="text-[10px] font-semibold text-slate-600 dark:text-[#c4c7c5] bg-slate-100 dark:bg-[#282a2c] px-1.5 py-0.5 rounded">
-                      {profile.maxTransferWaitMin ?? 5} Min
-                    </span>
+                  {/* 4. Max. Umstiegszeit */}
+                  <div className="p-2.5 flex items-center justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <label htmlFor={`picker-transfer-wait-${profile.id}`} className="text-xs font-medium text-slate-800 dark:text-[#e8eaed] flex items-center gap-1.5 cursor-pointer">
+                        <Clock className="w-3.5 h-3.5 text-slate-500 dark:text-[#9aa0a6] shrink-0" />
+                        <span>Puffer beim Umstieg</span>
+                      </label>
+                      <p className="text-[10px] text-slate-500 dark:text-[#9aa0a6] mt-0.5 leading-tight">
+                        Zeitpuffer beim Wechsel der Linie
+                      </p>
+                    </div>
+                    <div className="w-24 shrink-0">
+                      <MinutePicker
+                        id={`picker-transfer-wait-${profile.id}`}
+                        value={profile.maxTransferWaitMin}
+                        defaultValue={5}
+                        onChange={(val) => onUpdate({ maxTransferWaitMin: val })}
+                      />
+                    </div>
                   </div>
-                  <p className="text-[9px] text-slate-400 dark:text-[#9aa0a6] mb-1.5 leading-tight">
-                    Tolerierter Zeitpuffer beim Wechseln der Linie
-                  </p>
-                  <MinutePicker
-                    id={`picker-transfer-wait-${profile.id}`}
-                    value={profile.maxTransferWaitMin}
-                    defaultValue={5}
-                    onChange={(val) => onUpdate({ maxTransferWaitMin: val })}
-                  />
                 </div>
               </div>
-            </div>
-          )}
-        </div>
-      );
-    })()}
-      </>
-      )}
-    </div>
-  );
+            )}
+          </div>
+        );
+      })()}
+    </>
+  )}
+</div>
+);
 };

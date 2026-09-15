@@ -108,7 +108,7 @@ export const InspectionPanel: React.FC<InspectionPanelProps> = ({ inspection, on
           id="btn-close-inspector"
           type="button"
           onClick={onClose}
-          className="text-slate-400 dark:text-[#9aa0a6] hover:text-slate-600 dark:hover:text-[#e3e3e3] p-1 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors shrink-0 cursor-pointer"
+          className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 dark:text-[#9aa0a6] hover:text-slate-600 dark:hover:text-[#e3e3e3] hover:bg-black/5 dark:hover:bg-white/10 transition-colors shrink-0 cursor-pointer"
           title="Schließen"
         >
           <X className="w-4 h-4" />
@@ -127,17 +127,17 @@ export const InspectionPanel: React.FC<InspectionPanelProps> = ({ inspection, on
 
       {/* Mietspiegel / Rental District Card */}
       {inspection.rentalInfo && (
-        <div className="bg-gradient-to-r from-slate-50 to-blue-50/50 dark:from-[#1e1f20] dark:to-blue-950/20 border-b border-slate-200/80 dark:border-[#3c4043] p-3 flex items-start gap-2.5">
+        <div className="bg-slate-50/80 dark:bg-[#282a2c]/60 border-b border-slate-200/80 dark:border-[#3c4043] p-3 flex items-start gap-2.5">
           <div className="p-1.5 rounded-lg bg-blue-100 dark:bg-blue-950/50 text-blue-700 dark:text-[#8ab4f8] shrink-0 mt-0.5">
             <Building2 className="w-4 h-4" />
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between gap-1">
-              <span className="text-xs font-bold text-slate-800 dark:text-[#e3e3e3] truncate" title={inspection.rentalInfo.name}>
+              <span className="text-xs font-semibold text-slate-800 dark:text-[#e3e3e3] truncate" title={inspection.rentalInfo.name}>
                 {inspection.rentalInfo.name} <span className="text-slate-400 dark:text-[#9aa0a6] font-normal">({inspection.rentalInfo.districtNumber})</span>
               </span>
               <span
-                className="text-[10px] font-bold px-1.5 py-0.5 rounded-full shrink-0"
+                className="text-[10px] font-medium px-2 py-0.5 rounded-full shrink-0"
                 style={{
                   backgroundColor: `${getRentalChoroplethColor(inspection.rentalInfo.avgRentColdSqm)}20`,
                   color: getRentalChoroplethColor(inspection.rentalInfo.avgRentColdSqm),
@@ -147,7 +147,7 @@ export const InspectionPanel: React.FC<InspectionPanelProps> = ({ inspection, on
               </span>
             </div>
             <div className="flex items-baseline gap-2 mt-0.5">
-              <span className="text-sm font-extrabold text-slate-900 dark:text-white">
+              <span className="text-sm font-semibold text-slate-900 dark:text-white">
                 Ø {inspection.rentalInfo.avgRentColdSqm.toFixed(2)} €/m²
               </span>
               <span className="text-[10px] text-slate-500 dark:text-[#9aa0a6]">
@@ -156,7 +156,7 @@ export const InspectionPanel: React.FC<InspectionPanelProps> = ({ inspection, on
             </div>
             <div className="text-[9px] text-slate-400 dark:text-[#9aa0a6] mt-0.5 flex items-center justify-between">
               <span>{inspection.rentalInfo.source}</span>
-              <span className="font-semibold text-slate-500 dark:text-[#9aa0a6]">Kaltmiete</span>
+              <span className="font-medium text-slate-500 dark:text-[#9aa0a6]">Kaltmiete</span>
             </div>
           </div>
         </div>
@@ -164,12 +164,12 @@ export const InspectionPanel: React.FC<InspectionPanelProps> = ({ inspection, on
 
       {/* Breakdown Table */}
       <div className="p-3.5 space-y-2 max-h-[70vh] overflow-y-auto">
-        <div className="text-[11px] font-bold text-slate-500 dark:text-[#9aa0a6] uppercase tracking-wider mb-2 flex items-center justify-between">
+        <div className="text-xs font-medium text-slate-600 dark:text-[#9aa0a6] mb-2 flex items-center justify-between">
           <div className="flex items-center gap-1.5">
-            <Clock className="w-3 h-3 text-slate-500 dark:text-[#9aa0a6]" />
-            <span>Fahrzeiten & Routen-Details:</span>
+            <Clock className="w-3.5 h-3.5 text-slate-500 dark:text-[#9aa0a6]" />
+            <span>Fahrzeiten & Routen-Details</span>
           </div>
-          <span className="text-[10px] text-slate-400 dark:text-[#9aa0a6] font-normal lowercase">Klick für Details</span>
+          <span className="text-[10px] text-slate-400 dark:text-[#9aa0a6] font-normal">Klick für Details</span>
         </div>
 
         <div className="space-y-2">
@@ -199,7 +199,7 @@ export const InspectionPanel: React.FC<InspectionPanelProps> = ({ inspection, on
                       style={{ backgroundColor: est.personColor }}
                     />
                     <div className="min-w-0 truncate">
-                      <div className="font-bold text-xs text-slate-900 dark:text-[#e3e3e3] truncate">
+                      <div className="font-semibold text-xs text-slate-900 dark:text-[#e3e3e3] truncate">
                         {est.personName}
                       </div>
                       <div className="text-[11px] text-slate-500 dark:text-[#9aa0a6] flex items-center gap-1 mt-0.5">
@@ -223,7 +223,7 @@ export const InspectionPanel: React.FC<InspectionPanelProps> = ({ inspection, on
                     <div>
                       <div className="flex items-baseline justify-end gap-1">
                         <span
-                          className={`font-black text-sm ${
+                          className={`font-semibold text-sm ${
                             est.isWithinLimit ? 'text-slate-900 dark:text-white' : 'text-rose-600 dark:text-rose-400'
                           }`}
                         >
@@ -233,7 +233,7 @@ export const InspectionPanel: React.FC<InspectionPanelProps> = ({ inspection, on
                       </div>
 
                       <div
-                        className={`text-[10px] font-bold ${
+                        className={`text-[10px] font-semibold ${
                           est.isWithinLimit ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
                         }`}
                       >
@@ -243,7 +243,7 @@ export const InspectionPanel: React.FC<InspectionPanelProps> = ({ inspection, on
                       </div>
                     </div>
 
-                    <div className="text-slate-400 dark:text-[#9aa0a6] p-1 rounded-md hover:bg-slate-100 dark:hover:bg-[#3c4043]">
+                    <div className="w-7 h-7 rounded-full flex items-center justify-center text-slate-400 dark:text-[#9aa0a6] hover:bg-slate-100 dark:hover:bg-[#3c4043] transition-colors">
                       {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                     </div>
                   </div>
@@ -252,7 +252,7 @@ export const InspectionPanel: React.FC<InspectionPanelProps> = ({ inspection, on
                 {/* Expandable Route Details Drawer */}
                 {isExpanded && (
                   <div className="px-3 pb-3 pt-1 border-t border-slate-100 dark:border-[#3c4043] bg-slate-50/80 dark:bg-[#131314] text-xs space-y-2 animate-in fade-in duration-150">
-                    <div className="text-[10px] uppercase font-bold text-slate-500 dark:text-[#9aa0a6] tracking-wider flex items-center gap-1">
+                    <div className="text-[11px] font-medium text-slate-600 dark:text-[#9aa0a6] flex items-center gap-1">
                       <Navigation className="w-3 h-3 text-blue-600 dark:text-[#8ab4f8]" />
                       <span>Routen-Etappen & Zeitaufteilung:</span>
                     </div>
@@ -294,11 +294,11 @@ export const InspectionPanel: React.FC<InspectionPanelProps> = ({ inspection, on
                           <div className="text-slate-400 dark:text-[#9aa0a6] font-medium">Zustieg (Fußweg)</div>
                           <div className="flex items-baseline gap-1 mt-0.5">
                             <span
-                              className={`font-bold ${
+                              className={`font-semibold ${
                                 est.details.firstMileWalkLimitMin &&
                                 est.details.firstMileWalkMin !== undefined &&
                                 est.details.firstMileWalkMin > est.details.firstMileWalkLimitMin
-                                  ? 'text-rose-600 dark:text-rose-400 font-black'
+                                  ? 'text-rose-600 dark:text-rose-400 font-bold'
                                   : 'text-slate-800 dark:text-[#e3e3e3]'
                               }`}
                             >
@@ -317,7 +317,7 @@ export const InspectionPanel: React.FC<InspectionPanelProps> = ({ inspection, on
 
                         <div>
                           <div className="text-slate-400 dark:text-[#9aa0a6] font-medium">ÖPNV-Fahrt</div>
-                          <div className="font-bold text-slate-800 dark:text-[#e3e3e3] mt-0.5">{est.details.inVehicleMin} Min</div>
+                          <div className="font-semibold text-slate-800 dark:text-[#e3e3e3] mt-0.5">{est.details.inVehicleMin} Min</div>
                           <div className="text-slate-500 dark:text-[#9aa0a6] text-[9px] mt-0.5">
                             {est.details.transfersCount === 0
                               ? 'Direktfahrt'
@@ -329,11 +329,11 @@ export const InspectionPanel: React.FC<InspectionPanelProps> = ({ inspection, on
                           <div className="text-slate-400 dark:text-[#9aa0a6] font-medium">Ausstieg (Fußweg)</div>
                           <div className="flex items-baseline gap-1 mt-0.5">
                             <span
-                              className={`font-bold ${
+                              className={`font-semibold ${
                                 est.details.lastMileWalkLimitMin &&
                                 est.details.lastMileWalkMin !== undefined &&
                                 est.details.lastMileWalkMin > est.details.lastMileWalkLimitMin
-                                  ? 'text-rose-600 dark:text-rose-400 font-black'
+                                  ? 'text-rose-600 dark:text-rose-400 font-bold'
                                   : 'text-slate-800 dark:text-[#e3e3e3]'
                               }`}
                             >
