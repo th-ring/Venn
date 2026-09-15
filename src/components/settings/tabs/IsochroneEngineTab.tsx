@@ -5,7 +5,11 @@ import {
   hasGoogleMapsApiKey,
   hasOrsApiKey,
 } from '../../../services/isochroneEngine';
-import { ExternalLink } from 'lucide-react';
+import { Globe, Cpu, Route, Sparkles, SlidersHorizontal, ExternalLink, Check } from 'lucide-react';
+import { SettingsCard } from '../ui/SettingsCard';
+import { SettingsRow } from '../ui/SettingsRow';
+import { SettingsSwitch } from '../ui/SettingsSwitch';
+import { SettingsSegmentedControl } from '../ui/SettingsSegmentedControl';
 
 interface IsochroneEngineTabProps {
   activeProvider: IsochroneProvider;
@@ -18,6 +22,18 @@ interface IsochroneEngineTabProps {
   onOpenRoutingTab?: () => void;
 }
 
+interface ProviderItem {
+  id: IsochroneProvider;
+  name: string;
+  badge: string;
+  badgeColor: string;
+  description: string;
+  icon: React.ComponentType<{ className?: string }>;
+  isConfigured: boolean;
+  docUrl?: string;
+  docLabel?: string;
+}
+
 export const IsochroneEngineTab: React.FC<IsochroneEngineTabProps> = ({
   activeProvider,
   onSelectProvider,
@@ -28,321 +44,222 @@ export const IsochroneEngineTab: React.FC<IsochroneEngineTabProps> = ({
   onToggleOnlyIntersection,
   onOpenRoutingTab,
 }) => {
+  const providers: ProviderItem[] = [
+    {
+      id: 'calibrated',
+      name: 'Integrierte Multimodale Engine',
+      badge: 'Lokal • Ohne API-Key',
+      badgeColor: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300',
+      description:
+        'Kalibriertes physikalisches Modell mit schnellen radialen Transit-Fingern (S-Bahn/U-Bahn), Autobahnkorridoren und Berufsverkehrs-Faktoren.',
+      icon: Cpu,
+      isConfigured: true,
+    },
+    {
+      id: 'google',
+      name: 'Google Maps Isochrones API',
+      badge: hasGoogleMapsApiKey() ? 'Aktiv' : 'Key nötig',
+      badgeColor: hasGoogleMapsApiKey()
+        ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/60 dark:text-blue-300'
+        : 'bg-slate-100 text-slate-600 dark:bg-[#282a2c] dark:text-[#9aa0a6]',
+      description:
+        'Offizielle Google Maps Erreichbarkeits-Polygone für Pkw, Fahrrad und Fußwege. (ÖPNV nutzt nahtlos die MVV/MVG-Haltestellenmatrix).',
+      icon: Globe,
+      isConfigured: hasGoogleMapsApiKey(),
+      docUrl: 'https://developers.google.com/maps/documentation/isochrones',
+      docLabel: 'Google Doku',
+    },
+    {
+      id: 'ors',
+      name: 'OpenRouteService (ORS)',
+      badge: hasOrsApiKey() ? 'Aktiv' : 'Key nötig',
+      badgeColor: hasOrsApiKey()
+        ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/60 dark:text-blue-300'
+        : 'bg-slate-100 text-slate-600 dark:bg-[#282a2c] dark:text-[#9aa0a6]',
+      description:
+        'OpenStreetMap-basierte Erreichbarkeitszonen für Pkw, Rad und Fußgänger via HeiGIT OpenRouteService API.',
+      icon: Route,
+      isConfigured: hasOrsApiKey(),
+      docUrl: 'https://openrouteservice.org',
+      docLabel: 'openrouteservice.org',
+    },
+  ];
+
   return (
-    <div className="space-y-3">
-      <div className="text-xs text-slate-600 dark:text-[#9aa0a6] leading-relaxed">
-        Wähle, welche Berechnungs-Engine die Erreichbarkeits-Polygone (Fahrzeit-Zonen) berechnen soll.
-      </div>
-
-      {/* Option 1: Google Maps Isochrones API */}
-      <div
-        onClick={() => onSelectProvider('google')}
-        className={`p-3 rounded-xl border cursor-pointer transition-all ${
-          activeProvider === 'google'
-            ? 'border-blue-500 dark:border-[#8ab4f8] bg-blue-50/50 dark:bg-blue-950/40 ring-1 ring-blue-400 dark:ring-blue-500/50'
-            : 'border-slate-200 dark:border-[#3c4043] bg-white dark:bg-[#282a2c] hover:border-slate-300 dark:hover:border-[#5f6368]'
-        }`}
-      >
-        <div className="flex items-start justify-between">
-          <div className="flex items-center gap-2">
-            <input
-              type="radio"
-              name="provider"
-              checked={activeProvider === 'google'}
-              onChange={() => onSelectProvider('google')}
-              className="text-blue-600 dark:text-[#8ab4f8]"
-            />
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-xs font-bold text-slate-900 dark:text-[#e3e3e3]">
-                Google Maps Isochrones API
-              </span>
-              <span className="text-[10px] font-medium bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 px-1.5 py-0.5 rounded whitespace-nowrap">
-                Public Preview
-              </span>
-              {hasGoogleMapsApiKey() ? (
-                <span className="text-[10px] font-medium bg-emerald-100 dark:bg-emerald-900/50 text-emerald-800 dark:text-emerald-300 px-1.5 py-0.5 rounded whitespace-nowrap">
-                  Aktiv
-                </span>
-              ) : (
-                <span className="text-[10px] font-medium bg-slate-100 dark:bg-[#303134] text-slate-600 dark:text-[#9aa0a6] px-1.5 py-0.5 rounded whitespace-nowrap">
-                  Nicht konfiguriert
-                </span>
-              )}
-            </div>
-          </div>
-          <a
-            href="https://developers.google.com/maps/documentation/isochrones"
-            target="_blank"
-            rel="noreferrer"
-            className="text-[11px] text-blue-600 dark:text-[#8ab4f8] hover:underline flex items-center gap-1 shrink-0"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <span>Doku</span>
-            <ExternalLink className="w-2.5 h-2.5" />
-          </a>
-        </div>
-        <p className="text-[11px] text-slate-600 dark:text-[#9aa0a6] mt-1 pl-5 leading-relaxed">
-          Offizielle Google Maps Erreichbarkeits-Polygone für <strong>Pkw, Fahrrad und Fußwege</strong>.
-          <span className="text-slate-500 dark:text-[#9aa0a6] block mt-0.5">
-            (Hinweis: Für ÖPNV wird die MVV/MVG-Haltestellenmatrix genutzt, da Google Maps keine ÖPNV-Isochronen bereitstellt.)
-          </span>
+    <div className="space-y-6">
+      {/* Tab Header */}
+      <div>
+        <h3 className="text-base font-medium text-slate-900 dark:text-[#e3e3e3]">
+          Isochronen-Engine & Berechnungsqualität
+        </h3>
+        <p className="text-xs text-slate-500 dark:text-[#9aa0a6] mt-0.5 leading-relaxed">
+          Wähle die Berechnungs-Engine und passe Qualität, Kantenglättung und Darstellungsoptionen an.
         </p>
       </div>
 
-      {/* Option 2: Integrierte Offline Simulation */}
-      <div
-        onClick={() => onSelectProvider('calibrated')}
-        className={`p-3 rounded-xl border cursor-pointer transition-all ${
-          activeProvider === 'calibrated'
-            ? 'border-blue-500 dark:border-[#8ab4f8] bg-blue-50/50 dark:bg-blue-950/40 ring-1 ring-blue-400 dark:ring-blue-500/50'
-            : 'border-slate-200 dark:border-[#3c4043] bg-white dark:bg-[#282a2c] hover:border-slate-300 dark:hover:border-[#5f6368]'
-        }`}
-      >
-        <div className="flex items-center gap-2">
-          <input
-            type="radio"
-            name="provider"
-            checked={activeProvider === 'calibrated'}
-            onChange={() => onSelectProvider('calibrated')}
-            className="text-blue-600 dark:text-[#8ab4f8] shrink-0"
+      {/* Engine Selection Cards */}
+      <div className="space-y-2.5">
+        <div className="text-xs font-semibold text-slate-700 dark:text-[#c4c7c5] uppercase tracking-wider px-1">
+          Berechnungs-Engine
+        </div>
+
+        <div className="grid grid-cols-1 gap-2.5">
+          {providers.map((p) => {
+            const Icon = p.icon;
+            const isSelected = activeProvider === p.id;
+
+            return (
+              <div
+                key={p.id}
+                onClick={() => onSelectProvider(p.id)}
+                className={`p-3.5 sm:p-4 rounded-2xl border transition-all cursor-pointer select-none group ${
+                  isSelected
+                    ? 'bg-blue-50/60 dark:bg-blue-950/30 border-2 border-blue-600 dark:border-[#8ab4f8] shadow-xs'
+                    : 'bg-white dark:bg-[#1e1f20] border-slate-200/90 dark:border-[#3c4043] hover:border-slate-300 dark:hover:border-[#5f6368]'
+                }`}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-3 min-w-0 flex-1">
+                    <div
+                      className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+                        isSelected
+                          ? 'bg-blue-600 text-white dark:bg-[#8ab4f8] dark:text-[#131314]'
+                          : 'bg-slate-100 dark:bg-[#282a2c] text-slate-600 dark:text-[#9aa0a6]'
+                      }`}
+                    >
+                      <Icon className="w-4 h-4" />
+                    </div>
+
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-sm font-medium text-slate-900 dark:text-[#e3e3e3]">
+                          {p.name}
+                        </span>
+                        <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${p.badgeColor}`}>
+                          {p.badge}
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-500 dark:text-[#9aa0a6] leading-relaxed mt-1">
+                        {p.description}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    {p.docUrl && (
+                      <a
+                        href={p.docUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="text-xs text-blue-600 dark:text-[#8ab4f8] hover:underline flex items-center gap-1 p-1 rounded-md hover:bg-slate-100 dark:hover:bg-[#282a2c]"
+                        title={p.docLabel}
+                      >
+                        <span className="hidden sm:inline">{p.docLabel}</span>
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    )}
+
+                    <div
+                      className={`w-5 h-5 rounded-full flex items-center justify-center transition-all ${
+                        isSelected
+                          ? 'bg-blue-600 text-white dark:bg-[#8ab4f8] dark:text-[#131314]'
+                          : 'border border-slate-300 dark:border-[#5f6368]'
+                      }`}
+                    >
+                      {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Computation & Geometry Settings Card */}
+      <SettingsCard title="Berechnungs- & Geometrie-Parameter">
+        {/* Fidelity / Detailgrad */}
+        <SettingsRow
+          icon={Sparkles}
+          iconColor="text-blue-600 dark:text-[#8ab4f8]"
+          iconBg="bg-blue-50 dark:bg-blue-950/40"
+          title="Detailgrad der Polygone"
+          description="Bestimmt die Auflösung des Erreichbarkeitsrasters (Auto balanciert Geschwindigkeit und Detailtreue)."
+          control={
+            <SettingsSegmentedControl<PolygonFidelity>
+              value={options.fidelity || 'AUTOMATIC'}
+              onChange={onSelectFidelity}
+              options={[
+                { value: 'AUTOMATIC', label: 'Auto' },
+                { value: 'LOW', label: 'Grob' },
+                { value: 'MEDIUM', label: 'Mittel' },
+                { value: 'HIGH', label: 'Präzise' },
+              ]}
+            />
+          }
+        />
+
+        {/* Glatte Kanten / Smoothing */}
+        <SettingsRow
+          title="Glatte Konturkanten"
+          description="Wendet B-Spline Glättung auf die berechneten Polygon-Außenkanten an."
+          control={
+            <SettingsSwitch
+              checked={Boolean(options.enableSmoothing)}
+              onChange={() => onToggleOption('enableSmoothing')}
+              ariaLabel="Glatte Kanten umschalten"
+            />
+          }
+        />
+
+        {/* Hole-Filling */}
+        <SettingsRow
+          title="Künstliche Netzlöcher schließen (Hole-Filling)"
+          description="Schließt unbegründete Hohlräume und Artefakte in dichten Stadtgebieten (z. B. Moosach) für ein konsistentes Polygon."
+          control={
+            <SettingsSwitch
+              checked={options.fillHoles !== false}
+              onChange={() => onToggleOption('fillHoles')}
+              ariaLabel="Hole-Filling umschalten"
+            />
+          }
+        />
+
+        {/* Nur Treffbereich anzeigen */}
+        {onToggleOnlyIntersection && (
+          <SettingsRow
+            title="Nur gemeinsamen Treffbereich anzeigen"
+            description="Blendet individuelle Personen-Isochronen aus und hebt ausschließlich die grüne gemeinsame Schnittmenge hervor."
+            control={
+              <SettingsSwitch
+                checked={Boolean(showOnlyIntersection)}
+                onChange={onToggleOnlyIntersection}
+                ariaLabel="Nur Schnittmenge anzeigen umschalten"
+              />
+            }
           />
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-xs font-bold text-slate-900 dark:text-[#e3e3e3]">
-              Integrierte Multimodale Engine (Standard)
-            </span>
-            <span className="text-[10px] font-medium bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 px-1.5 py-0.5 rounded whitespace-nowrap">
-              Lokal • Ohne API-Key
+        )}
+      </SettingsCard>
+
+      {/* Link to Routing Parameters */}
+      {onOpenRoutingTab && (
+        <div className="p-3.5 bg-blue-50/60 dark:bg-blue-950/30 border border-blue-200/70 dark:border-blue-800/60 rounded-2xl flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <SlidersHorizontal className="w-4 h-4 text-blue-600 dark:text-[#8ab4f8] shrink-0" />
+            <span className="text-xs text-slate-700 dark:text-[#c4c7c5]">
+              Gehzeiten, Umsteigepuffer, Taktzeiten & Geschwindigkeiten anpassen?
             </span>
           </div>
-        </div>
-        <p className="text-[11px] text-slate-600 dark:text-[#9aa0a6] mt-1 pl-5 leading-relaxed">
-          Mathematisch kalibriertes Modell mit schnellen radialen Transit-Fingern (S-Bahn/U-Bahn),
-          lokalem Bus-Netz, Autobahn-Korridoren und Tageszeit-/Rush-Hour-Faktoren.
-        </p>
-      </div>
-
-      {/* Option 3: OpenRouteService (ORS) */}
-      <div
-        onClick={() => onSelectProvider('ors')}
-        className={`p-3 rounded-xl border cursor-pointer transition-all ${
-          activeProvider === 'ors'
-            ? 'border-blue-500 dark:border-[#8ab4f8] bg-blue-50/50 dark:bg-blue-950/40 ring-1 ring-blue-400 dark:ring-blue-500/50'
-            : 'border-slate-200 dark:border-[#3c4043] bg-white dark:bg-[#282a2c] hover:border-slate-300 dark:hover:border-[#5f6368]'
-        }`}
-      >
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <input
-              type="radio"
-              name="provider"
-              checked={activeProvider === 'ors'}
-              onChange={() => onSelectProvider('ors')}
-              className="text-blue-600 dark:text-[#8ab4f8] shrink-0"
-            />
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-xs font-bold text-slate-900 dark:text-[#e3e3e3]">
-                OpenRouteService (ORS)
-              </span>
-              <span className="text-[10px] font-medium bg-slate-100 dark:bg-[#303134] text-slate-700 dark:text-[#e3e3e3] px-1.5 py-0.5 rounded whitespace-nowrap">
-                Open Source API
-              </span>
-              {hasOrsApiKey() ? (
-                <span className="text-[10px] font-medium bg-emerald-100 dark:bg-emerald-900/50 text-emerald-800 dark:text-emerald-300 px-1.5 py-0.5 rounded whitespace-nowrap">
-                  Aktiv
-                </span>
-              ) : (
-                <span className="text-[10px] font-medium bg-slate-100 dark:bg-[#303134] text-slate-600 dark:text-[#9aa0a6] px-1.5 py-0.5 rounded whitespace-nowrap">
-                  Nicht konfiguriert
-                </span>
-              )}
-            </div>
-          </div>
-          <a
-            href="https://openrouteservice.org"
-            target="_blank"
-            rel="noreferrer"
-            className="text-[11px] text-blue-600 dark:text-[#8ab4f8] hover:underline flex items-center gap-1"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <span>openrouteservice.org</span>
-            <ExternalLink className="w-2.5 h-2.5" />
-          </a>
-        </div>
-        <p className="text-[11px] text-slate-600 dark:text-[#9aa0a6] mt-1 pl-5 leading-relaxed">
-          OpenStreetMap-basierte Isochronen für Auto, Fahrrad und Fußgänger (kostenloser API-Key erforderlich).
-        </p>
-      </div>
-
-      {/* Quick link to Routing Parameters */}
-      <div className="flex items-center justify-between p-3 bg-blue-50/60 dark:bg-blue-950/30 border border-blue-200/70 dark:border-blue-800/60 rounded-xl">
-        <div className="text-xs text-slate-700 dark:text-[#c4c7c5] pr-2">
-          <span className="font-semibold text-slate-900 dark:text-[#e3e3e3] block">
-            Geschwindigkeiten & Puffer anpassen?
-          </span>
-          <span className="text-[11px] text-slate-500 dark:text-[#9aa0a6] mt-0.5 block">
-            Gehgeschwindigkeit, Detour-Faktor, Umsteigepuffer & Taktzeit-Malus konfigurieren.
-          </span>
-        </div>
-        {onOpenRoutingTab && (
           <button
             type="button"
             onClick={onOpenRoutingTab}
-            className="text-xs font-medium text-blue-600 dark:text-[#8ab4f8] hover:underline px-2.5 py-1.5 rounded-lg hover:bg-blue-100/50 dark:hover:bg-blue-900/30 shrink-0 cursor-pointer"
+            className="text-xs font-semibold text-blue-600 dark:text-[#8ab4f8] hover:underline px-3 py-1.5 rounded-lg hover:bg-blue-100/50 dark:hover:bg-blue-900/40 shrink-0 cursor-pointer"
           >
-            Zu den Routing-Parametern →
+            Zu den Mobilitäts-Parametern →
           </button>
-        )}
-      </div>
-
-      {/* Berechnungsparameter: Detailgrad, Live-Verkehr & Glättung */}
-      <div className="pt-3 border-t border-slate-200/80 dark:border-[#3c4043] space-y-3">
-        <div className="text-xs font-bold text-slate-800 dark:text-[#e3e3e3]">
-          Berechnungs- & Darstellungs-Parameter
         </div>
-
-        {/* Detailgenauigkeit / Fidelity */}
-        <div className="bg-slate-50 dark:bg-[#202124] border border-slate-200 dark:border-[#3c4043] rounded-xl p-3 space-y-2">
-          <div className="flex items-center justify-between text-xs">
-            <span className="font-semibold text-slate-700 dark:text-[#e3e3e3]">Detailgrad der Isochronen:</span>
-            <span className="text-[11px] text-slate-500 dark:text-[#9aa0a6]">
-              {options.fidelity === 'HIGH'
-                ? 'Sehr präzise Berechnungsraster'
-                : options.fidelity === 'LOW'
-                ? 'Grob & maximal schnell'
-                : 'Ausgewogen'}
-            </span>
-          </div>
-          <div className="grid grid-cols-4 gap-1 bg-white dark:bg-[#1e1f20] p-1 rounded-lg border border-slate-200 dark:border-[#3c4043]">
-            {[
-              { id: 'AUTOMATIC' as PolygonFidelity, label: 'Auto' },
-              { id: 'LOW' as PolygonFidelity, label: 'Grob' },
-              { id: 'MEDIUM' as PolygonFidelity, label: 'Mittel' },
-              { id: 'HIGH' as PolygonFidelity, label: 'Präzise' },
-            ].map((item) => {
-              const isSelected = (options.fidelity || 'AUTOMATIC') === item.id;
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => onSelectFidelity(item.id)}
-                  className={`py-1.5 text-center rounded-md transition-all text-xs font-medium cursor-pointer ${
-                    isSelected
-                      ? 'bg-blue-600 dark:bg-[#8ab4f8] text-white dark:text-[#131314] shadow-xs font-semibold'
-                      : 'text-slate-600 dark:text-[#9aa0a6] hover:text-slate-900 dark:hover:text-[#e3e3e3] hover:bg-slate-100 dark:hover:bg-[#282a2c]'
-                  }`}
-                >
-                  {item.label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Switches for Live-Traffic, Smoothing, and Only Intersection */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          {/* Live-Verkehr Switch */}
-          <div className="bg-slate-50 dark:bg-[#202124] border border-slate-200 dark:border-[#3c4043] rounded-xl p-3 flex items-center justify-between">
-            <div>
-              <div className="text-xs font-semibold text-slate-800 dark:text-[#e3e3e3]">Live-Verkehr & Stau</div>
-              <div className="text-[10px] text-slate-500 dark:text-[#9aa0a6]">Rush-Hour Berücksichtigung</div>
-            </div>
-            <button
-              type="button"
-              role="switch"
-              aria-checked={options.liveTraffic}
-              onClick={() => onToggleOption('liveTraffic')}
-              className={`w-8 h-4.5 flex items-center rounded-full p-0.5 transition-colors cursor-pointer ${
-                options.liveTraffic ? 'bg-blue-600 dark:bg-[#8ab4f8]' : 'bg-slate-200 dark:bg-[#3c4043]'
-              }`}
-            >
-              <div
-                className={`bg-white dark:bg-[#1e1f20] w-3.5 h-3.5 rounded-full shadow-xs transform transition-transform ${
-                  options.liveTraffic ? 'translate-x-3.5' : 'translate-x-0'
-                }`}
-              />
-            </button>
-          </div>
-
-          {/* Glatte Kanten Switch */}
-          <div className="bg-slate-50 dark:bg-[#202124] border border-slate-200 dark:border-[#3c4043] rounded-xl p-3 flex items-center justify-between">
-            <div>
-              <div className="text-xs font-semibold text-slate-800 dark:text-[#e3e3e3]">Glatte Kanten</div>
-              <div className="text-[10px] text-slate-500 dark:text-[#9aa0a6]">B-Spline Konturen-Glättung</div>
-            </div>
-            <button
-              type="button"
-              role="switch"
-              aria-checked={options.enableSmoothing}
-              onClick={() => onToggleOption('enableSmoothing')}
-              className={`w-8 h-4.5 flex items-center rounded-full p-0.5 transition-colors cursor-pointer ${
-                options.enableSmoothing ? 'bg-blue-600 dark:bg-[#8ab4f8]' : 'bg-slate-200 dark:bg-[#3c4043]'
-              }`}
-            >
-              <div
-                className={`bg-white dark:bg-[#1e1f20] w-3.5 h-3.5 rounded-full shadow-xs transform transition-transform ${
-                  options.enableSmoothing ? 'translate-x-3.5' : 'translate-x-0'
-                }`}
-              />
-            </button>
-          </div>
-
-          {/* Hole-Filling Switch: Schließt künstliche Netzlöcher */}
-          <div className="bg-slate-50 dark:bg-[#202124] border border-slate-200 dark:border-[#3c4043] rounded-xl p-3 flex items-center justify-between sm:col-span-2">
-            <div className="pr-2">
-              <div className="text-xs font-semibold text-slate-800 dark:text-[#e3e3e3]">
-                Künstliche Netzlöcher schließen (Hole-Filling)
-              </div>
-              <div className="text-[10px] text-slate-500 dark:text-[#9aa0a6] leading-tight mt-0.5">
-                Füllt unbegründete Hohlräume und Artefakte in dichten Stadtgebieten (z. B. Moosach) für ein konsistentes Erreichbarkeitspolygon.
-              </div>
-            </div>
-            <button
-              type="button"
-              role="switch"
-              aria-checked={options.fillHoles !== false}
-              onClick={() => onToggleOption('fillHoles')}
-              className={`w-8 h-4.5 shrink-0 flex items-center rounded-full p-0.5 transition-colors cursor-pointer ${
-                options.fillHoles !== false ? 'bg-blue-600 dark:bg-[#8ab4f8]' : 'bg-slate-200 dark:bg-[#3c4043]'
-              }`}
-            >
-              <div
-                className={`bg-white dark:bg-[#1e1f20] w-3.5 h-3.5 rounded-full shadow-xs transform transition-transform ${
-                  options.fillHoles !== false ? 'translate-x-3.5' : 'translate-x-0'
-                }`}
-              />
-            </button>
-          </div>
-
-          {/* Nur überlagerten Treffbereich anzeigen Switch */}
-          {onToggleOnlyIntersection && (
-            <div className="bg-slate-50 dark:bg-[#202124] border border-slate-200 dark:border-[#3c4043] rounded-xl p-3 flex items-center justify-between sm:col-span-2">
-              <div className="pr-2">
-                <div className="text-xs font-semibold text-slate-800 dark:text-[#e3e3e3]">
-                  Nur überlagerten Treffbereich anzeigen
-                </div>
-                <div className="text-[10px] text-slate-500 dark:text-[#9aa0a6] leading-tight mt-0.5">
-                  Blendet die individuellen Personen-Isochronen aus und zeigt nur den gemeinsamen grünen Treffbereich.
-                </div>
-              </div>
-              <button
-                type="button"
-                role="switch"
-                aria-checked={showOnlyIntersection}
-                onClick={onToggleOnlyIntersection}
-                className={`w-8 h-4.5 shrink-0 flex items-center rounded-full p-0.5 transition-colors cursor-pointer ${
-                  showOnlyIntersection ? 'bg-emerald-600 dark:bg-emerald-400' : 'bg-slate-200 dark:bg-[#3c4043]'
-                }`}
-              >
-                <div
-                  className={`bg-white dark:bg-[#1e1f20] w-3.5 h-3.5 rounded-full shadow-xs transform transition-transform ${
-                    showOnlyIntersection ? 'translate-x-3.5' : 'translate-x-0'
-                  }`}
-                />
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
+      )}
     </div>
   );
 };

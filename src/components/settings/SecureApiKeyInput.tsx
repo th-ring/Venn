@@ -20,7 +20,7 @@ interface SecureApiKeyInputProps {
 export const SecureApiKeyInput: React.FC<SecureApiKeyInputProps> = ({
   value,
   onChange,
-  placeholder = 'API-Key hier einfügen...',
+  placeholder = '',
   disabled = false,
 }) => {
   const [isVisible, setIsVisible] = useState(false);

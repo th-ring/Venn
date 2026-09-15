@@ -1,11 +1,11 @@
 import React from 'react';
-import {
-  HeatmapSettings,
-  PriorityHeatmapItem,
-  PriorityHeatmapMode,
-} from '../../../types';
-import { Flame, Car, TrainFrontTunnel, TrainFront } from 'lucide-react';
+import { HeatmapSettings, PriorityHeatmapItem, PriorityHeatmapMode } from '../../../types';
+import { Flame, Car, TrainFrontTunnel, TrainFront, Info } from 'lucide-react';
 import { getHighwayMetadata } from '../../../services/highwayService';
+import { SettingsCard } from '../ui/SettingsCard';
+import { SettingsRow } from '../ui/SettingsRow';
+import { SettingsSwitch } from '../ui/SettingsSwitch';
+import { SettingsSlider } from '../ui/SettingsSlider';
 
 interface PriorityHeatmapTabProps {
   heatmap: HeatmapSettings;
@@ -40,158 +40,150 @@ export const PriorityHeatmapTab: React.FC<PriorityHeatmapTabProps> = ({
     });
   };
 
-  const handleToggleActive = () => {
-    if (isActive) {
+  const handleToggleActive = (checked: boolean) => {
+    if (!checked) {
       onUpdateHeatmap({ mode: 'none', selectedItems: [] });
     } else {
       onUpdateHeatmap({ mode: 'ubahn', selectedItems: ['ubahn', 'sbahn'] });
     }
   };
 
+  const infrastructureOptions = [
+    {
+      id: 'ubahn' as PriorityHeatmapItem,
+      label: 'U-Bahn-Stationen',
+      sub: 'Münchner U-Bahn Linien U1–U8',
+      icon: TrainFrontTunnel,
+    },
+    {
+      id: 'sbahn' as PriorityHeatmapItem,
+      label: 'S-Bahn-Stationen',
+      sub: 'Stammstrecke & Außenäste S1–S8',
+      icon: TrainFront,
+    },
+    {
+      id: 'highway' as PriorityHeatmapItem,
+      label: 'Autobahnanschlussstellen',
+      sub: `${highwayMeta.junctionCount} Anschlüsse & Rampen (A99, A8, A96)`,
+      icon: Car,
+    },
+  ];
+
   return (
-    <div className="space-y-4">
-      <div className="text-xs text-slate-600 dark:text-[#9aa0a6] leading-relaxed">
-        Die Prioritäts-Heatmap blendet innerhalb des gemeinsamen Treffbereichs farbige Reichweiten-Puffer ein (z. B. unmittelbare Fußdistanz zu U-Bahn, S-Bahn oder Autobahnanschlussstellen).
+    <div className="space-y-6">
+      {/* Tab Header */}
+      <div>
+        <h3 className="text-base font-medium text-slate-900 dark:text-[#e3e3e3]">
+          Prioritäts-Heatmap
+        </h3>
+        <p className="text-xs text-slate-500 dark:text-[#9aa0a6] mt-0.5 leading-relaxed">
+          Hebt bevorzugte Wohnlagen innerhalb des gemeinsamen Treffbereichs anhand ihrer Nähe zu Bahn- und Verkehrsnetzen hervor.
+        </p>
       </div>
 
-      <div className="p-3.5 bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-800/60 rounded-xl space-y-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="p-1.5 bg-amber-500 text-white rounded-lg">
-              <Flame className="w-4 h-4" />
-            </div>
-            <div>
-              <div className="text-xs font-bold text-slate-900 dark:text-[#e3e3e3]">
-                Heatmap aktivieren
-              </div>
-              <div className="text-[11px] text-slate-500 dark:text-[#9aa0a6]">
-                Färbt beste Lagen im Treffbereich hervor
-              </div>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            role="switch"
-            aria-checked={isActive}
-            onClick={handleToggleActive}
-            className={`w-9 h-5 flex items-center rounded-full p-0.5 transition-colors cursor-pointer ${
-              isActive ? 'bg-amber-500' : 'bg-slate-200 dark:bg-[#3c4043]'
-            }`}
-          >
-            <div
-              className={`bg-white dark:bg-[#1e1f20] w-4 h-4 rounded-full shadow-xs transform transition-transform ${
-                isActive ? 'translate-x-4' : 'translate-x-0'
-              }`}
+      {/* Main Activation Card */}
+      <SettingsCard title="Heatmap-Steuerung">
+        <SettingsRow
+          icon={Flame}
+          iconColor="text-amber-600 dark:text-amber-400"
+          iconBg="bg-amber-50 dark:bg-amber-950/40"
+          title="Prioritäts-Heatmap aktivieren"
+          description="Visualisiert farbige Reichweiten-Puffer für ausgewählte Verkehrsknotenpunkte direkt im Treffbereich."
+          control={
+            <SettingsSwitch
+              checked={isActive}
+              onChange={handleToggleActive}
+              ariaLabel="Prioritäts-Heatmap aktivieren"
             />
-          </button>
-        </div>
+          }
+        />
+      </SettingsCard>
 
-        {isActive && (
-          <div className="space-y-3 pt-2 border-t border-amber-200/60 dark:border-amber-800/60">
-            <div>
-              <div className="text-[11px] font-bold text-slate-700 dark:text-[#e3e3e3] mb-1.5">
-                Infrastruktur-Ziele:
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                {[
-                  { id: 'ubahn' as PriorityHeatmapItem, label: 'U-Bahn', icon: TrainFrontTunnel, desc: 'Haltestellen U1–U8' },
-                  { id: 'sbahn' as PriorityHeatmapItem, label: 'S-Bahn', icon: TrainFront, desc: 'Stammstrecke & Äste' },
-                  { id: 'highway' as PriorityHeatmapItem, label: 'Autobahn', icon: Car, desc: 'A99, A8, A96 etc.' },
-                ].map((item) => {
-                  const checked = activeItems.includes(item.id);
-                  const Icon = item.icon;
-                  return (
-                    <label
-                      key={item.id}
-                      className={`flex items-start gap-2 p-2 rounded-xl border transition-all cursor-pointer select-none ${
+      {/* Configuration when active */}
+      {isActive && (
+        <>
+          {/* Target Selection Card */}
+          <SettingsCard
+            title="Infrastruktur-Ziele"
+            subtitle="Wähle die Verkehrsträger aus, für die Pufferzonen generiert werden sollen"
+          >
+            <div className="p-4 grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+              {infrastructureOptions.map((opt) => {
+                const checked = activeItems.includes(opt.id);
+                const Icon = opt.icon;
+
+                return (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    onClick={() => handleToggleItem(opt.id)}
+                    className={`p-3 rounded-xl border text-left transition-all flex items-start gap-3 cursor-pointer select-none ${
+                      checked
+                        ? 'bg-blue-50/60 dark:bg-blue-950/30 border-2 border-blue-600 dark:border-[#8ab4f8] shadow-xs'
+                        : 'bg-white dark:bg-[#1e1f20] border-slate-200/90 dark:border-[#3c4043] hover:border-slate-300 dark:hover:border-[#5f6368]'
+                    }`}
+                  >
+                    <div
+                      className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
                         checked
-                          ? 'bg-white dark:bg-[#282a2c] border-blue-500/50 dark:border-blue-400/50 shadow-2xs font-semibold text-slate-900 dark:text-[#e3e3e3]'
-                          : 'bg-slate-50/50 dark:bg-[#1e1f20]/50 border-slate-200/60 dark:border-[#3c4043] text-slate-600 dark:text-[#9aa0a6] opacity-70'
+                          ? 'bg-blue-600 text-white dark:bg-[#8ab4f8] dark:text-[#131314]'
+                          : 'bg-slate-100 dark:bg-[#282a2c] text-slate-600 dark:text-[#9aa0a6]'
                       }`}
                     >
-                      <input
-                        type="checkbox"
-                        checked={checked}
-                        onChange={() => handleToggleItem(item.id)}
-                        className="mt-0.5 rounded text-blue-600 focus:ring-blue-500 border-slate-300 dark:border-[#3c4043] cursor-pointer"
-                      />
-                      <div className="min-w-0">
-                        <div className="text-xs font-semibold flex items-center gap-1.5">
-                          <Icon className="w-3.5 h-3.5 shrink-0 text-slate-600 dark:text-[#9aa0a6]" />
-                          <span>{item.label}</span>
-                        </div>
-                        <div className="text-[10px] text-slate-500 dark:text-[#9aa0a6] font-normal">{item.desc}</div>
+                      <Icon className="w-3.5 h-3.5" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-xs font-medium text-slate-900 dark:text-[#e3e3e3]">
+                        {opt.label}
                       </div>
-                    </label>
-                  );
-                })}
-              </div>
+                      <div className="text-[11px] text-slate-500 dark:text-[#9aa0a6] leading-tight mt-0.5">
+                        {opt.sub}
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
+          </SettingsCard>
 
-            <div className="bg-white dark:bg-[#282a2c] p-3 rounded-xl border border-amber-200 dark:border-amber-800/60 space-y-2.5">
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-semibold text-slate-700 dark:text-[#e3e3e3]">Suchradius / Fußdistanz:</span>
-                <span className="font-bold text-amber-700 dark:text-amber-400">
-                  {heatmap.radiusKm >= 1
-                    ? `${heatmap.radiusKm.toFixed(1)} km`
-                    : `${(heatmap.radiusKm * 1000).toFixed(0)} m`} (ca. {Math.round(heatmap.radiusKm * 12)} Min)
-                </span>
-              </div>
-              <input
-                type="range"
-                min="0.5"
-                max="3.5"
-                step="0.25"
+          {/* Slider Controls Card */}
+          <SettingsCard title="Reichweite & Puffer-Parameter">
+            <div className="p-4 space-y-4">
+              <SettingsSlider
+                id="heatmap-radius-slider"
+                label="Suchradius / Fußdistanz zur Station"
                 value={heatmap.radiusKm}
-                onChange={(e) => onUpdateHeatmap({ radiusKm: parseFloat(e.target.value) })}
-                className="w-full accent-amber-600 h-1.5 bg-amber-100 dark:bg-[#3c4043] rounded-lg cursor-pointer"
+                min={0.5}
+                max={3.5}
+                step={0.25}
+                formatValue={(v) =>
+                  v >= 1
+                    ? `${v.toFixed(1)} km (ca. ${Math.round(v * 12)} Min Fußweg)`
+                    : `${Math.round(v * 1000)} m (ca. ${Math.round(v * 12)} Min Fußweg)`
+                }
+                minLabel="500 m (Unmittelbare Nähe)"
+                maxLabel="3.5 km (Erweiterter Korridor)"
+                onChange={(radiusKm) => onUpdateHeatmap({ radiusKm })}
               />
 
-              <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-100 dark:border-[#3c4043]">
-                <span className="font-semibold text-slate-700 dark:text-[#e3e3e3]">Deckkraft & Intensität:</span>
-                <span className="font-bold text-amber-700 dark:text-amber-400">
-                  {Math.round(heatmap.intensity * 100)}%
-                </span>
+              <div className="pt-2 border-t border-slate-100 dark:border-[#2d2f31]">
+                <SettingsSlider
+                  id="heatmap-intensity-slider"
+                  label="Deckkraft & Farbintensität"
+                  value={heatmap.intensity}
+                  min={0.2}
+                  max={0.95}
+                  step={0.05}
+                  formatValue={(v) => `${Math.round(v * 100)}%`}
+                  minLabel="20% (Dezent)"
+                  maxLabel="95% (Signalstark)"
+                  onChange={(intensity) => onUpdateHeatmap({ intensity })}
+                />
               </div>
-              <input
-                type="range"
-                min="0.2"
-                max="0.95"
-                step="0.05"
-                value={heatmap.intensity}
-                onChange={(e) => onUpdateHeatmap({ intensity: parseFloat(e.target.value) })}
-                className="w-full accent-amber-600 h-1.5 bg-amber-100 dark:bg-[#3c4043] rounded-lg cursor-pointer"
-              />
             </div>
-
-            {/* Autobahn OSM Data Source Info Badge */}
-            {activeItems.includes('highway') && (
-              <div className="bg-orange-50 dark:bg-orange-950/40 border border-orange-200/80 dark:border-orange-800/60 rounded-xl p-2.5 text-[11px] text-orange-950 dark:text-orange-200 flex items-start gap-2 animate-in fade-in">
-                <Car className="w-4 h-4 text-orange-600 dark:text-orange-400 shrink-0 mt-0.5" />
-                <div className="space-y-0.5">
-                  <div className="font-bold flex items-center gap-1.5">
-                    <span>Datenbasis Autobahn: OpenStreetMap (ODbL)</span>
-                    <span className="text-[9px] font-normal px-1.5 py-0.2 rounded bg-orange-100 dark:bg-orange-900/60 text-orange-800 dark:text-orange-300">
-                      Stand: {(() => {
-                        try {
-                          const d = new Date(highwayMeta.lastUpdated);
-                          return isNaN(d.getTime()) ? highwayMeta.lastUpdated : d.toLocaleDateString('de-DE');
-                        } catch {
-                          return highwayMeta.lastUpdated;
-                        }
-                      })()}
-                    </span>
-                  </div>
-                  <p className="text-orange-900/80 dark:text-orange-300/80 text-[10px] leading-tight">
-                    Enthält {highwayMeta.junctionCount} Anschlussstellen und {highwayMeta.rampCount} Auffahrts- & Abfahrtsrampen. Die Heatmap puffert entlang der echten Rampenkorridore. Aktualisierung zentral in Tab „4. Datenpakete & Regionen“.
-                  </p>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
+          </SettingsCard>
+        </>
+      )}
     </div>
   );
 };

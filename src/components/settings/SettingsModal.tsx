@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   BasemapPlatform,
   MapVariant,
@@ -44,20 +44,21 @@ import { DataPackagesTab } from './tabs/DataPackagesTab';
 import { ApiKeysTab } from './tabs/ApiKeysTab';
 import { PriorityHeatmapTab } from './tabs/PriorityHeatmapTab';
 import { RentalOverlayTab } from './tabs/RentalOverlayTab';
+import { SettingsSearch } from './ui/SettingsSearch';
 import { useTheme } from '../../hooks/useTheme';
 import {
-  Settings,
   Layers,
   Map as MapIcon,
   Globe,
   SlidersHorizontal,
-  Train,
   Key,
   Flame,
   Euro,
   Palette,
   X,
   Check,
+  Sparkles,
+  Settings as SettingsIcon,
 } from 'lucide-react';
 
 export type SettingsTabId =
@@ -65,25 +66,49 @@ export type SettingsTabId =
   | 'basemap'
   | 'isochrones'
   | 'routing'
-  | 'mvv'
-  | 'keys'
+  | 'rental'
   | 'heatmap'
-  | 'rental';
+  | 'mvv'
+  | 'keys';
 
-const SETTINGS_MENU: Array<{
-  id: SettingsTabId;
-  label: string;
-  subLabel: string;
-  icon: React.ComponentType<{ className?: string }>;
-}> = [
-  { id: 'appearance', label: 'Erscheinungsbild', subLabel: 'Design & Theme', icon: Palette },
-  { id: 'basemap', label: 'Kartendienst', subLabel: 'OSM, MemoMaps, CARTO & Google', icon: MapIcon },
-  { id: 'isochrones', label: 'Isochronen', subLabel: 'Engine & Detailgrad', icon: Globe },
-  { id: 'routing', label: 'Routing & Mobilität', subLabel: 'Geschwindigkeit, Detour & Puffer', icon: SlidersHorizontal },
-  { id: 'mvv', label: 'Datenpakete & Regionen', subLabel: 'Lokale Verkehrsdaten', icon: Layers },
-  { id: 'keys', label: 'API-Schlüssel', subLabel: 'Google & ORS Zugangsdaten', icon: Key },
-  { id: 'heatmap', label: 'Prioritäts-Heatmap', subLabel: 'Infrastruktur-Puffer', icon: Flame },
-  { id: 'rental', label: 'Mietspiegel', subLabel: 'Kaltmieten & Wohnlagen', icon: Euro },
+interface NavSection {
+  title: string;
+  items: Array<{
+    id: SettingsTabId;
+    label: string;
+    icon: React.ComponentType<{ className?: string }>;
+  }>;
+}
+
+const SETTINGS_SECTIONS: NavSection[] = [
+  {
+    title: 'Darstellung & Karte',
+    items: [
+      { id: 'appearance', label: 'Erscheinungsbild', icon: Palette },
+      { id: 'basemap', label: 'Kartendienst & Overlays', icon: MapIcon },
+    ],
+  },
+  {
+    title: 'Berechnung & Routing',
+    items: [
+      { id: 'isochrones', label: 'Isochronen-Engine', icon: Globe },
+      { id: 'routing', label: 'Mobilität & Parameter', icon: SlidersHorizontal },
+    ],
+  },
+  {
+    title: 'Karten-Ebenen',
+    items: [
+      { id: 'rental', label: 'Mietspiegel & Wohnlagen', icon: Euro },
+      { id: 'heatmap', label: 'Prioritäts-Heatmap', icon: Flame },
+    ],
+  },
+  {
+    title: 'Daten & Schnittstellen',
+    items: [
+      { id: 'mvv', label: 'Datenpakete & Regionen', icon: Layers },
+      { id: 'keys', label: 'API-Schlüssel', icon: Key },
+    ],
+  },
 ];
 
 interface SettingsModalProps {
@@ -107,50 +132,85 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   onBasemapChange,
   showOnlyIntersection,
   onToggleOnlyIntersection,
-  initialTab = 'basemap',
+  initialTab = 'appearance',
 }) => {
   if (!isOpen) return null;
 
   const [modalTab, setModalTab] = useState<SettingsTabId>(initialTab);
+  const [searchQuery, setSearchQuery] = useState('');
   const { themePreference, resolvedTheme, setThemePreference } = useTheme();
 
   useEffect(() => {
     setModalTab(initialTab);
   }, [initialTab]);
 
-  // Input states
-  const [googleKeyInput, setGoogleKeyInput] = useState(getGoogleMapsApiKey());
-  const [orsKeyInput, setOrsKeyInput] = useState(getOrsApiKey());
-  const [activeProvider, setActiveProvider] = useState<IsochroneProvider>(getSelectedProvider());
+  // Keys & Engine State
+  const [googleKeyInput, setGoogleKeyInput] = useState(() => getGoogleMapsApiKey());
+  const [orsKeyInput, setOrsKeyInput] = useState(() => getOrsApiKey());
+  const [activeProvider, setActiveProvider] = useState<IsochroneProvider>(() => getSelectedProvider());
   const [modalPlatform, setModalPlatform] = useState<BasemapPlatform>(() => getBasemapPlatform());
   const [modalVariant, setModalVariant] = useState<MapVariant>(() => getMapVariant());
   const [modalRailwayOverlay, setModalRailwayOverlay] = useState<boolean>(() => getRailwayOverlayEnabled());
-  const [isSaved, setIsSaved] = useState(false);
 
-  const handleModalSelectPlatform = (platform: BasemapPlatform) => {
-    setModalPlatform(platform);
-    if (platform === 'carto' && !['carto_light', 'carto_dark', 'carto_voyager'].includes(modalVariant)) {
-      setModalVariant('carto_light');
-    } else if ((platform === 'memomaps' || platform === 'opnv') && modalVariant !== 'memomaps') {
-      setModalVariant('memomaps');
-    } else if (platform === 'osm' && ['carto_light', 'carto_dark', 'carto_voyager', 'memomaps', 'railway'].includes(modalVariant)) {
-      setModalVariant('normal');
-    } else if (platform === 'google' && ['carto_light', 'carto_dark', 'carto_voyager', 'topo', 'memomaps', 'railway'].includes(modalVariant)) {
-      setModalVariant('normal');
-    }
-  };
-
-  // Key check statuses
+  // Key check state
   const [isCheckingGoogle, setIsCheckingGoogle] = useState(false);
   const [googleCheckResult, setGoogleCheckResult] = useState<KeyCheckResult | null>(null);
-
   const [isCheckingOrs, setIsCheckingOrs] = useState(false);
   const [orsCheckResult, setOrsCheckResult] = useState<KeyCheckResult | null>(null);
 
-  // MVV Dataset metadata & sync state
+  // MVV Data sync state
   const [mvvMeta, setMvvMeta] = useState(() => getMvvDatasetMetadata());
   const [isSyncingMvv, setIsSyncingMvv] = useState(false);
   const [mvvSyncMessage, setMvvSyncMessage] = useState<string | null>(null);
+
+  // Platform selection handler
+  const handleSelectPlatform = (platform: BasemapPlatform) => {
+    setModalPlatform(platform);
+    let nextVariant = modalVariant;
+    if (platform === 'carto' && !['carto_light', 'carto_dark', 'carto_voyager'].includes(modalVariant)) {
+      nextVariant = 'carto_light';
+    } else if ((platform === 'memomaps' || platform === 'opnv') && modalVariant !== 'memomaps') {
+      nextVariant = 'memomaps';
+    } else if (platform === 'osm' && ['carto_light', 'carto_dark', 'carto_voyager', 'memomaps', 'railway'].includes(modalVariant)) {
+      nextVariant = 'normal';
+    } else if (platform === 'google' && ['carto_light', 'carto_dark', 'carto_voyager', 'topo', 'memomaps', 'railway'].includes(modalVariant)) {
+      nextVariant = 'normal';
+    }
+    setModalVariant(nextVariant);
+
+    setBasemapPlatform(platform);
+    setMapVariant(nextVariant);
+    const composite = `${platform}_${nextVariant}` as BasemapProvider;
+    setSelectedBasemap(composite);
+    if (onBasemapChange) {
+      onBasemapChange(composite);
+    }
+  };
+
+  const handleSelectVariant = (variant: MapVariant) => {
+    setModalVariant(variant);
+    setMapVariant(variant);
+    const composite = `${modalPlatform}_${variant}` as BasemapProvider;
+    setSelectedBasemap(composite);
+    if (onBasemapChange) {
+      onBasemapChange(composite);
+    }
+  };
+
+  const handleToggleRailwayOverlay = () => {
+    const nextVal = !modalRailwayOverlay;
+    setModalRailwayOverlay(nextVal);
+    setRailwayOverlayEnabled(nextVal);
+  };
+
+  const handleSelectProvider = (provider: IsochroneProvider) => {
+    setActiveProvider(provider);
+    setSelectedProvider(provider);
+    clearIsochroneCache();
+    if (onRefreshIsochrones) {
+      onRefreshIsochrones();
+    }
+  };
 
   const handleSyncMvv = async () => {
     setIsSyncingMvv(true);
@@ -175,6 +235,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     try {
       const res = await validateGoogleMapsApiKey(googleKeyInput);
       setGoogleCheckResult(res);
+      if (res.valid) {
+        setGoogleMapsApiKey(googleKeyInput);
+        clearIsochroneCache();
+        if (onRefreshIsochrones) {
+          onRefreshIsochrones();
+        }
+      }
     } catch {
       setGoogleCheckResult({
         valid: false,
@@ -192,6 +259,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     try {
       const res = await validateOrsApiKey(orsKeyInput);
       setOrsCheckResult(res);
+      if (res.valid) {
+        setOrsApiKey(orsKeyInput);
+        clearIsochroneCache();
+        if (onRefreshIsochrones) {
+          onRefreshIsochrones();
+        }
+      }
     } catch {
       setOrsCheckResult({
         valid: false,
@@ -203,41 +277,19 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     }
   };
 
-  const handleSaveSettings = () => {
-    setGoogleMapsApiKey(googleKeyInput);
-    setOrsApiKey(orsKeyInput);
-
-    let providerToSave = activeProvider;
-    // If user entered an ORS key and provider was still default 'calibrated', activate ORS
-    if (orsKeyInput.trim() && activeProvider === 'calibrated' && !getOrsApiKey()) {
-      providerToSave = 'ors';
-      setActiveProvider('ors');
-    } else if (googleKeyInput.trim() && activeProvider === 'calibrated' && !getGoogleMapsApiKey() && !orsKeyInput.trim()) {
-      providerToSave = 'google';
-      setActiveProvider('google');
+  const handleSaveAndClose = () => {
+    if (googleKeyInput !== getGoogleMapsApiKey()) {
+      setGoogleMapsApiKey(googleKeyInput);
+      clearIsochroneCache();
     }
-
-    setSelectedProvider(providerToSave);
-    setBasemapPlatform(modalPlatform);
-    setMapVariant(modalVariant);
-    setRailwayOverlayEnabled(modalRailwayOverlay);
-    const composite = `${modalPlatform}_${modalVariant}` as BasemapProvider;
-    setSelectedBasemap(composite);
-    if (onBasemapChange) {
-      onBasemapChange(composite);
+    if (orsKeyInput !== getOrsApiKey()) {
+      setOrsApiKey(orsKeyInput);
+      clearIsochroneCache();
     }
-
-    // Invalidate isochrone cache so fresh calculation runs with new keys/provider
-    clearIsochroneCache();
-
-    setIsSaved(true);
     if (onRefreshIsochrones) {
       onRefreshIsochrones();
     }
-    setTimeout(() => {
-      setIsSaved(false);
-      onClose();
-    }, 600);
+    onClose();
   };
 
   const options = schedule.options ?? {
@@ -315,90 +367,99 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/60 dark:bg-black/70 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 animate-in fade-in duration-150">
-      <div className="bg-white dark:bg-[#1e1f20] rounded-2xl w-full max-w-3xl h-[620px] max-h-[92vh] shadow-2xl border border-slate-200 dark:border-[#3c4043] flex flex-col overflow-hidden">
-        {/* Header - Fixed */}
-        <div className="px-5 py-3.5 border-b border-slate-200 dark:border-[#3c4043] bg-white dark:bg-[#1e1f20] flex items-center justify-between shrink-0">
-          <div>
-            <h3 className="text-base font-medium text-slate-900 dark:text-[#e3e3e3] leading-tight">
-              Einstellungen
-            </h3>
-            <p className="text-xs text-slate-500 dark:text-[#9aa0a6] mt-0.5">
-              Erscheinungsbild, Kartendienste, Isochronen, ÖPNV, API-Keys und Heatmaps
-            </p>
+    <div className="fixed inset-0 z-50 bg-slate-900/60 dark:bg-black/75 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-150">
+      <div className="bg-white dark:bg-[#1e1f20] rounded-[24px] sm:rounded-[28px] w-full max-w-5xl h-[740px] max-h-[92vh] shadow-2xl border border-slate-200/90 dark:border-[#3c4043] flex flex-col overflow-hidden">
+        {/* Top App Bar (Google M3 Style) */}
+        <div className="px-5 sm:px-6 py-3.5 border-b border-slate-200/80 dark:border-[#3c4043] bg-white dark:bg-[#1e1f20] flex items-center justify-between gap-4 shrink-0">
+          <div className="flex items-center gap-3 shrink-0">
+            <div className="w-9 h-9 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-[#8ab4f8] flex items-center justify-center shrink-0">
+              <SettingsIcon className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-base font-medium text-slate-900 dark:text-[#e3e3e3] leading-none">
+                  Einstellungen
+                </h2>
+                <span className="hidden md:inline-flex items-center gap-1 text-[11px] font-normal text-slate-500 dark:text-[#9aa0a6] bg-slate-100 dark:bg-[#282a2c] px-2 py-0.5 rounded-full">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                  <span>Live synchronisiert</span>
+                </span>
+              </div>
+            </div>
           </div>
+
+          {/* Centered Search Bar */}
+          <SettingsSearch
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            onSelectResult={(tabId) => setModalTab(tabId)}
+          />
+
+          {/* Close Button */}
           <button
             type="button"
-            onClick={onClose}
-            className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-700 dark:text-[#9aa0a6] dark:hover:text-[#e3e3e3] hover:bg-slate-100 dark:hover:bg-[#282a2c] transition-colors cursor-pointer"
+            onClick={handleSaveAndClose}
+            className="w-9 h-9 rounded-full flex items-center justify-center text-slate-500 hover:text-slate-800 dark:text-[#9aa0a6] dark:hover:text-[#e3e3e3] hover:bg-slate-100 dark:hover:bg-[#282a2c] transition-colors cursor-pointer shrink-0"
             title="Schließen"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Modal Body: Two-column layout with fixed navigation */}
-        <div className="flex flex-col sm:flex-row flex-1 min-h-0 overflow-hidden">
-          {/* Fixed Navigation Menu */}
-          <nav className="w-full sm:w-56 bg-slate-50/90 dark:bg-[#131314]/90 border-b sm:border-b-0 sm:border-r border-slate-200/90 dark:border-[#3c4043] p-2.5 flex sm:flex-col justify-between shrink-0 overflow-x-auto sm:overflow-x-visible select-none gap-1">
-            <div className="flex sm:flex-col gap-1 w-full">
-              <div className="hidden sm:block px-3 py-1.5 text-xs font-medium text-slate-500 dark:text-[#9aa0a6]">
-                Kategorien
-              </div>
+        {/* Modal Body: Navigation Drawer + Content Pane */}
+        <div className="flex flex-col md:flex-row flex-1 min-h-0 overflow-hidden">
+          {/* M3 Navigation Rail / Sidebar */}
+          <nav className="w-full md:w-64 bg-[#f8fafd] dark:bg-[#131314] border-b md:border-b-0 md:border-r border-slate-200/80 dark:border-[#2d2f31] p-3 flex md:flex-col justify-between shrink-0 overflow-x-auto md:overflow-y-auto select-none gap-4">
+            <div className="flex md:flex-col gap-4 w-full">
+              {SETTINGS_SECTIONS.map((sec) => (
+                <div key={sec.title} className="space-y-1">
+                  <div className="hidden md:block px-3 py-1 text-[11px] font-semibold text-slate-500 dark:text-[#9aa0a6] uppercase tracking-wider">
+                    {sec.title}
+                  </div>
 
-              {SETTINGS_MENU.map((item) => {
-                const Icon = item.icon;
-                const isSelected = modalTab === item.id;
+                  <div className="flex md:flex-col gap-1">
+                    {sec.items.map((item) => {
+                      const Icon = item.icon;
+                      const isSelected = modalTab === item.id;
 
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => setModalTab(item.id)}
-                    className={`px-3.5 py-2 rounded-full text-left transition-colors flex items-center gap-3 cursor-pointer whitespace-nowrap shrink-0 sm:shrink ${
-                      isSelected
-                        ? 'bg-blue-100/80 dark:bg-blue-950/60 text-blue-900 dark:text-[#8ab4f8] font-medium'
-                        : 'text-slate-600 dark:text-[#9aa0a6] hover:text-slate-900 dark:hover:text-[#e3e3e3] hover:bg-slate-200/60 dark:hover:bg-[#282a2c] font-normal'
-                    }`}
-                  >
-                    <Icon className={`w-4 h-4 shrink-0 ${isSelected ? 'text-blue-700 dark:text-[#8ab4f8]' : 'text-slate-500 dark:text-[#9aa0a6]'}`} />
-                    <div className="min-w-0">
-                      <div className="text-xs leading-tight">{item.label}</div>
-                      <div
-                        className={`hidden sm:block text-[10px] font-normal leading-tight truncate mt-0.5 ${
-                          isSelected ? 'text-blue-800/80 dark:text-[#8ab4f8]/80' : 'text-slate-400 dark:text-[#747775]'
-                        }`}
-                      >
-                        {item.subLabel}
-                      </div>
-                    </div>
-                  </button>
-                );
-              })}
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => setModalTab(item.id)}
+                          className={`px-3.5 py-2 rounded-full text-left transition-all flex items-center gap-3 cursor-pointer whitespace-nowrap shrink-0 md:shrink ${
+                            isSelected
+                              ? 'bg-blue-100/90 text-blue-900 font-semibold dark:bg-[#004a77] dark:text-[#c2e7ff]'
+                              : 'text-slate-600 dark:text-[#9aa0a6] hover:text-slate-900 dark:hover:text-[#e3e3e3] hover:bg-slate-200/60 dark:hover:bg-[#202124]'
+                          }`}
+                        >
+                          <Icon
+                            className={`w-4 h-4 shrink-0 ${
+                              isSelected
+                                ? 'text-blue-700 dark:text-[#c2e7ff]'
+                                : 'text-slate-500 dark:text-[#9aa0a6]'
+                            }`}
+                          />
+                          <span className="text-xs">{item.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
             </div>
 
-            {/* Quick Status Pill in Sidebar on desktop */}
-            <div className="hidden sm:block p-2.5 rounded-2xl bg-white dark:bg-[#1e1f20] border border-slate-200/80 dark:border-[#3c4043] text-[10px] text-slate-500 dark:text-[#9aa0a6] space-y-1">
-              <div className="font-medium text-slate-700 dark:text-[#e3e3e3] flex items-center justify-between">
-                <span>Konfiguration</span>
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-              </div>
-              <div className="truncate text-slate-600 dark:text-[#9aa0a6]">
-                Theme: <span className="font-medium text-slate-800 dark:text-[#e3e3e3]">{themePreference === 'system' ? 'System' : themePreference === 'dark' ? 'Dunkel' : 'Hell'}</span>
-              </div>
-              <div className="truncate text-slate-600 dark:text-[#9aa0a6]">
-                Karte: <span className="font-medium text-slate-800 dark:text-[#e3e3e3]">{modalPlatform === 'google' ? 'Google Maps' : modalPlatform === 'carto' ? 'CARTO' : modalPlatform === 'memomaps' || modalPlatform === 'opnv' ? 'MemoMaps' : 'OSM'}</span>
-              </div>
-              <div className="truncate text-slate-600 dark:text-[#9aa0a6]">
-                Engine: <span className="font-medium text-slate-800 dark:text-[#e3e3e3]">{activeProvider === 'google' ? 'Google API' : activeProvider === 'ors' ? 'ORS' : 'Offline'}</span>
-              </div>
+            {/* Sidebar Footer Brand Tag */}
+            <div className="hidden md:flex items-center justify-between px-3 py-2 text-[11px] text-slate-400 dark:text-[#747775] border-t border-slate-200/60 dark:border-[#202124]">
+              <span>Venn v1.0</span>
+              <span>Build 2026</span>
             </div>
           </nav>
 
-          {/* Main Content & Actions Area */}
+          {/* Main Content Area */}
           <div className="flex-1 flex flex-col min-w-0 bg-white dark:bg-[#1e1f20]">
-            {/* Scrollable Tab Content Pane */}
-            <div className="flex-1 overflow-y-auto p-4 sm:p-5">
+            {/* Scrollable Content Pane */}
+            <div className="flex-1 overflow-y-auto p-5 sm:p-7">
               {modalTab === 'appearance' && (
                 <AppearanceTab
                   themePreference={themePreference}
@@ -411,19 +472,19 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 <BasemapTab
                   platform={modalPlatform}
                   variant={modalVariant}
-                  onSelectPlatform={handleModalSelectPlatform}
-                  onSelectVariant={setModalVariant}
-                  hasGoogleKey={!!getGoogleMapsApiKey()}
+                  onSelectPlatform={handleSelectPlatform}
+                  onSelectVariant={handleSelectVariant}
+                  hasGoogleKey={Boolean(getGoogleMapsApiKey())}
                   onOpenKeysTab={() => setModalTab('keys')}
                   showRailwayOverlay={modalRailwayOverlay}
-                  onToggleRailwayOverlay={() => setModalRailwayOverlay((prev) => !prev)}
+                  onToggleRailwayOverlay={handleToggleRailwayOverlay}
                 />
               )}
 
               {modalTab === 'isochrones' && (
                 <IsochroneEngineTab
                   activeProvider={activeProvider}
-                  onSelectProvider={setActiveProvider}
+                  onSelectProvider={handleSelectProvider}
                   options={options}
                   onSelectFidelity={handleSelectFidelity}
                   onToggleOption={handleToggleOption}
@@ -437,6 +498,20 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 <RoutingParametersTab
                   options={options}
                   onUpdateOptions={handleUpdateOptions}
+                />
+              )}
+
+              {modalTab === 'rental' && (
+                <RentalOverlayTab
+                  schedule={schedule}
+                  onChangeSchedule={onChangeSchedule}
+                />
+              )}
+
+              {modalTab === 'heatmap' && (
+                <PriorityHeatmapTab
+                  heatmap={heatmap}
+                  onUpdateHeatmap={handleUpdateHeatmap}
                 />
               )}
 
@@ -466,43 +541,21 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   onCheckOrsKey={handleCheckOrsKey}
                 />
               )}
-
-              {modalTab === 'heatmap' && (
-                <PriorityHeatmapTab
-                  heatmap={heatmap}
-                  onUpdateHeatmap={handleUpdateHeatmap}
-                />
-              )}
-
-              {modalTab === 'rental' && (
-                <RentalOverlayTab
-                  schedule={schedule}
-                  onChangeSchedule={onChangeSchedule}
-                />
-              )}
             </div>
 
-            {/* Fixed Footer */}
-            <div className="px-5 py-3 border-t border-slate-200 dark:border-[#3c4043] bg-slate-50/70 dark:bg-[#131314]/70 flex items-center justify-between shrink-0">
-              <button
-                type="button"
-                onClick={onClose}
-                className="px-4 py-2 text-xs font-medium text-slate-600 dark:text-[#9aa0a6] hover:text-slate-900 dark:hover:text-[#e3e3e3] hover:bg-slate-200/60 dark:hover:bg-[#282a2c] rounded-full transition-colors cursor-pointer"
-              >
-                Abbrechen
-              </button>
+            {/* M3 Bottom Bar */}
+            <div className="px-5 sm:px-6 py-3 border-t border-slate-200/80 dark:border-[#3c4043] bg-[#f8fafd] dark:bg-[#18191a] flex items-center justify-between shrink-0">
+              <div className="text-xs text-slate-500 dark:text-[#9aa0a6] flex items-center gap-1.5">
+                <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                <span>Alle Anpassungen werden live angewendet.</span>
+              </div>
 
               <button
                 type="button"
-                onClick={handleSaveSettings}
-                className={`px-5 py-2 text-xs font-medium rounded-full transition-all flex items-center gap-1.5 cursor-pointer ${
-                  isSaved
-                    ? 'bg-emerald-600 text-white'
-                    : 'bg-blue-600 hover:bg-blue-700 dark:bg-[#8ab4f8] dark:hover:bg-[#aecbfa] text-white dark:text-[#131314]'
-                }`}
+                onClick={handleSaveAndClose}
+                className="px-5 py-2 text-xs font-medium rounded-full bg-blue-600 hover:bg-blue-700 text-white dark:bg-[#8ab4f8] dark:hover:bg-[#aecbfa] dark:text-[#131314] transition-colors cursor-pointer shadow-2xs"
               >
-                {isSaved ? <Check className="w-4 h-4" /> : null}
-                <span>{isSaved ? 'Gespeichert!' : 'Speichern & Übernehmen'}</span>
+                Fertig
               </button>
             </div>
           </div>

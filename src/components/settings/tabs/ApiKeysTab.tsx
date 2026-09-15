@@ -1,8 +1,18 @@
 import React from 'react';
 import { KeyCheckResult } from '../../../services/apiKeyValidator';
-import { ShieldCheck, Loader2, CheckCircle2, AlertCircle, Info, ExternalLink } from 'lucide-react';
+import {
+  ShieldCheck,
+  Loader2,
+  CheckCircle2,
+  AlertCircle,
+  ExternalLink,
+  KeyRound,
+  Lock,
+  ChevronDown,
+} from 'lucide-react';
 import { SecureApiKeyInput } from '../SecureApiKeyInput';
 import { ApiKeyGuideSection } from '../ApiKeyGuideSection';
+import { SettingsCard } from '../ui/SettingsCard';
 
 interface ApiKeysTabProps {
   googleKeyInput: string;
@@ -30,66 +40,74 @@ export const ApiKeysTab: React.FC<ApiKeysTabProps> = ({
   onCheckOrsKey,
 }) => {
   return (
-    <div className="space-y-4">
-      {/* Google Maps API Key Card */}
-      <div className="p-3.5 bg-slate-50 dark:bg-[#202124] border border-slate-200 dark:border-[#3c4043] rounded-xl space-y-2.5">
-        <div className="flex items-center justify-between gap-2 flex-wrap">
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-blue-500" />
-            <span className="text-xs font-bold text-slate-900 dark:text-[#e3e3e3]">
-              Google Maps API Key
-            </span>
-          </div>
+    <div className="space-y-6">
+      {/* Tab Header */}
+      <div>
+        <h3 className="text-base font-medium text-slate-900 dark:text-[#e3e3e3]">
+          API-Schlüssel & Schnittstellen
+        </h3>
+        <p className="text-xs text-slate-500 dark:text-[#9aa0a6] mt-0.5 leading-relaxed">
+          Hinterlege eigene API-Schlüssel für die Google Maps Platform oder OpenRouteService.
+          Schlüssel werden ausschließlich lokal in deinem Browser verschlüsselt im Speicher abgelegt.
+        </p>
+      </div>
 
-          <div className="flex items-center gap-2">
-            {/* External Management Link */}
-            <a
-              href="https://console.cloud.google.com/google/maps-apis/credentials"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-[11px] font-medium text-slate-600 dark:text-[#9aa0a6] hover:text-blue-600 dark:hover:text-[#8ab4f8] flex items-center gap-1 px-2 py-1 rounded-lg bg-white dark:bg-[#282a2c] border border-slate-200 dark:border-[#3c4043] hover:border-blue-300 dark:hover:border-blue-500 transition-colors"
-              title="Google Cloud Console öffnen (API-Keys verwalten, Quotas & Einschränkungen prüfen)"
-            >
-              <span>GCP Console</span>
-              <ExternalLink className="w-3 h-3 text-slate-400 dark:text-[#747775]" />
-            </a>
-
-            {/* Test Key Button */}
-            <button
-              type="button"
-              onClick={onCheckGoogleKey}
-              disabled={isCheckingGoogle || !googleKeyInput.trim()}
-              className="text-[11px] font-semibold text-blue-600 dark:text-[#8ab4f8] hover:text-blue-800 disabled:text-slate-400 dark:disabled:text-[#747775] flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-50 dark:bg-blue-950/50 hover:bg-blue-100/80 dark:hover:bg-blue-900/50 disabled:bg-slate-100 dark:disabled:bg-[#282a2c] transition-colors cursor-pointer disabled:cursor-not-allowed"
-              title="Diesen API-Key jetzt live auf Gültigkeit testen"
-            >
-              {isCheckingGoogle ? (
-                <Loader2 className="w-3 h-3 animate-spin text-blue-600 dark:text-[#8ab4f8]" />
-              ) : (
-                <ShieldCheck className="w-3 h-3 text-blue-600 dark:text-[#8ab4f8]" />
-              )}
-              <span>{isCheckingGoogle ? 'Prüfe Key...' : 'Key testen'}</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Masked & Protected Input */}
-        <SecureApiKeyInput
-          value={googleKeyInput}
-          onChange={onChangeGoogleKeyInput}
-          placeholder="AIzaSy..."
-        />
-
-        {/* Google Key Test Result Banner with Individual Sub-Service Status */}
-        {googleCheckResult && (
+      {/* 1. Google Maps Platform Card */}
+      <SettingsCard
+        title="Google Maps Platform API-Key"
+        subtitle="Aktiviert die Google Maps Hintergrundkarte und die Google Maps Isochronen API"
+        headerAction={
+          <a
+            href="https://console.cloud.google.com/google/maps-apis/credentials"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs text-blue-600 dark:text-[#8ab4f8] hover:underline flex items-center gap-1"
+            title="Google Cloud Console"
+          >
+            <span>GCP Console</span>
+            <ExternalLink className="w-3 h-3" />
+          </a>
+        }
+      >
+        <div className="p-4 space-y-3.5">
+          {/* Secure Input + Test Button */}
           <div className="space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <label className="text-xs font-medium text-slate-700 dark:text-[#c4c7c5]">
+                API-Key (AIzaSy...):
+              </label>
+              <button
+                type="button"
+                onClick={onCheckGoogleKey}
+                disabled={isCheckingGoogle || !googleKeyInput.trim()}
+                className="px-3 py-1 rounded-full text-xs font-medium text-blue-600 dark:text-[#8ab4f8] bg-blue-50 hover:bg-blue-100/70 dark:bg-blue-950/40 dark:hover:bg-blue-900/40 border border-blue-200/60 dark:border-blue-800/50 disabled:opacity-40 flex items-center gap-1.5 transition-colors cursor-pointer disabled:cursor-not-allowed"
+              >
+                {isCheckingGoogle ? (
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                ) : (
+                  <ShieldCheck className="w-3 h-3" />
+                )}
+                <span>{isCheckingGoogle ? 'Prüfe Key...' : 'Key testen'}</span>
+              </button>
+            </div>
+
+            <SecureApiKeyInput
+              value={googleKeyInput}
+              onChange={onChangeGoogleKeyInput}
+              placeholder="AIzaSy..."
+            />
+          </div>
+
+          {/* Google Test Result Banner */}
+          {googleCheckResult && (
             <div
-              className={`p-2.5 rounded-xl text-xs border flex flex-col gap-1 transition-all ${
+              className={`p-3 rounded-2xl border text-xs space-y-1.5 transition-all ${
                 googleCheckResult.valid
-                  ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800/60 text-emerald-900 dark:text-emerald-300'
-                  : 'bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-800/60 text-rose-900 dark:text-rose-300'
+                  ? 'bg-emerald-50/70 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800/60 text-emerald-900 dark:text-emerald-300'
+                  : 'bg-rose-50/70 dark:bg-rose-950/30 border-rose-200 dark:border-rose-800/60 text-rose-900 dark:text-rose-300'
               }`}
             >
-              <div className="flex items-center gap-1.5 font-semibold">
+              <div className="flex items-center gap-2 font-medium">
                 {googleCheckResult.valid ? (
                   <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
                 ) : (
@@ -98,204 +116,133 @@ export const ApiKeysTab: React.FC<ApiKeysTabProps> = ({
                 <span>{googleCheckResult.message}</span>
               </div>
               {googleCheckResult.details && (
-                <p className="text-[11px] opacity-90 pl-5.5 leading-snug">
+                <p className="text-[11px] opacity-90 pl-6 leading-relaxed">
                   {googleCheckResult.details}
                 </p>
               )}
-            </div>
 
-            {/* Split Diagnosis: Individual API Badges */}
-            {googleCheckResult.detailedGoogle && (
-              <div className="bg-white dark:bg-[#1e1f20] border border-slate-200 dark:border-[#3c4043] rounded-xl p-3 space-y-2.5 shadow-xs">
-                <div className="text-xs font-medium text-slate-700 dark:text-[#e3e3e3]">
-                  API-Berechtigungen im GCP-Projekt:
-                </div>
-
-                {/* 1. Maps JS API */}
-                <div className="flex items-center justify-between p-2 rounded-lg bg-slate-50 dark:bg-[#282a2c] border border-slate-200/80 dark:border-[#3c4043] text-xs">
-                  <div className="flex items-center gap-2">
-                    {googleCheckResult.detailedGoogle.mapsJsApi.status === 'valid' ? (
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                    ) : (
-                      <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
-                    )}
-                    <div>
-                      <span className="font-semibold text-slate-800 dark:text-[#e3e3e3]">
-                        Maps JavaScript API
-                      </span>
-                      <span className="text-[10px] text-slate-500 dark:text-[#9aa0a6] block">
-                        Kartenanzeige, Satellit & Google Basemap
-                      </span>
-                    </div>
-                  </div>
-                  <span
-                    className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                      googleCheckResult.detailedGoogle.mapsJsApi.status === 'valid'
-                        ? 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-800 dark:text-emerald-300'
-                        : 'bg-amber-100 dark:bg-amber-900/50 text-amber-800 dark:text-amber-300'
-                    }`}
-                  >
-                    {googleCheckResult.detailedGoogle.mapsJsApi.status === 'valid'
-                      ? 'Aktiv'
-                      : 'Fehlt / Beschränkt'}
-                  </span>
-                </div>
-
-                {/* 2. Google Maps Isochrones API */}
-                <div className="flex items-center justify-between p-2 rounded-lg bg-slate-50 dark:bg-[#282a2c] border border-slate-200/80 dark:border-[#3c4043] text-xs">
-                  <div className="flex items-center gap-2">
-                    {googleCheckResult.detailedGoogle.isochronesApi.status === 'valid' ? (
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                    ) : (
-                      <AlertCircle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />
-                    )}
-                    <div>
-                      <span className="font-semibold text-slate-800 dark:text-[#e3e3e3]">
-                        Google Maps Isochrones API
-                      </span>
-                      <span className="text-[10px] text-slate-500 dark:text-[#9aa0a6] block">
-                        Pkw-, Rad- & Fußwege-Polygone
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    {googleCheckResult.detailedGoogle.isochronesApi.status !== 'valid' && (
-                      <a
-                        href="https://console.cloud.google.com/apis/library/isochrones.googleapis.com"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-[10px] text-blue-600 dark:text-[#8ab4f8] hover:underline flex items-center gap-0.5"
-                        title="Isochrones API in Google Cloud aktivieren"
-                      >
-                        Aktivieren <ExternalLink className="w-2.5 h-2.5" />
-                      </a>
-                    )}
+              {/* Sub-API Breakdown */}
+              {googleCheckResult.detailedGoogle && (
+                <div className="pt-2 mt-1 border-t border-emerald-200/60 dark:border-emerald-800/40 grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
+                  <div className="flex items-center justify-between p-2 rounded-xl bg-white/70 dark:bg-[#1e1f20]/70 border border-emerald-200/50 dark:border-emerald-800/40">
+                    <span>Maps JavaScript API:</span>
                     <span
-                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                        googleCheckResult.detailedGoogle.isochronesApi.status === 'valid'
-                          ? 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-800 dark:text-emerald-300'
-                          : 'bg-rose-100 dark:bg-rose-900/50 text-rose-800 dark:text-rose-300'
+                      className={`font-semibold ${
+                        googleCheckResult.detailedGoogle.mapsJsApi.status === 'valid'
+                          ? 'text-emerald-700 dark:text-emerald-400'
+                          : 'text-amber-700 dark:text-amber-400'
                       }`}
                     >
-                      {googleCheckResult.detailedGoogle.isochronesApi.status === 'valid'
-                        ? 'Aktiv'
-                        : 'Deaktiviert'}
+                      {googleCheckResult.detailedGoogle.mapsJsApi.status === 'valid' ? 'Aktiv' : 'Fehlt'}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between p-2 rounded-xl bg-white/70 dark:bg-[#1e1f20]/70 border border-emerald-200/50 dark:border-emerald-800/40">
+                    <span>Isochrones API:</span>
+                    <span
+                      className={`font-semibold ${
+                        googleCheckResult.detailedGoogle.isochronesApi.status === 'valid'
+                          ? 'text-emerald-700 dark:text-emerald-400'
+                          : 'text-rose-700 dark:text-rose-400'
+                      }`}
+                    >
+                      {googleCheckResult.detailedGoogle.isochronesApi.status === 'valid' ? 'Aktiv' : 'Deaktiviert'}
                     </span>
                   </div>
                 </div>
-
-                {/* 3. Transit Explanation */}
-                <div className="p-2 rounded-lg bg-amber-50/80 dark:bg-amber-950/40 border border-amber-200/70 dark:border-amber-800/60 text-[11px] text-amber-900 dark:text-amber-200 leading-snug">
-                  <span className="font-semibold">ÖPNV-Besonderheit: </span>
-                  Google bietet in seiner Isochrones API grundsätzlich keinen ÖPNV-Modus. Dafür wird die MVV/MVG-Matrix herangezogen.
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        <div className="flex items-start gap-1.5 bg-blue-50/80 dark:bg-blue-950/40 border border-blue-200/60 dark:border-blue-800/60 rounded-lg p-2 text-[11px] text-blue-900 dark:text-blue-200 leading-snug">
-          <Info className="w-3.5 h-3.5 text-blue-600 dark:text-[#8ab4f8] shrink-0 mt-0.5" />
-          <span>
-            Dieser Key aktiviert sowohl die <strong>Google Maps Hintergrundkarte</strong> (Maps JavaScript API) als auch die <strong>Google Maps Isochronen API</strong>.
-          </span>
-        </div>
-
-        {/* Expandable Setup & Permissions Guide */}
-        <ApiKeyGuideSection api="google" />
-      </div>
-
-      {/* OpenRouteService API Key Card */}
-      <div className="p-3.5 bg-slate-50 dark:bg-[#202124] border border-slate-200 dark:border-[#3c4043] rounded-xl space-y-2.5">
-        <div className="flex items-center justify-between gap-2 flex-wrap">
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-slate-500" />
-            <span className="text-xs font-bold text-slate-900 dark:text-[#e3e3e3]">
-              OpenRouteService API Key (optional)
-            </span>
-          </div>
-
-          <div className="flex items-center gap-2">
-            {/* External Management Link */}
-            <a
-              href="https://account.heigit.org/manage/key"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-[11px] font-medium text-slate-600 dark:text-[#9aa0a6] hover:text-blue-600 dark:hover:text-[#8ab4f8] flex items-center gap-1 px-2 py-1 rounded-lg bg-white dark:bg-[#282a2c] border border-slate-200 dark:border-[#3c4043] hover:border-blue-300 dark:hover:border-blue-500 transition-colors"
-              title="HeiGIT / ORS Dashboard öffnen (Keys verwalten, erstellen & Kontingente prüfen)"
-            >
-              <span>ORS Dashboard</span>
-              <ExternalLink className="w-3 h-3 text-slate-400 dark:text-[#747775]" />
-            </a>
-
-            {/* Test Key Button */}
-            <button
-              type="button"
-              onClick={onCheckOrsKey}
-              disabled={isCheckingOrs || !orsKeyInput.trim()}
-              className="text-[11px] font-semibold text-slate-700 dark:text-[#e3e3e3] hover:text-slate-900 dark:hover:text-white disabled:text-slate-400 dark:disabled:text-[#747775] flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-200/60 dark:bg-[#303134] hover:bg-slate-200 dark:hover:bg-[#3c4043] disabled:bg-slate-100 dark:disabled:bg-[#282a2c] transition-colors cursor-pointer disabled:cursor-not-allowed"
-              title="ORS API-Key live testen"
-            >
-              {isCheckingOrs ? (
-                <Loader2 className="w-3 h-3 animate-spin text-slate-600 dark:text-[#9aa0a6]" />
-              ) : (
-                <ShieldCheck className="w-3 h-3 text-slate-600 dark:text-[#9aa0a6]" />
               )}
-              <span>{isCheckingOrs ? 'Prüfe Key...' : 'Key testen'}</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Masked & Protected Input */}
-        <SecureApiKeyInput
-          value={orsKeyInput}
-          onChange={onChangeOrsKeyInput}
-          placeholder="5b3ce3597851110001cf6248..."
-        />
-
-        {/* ORS Test Result Banner */}
-        {orsCheckResult && (
-          <div
-            className={`p-2.5 rounded-xl text-xs border flex flex-col gap-1 transition-all ${
-              orsCheckResult.valid
-                ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800/60 text-emerald-900 dark:text-emerald-300'
-                : 'bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-800/60 text-rose-900 dark:text-rose-300'
-            }`}
-          >
-            <div className="flex items-center gap-1.5 font-semibold">
-              {orsCheckResult.valid ? (
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-              ) : (
-                <AlertCircle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />
-              )}
-              <span>{orsCheckResult.message}</span>
             </div>
-            {orsCheckResult.details && (
-              <p className="text-[11px] opacity-90 pl-5.5 leading-snug">
-                {orsCheckResult.details}
-              </p>
-            )}
+          )}
+
+          {/* Setup Guide Accordion */}
+          <div className="pt-1">
+            <ApiKeyGuideSection api="google" />
           </div>
-        )}
-
-        <div className="flex items-start gap-1.5 bg-slate-100/80 dark:bg-[#282a2c] border border-slate-200/80 dark:border-[#3c4043] rounded-lg p-2 text-[11px] text-slate-600 dark:text-[#9aa0a6] leading-snug">
-          <Info className="w-3.5 h-3.5 text-slate-500 dark:text-[#9aa0a6] shrink-0 mt-0.5" />
-          <span>
-            OpenRouteService liefert genaue Auto-, Fahrrad- und Fußgänger-Isochronen. Einen kostenlosen Token kannst du im{' '}
-            <a
-              href="https://openrouteservice.org/dev/#/home"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-600 dark:text-[#8ab4f8] hover:underline font-medium inline-flex items-center gap-0.5"
-            >
-              ORS Portal <ExternalLink className="w-2.5 h-2.5" />
-            </a>{' '}
-            beantragen.
-          </span>
         </div>
+      </SettingsCard>
 
-        {/* Expandable Setup & Permissions Guide */}
-        <ApiKeyGuideSection api="ors" />
+      {/* 2. OpenRouteService Card */}
+      <SettingsCard
+        title="OpenRouteService (ORS) API-Token"
+        subtitle="Kostenlose Open-Source-Isochronen für Pkw, Fahrrad und Fußwege"
+        headerAction={
+          <a
+            href="https://account.heigit.org/manage/key"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs text-blue-600 dark:text-[#8ab4f8] hover:underline flex items-center gap-1"
+            title="ORS Dashboard"
+          >
+            <span>ORS Dashboard</span>
+            <ExternalLink className="w-3 h-3" />
+          </a>
+        }
+      >
+        <div className="p-4 space-y-3.5">
+          <div className="space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <label className="text-xs font-medium text-slate-700 dark:text-[#c4c7c5]">
+                API-Token (5b3ce...):
+              </label>
+              <button
+                type="button"
+                onClick={onCheckOrsKey}
+                disabled={isCheckingOrs || !orsKeyInput.trim()}
+                className="px-3 py-1 rounded-full text-xs font-medium text-slate-700 dark:text-[#e3e3e3] bg-slate-100 hover:bg-slate-200 dark:bg-[#282a2c] dark:hover:bg-[#323437] border border-slate-200 dark:border-[#3c4043] disabled:opacity-40 flex items-center gap-1.5 transition-colors cursor-pointer disabled:cursor-not-allowed"
+              >
+                {isCheckingOrs ? (
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                ) : (
+                  <ShieldCheck className="w-3 h-3" />
+                )}
+                <span>{isCheckingOrs ? 'Prüfe Key...' : 'Key testen'}</span>
+              </button>
+            </div>
+
+            <SecureApiKeyInput
+              value={orsKeyInput}
+              onChange={onChangeOrsKeyInput}
+              placeholder="5b3ce3597851110001cf6248..."
+            />
+          </div>
+
+          {/* ORS Test Result */}
+          {orsCheckResult && (
+            <div
+              className={`p-3 rounded-2xl border text-xs flex items-start gap-2.5 transition-all ${
+                orsCheckResult.valid
+                  ? 'bg-emerald-50/70 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800/60 text-emerald-900 dark:text-emerald-300'
+                  : 'bg-rose-50/70 dark:bg-rose-950/30 border-rose-200 dark:border-rose-800/60 text-rose-900 dark:text-rose-300'
+              }`}
+            >
+              {orsCheckResult.valid ? (
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+              ) : (
+                <AlertCircle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
+              )}
+              <div>
+                <span className="font-medium block">{orsCheckResult.message}</span>
+                {orsCheckResult.details && (
+                  <p className="text-[11px] opacity-90 mt-0.5">{orsCheckResult.details}</p>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Setup Guide Accordion */}
+          <div className="pt-1">
+            <ApiKeyGuideSection api="ors" />
+          </div>
+        </div>
+      </SettingsCard>
+
+      {/* Security Privacy Notice */}
+      <div className="p-3.5 bg-slate-50 dark:bg-[#1e1f20] border border-slate-200/80 dark:border-[#3c4043] rounded-2xl flex items-start gap-2.5 text-xs text-slate-500 dark:text-[#9aa0a6]">
+        <Lock className="w-4 h-4 text-slate-400 dark:text-[#747775] shrink-0 mt-0.5" />
+        <p className="leading-relaxed">
+          <strong className="text-slate-800 dark:text-[#e3e3e3]">Datenschutz-Garantie:</strong>{' '}
+          Alle eingegebenen API-Schlüssel verbleiben ausschließlich im lokalen Speicher deines Browsers
+          (Client-Side Storage) und werden niemals an unsere Server übermittelt oder protokolliert.
+        </p>
       </div>
     </div>
   );

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { IsochroneFallbackAlert, TransportMode } from '../types';
+import type { SettingsTabId } from './settings/SettingsModal';
 import {
   AlertOctagon,
   Settings,
@@ -13,7 +14,7 @@ import {
 
 interface FallbackWarningBannerProps {
   alerts?: IsochroneFallbackAlert[];
-  onOpenSettings: (tab?: 'appearance' | 'basemap' | 'isochrones' | 'mvv' | 'keys' | 'heatmap') => void;
+  onOpenSettings: (tab?: SettingsTabId) => void;
   onRetry: () => void;
 }
 

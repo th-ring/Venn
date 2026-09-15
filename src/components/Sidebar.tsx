@@ -12,6 +12,7 @@ import { CommuteSettings } from './CommuteSettings';
 import { FallbackAlert } from './FallbackAlert';
 import { PresetSelector } from './PresetSelector';
 import { useTheme } from '../hooks/useTheme';
+import type { SettingsTabId } from './settings/SettingsModal';
 import {
   Users,
   Plus,
@@ -51,7 +52,7 @@ interface SidebarProps {
   onChangeSchedule: (updated: Partial<CommuteSchedule>) => void;
   onApplySuggestion: (suggestion: FallbackSuggestion) => void;
   onOpenShareModal: () => void;
-  onOpenSettings?: (tab?: 'appearance' | 'basemap' | 'isochrones' | 'mvv' | 'keys' | 'heatmap') => void;
+  onOpenSettings?: (tab?: SettingsTabId) => void;
   onRefreshIsochrones?: () => void;
   isMobileOpen: boolean;
   onToggleMobile: () => void;

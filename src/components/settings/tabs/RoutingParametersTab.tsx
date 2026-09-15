@@ -1,6 +1,10 @@
-﻿import React from 'react';
+import React from 'react';
 import { IsochroneOptions, DEFAULT_ROUTING_PARAMETERS } from '../../../types';
-import { Footprints, Train, Bike, RotateCcw, Info } from 'lucide-react';
+import { Footprints, Train, Bike, RotateCcw } from 'lucide-react';
+import { SettingsCard } from '../ui/SettingsCard';
+import { SettingsRow } from '../ui/SettingsRow';
+import { SettingsSwitch } from '../ui/SettingsSwitch';
+import { SettingsSlider } from '../ui/SettingsSlider';
 
 interface RoutingParametersTabProps {
   options: IsochroneOptions;
@@ -31,7 +35,7 @@ export const RoutingParametersTab: React.FC<RoutingParametersTabProps> = ({
     });
   };
 
-  const isModifiedFromDefaults =
+  const isModified =
     walkingSpeed !== DEFAULT_ROUTING_PARAMETERS.walkingSpeedKmh ||
     urbanDetour !== DEFAULT_ROUTING_PARAMETERS.urbanDetourFactor ||
     minTransferBuffer !== DEFAULT_ROUTING_PARAMETERS.minTransferBufferMin ||
@@ -41,270 +45,163 @@ export const RoutingParametersTab: React.FC<RoutingParametersTabProps> = ({
     parkingBuffer !== DEFAULT_ROUTING_PARAMETERS.drivingParkingBufferMin;
 
   return (
-    <div className="space-y-4">
-      {/* Intro info box */}
-      <div className="p-3 bg-blue-50/60 dark:bg-blue-950/30 border border-blue-200/70 dark:border-blue-800/60 rounded-xl flex items-start gap-2.5">
-        <Info className="w-4 h-4 text-blue-600 dark:text-[#8ab4f8] shrink-0 mt-0.5" />
-        <div className="text-xs text-slate-700 dark:text-[#c4c7c5] leading-relaxed">
-          Passe die Berechnungs-Parameter zentral an. Änderungen wirken sich direkt auf alle Erreichbarkeits-Polygone (Isochronen), Haltestelleneinzugsgebiete und Punkt-zu-Punkt-Fahrzeitschätzungen aus.
-        </div>
-      </div>
-
-      {/* 1. Fußverkehr (Walking) */}
-      <div className="p-3.5 bg-slate-50/90 dark:bg-[#202124] border border-slate-200 dark:border-[#3c4043] rounded-xl space-y-3.5">
-        <div className="flex items-center gap-2 pb-1 border-b border-slate-200/80 dark:border-[#3c4043]">
-          <Footprints className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-          <h4 className="text-xs font-semibold text-slate-900 dark:text-[#e3e3e3]">
-            Fußverkehr (Walking & First/Last Mile)
-          </h4>
-        </div>
-
-        {/* Walking Speed Slider */}
-        <div className="space-y-1.5">
-          <div className="flex items-center justify-between text-xs">
-            <label htmlFor="param-walking-speed" className="font-medium text-slate-700 dark:text-[#e3e3e3]">
-              Fußgänger-Geschwindigkeit:
-            </label>
-            <span className="font-semibold text-blue-600 dark:text-[#8ab4f8] bg-blue-50 dark:bg-blue-950/50 px-2 py-0.5 rounded text-xs">
-              {walkingSpeed.toFixed(1)} km/h
-              <span className="text-[10px] font-normal text-slate-500 dark:text-[#9aa0a6] ml-1">
-                ({(60 / walkingSpeed).toFixed(1)} min/km)
-              </span>
-            </span>
-          </div>
-          <input
-            id="param-walking-speed"
-            type="range"
-            min="2.5"
-            max="6.5"
-            step="0.1"
-            value={walkingSpeed}
-            onChange={(e) => onUpdateOptions({ walkingSpeedKmh: parseFloat(e.target.value) })}
-            className="w-full accent-blue-600 dark:accent-[#8ab4f8] cursor-pointer"
-          />
-          <div className="flex justify-between text-[10px] text-slate-400 dark:text-[#747775]">
-            <span>2.5 km/h (Gemütlich / Barrierearm)</span>
-            <span>4.0 km/h (Standard)</span>
-            <span>6.5 km/h (Zügiges Gehen)</span>
-          </div>
-          <p className="text-[11px] text-slate-500 dark:text-[#9aa0a6] leading-tight">
-            Gilt für Zustiegswege von der Haustür zur Haltestelle sowie Ausstiegswege zum Büro.
+    <div className="space-y-6">
+      {/* Tab Header & Reset Button */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h3 className="text-base font-medium text-slate-900 dark:text-[#e3e3e3]">
+            Mobilität & Routing-Parameter
+          </h3>
+          <p className="text-xs text-slate-500 dark:text-[#9aa0a6] mt-0.5 leading-relaxed">
+            Passe Geschwindigkeiten, Umsteigezeiten und Sicherheitszuschläge für die Reisezeitberechnung an.
           </p>
         </div>
 
-        {/* Detour Factor Slider */}
-        <div className="space-y-1.5 pt-2 border-t border-slate-200/60 dark:border-[#2e3134]">
-          <div className="flex items-center justify-between text-xs">
-            <label htmlFor="param-urban-detour" className="font-medium text-slate-700 dark:text-[#e3e3e3]">
-              Städtischer Umwegfaktor (Detour-Faktor):
-            </label>
-            <span className="font-semibold text-blue-600 dark:text-[#8ab4f8] bg-blue-50 dark:bg-blue-950/50 px-2 py-0.5 rounded text-xs">
-              {urbanDetour.toFixed(2)}×
-            </span>
-          </div>
-          <input
-            id="param-urban-detour"
-            type="range"
-            min="1.10"
-            max="1.60"
-            step="0.05"
-            value={urbanDetour}
-            onChange={(e) => onUpdateOptions({ urbanDetourFactor: parseFloat(e.target.value) })}
-            className="w-full accent-blue-600 dark:accent-[#8ab4f8] cursor-pointer"
-          />
-          <div className="flex justify-between text-[10px] text-slate-400 dark:text-[#747775]">
-            <span>1.10× (Direkte Verbindungen)</span>
-            <span>1.35× (Städtischer Standard)</span>
-            <span>1.60× (Starke Umwege / Barrieren)</span>
-          </div>
-          <p className="text-[11px] text-slate-500 dark:text-[#9aa0a6] leading-tight">
-            Verhältnis der tatsächlichen Straßen- und Gehwegdistanz zur Luftlinie (z. B. durch Häuserblocks, Schienenquerungen und Ampeln).
-          </p>
-        </div>
-      </div>
-
-      {/* 2. ÖPNV-Puffer & Taktzeit-Malus */}
-      <div className="p-3.5 bg-slate-50/90 dark:bg-[#202124] border border-slate-200 dark:border-[#3c4043] rounded-xl space-y-3.5">
-        <div className="flex items-center gap-2 pb-1 border-b border-slate-200/80 dark:border-[#3c4043]">
-          <Train className="w-4 h-4 text-blue-600 dark:text-[#8ab4f8]" />
-          <h4 className="text-xs font-semibold text-slate-900 dark:text-[#e3e3e3]">
-            ÖPNV-Puffer & Taktzeiten (Transit Realism)
-          </h4>
-        </div>
-
-        {/* Headway Penalty Switch */}
-        <div className="flex items-center justify-between gap-3 bg-white dark:bg-[#1a1b1e] p-2.5 rounded-lg border border-slate-200/80 dark:border-[#3c4043]">
-          <div className="min-w-0">
-            <div className="text-xs font-semibold text-slate-800 dark:text-[#e3e3e3]">
-              Taktzeit-Malus (Headway / 2) einrechnen
-            </div>
-            <div className="text-[10px] text-slate-500 dark:text-[#9aa0a6] leading-tight mt-0.5">
-              Schlägt die halbe durchschnittliche Taktzeit als rechnerische Wartezeit auf. Bevorzugt dichte Takte (z. B. 5-Min-Takt) gegenüber seltenen Verbindungen (z. B. 20-Min-Takt).
-            </div>
-          </div>
+        {isModified && (
           <button
-            id="switch-enable-headway-penalty"
             type="button"
-            role="switch"
-            aria-checked={enableHeadway}
-            onClick={() => onUpdateOptions({ enableHeadwayPenalty: !enableHeadway })}
-            className={`w-8 h-4.5 shrink-0 flex items-center rounded-full p-0.5 transition-colors cursor-pointer ${
-              enableHeadway ? 'bg-blue-600 dark:bg-[#8ab4f8]' : 'bg-slate-200 dark:bg-[#3c4043]'
-            }`}
+            onClick={handleResetDefaults}
+            className="self-start sm:self-center px-3 py-1.5 rounded-full text-xs font-medium text-blue-600 dark:text-[#8ab4f8] bg-blue-50 hover:bg-blue-100/70 dark:bg-blue-950/40 dark:hover:bg-blue-900/40 border border-blue-200/60 dark:border-blue-800/50 flex items-center gap-1.5 transition-colors cursor-pointer shrink-0"
           >
-            <div
-              className={`bg-white dark:bg-[#1e1f20] w-3.5 h-3.5 rounded-full shadow-xs transform transition-transform ${
-                enableHeadway ? 'translate-x-3.5' : 'translate-x-0'
-              }`}
-            />
+            <RotateCcw className="w-3.5 h-3.5" />
+            <span>Auf Standard zurücksetzen</span>
           </button>
-        </div>
+        )}
+      </div>
 
-        {/* Min Transfer Buffer Slider */}
-        <div className="space-y-1.5">
-          <div className="flex items-center justify-between text-xs">
-            <label htmlFor="param-min-transfer-buffer" className="font-medium text-slate-700 dark:text-[#e3e3e3]">
-              Mindest-Umsteigepuffer:
-            </label>
-            <span className="font-semibold text-blue-600 dark:text-[#8ab4f8] bg-blue-50 dark:bg-blue-950/50 px-2 py-0.5 rounded text-xs">
-              {minTransferBuffer.toFixed(1)} Min
-            </span>
+      {/* 1. Fußverkehr */}
+      <SettingsCard
+        title="Fußverkehr (Walking & First/Last Mile)"
+        subtitle="Zustiegswege von der Wohnung zur Haltestelle und Ausstiegswege zum Zielort"
+      >
+        <div className="p-4 space-y-4">
+          <SettingsSlider
+            id="walking-speed-slider"
+            label="Gehgeschwindigkeit"
+            value={walkingSpeed}
+            min={2.5}
+            max={6.5}
+            step={0.1}
+            unit="km/h"
+            formatValue={(v) => `${v.toFixed(1)} km/h (${(60 / v).toFixed(1)} min/km)`}
+            minLabel="2.5 km/h (Gemütlich)"
+            maxLabel="6.5 km/h (Zügig)"
+            description="Durchschnittliches Gehtempo auf Fußwegen und Bürgersteigen."
+            onChange={(v) => onUpdateOptions({ walkingSpeedKmh: v })}
+          />
+
+          <div className="pt-2 border-t border-slate-100 dark:border-[#2d2f31]">
+            <SettingsSlider
+              id="urban-detour-slider"
+              label="Städtischer Umwegfaktor (Detour-Faktor)"
+              value={urbanDetour}
+              min={1.1}
+              max={1.6}
+              step={0.05}
+              formatValue={(v) => `${v.toFixed(2)}×`}
+              minLabel="1.10× (Direkt)"
+              maxLabel="1.60× (Starke Umwege)"
+              description="Verhältnis der tatsächlichen Straßennetzdistanz zur direkten Luftlinie (z. B. durch Häuserblocks und Schienenquerungen)."
+              onChange={(v) => onUpdateOptions({ urbanDetourFactor: v })}
+            />
           </div>
-          <input
-            id="param-min-transfer-buffer"
-            type="range"
-            min="1.0"
-            max="8.0"
-            step="0.5"
+        </div>
+      </SettingsCard>
+
+      {/* 2. ÖPNV-Puffer & Taktzeiten */}
+      <SettingsCard
+        title="ÖPNV-Puffer & Taktzeiten (Transit Realism)"
+        subtitle="Realistische Modellierung von Umstiegen, Taktintervallen und Fahrplanrisiken"
+      >
+        <SettingsRow
+          icon={Train}
+          iconColor="text-blue-600 dark:text-[#8ab4f8]"
+          iconBg="bg-blue-50 dark:bg-blue-950/40"
+          title="Taktzeit-Malus (Headway / 2) einrechnen"
+          description="Schlägt die halbe durchschnittliche Taktzeit als rechnerische Wartezeit auf. Bevorzugt dichte Takte (z. B. 5-Min-Takt) gegenüber seltenen Verbindungen (z. B. 20-Min-Takt)."
+          control={
+            <SettingsSwitch
+              checked={enableHeadway}
+              onChange={(checked) => onUpdateOptions({ enableHeadwayPenalty: checked })}
+              ariaLabel="Taktzeit-Malus umschalten"
+            />
+          }
+        />
+
+        <div className="p-4 space-y-4">
+          <SettingsSlider
+            id="min-transfer-slider"
+            label="Mindest-Umsteigepuffer"
             value={minTransferBuffer}
-            onChange={(e) => onUpdateOptions({ minTransferBufferMin: parseFloat(e.target.value) })}
-            className="w-full accent-blue-600 dark:accent-[#8ab4f8] cursor-pointer"
+            min={1.0}
+            max={8.0}
+            step={0.5}
+            unit="Min"
+            formatValue={(v) => `${v.toFixed(1)} Min`}
+            minLabel="1.0 Min (Knapp)"
+            maxLabel="8.0 Min (Komfortabel)"
+            description="Erforderlicher Mindestzeitaufwand für Treppen, Gleiswechsel und Ebenenwechsel an Bahnhöfen."
+            onChange={(v) => onUpdateOptions({ minTransferBufferMin: v })}
           />
-          <div className="flex justify-between text-[10px] text-slate-400 dark:text-[#747775]">
-            <span>1.0 Min (Knapp)</span>
-            <span>4.0 Min (Empfohlen)</span>
-            <span>8.0 Min (Komfortabel / Barrierefrei)</span>
-          </div>
-          <p className="text-[11px] text-slate-500 dark:text-[#9aa0a6] leading-tight">
-            Mindestzeitaufwand für den physischen Wechsel zwischen Gleisen, Ebenen und Stationen.
-          </p>
-        </div>
 
-        {/* Transfer Risk Buffer Slider */}
-        <div className="space-y-1.5 pt-2 border-t border-slate-200/60 dark:border-[#2e3134]">
-          <div className="flex items-center justify-between text-xs">
-            <label htmlFor="param-transfer-risk-buffer" className="font-medium text-slate-700 dark:text-[#e3e3e3]">
-              Verspätungsrisiko-Puffer:
-            </label>
-            <span className="font-semibold text-blue-600 dark:text-[#8ab4f8] bg-blue-50 dark:bg-blue-950/50 px-2 py-0.5 rounded text-xs">
-              {transferRiskBuffer.toFixed(1)} Min
-            </span>
+          <div className="pt-2 border-t border-slate-100 dark:border-[#2d2f31]">
+            <SettingsSlider
+              id="transfer-risk-slider"
+              label="Verspätungsrisiko-Puffer"
+              value={transferRiskBuffer}
+              min={0.0}
+              max={5.0}
+              step={0.5}
+              unit="Min"
+              formatValue={(v) => `${v.toFixed(1)} Min`}
+              minLabel="0.0 Min (Kein Aufschlag)"
+              maxLabel="5.0 Min (Hohe Zuverlässigkeit)"
+              description="Bestraft fragile Anschlüsse mit knapper Umsteigezeit, um verlässliche Direktverbindungen zu priorisieren."
+              onChange={(v) => onUpdateOptions({ transferRiskBufferMin: v })}
+            />
           </div>
-          <input
-            id="param-transfer-risk-buffer"
-            type="range"
-            min="0.0"
-            max="5.0"
-            step="0.5"
-            value={transferRiskBuffer}
-            onChange={(e) => onUpdateOptions({ transferRiskBufferMin: parseFloat(e.target.value) })}
-            className="w-full accent-blue-600 dark:accent-[#8ab4f8] cursor-pointer"
-          />
-          <div className="flex justify-between text-[10px] text-slate-400 dark:text-[#747775]">
-            <span>0.0 Min (Kein Aufschlag)</span>
-            <span>2.0 Min (Standard)</span>
-            <span>5.0 Min (Hohe Zuverlässigkeit)</span>
-          </div>
-          <p className="text-[11px] text-slate-500 dark:text-[#9aa0a6] leading-tight">
-            Bestraft fragile Umsteigeverbindungen, um verlässliche Direkt- oder Taktverbindungen im Wohnbereich zu priorisieren.
-          </p>
         </div>
-      </div>
+      </SettingsCard>
 
-      {/* 3. Fahrrad & Pkw (Cycling & Driving) */}
-      <div className="p-3.5 bg-slate-50/90 dark:bg-[#202124] border border-slate-200 dark:border-[#3c4043] rounded-xl space-y-3.5">
-        <div className="flex items-center gap-2 pb-1 border-b border-slate-200/80 dark:border-[#3c4043]">
-          <Bike className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-          <h4 className="text-xs font-semibold text-slate-900 dark:text-[#e3e3e3]">
-            Fahrrad & Pkw (Individualverkehr)
-          </h4>
-        </div>
-
-        {/* Cycling Speed Slider */}
-        <div className="space-y-1.5">
-          <div className="flex items-center justify-between text-xs">
-            <label htmlFor="param-cycling-speed" className="font-medium text-slate-700 dark:text-[#e3e3e3]">
-              Fahrrad-Durchschnittsgeschwindigkeit:
-            </label>
-            <span className="font-semibold text-blue-600 dark:text-[#8ab4f8] bg-blue-50 dark:bg-blue-950/50 px-2 py-0.5 rounded text-xs">
-              {cyclingSpeed.toFixed(1)} km/h
-            </span>
-          </div>
-          <input
-            id="param-cycling-speed"
-            type="range"
-            min="10.0"
-            max="25.0"
-            step="0.5"
+      {/* 3. Individualverkehr */}
+      <SettingsCard
+        title="Individualverkehr (Fahrrad & Pkw)"
+        subtitle="Geschwindigkeiten und Zeitaufwand für Rad und Auto"
+      >
+        <div className="p-4 space-y-4">
+          <SettingsSlider
+            id="cycling-speed-slider"
+            label="Fahrrad-Geschwindigkeit"
             value={cyclingSpeed}
-            onChange={(e) => onUpdateOptions({ cyclingSpeedKmh: parseFloat(e.target.value) })}
-            className="w-full accent-blue-600 dark:accent-[#8ab4f8] cursor-pointer"
+            min={10.0}
+            max={25.0}
+            step={0.5}
+            unit="km/h"
+            formatValue={(v) => `${v.toFixed(1)} km/h`}
+            minLabel="10.0 km/h (Cityrad)"
+            maxLabel="25.0 km/h (E-Bike)"
+            description="Durchschnittliches Reisetempo inklusive Ampelstopps und Radwege."
+            onChange={(v) => onUpdateOptions({ cyclingSpeedKmh: v })}
           />
-          <div className="flex justify-between text-[10px] text-slate-400 dark:text-[#747775]">
-            <span>10.0 km/h (Stadtradeln)</span>
-            <span>16.5 km/h (Standard)</span>
-            <span>25.0 km/h (Schnelles E-Bike)</span>
+
+          <div className="pt-2 border-t border-slate-100 dark:border-[#2d2f31]">
+            <SettingsSlider
+              id="driving-parking-slider"
+              label="Pkw-Parkplatz- & Rüstzeitpuffer"
+              value={parkingBuffer}
+              min={0.0}
+              max={10.0}
+              step={0.5}
+              unit="Min"
+              formatValue={(v) => `${v.toFixed(1)} Min`}
+              minLabel="0.0 Min (Nur reine Fahrt)"
+              maxLabel="10.0 Min (Innenstadt-Suche)"
+              description="Zeitaufschlag für Garagenausfahrt, Ampelverzögerungen und Parkplatzsuche am Zielort."
+              onChange={(v) => onUpdateOptions({ drivingParkingBufferMin: v })}
+            />
           </div>
         </div>
-
-        {/* Driving Parking Buffer Slider */}
-        <div className="space-y-1.5 pt-2 border-t border-slate-200/60 dark:border-[#2e3134]">
-          <div className="flex items-center justify-between text-xs">
-            <label htmlFor="param-driving-parking" className="font-medium text-slate-700 dark:text-[#e3e3e3]">
-              Pkw-Parkplatz- & Rüstzeitpuffer:
-            </label>
-            <span className="font-semibold text-blue-600 dark:text-[#8ab4f8] bg-blue-50 dark:bg-blue-950/50 px-2 py-0.5 rounded text-xs">
-              {parkingBuffer.toFixed(1)} Min
-            </span>
-          </div>
-          <input
-            id="param-driving-parking"
-            type="range"
-            min="0.0"
-            max="10.0"
-            step="0.5"
-            value={parkingBuffer}
-            onChange={(e) => onUpdateOptions({ drivingParkingBufferMin: parseFloat(e.target.value) })}
-            className="w-full accent-blue-600 dark:accent-[#8ab4f8] cursor-pointer"
-          />
-          <div className="flex justify-between text-[10px] text-slate-400 dark:text-[#747775]">
-            <span>0.0 Min (Nur Fahrzeit)</span>
-            <span>3.0 Min (Standard)</span>
-            <span>10.0 Min (Innenstadt-Parkplatzsuche)</span>
-          </div>
-          <p className="text-[11px] text-slate-500 dark:text-[#9aa0a6] leading-tight">
-            Wird bei Pkw-Pendelzeiten aufgeschlagen, um Parkplatzsuche, Ampelverzögerungen und Garagenausfahrt abzubilden.
-          </p>
-        </div>
-      </div>
-
-      {/* Reset Button */}
-      <div className="pt-2 flex justify-end">
-        <button
-          id="btn-reset-routing-defaults"
-          type="button"
-          onClick={handleResetDefaults}
-          disabled={!isModifiedFromDefaults}
-          className={`px-3.5 py-1.5 text-xs rounded-full border flex items-center gap-1.5 transition-colors cursor-pointer ${
-            isModifiedFromDefaults
-              ? 'border-slate-300 dark:border-[#5f6368] text-slate-700 dark:text-[#e3e3e3] hover:bg-slate-100 dark:hover:bg-[#282a2c]'
-              : 'border-slate-200 dark:border-[#3c4043] text-slate-400 dark:text-[#747775] cursor-not-allowed opacity-60'
-          }`}
-        >
-          <RotateCcw className="w-3.5 h-3.5" />
-          <span>Standardwerte wiederherstellen</span>
-        </button>
-      </div>
+      </SettingsCard>
     </div>
   );
 };
