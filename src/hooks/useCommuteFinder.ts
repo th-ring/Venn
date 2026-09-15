@@ -20,7 +20,14 @@ import {
   estimateCommuteTime,
   getSelectedBasemap,
   setSelectedBasemap,
+  getGoogleMapsApiKey,
+  getOrsApiKey,
+  getSelectedProvider,
 } from '../services/isochroneEngine';
+import {
+  CommuteWorkerRequest,
+  CommuteWorkerResponse,
+} from '../workers/commuteWorker';
 import {
   calculateMultiIntersection,
   calculateAreaKm2,
@@ -232,6 +239,49 @@ export function useCommuteFinder() {
     initializeTransitStorage().catch(() => {});
   }, []);
 
+  const workerRef = useRef<Worker | null>(null);
+  const activeRequestIdRef = useRef<string | null>(null);
+
+  // Initialize background computation Web Worker
+  useEffect(() => {
+    let worker: Worker | null = null;
+    try {
+      if (typeof Worker !== 'undefined') {
+        worker = new Worker(new URL('../workers/commuteWorker.ts', import.meta.url), {
+          type: 'module',
+        });
+        worker.onmessage = (e: MessageEvent<CommuteWorkerResponse>) => {
+          const resp = e.data;
+          if (!resp || resp.requestId !== activeRequestIdRef.current) {
+            // Drop stale / cancelled calculation results
+            return;
+          }
+          if (resp.success) {
+            setResult(resp.result || null);
+          }
+          setIsCalculating(false);
+          setIsPending(false);
+          setLastCalculatedAt(new Date());
+        };
+        worker.onerror = (err) => {
+          console.warn('[useCommuteFinder] Web Worker calculation error, falling back to main-thread:', err);
+          setIsCalculating(false);
+          setIsPending(false);
+        };
+        workerRef.current = worker;
+      }
+    } catch (err) {
+      console.warn('[useCommuteFinder] Web Worker initialization failed, using main-thread fallback:', err);
+    }
+
+    return () => {
+      if (worker) {
+        worker.terminate();
+      }
+      workerRef.current = null;
+    };
+  }, []);
+
   // Calculation Engine
   const runCalculation = useCallback(
     async (
@@ -250,6 +300,26 @@ export function useCommuteFinder() {
         return;
       }
 
+      const requestId = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+      activeRequestIdRef.current = requestId;
+
+      // Primary: Execute all matrix searches, Turf buffering, and geometric intersections in Web Worker
+      if (workerRef.current) {
+        const workerPayload: CommuteWorkerRequest = {
+          requestId,
+          profiles: currentProfiles,
+          schedule: currentSchedule,
+          onlyResidential: residentialFilter,
+          activeTransitRegion: getTransitRegion(),
+          selectedProvider: getSelectedProvider(),
+          googleMapsApiKey: getGoogleMapsApiKey(),
+          orsApiKey: getOrsApiKey(),
+        };
+        workerRef.current.postMessage(workerPayload);
+        return;
+      }
+
+      // Fallback: Synchronous Main-Thread execution if Web Worker is unavailable
       try {
         const isochronePromises = active.map(async (p) => {
           const poly = await generateIsochrone(p, currentSchedule);

@@ -455,11 +455,16 @@ async function fetchOrsIsochrone(
  */
 export async function generateIsochrone(
   profile: PersonProfile,
-  schedule: CommuteSchedule
+  schedule: CommuteSchedule,
+  overrideConfig?: {
+    googleMapsApiKey?: string;
+    orsApiKey?: string;
+    selectedProvider?: IsochroneProvider;
+  }
 ): Promise<GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon>> {
-  const googleKey = getGoogleMapsApiKey();
-  const orsKey = getOrsApiKey();
-  const provider = getSelectedProvider();
+  const googleKey = overrideConfig?.googleMapsApiKey ?? getGoogleMapsApiKey();
+  const orsKey = overrideConfig?.orsApiKey ?? getOrsApiKey();
+  const provider = overrideConfig?.selectedProvider ?? getSelectedProvider();
 
   const opts = schedule.options ?? {
     liveTraffic: false,
@@ -661,9 +666,9 @@ function generateCalibratedIsochrone(
 
   switch (mode) {
     case 'walking': {
-      // 4.8 km/h = 0.08 km/min
-      const speedKmPerMin = 0.08;
-      detourFactor = 1.32;
+      // 4.0 km/h = 0.067 km/min
+      const speedKmPerMin = 0.067;
+      detourFactor = 1.35;
       baseRadiusKm = (travelTimeMinutes * speedKmPerMin) / detourFactor;
       break;
     }
@@ -795,13 +800,13 @@ export function estimateCommuteTime(
 
   switch (mode) {
     case 'walking': {
-      roadDistanceKm = straightDistKm * 1.32;
-      travelTimeMin = roadDistanceKm * 12.5;
+      roadDistanceKm = straightDistKm * 1.35;
+      travelTimeMin = (roadDistanceKm / 4.0) * 60; // 4.0 km/h = 15 min per km
       details = {
         summary: `Zu Fuß (${roadDistanceKm.toFixed(1)} km)`,
         steps: [
-          `ca. ${Math.round(travelTimeMin)} Min Fußweg bei ~4.8 km/h`,
-          `Direkter Fußgängerpfad (${roadDistanceKm.toFixed(1)} km)`,
+          `ca. ${Math.round(travelTimeMin)} Min Fußweg bei ~4.0 km/h`,
+          `Fußgängerpfad & Straßenquerungen (Detour 1.35, ${roadDistanceKm.toFixed(1)} km)`,
         ],
       };
       break;
@@ -844,10 +849,10 @@ export function estimateCommuteTime(
       roadDistanceKm = straightDistKm * 1.22;
       // Direct walking if very close (< 800m)
       if (straightDistKm <= 0.8) {
-        travelTimeMin = (straightDistKm / 0.082) * 1.25;
+        travelTimeMin = (straightDistKm / 0.067) * 1.35;
         details = {
           summary: `Fußweg (< 800m)`,
-          steps: [`Direkter Fußweg (${Math.round(straightDistKm * 1000)} m, ca. ${Math.round(travelTimeMin)} Min)`],
+          steps: [`Direkter Fußweg (${Math.round(straightDistKm * 1000)} m, ca. ${Math.round(travelTimeMin)} Min bei ~4 km/h)`],
         };
         break;
       }

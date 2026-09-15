@@ -28,6 +28,7 @@ import {
 import {
   getRentalGeoJsonForRegion,
   getRentalChoroplethColor,
+  getRentalRelativeTier,
 } from '../services/rentalService';
 import {
   getGoogleMapsApiKey,
@@ -889,6 +890,7 @@ export const MapComponent: React.FC<MapComponentProps> = ({
       onEachFeature: (feature, fLayer) => {
         const p = feature.properties;
         const color = getRentalChoroplethColor(p.avgRentColdSqm);
+        const relativeTier = getRentalRelativeTier(p.avgRentColdSqm);
 
         fLayer.bindTooltip(
           `<div style="font-family: inherit; font-size: 12px; line-height: 1.35; padding: 2px;">
@@ -899,13 +901,13 @@ export const MapComponent: React.FC<MapComponentProps> = ({
               Ø ${p.avgRentColdSqm.toFixed(2)} €/m² <span style="font-size: 11px; font-weight: 500; color: ${isDark ? '#94a3b8' : '#475569'};">Kaltmiete</span>
             </div>
             <div style="font-size: 11px; color: ${isDark ? '#94a3b8' : '#64748b'}; margin-top: 2px;">
-              Spanne: ${p.minRentColdSqm.toFixed(2)} – ${p.maxRentColdSqm.toFixed(2)} €/m²
+              Amtliche Spanne: ${p.minRentColdSqm.toFixed(2)} – ${p.maxRentColdSqm.toFixed(2)} €/m²
             </div>
-            <div style="font-size: 10px; color: ${isDark ? '#38bdf8' : '#0369a1'}; font-weight: 600; margin-top: 3px;">
-              ${p.qualityLabel}
+            <div style="font-size: 10px; color: ${relativeTier.color}; font-weight: 600; margin-top: 3px;">
+              ${relativeTier.label} • ${p.qualityLabel}
             </div>
             <div style="font-size: 9px; color: ${isDark ? '#64748b' : '#94a3b8'}; margin-top: 4px; border-top: 1px solid ${isDark ? '#334155' : '#f1f5f9'}; padding-top: 2px;">
-              ${p.source}
+              ${p.source} (Mietspiegel Bestand/Neuabschlüsse)
             </div>
           </div>`,
           { sticky: true, className: 'rental-choropleth-tooltip' }

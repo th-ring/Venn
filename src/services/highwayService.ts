@@ -6,37 +6,100 @@ import {
   HighwayRampFeature,
   HighwayAreaFeature,
 } from '../types';
-import defaultHighwayData from '../data/highwayData.json';
-
 const STORAGE_KEY = 'living_area_highway_data_custom_v1';
 
 let cachedDataset: HighwayDataset | null = null;
+let defaultDataPromise: Promise<HighwayDataset> | null = null;
 const listeners = new Set<(dataset: HighwayDataset) => void>();
+
+const EMPTY_HIGHWAY_DATASET: HighwayDataset = {
+  metadata: {
+    region: 'Munich Metropolitan Region',
+    regionId: 'munich-mvv',
+    bbox: [11.30, 48.00, 11.75, 48.28],
+    junctionCount: 0,
+    rampCount: 0,
+    areaCount: 0,
+    lastUpdated: '2026-01-01',
+    source: 'OpenStreetMap Overpass API',
+    sourceUrl: 'https://overpass-api.de',
+    license: 'ODbL (OpenStreetMap contributors)',
+  },
+  junctions: [],
+  ramps: [],
+  areas: [],
+};
+
+/**
+ * Asynchronously loads default highway data on demand.
+ * This code-splits the 1.24 MB highway data JSON into an on-demand chunk,
+ * removing it from the initial application bundle.
+ */
+export async function loadDefaultHighwayData(): Promise<HighwayDataset> {
+  if (cachedDataset && cachedDataset.junctions.length > 0) {
+    return cachedDataset;
+  }
+
+  // 1. Check custom user storage
+  if (typeof localStorage !== 'undefined') {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw) as HighwayDataset;
+        if (parsed && parsed.metadata && parsed.junctions && parsed.ramps) {
+          cachedDataset = parsed;
+          notifyListeners(cachedDataset);
+          return cachedDataset;
+        }
+      }
+    } catch (err) {
+      console.warn('[HighwayService] Failed to load custom highway dataset from storage:', err);
+    }
+  }
+
+  // 2. Load chunk dynamically
+  if (!defaultDataPromise) {
+    defaultDataPromise = import('../data/highwayData.json').then((mod) => {
+      const data = (mod.default || mod) as unknown as HighwayDataset;
+      cachedDataset = data;
+      notifyListeners(cachedDataset);
+      return data;
+    });
+  }
+
+  return defaultDataPromise;
+}
 
 /**
  * Loads the active Highway dataset.
- * Checks localStorage for a user-updated OSM pull, else falls back to bundled static JSON.
+ * Checks localStorage for a user-updated OSM pull, else returns cached or triggers background load.
  */
 export function getHighwayDataset(): HighwayDataset {
   if (cachedDataset) {
     return cachedDataset;
   }
 
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw) as HighwayDataset;
-      if (parsed && parsed.metadata && parsed.junctions && parsed.ramps) {
-        cachedDataset = parsed;
-        return cachedDataset;
+  if (typeof localStorage !== 'undefined') {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw) as HighwayDataset;
+        if (parsed && parsed.metadata && parsed.junctions && parsed.ramps) {
+          cachedDataset = parsed;
+          return cachedDataset;
+        }
       }
+    } catch (err) {
+      console.warn('[HighwayService] Failed to load custom highway dataset from storage:', err);
     }
-  } catch (err) {
-    console.warn('[HighwayService] Failed to load custom highway dataset from storage:', err);
   }
 
-  cachedDataset = defaultHighwayData as unknown as HighwayDataset;
-  return cachedDataset;
+  // Trigger background load if not yet loaded
+  loadDefaultHighwayData().catch((err) => {
+    console.warn('[HighwayService] Error loading highway data chunk:', err);
+  });
+
+  return EMPTY_HIGHWAY_DATASET;
 }
 
 export function getHighwayMetadata(): HighwayDatasetMetadata {
@@ -80,9 +143,12 @@ export function resetHighwayDataToDefault(): HighwayDataset {
   try {
     localStorage.removeItem(STORAGE_KEY);
   } catch {}
-  cachedDataset = defaultHighwayData as unknown as HighwayDataset;
-  notifyListeners(cachedDataset);
-  return cachedDataset;
+  cachedDataset = null;
+  defaultDataPromise = null;
+  loadDefaultHighwayData().then((data) => {
+    notifyListeners(data);
+  });
+  return EMPTY_HIGHWAY_DATASET;
 }
 
 const OVERPASS_MIRRORS = [

@@ -17,6 +17,7 @@ export const DEFAULT_RENTAL_OVERLAY_SETTINGS: RentalOverlaySettings = {
 };
 
 export interface RentalLegendItem {
+  tierIndex: number;
   min?: number;
   max?: number;
   label: string;
@@ -26,39 +27,59 @@ export interface RentalLegendItem {
 
 export const RENTAL_LEGEND_TIERS: RentalLegendItem[] = [
   {
+    tierIndex: 1,
     max: 17.0,
-    label: '< 17,00 €',
-    subLabel: 'Günstige Lage (z. B. Feldmoching, Aubing)',
+    label: 'Stufe 1: Günstig (< 17 €)',
+    subLabel: 'Preiswerte Lage (z. B. Feldmoching, Aubing)',
     color: '#10B981', // Emerald
   },
   {
+    tierIndex: 2,
     min: 17.0,
     max: 18.99,
-    label: '17,00 – 18,99 €',
+    label: 'Stufe 2: Moderat (17 – 19 €)',
     subLabel: 'Moderate Lage (z. B. Laim, Moosach, Trudering)',
     color: '#84CC16', // Lime
   },
   {
+    tierIndex: 3,
     min: 19.0,
     max: 20.99,
-    label: '19,00 – 20,99 €',
+    label: 'Stufe 3: Gehoben (19 – 21 €)',
     subLabel: 'Gehobene Lage (z. B. Sendling, Westend, Solln)',
     color: '#F59E0B', // Amber
   },
   {
+    tierIndex: 4,
     min: 21.0,
     max: 22.99,
-    label: '21,00 – 22,99 €',
+    label: 'Stufe 4: Teuer (21 – 23 €)',
     subLabel: 'Teure Lage (z. B. Schwabing-West, Au-Haidhausen)',
     color: '#F43F5E', // Rose
   },
   {
+    tierIndex: 5,
     min: 23.0,
-    label: '≥ 23,00 €',
+    label: 'Stufe 5: Spitzenlage (≥ 23 €)',
     subLabel: 'Spitzenlage (z. B. Altstadt-Lehel, Maxvorstadt)',
     color: '#8B5CF6', // Purple
   },
 ];
+
+/**
+ * Returns the relative tier information for a given average net cold rent.
+ */
+export function getRentalRelativeTier(avgRentColdSqm: number): {
+  tierIndex: number;
+  label: string;
+  color: string;
+} {
+  if (avgRentColdSqm < 17.0) return { tierIndex: 1, label: 'Stufe 1 (Günstig)', color: '#10B981' };
+  if (avgRentColdSqm < 19.0) return { tierIndex: 2, label: 'Stufe 2 (Moderat)', color: '#84CC16' };
+  if (avgRentColdSqm < 21.0) return { tierIndex: 3, label: 'Stufe 3 (Gehoben)', color: '#F59E0B' };
+  if (avgRentColdSqm < 23.0) return { tierIndex: 4, label: 'Stufe 4 (Teuer)', color: '#F43F5E' };
+  return { tierIndex: 5, label: 'Stufe 5 (Spitzenlage)', color: '#8B5CF6' };
+}
 
 /**
  * Returns the hex color for a given average net cold rent per sqm.

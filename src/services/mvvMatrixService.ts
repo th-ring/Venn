@@ -279,6 +279,82 @@ export async function syncMvvDatasetFromEndpoint(): Promise<{
 }
 
 /**
+ * Estimated headway (Taktzeit in minutes) based on transit type and lines.
+ * Models real scheduled frequencies across German metropolitan transit networks.
+ */
+export function estimateHeadwayMinutes(type: string, lines: string[] = []): number {
+  switch (type) {
+    case 'ubahn':
+      return 5;
+    case 'sbahn': {
+      // Stammstrecke with bundled lines has 2-3 min, outer branches typically 10-20 min
+      const isCoreTrunk = lines.length >= 3;
+      return isCoreTrunk ? 4 : 10;
+    }
+    case 'tram':
+      return 10;
+    case 'expressbus':
+      return 10;
+    case 'bus': {
+      const isExpress = lines.some((l) => l.trim().toUpperCase().startsWith('X'));
+      if (isExpress) return 10;
+      const isMetro = lines.some((l) => {
+        const num = parseInt(l.trim(), 10);
+        return !isNaN(num) && num >= 50 && num <= 68;
+      });
+      return isMetro ? 10 : 15;
+    }
+    case 'train':
+      return 30;
+    default:
+      return 12;
+  }
+}
+
+/**
+ * Calculates initial departure waiting time based on available modes at entry station.
+ * Models half of the headway (Headway / 2) as realistic average wait time.
+ */
+export function getInitialDepartureWaitMinutes(
+  station: TransitStation,
+  allowedModes: Set<TransitSubMode>
+): number {
+  let minWait = 15;
+  for (const t of station.types) {
+    if (t === 'ubahn' && allowedModes.has('ubahn')) minWait = Math.min(minWait, 2.5);
+    else if (t === 'sbahn' && allowedModes.has('sbahn')) {
+      const isTrunk = station.lines.filter((l) => l.startsWith('S')).length >= 3;
+      minWait = Math.min(minWait, isTrunk ? 2.0 : 5.0);
+    } else if (t === 'tram' && allowedModes.has('tram')) minWait = Math.min(minWait, 5.0);
+    else if (t === 'bus' && (allowedModes.has('bus') || allowedModes.has('expressbus'))) {
+      const hasExpress = station.lines.some((l) => l.trim().toUpperCase().startsWith('X'));
+      minWait = Math.min(minWait, hasExpress ? 5.0 : 7.5);
+    } else if (t === 'train' && allowedModes.has('train')) minWait = Math.min(minWait, 15.0);
+  }
+  return minWait === 15 ? 4.0 : minWait;
+}
+
+/**
+ * Calculates realistic transfer penalty when changing lines.
+ * Accounts for:
+ * 1. Physical walking buffer between platforms / stairs (3.5 - 4.5 min)
+ * 2. Average waiting time for connecting service (Headway / 2, capped by user's maxTransferWaitMin)
+ * 3. Schedule fragility risk buffer (2.0 min) to penalize brittle connections.
+ */
+export function calculateTransferPenalty(
+  targetType: string,
+  targetLines: string[],
+  maxTransferWaitMin: number = 5
+): number {
+  const headway = estimateHeadwayMinutes(targetType, targetLines);
+  const averageWait = headway / 2;
+  const effectiveWait = Math.min(averageWait, Math.max(2.0, maxTransferWaitMin));
+  const walkBuffer = targetType === 'ubahn' || targetType === 'sbahn' ? 3.5 : 4.5;
+  const riskBuffer = 2.0; // Deliberate risk penalty against fragile connections
+  return walkBuffer + effectiveWait + riskBuffer;
+}
+
+/**
  * Resulting reachable station with travel time breakdown
  */
 export interface ReachableStation {
@@ -316,8 +392,9 @@ export function calculateReachableStations(
   const originPoint = turf.point([lng, lat]);
 
   // 1. Find entry stations accessible from workplace/destination (Last Mile in reverse)
-  const walkSpeedKmPerMin = 0.082; // ~4.9 km/h
-  const detourFactor = 1.2;
+  // Calibrated urban pedestrian parameters: 4.0 km/h with 1.35 urban detour factor
+  const walkSpeedKmPerMin = 0.067; // ~4.0 km/h
+  const detourFactor = 1.35; // Urban block & pedestrian crossing detour factor
   const effectiveMaxWalkMin = Math.max(maxWalkFromStationMin, 1);
 
   const entryStations: { station: TransitStation; walkTimeMin: number }[] = [];
@@ -390,10 +467,9 @@ export function calculateReachableStations(
   const bestTimes = new Map<string, { time: number; transfers: number }>();
   const pq = new PriorityQueue<State>((a, b) => a.totalTime - b.totalTime);
 
-  const initialDepartureWait = 2.0;
-
   for (const entry of entryStations) {
-    const startTime = entry.walkTimeMin + initialDepartureWait;
+    const departureWait = getInitialDepartureWaitMinutes(entry.station, allowedModes);
+    const startTime = entry.walkTimeMin + departureWait;
     if (startTime <= travelTimeMinutes) {
       pq.push({
         stationId: entry.station.id,
@@ -435,8 +511,9 @@ export function calculateReachableStations(
         continue;
       }
 
-      const isCoreRail = edge.type === 'sbahn' || edge.type === 'ubahn' || edge.type === 'train';
-      const transferPenalty = isLineChange ? Math.min(maxTransferWaitMin, isCoreRail ? 1.5 : 2.5) : 0;
+      const transferPenalty = isLineChange
+        ? calculateTransferPenalty(edge.type, edge.lines, maxTransferWaitMin)
+        : 0;
       const nextTime = curr.totalTime + edge.minutes + transferPenalty;
 
       if (nextTime <= travelTimeMinutes) {
@@ -517,7 +594,7 @@ export function findShortestTransitTrip(
 
   // Direct walk shortcut if very close
   if (directDistanceKm <= 0.8) {
-    const walkMin = Math.round((directDistanceKm / 0.082) * 1.25);
+    const walkMin = Math.round((directDistanceKm / 0.067) * 1.35);
     return {
       travelTimeMinutes: walkMin,
       routeFound: true,
@@ -530,12 +607,12 @@ export function findShortestTransitTrip(
       lastMileWalkMin: 0,
       lastMileStationName: 'Ziel',
       lastMileWalkLimitMin: maxWalkFromStation,
-      steps: [`Direkter Fußweg (${Math.round(directDistanceKm * 1000)} m, ca. ${walkMin} Min)`],
+      steps: [`Direkter Fußweg (${Math.round(directDistanceKm * 1000)} m, ca. ${walkMin} Min bei ~4 km/h)`],
     };
   }
 
-  const walkSpeedKmPerMin = 0.082;
-  const detourFactor = 1.25;
+  const walkSpeedKmPerMin = 0.067;
+  const detourFactor = 1.35;
 
   // Find candidate entry stations near origin (Wohnort ➔ Station)
   const entryStations: { station: TransitStation; walkTime: number }[] = [];
@@ -611,13 +688,14 @@ export function findShortestTransitTrip(
     allLinesUsed: string[];
     entryStationName: string;
     entryWalkTime: number;
+    entryWaitTime: number;
   }
 
   const pq = new PriorityQueue<AStarState>((a, b) => a.fScore - b.fScore);
   const bestGTime = new Map<string, number>();
 
   for (const entry of entryStations) {
-    const initialWait = 2.0;
+    const initialWait = getInitialDepartureWaitMinutes(entry.station, allowedModes);
     const gTime = entry.walkTime + initialWait;
     const distToTargetKm = turf.distance(turf.point([entry.station.lng, entry.station.lat]), destPoint, {
       units: 'kilometers',
@@ -633,6 +711,7 @@ export function findShortestTransitTrip(
       allLinesUsed: [],
       entryStationName: entry.station.name,
       entryWalkTime: entry.walkTime,
+      entryWaitTime: initialWait,
     });
     bestGTime.set(entry.station.id, gTime);
   }
@@ -648,7 +727,7 @@ export function findShortestTransitTrip(
     if (exitMatch) {
       const candidateTotal = curr.gTime + exitMatch.walkToDestTime;
       if (bestResult === null || candidateTotal < bestResult.travelTimeMinutes) {
-        const inVehicle = Math.max(1, Math.round(curr.gTime - curr.entryWalkTime - 2.0));
+        const inVehicle = Math.max(1, Math.round(curr.gTime - curr.entryWalkTime - curr.entryWaitTime));
         const uniqueLines = Array.from(new Set(curr.allLinesUsed));
         const entryWalkMin = Math.round(curr.entryWalkTime);
         const exitWalkMin = Math.round(exitMatch.walkToDestTime);
@@ -708,8 +787,9 @@ export function findShortestTransitTrip(
         continue;
       }
 
-      const isCoreRail = edge.type === 'sbahn' || edge.type === 'ubahn' || edge.type === 'train';
-      const transferPenalty = isLineChange ? Math.min(profile.maxTransferWaitMin ?? 5, isCoreRail ? 1.5 : 2.5) : 0;
+      const transferPenalty = isLineChange
+        ? calculateTransferPenalty(edge.type, edge.lines, profile.maxTransferWaitMin ?? 5)
+        : 0;
       const nextGTime = curr.gTime + edge.minutes + transferPenalty;
 
       const destStation = dataset.stations.find((s) => s.id === edge.to);
@@ -736,6 +816,7 @@ export function findShortestTransitTrip(
           allLinesUsed: updatedLines,
           entryStationName: curr.entryStationName,
           entryWalkTime: curr.entryWalkTime,
+          entryWaitTime: curr.entryWaitTime,
         });
       }
     }
@@ -768,14 +849,14 @@ export function generateMvvTransitIsochrone(
       : DEFAULT_TRANSIT_SUBMODES
   );
 
-  const walkSpeedKmPerMin = 0.082; // ~4.9 km/h
-  const detourFactor = 1.25;
+  const walkSpeedKmPerMin = 0.067; // ~4.0 km/h (calibrated for real urban pedestrian conditions)
+  const detourFactor = 1.35; // Urban block & pedestrian crossing detour factor
 
   const polygonsToUnion: GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon>[] = [];
 
   // 1. Direct Walking Polygon from origin (workplace) without transit
   const directWalkTime = Math.min(travelTimeMinutes, maxWalkFromStationMin);
-  const directWalkRadiusKm = Math.max(0.3, (directWalkTime * walkSpeedKmPerMin) / detourFactor);
+  const directWalkRadiusKm = Math.max(0.25, (directWalkTime * walkSpeedKmPerMin) / detourFactor);
   const originWalkCircle = turf.circle(origin, directWalkRadiusKm, {
     steps: 24,
     units: 'kilometers',
@@ -790,7 +871,7 @@ export function generateMvvTransitIsochrone(
 
     // Walking dispersal around reached station into residential area (Wohnort ➔ Station)
     const dispersalMinutes = Math.min(item.remainingTimeMin, maxWalkToStationMin);
-    const minRadius = item.station.types.includes('sbahn') || item.station.types.includes('train') ? 0.35 : 0.25;
+    const minRadius = item.station.types.includes('sbahn') || item.station.types.includes('train') ? 0.30 : 0.20;
     const radiusKm = Math.max(minRadius, (dispersalMinutes * walkSpeedKmPerMin) / detourFactor);
 
     const stationBuffer = turf.circle(stPoint, radiusKm, {

@@ -5,7 +5,7 @@ import {
   getRentalRegionsCatalog,
   saveRentalOverlaySettings,
 } from '../../../services/rentalService';
-import { Euro, Building2, CheckCircle2, Clock, ExternalLink, Sliders } from 'lucide-react';
+import { Euro, Building2, CheckCircle2, Clock, ExternalLink, Sliders, AlertTriangle } from 'lucide-react';
 
 interface RentalOverlayTabProps {
   schedule: CommuteSchedule;
@@ -47,6 +47,20 @@ export const RentalOverlayTab: React.FC<RentalOverlayTabProps> = ({
           Choroplethen-Überlagerung der durchschnittlichen Nettokaltmieten (€/m²) und Wohnlagen
           auf Basis amtlicher kommunaler Open-Data-Portale.
         </p>
+      </div>
+
+      {/* Transparency / Source Disclaimer Box */}
+      <div className="bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 rounded-2xl p-3.5 flex items-start gap-3">
+        <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+        <div className="text-xs text-amber-900 dark:text-amber-200 leading-relaxed">
+          <span className="font-bold">Wichtiger Einordnungshinweis (Mietspiegel vs. Neuinserate):</span>
+          <p className="mt-1 text-amber-800/90 dark:text-amber-300/90">
+            Die Werte basieren auf dem <strong>amtlichen qualifizierten Mietspiegel</strong> (gem. § 558c BGB). 
+            Dieser umfasst bestehende Mietverhältnisse sowie Neuabschlüsse der letzten 6 Jahre.
+            <strong> Aktuelle Marktangebote für Neuinserate</strong> auf Immobilienportalen liegen in gefragten Großstädten 
+            in der Regel <strong>15–30 % über</strong> diesen amtlichen Mietspiegelwerten.
+          </p>
+        </div>
       </div>
 
       {/* Main Activation Card */}
