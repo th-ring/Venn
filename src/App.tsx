@@ -290,6 +290,9 @@ export default function App() {
             <InspectionPanel
               inspection={inspectionPoint}
               onClose={() => setInspectionPoint(null)}
+              showRentalInfo={Boolean(
+                schedule.options?.rentalOverlay?.enabled && !hiddenLayers.has('rental')
+              )}
             />
           </div>
         )}

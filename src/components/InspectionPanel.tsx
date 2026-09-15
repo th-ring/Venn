@@ -23,6 +23,7 @@ import { getRentalChoroplethColor } from '../services/rentalService';
 interface InspectionPanelProps {
   inspection: InspectionPoint | null;
   onClose: () => void;
+  showRentalInfo?: boolean;
 }
 
 const MODE_ICONS: Record<TransportMode, React.ComponentType<{ className?: string }>> = {
@@ -39,7 +40,11 @@ const MODE_NAMES: Record<TransportMode, string> = {
   walking: 'Zu Fuß',
 };
 
-export const InspectionPanel: React.FC<InspectionPanelProps> = ({ inspection, onClose }) => {
+export const InspectionPanel: React.FC<InspectionPanelProps> = ({
+  inspection,
+  onClose,
+  showRentalInfo = false,
+}) => {
   const [expandedPersonIds, setExpandedPersonIds] = useState<Record<string, boolean>>({});
 
   if (!inspection) return null;
@@ -125,8 +130,8 @@ export const InspectionPanel: React.FC<InspectionPanelProps> = ({ inspection, on
         </div>
       )}
 
-      {/* Mietspiegel / Rental District Card */}
-      {inspection.rentalInfo && (
+      {/* Mietspiegel / Rental District Card (only shown when rental overlay is active) */}
+      {showRentalInfo && inspection.rentalInfo && (
         <div className="bg-slate-50/80 dark:bg-[#282a2c]/60 border-b border-slate-200/80 dark:border-[#3c4043] p-3 flex items-start gap-2.5">
           <div className="p-1.5 rounded-lg bg-blue-100 dark:bg-blue-950/50 text-blue-700 dark:text-[#8ab4f8] shrink-0 mt-0.5">
             <Building2 className="w-4 h-4" />
