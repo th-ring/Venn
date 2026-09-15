@@ -100,38 +100,42 @@ This project integrates and processes open geodata, routing services, and open-s
 - **[CARTO](https://carto.com/)**, **[OpenTopoMap](https://opentopomap.org/)**, **[OpenRailwayMap](https://www.openrailwaymap.org/)**: Specialized tile layer and basemap services.
 - **[DELFI e.V.](https://www.delfi.de/)**: Nationwide public transport data initiative providing cross-regional schedule and stop feeds (*DELFI Bundesfeed*).
 
-### 📍 Location-Specific Data
+### 📍 Location-Specific Data & City Packages
 
-City- and region-specific features in Venn rely on three specialized data categories per metropolitan area:
+City- and region-specific features in Venn rely on three specialized data layers per metropolitan area:
 1. **Public Transit Networks**: Topological graph models, scheduled timetables, and stop coordinates (GTFS / Open Data feeds).
 2. **Rent Indices & Housing Zones**: Official municipal rent indices (*Mietspiegel*) and statistical district geometries.
 3. **Motorway Infrastructure**: Detailed OpenStreetMap vector extracts of motorway interchanges, junctions, and on-/off-ramps for commute optimization.
 
-#### Supported Cities & Regional Sources
+#### Fully Integrated (Built-in)
 
-- **München (Munich & MVV)**:
-  - **Public Transit**: [Münchner Verkehrs- und Tarifverbund (MVV)](https://www.mvv-muenchen.de/) & [Münchner Verkehrsgesellschaft (MVG)](https://www.mvg.de/) via DELFI Bundesfeed and Open Data (S-Bahn, U-Bahn, Tram, Bus).
+- **München (Munich & MVV)** — *Production-ready & fully bundled*:
+  - **Public Transit**: [Münchner Verkehrs- und Tarifverbund (MVV)](https://www.mvv-muenchen.de/) & [Münchner Verkehrsgesellschaft (MVG)](https://www.mvg.de/) via DELFI Bundesfeed and Open Data (complete S-Bahn, U-Bahn, Tram, Bus network model).
   - **Rent Index & Housing Zones**: [Landeshauptstadt München](https://opendata.muenchen.de/) – Open Data Geoportal (GeodatenService & Sozialreferat), licensed under *Datenlizenz Deutschland – Namensnennung – Version 2.0 (dl-de/by-2-0)*.
-  - **Motorway Infrastructure**: OpenStreetMap geodata for Munich orbital and radial motorways (A99, A9, A8, A96, A95, A94, B2R Mittlerer Ring).
+  - **Motorway Infrastructure**: OpenStreetMap geodata for the Munich orbital motorway (A99), radial autobahns (A9, A8, A96, A95, A94), and Mittlerer Ring (B2R).
 
-- **Berlin (Berlin & Brandenburg / VBB)**:
-  - **Public Transit**: [Verkehrsverbund Berlin-Brandenburg (VBB)](https://www.vbb.de/) via DELFI Bundesfeed and VBB Open Data (S-Bahn Berlin, U-Bahn, MetroTram, MetroBus), licensed under *dl-de/by-2-0*.
+#### Modular Catalog & Roadmap (In Preparation)
+
+Venn includes a centralized package manager and catalog architecture (`src/data/cityPackagesCatalog.ts`) designed for dynamic on-demand loading of further metropolitan regions. Core hub prototype packages are available for testing the regional switcher, with full transit graphs, municipal rent layers, and motorway vectors currently in preparation:
+
+- **Berlin (Berlin & Brandenburg / VBB)** *(Catalog package available; rent overlay & motorway package in preparation)*:
+  - **Public Transit**: [Verkehrsverbund Berlin-Brandenburg (VBB)](https://www.vbb.de/) via DELFI Bundesfeed and VBB Open Data (dl-de/by-2-0).
   - **Rent Index & Planning Areas**: [Geoportal Berlin (FIS-Broker)](https://fbinter.stadt-berlin.de/) & Berliner Mietspiegel (LOR-Planungsräume).
   - **Motorway Infrastructure**: OpenStreetMap geodata for Berlin urban motorways (A100, A111, A113, A115, A10 Berliner Ring).
 
-- **Hamburg (Hamburg & Metropolregion / HVV)**:
-  - **Public Transit**: [Hamburger Verkehrsverbund (HVV)](https://www.hvv.de/) via DELFI Bundesfeed and HVV Open Data (U-Bahn, S-Bahn, MetroBus, HADAG-Hafenfähren), licensed under *dl-de/by-2-0*.
-  - **Rent Index & Districts**: [Transparenzportal Hamburg](https://transparenz.hamburg.de/) & Hamburger Mietenspiegel, licensed under *dl-de/by-2-0*.
+- **Hamburg (Hamburg & Metropolregion / HVV)** *(Catalog package available; rent overlay & motorway package in preparation)*:
+  - **Public Transit**: [Hamburger Verkehrsverbund (HVV)](https://www.hvv.de/) via DELFI Bundesfeed and HVV Open Data (dl-de/by-2-0).
+  - **Rent Index & Districts**: [Transparenzportal Hamburg](https://transparenz.hamburg.de/) & Hamburger Mietenspiegel (dl-de/by-2-0).
   - **Motorway Infrastructure**: OpenStreetMap geodata for Hamburg arterial motorways (A7, A1, A23, A24, A25).
 
-- **Nürnberg (Nürnberg & Franken / VGN)**:
-  - **Public Transit**: [Verkehrsverbund Großraum Nürnberg (VGN)](https://www.vgn.de/) via DELFI Bundesfeed and VGN Open Data (U-Bahn Nürnberg, S-Bahn, Straßenbahn, Regionalbusse), licensed under *dl-de/by-2-0*.
-  - **Rent Index**: [Open Data Nürnberg](https://opendata.nuernberg.de/) & Nürnberger Mietspiegel, licensed under *dl-de/by-2-0*.
+- **Nürnberg (Nürnberg & Franken / VGN)** *(In preparation)*:
+  - **Public Transit**: [Verkehrsverbund Großraum Nürnberg (VGN)](https://www.vgn.de/) via DELFI Bundesfeed and VGN Open Data (dl-de/by-2-0).
+  - **Rent Index**: [Open Data Nürnberg](https://opendata.nuernberg.de/) & Nürnberger Mietspiegel (dl-de/by-2-0).
   - **Motorway Infrastructure**: OpenStreetMap geodata for the Franconian motorway network (A3, A6, A9, A73).
 
-- **Frankfurt am Main (Frankfurt / Rhein-Main / RMV)**:
-  - **Public Transit**: [Rhein-Main-Verkehrsverbund (RMV)](https://www.rmv.de/) via DELFI Bundesfeed and RMV Open Data (S-Bahn Rhein-Main, U-Bahn Frankfurt, Straßenbahnen, Busse), licensed under *dl-de/by-2-0*.
-  - **Rent Index**: [Geoportal Frankfurt](https://geoportal.frankfurt.de/) & Frankfurter Mietspiegel, licensed under *dl-de/by-2-0*.
+- **Frankfurt am Main (Frankfurt / Rhein-Main / RMV)** *(In preparation)*:
+  - **Public Transit**: [Rhein-Main-Verkehrsverbund (RMV)](https://www.rmv.de/) via DELFI Bundesfeed and RMV Open Data (dl-de/by-2-0).
+  - **Rent Index**: [Geoportal Frankfurt](https://geoportal.frankfurt.de/) & Frankfurter Mietspiegel (dl-de/by-2-0).
   - **Motorway Infrastructure**: OpenStreetMap geodata for Frankfurt motorway network and Frankfurter Kreuz (A3, A5, A66).
 
 ---
