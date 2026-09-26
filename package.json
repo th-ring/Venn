@@ -8,6 +8,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "lint": "tsc --noEmit",
+    "test": "node scripts/testEssential.mjs",
     "update:highways": "node scripts/updateHighways.mjs"
   },
   "dependencies": {

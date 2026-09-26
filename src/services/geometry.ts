@@ -1,9 +1,9 @@
 import * as turf from '@turf/turf';
-import { PersonProfile, FallbackSuggestion } from '../types';
+import type { PersonProfile, FallbackSuggestion } from '../types.ts';
 
 /**
  * Calculates the intersection of an array of GeoJSON Polygons or MultiPolygons.
- * Handles Turf v7 (featureCollection input) and earlier v6 signatures safely.
+ * Uses Turf v7 FeatureCollection multi-intersection with robust pairwise fallback.
  */
 export function calculateMultiIntersection(
   polygons: Array<GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon>>
@@ -11,37 +11,40 @@ export function calculateMultiIntersection(
   if (!polygons || polygons.length === 0) return null;
   if (polygons.length === 1) return polygons[0];
 
-  let currentResult: GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon | GeoJSON.GeometryCollection> | null = polygons[0];
-
-  for (let i = 1; i < polygons.length; i++) {
-    const nextPoly = polygons[i];
-    if (!currentResult) return null;
-
-    try {
-      // In Turf v7: turf.intersect(featureCollection([p1, p2]))
-      // Let's support both Turf v7 and legacy signatures
-      let intersected: any = null;
-      try {
-        const fc = turf.featureCollection([currentResult as any, nextPoly]);
-        intersected = (turf.intersect as any)(fc);
-      } catch {
-        // Fallback to 2-arg signature
-        intersected = (turf.intersect as any)(currentResult, nextPoly);
-      }
-
-      if (!intersected || !intersected.geometry) {
-        return null;
-      }
-
-      // Clean geometry coordinates if needed
-      currentResult = intersected;
-    } catch (err) {
-      console.warn('Intersection step failed:', err);
+  // Turf v7 fast path: intersect all features at once via FeatureCollection
+  try {
+    const fc = turf.featureCollection(polygons);
+    const intersected = turf.intersect(fc);
+    if (!intersected || !intersected.geometry) {
       return null;
     }
-  }
+    return intersected;
+  } catch {
+    // Pairwise fallback for complex or edge-case geometries
+    let currentResult: GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon | GeoJSON.GeometryCollection> | null = polygons[0];
 
-  return currentResult;
+    for (let i = 1; i < polygons.length; i++) {
+      const nextPoly = polygons[i];
+      if (!currentResult) return null;
+
+      try {
+        const pair: Array<GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon>> = [
+          currentResult as GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon>,
+          nextPoly,
+        ];
+        const step = turf.intersect(turf.featureCollection(pair));
+        if (!step || !step.geometry) {
+          return null;
+        }
+        currentResult = step;
+      } catch (err) {
+        console.warn('Pairwise intersection step failed:', err);
+        return null;
+      }
+    }
+
+    return currentResult;
+  }
 }
 
 /**
@@ -85,7 +88,7 @@ export function calculateAreaKm2(
 ): number {
   if (!feature) return 0;
   try {
-    const areaM2 = turf.area(feature as any);
+    const areaM2 = turf.area(feature);
     return Math.round((areaM2 / 1_000_000) * 100) / 100;
   } catch {
     return 0;
@@ -109,7 +112,9 @@ export function isPointInPolygon(
     if (geom.type === 'GeometryCollection') {
       for (const g of geom.geometries) {
         if (g.type === 'Polygon' || g.type === 'MultiPolygon') {
-          if (turf.booleanPointInPolygon(pt, turf.feature(g) as any)) return true;
+          if (turf.booleanPointInPolygon(pt, turf.feature(g) as GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon>)) {
+            return true;
+          }
         }
       }
     }
