@@ -48,7 +48,58 @@ Guidelines and best practices for agents in this repository (`Venn`).
 
 ---
 
-## 3. Multi-Agent & Subagent Coordination
+## 3. Release Management & Versioning Standard
+
+### 3.1 Proactive Agent-Driven Release Responsibility
+Release decisions are actively guided and proposed by the agent, not left to chance:
+- At the conclusion of any feature, bugfix, or milestone, the agent evaluates the changes since the last git release tag.
+- If the threshold for a release is met (see below), the agent **must proactively propose a release** to the user.
+- The proposal must include:
+  1. The recommended SemVer bump type (`patch`, `minor`, `major`) and target version number (e.g. `v1.1.0`).
+  2. Curated draft of the Release Notes (categorized for `CHANGELOG.md`).
+  3. A prompt requesting the user's confirmation before cutting the release.
+
+### 3.2 Semantic Versioning (SemVer) Policy
+Versions strictly follow `MAJOR.MINOR.PATCH` (`vX.Y.Z`):
+- **PATCH (`x.y.Z`)**:
+  - *When*: Backward-compatible bug fixes (`fix`), minor UX edge-case patches, accessibility tweaks, or non-breaking performance optimizations (`perf`).
+  - *Trigger*: Cut immediately for critical hotfixes, or propose after accumulating 2–4 smaller fixes/optimizations.
+- **MINOR (`x.Y.0`)**:
+  - *When*: Backward-compatible new user-facing features (`feat`), significant UI capabilities, or major workflow expansions.
+  - *Trigger*: Propose immediately upon completing and verifying any substantial new feature or UX enhancement.
+- **MAJOR (`X.0.0`)**:
+  - *When*: Incompatible API changes, breaking state/storage schema migrations, or fundamental architectural replacements.
+  - *Trigger*: Requires explicit alignment with the user prior to release execution.
+
+### 3.3 Release Notes & Documentation Standard (`CHANGELOG.md`)
+- A project-level `CHANGELOG.md` must be maintained following [Keep a Changelog](https://keepachangelog.com/) standards.
+- **User-Facing Focus**: Changelog and release notes speak to the user, not the compiler.
+  - The `Impact:` line in Conventional Commits is the primary source for release notes entries.
+  - Omit internal churn (e.g. build tooling, internal typing fixes, routine dependency bumps) from user-facing notes unless impactful.
+- **Standard Sections**:
+  - `### Added` — New features and user-facing capabilities (`feat`).
+  - `### Changed` — Updates to existing workflows, layout, or behaviors (`refactor`, `style`).
+  - `### Fixed` — Bug fixes and error resolutions (`fix`).
+  - `### Performance` — Measurable speed, memory, or rendering improvements (`perf`).
+
+### 3.4 Release Execution Protocol
+Once the user confirms the agent's release proposal, the agent executes the release sequentially:
+1. **Prepare `CHANGELOG.md`**: Create the version header `## [X.Y.Z] - YYYY-MM-DD` and insert the curated release notes.
+2. **Update `package.json`**: Update `"version": "X.Y.Z"`.
+3. **Run Quality Gate**:
+   - `npm run lint`
+   - `npm run build`
+4. **Targeted Staging & Release Commit**:
+   - Stage only: `git add package.json CHANGELOG.md`
+   - Commit message: `chore(release): cut release vX.Y.Z`
+5. **Create Annotated Git Tag**:
+   - `git tag -a vX.Y.Z -m "Release vX.Y.Z"`
+6. **Push Branch and Tags**:
+   - `git push origin <branch> --tags`
+
+---
+
+## 4. Multi-Agent & Subagent Coordination
 - **Subagents do not commit autonomously** to the same branch; instead they report their modified files back to the lead agent.
 - When subagents work in parallel, an isolated workspace (`Workspace: 'branch'`) must be used.
 - The lead agent acts as integrator: it reviews the combined result, runs the quality gate, and creates the lean commit.
