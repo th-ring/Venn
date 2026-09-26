@@ -16,10 +16,7 @@ import {
   DEFAULT_POI_ICON_SETTINGS,
 } from '../types';
 import { Loader2, AlertCircle, Key } from 'lucide-react';
-import {
-  generatePriorityHeatmapZones,
-  getPriorityTargets,
-} from '../services/priorityHeatmapEngine';
+import { getPriorityTargets } from '../services/priorityHeatmapEngine';
 import {
   getProfileLineSignature,
   injectMapPatternDefs,
@@ -135,7 +132,6 @@ export const MapComponent: React.FC<MapComponentProps> = React.memo<MapComponent
   const [isBasemapLoading, setIsBasemapLoading] = useState(false);
   const [basemapError, setBasemapError] = useState<string | null>(null);
   const [highwayVersion, setHighwayVersion] = useState(0);
-  const [computedHeatmapZones, setComputedHeatmapZones] = useState<any[]>([]);
 
   const profilesRef = useRef(profiles);
   profilesRef.current = profiles;
@@ -280,15 +276,34 @@ export const MapComponent: React.FC<MapComponentProps> = React.memo<MapComponent
     return () => {
       if (resizeTimer) clearTimeout(resizeTimer);
       resizeObserver.disconnect();
-      map.remove();
+      try {
+        rentalLayerRef.current?.clearLayers();
+        isochronesLayerRef.current?.clearLayers();
+        heatmapLayerRef.current?.clearLayers();
+        intersectionLayerRef.current?.clearLayers();
+        poiIconsLayerRef.current?.clearLayers();
+        personsLayerRef.current?.clearLayers();
+        if (inspectionMarkerRef.current) {
+          inspectionMarkerRef.current.remove();
+          inspectionMarkerRef.current = null;
+        }
+        if (railwayLayerRef.current && mapRef.current) {
+          mapRef.current.removeLayer(railwayLayerRef.current);
+          railwayLayerRef.current = null;
+        }
+        if (basemapLayerRef.current && mapRef.current) {
+          mapRef.current.removeLayer(basemapLayerRef.current);
+          basemapLayerRef.current = null;
+        }
+        map.closePopup();
+        map.closeTooltip();
+        map.off();
+        map.remove();
+      } catch (err) {
+        console.warn('[MapComponent] Error during map unmount cleanup:', err);
+      }
       mapRef.current = null;
       basemapLayerRef.current = null;
-      if (railwayLayerRef.current) {
-        try {
-          map.removeLayer(railwayLayerRef.current);
-        } catch (_) {}
-        railwayLayerRef.current = null;
-      }
       rentalLayerRef.current = null;
       isochronesLayerRef.current = null;
       heatmapLayerRef.current = null;
@@ -647,59 +662,21 @@ export const MapComponent: React.FC<MapComponentProps> = React.memo<MapComponent
     intersectionLayer.addTo(intersectionGroup);
   }, [result, showIntersectionLayer, onlyResidential, hiddenLayers, onSelectInspectionPoint, isDark]);
 
-  // 5a. Asynchronously compute Priority Heatmap Zones (ISO/IEC 25010 & INP optimization)
-  useEffect(() => {
-    if (
-      !result?.intersection ||
-      !heatmapSettings ||
-      heatmapSettings.mode === 'none' ||
-      hiddenLayers.has('heatmap')
-    ) {
-      setComputedHeatmapZones([]);
-      return;
-    }
-
-    let isCurrent = true;
-    // Yield to the browser paint loop & user interaction before running heavy Turf binary unions
-    const timer = setTimeout(() => {
-      try {
-        const zones = generatePriorityHeatmapZones(
-          result.intersection as any,
-          heatmapSettings
-        );
-        if (isCurrent) {
-          setComputedHeatmapZones(zones);
-        }
-      } catch (err) {
-        console.warn('Error computing heatmap zones:', err);
-      }
-    }, 25);
-
-    return () => {
-      isCurrent = false;
-      clearTimeout(timer);
-    };
-  }, [
-    result?.intersection,
-    heatmapSettings?.mode,
-    JSON.stringify(heatmapSettings?.selectedItems),
-    heatmapSettings?.radiusKm,
-    hiddenLayers,
-  ]);
-
-  // 5b. Render Priority Heatmap Layer (Pane: pane-heatmap)
+  // 5. Render Priority Heatmap Layer (Pane: pane-heatmap)
+  // Direct render from Web Worker pre-calculated zones (zero main-thread blocking)
   useEffect(() => {
     const heatmapGroup = heatmapLayerRef.current;
     if (!heatmapGroup || !mapRef.current) return;
 
     heatmapGroup.clearLayers();
 
-    if (computedHeatmapZones.length === 0 || hiddenLayers.has('heatmap')) {
+    const zones = result?.heatmapZones;
+    if (!zones || zones.length === 0 || hiddenLayers.has('heatmap')) {
       return;
     }
 
     try {
-      computedHeatmapZones.forEach((zone) => {
+      zones.forEach((zone) => {
         const zoneLayer = L.geoJSON(zone.geometry as any, {
           pane: 'pane-heatmap',
           style: {
@@ -734,7 +711,7 @@ export const MapComponent: React.FC<MapComponentProps> = React.memo<MapComponent
     } catch (err) {
       console.warn('Error rendering heatmap zones:', err);
     }
-  }, [computedHeatmapZones, heatmapSettings?.intensity, hiddenLayers, onSelectInspectionPoint, isDark]);
+  }, [result?.heatmapZones, heatmapSettings?.intensity, hiddenLayers, onSelectInspectionPoint, isDark]);
 
   // 6. Render POI Station & Highway Badges & Vector Ramps (Pane: pane-poi_icons)
   useEffect(() => {
@@ -786,10 +763,20 @@ export const MapComponent: React.FC<MapComponentProps> = React.memo<MapComponent
       ? currentMap.getBounds().pad(0.25)
       : null;
 
-    const isPointVisible = (lng: number, lat: number): boolean => {
+    const isPointVisible = (lng: number, lat: number, id?: string, isRamp = false): boolean => {
       if (poiIconSettings.onlyWithinIntersection) {
-        if (!result?.intersection || !filterBbox) return false;
-        // 1. Ultra-fast BBOX rejection (filters out 95% of candidates instantaneously)
+        if (!result?.intersection) return false;
+        // 1. Instant O(1) Web Worker pre-filtered lookup
+        if (id) {
+          if (isRamp && result.relevantRampIds) {
+            return result.relevantRampIds.includes(id);
+          }
+          if (!isRamp && result.relevantTargetIds) {
+            return result.relevantTargetIds.includes(id);
+          }
+        }
+        // 2. High-speed BBOX rejection
+        if (!filterBbox) return false;
         if (
           lng < filterBbox[0] ||
           lng > filterBbox[2] ||
@@ -798,15 +785,9 @@ export const MapComponent: React.FC<MapComponentProps> = React.memo<MapComponent
         ) {
           return false;
         }
-        // 2. High-speed point-in-polygon check
-        const pt = turf.point([lng, lat]);
+        // 3. Fast boolean point-in-polygon (no expensive distance loops)
         try {
-          if (turf.booleanPointInPolygon(pt, result.intersection as any)) {
-            return true;
-          }
-          // 3. Distance check only for edge-cases within BBOX
-          const dist = turf.pointToPolygonDistance(pt, result.intersection as any, { units: 'kilometers' });
-          return dist <= radiusKm;
+          return turf.booleanPointInPolygon(turf.point([lng, lat]), result.intersection as any);
         } catch {
           return false;
         }
@@ -831,7 +812,7 @@ export const MapComponent: React.FC<MapComponentProps> = React.memo<MapComponent
             return;
           }
 
-          if (!isPointVisible(centerCoord[0], centerCoord[1])) return;
+          if (!isPointVisible(centerCoord[0], centerCoord[1], area.properties.junctionId, false)) return;
 
           const polyLayer = L.geoJSON(area as any, {
             pane: 'pane-poi_icons',
@@ -858,21 +839,27 @@ export const MapComponent: React.FC<MapComponentProps> = React.memo<MapComponent
     }
 
     // B. If Highway is active, render Ramp Vector Lines (straßenmäßig)
-    // Only render detailed individual road lines when zoom >= 10 to avoid unnecessary GPU overhead
+    // Only render detailed individual road lines when zoom >= 12 and capped to 35 items to protect mobile GPU & RAM
     if (
       activeTypes.includes('highway') &&
       poiIconSettings.showHighwayRamps !== false &&
-      currentZoom >= 10
+      currentZoom >= 12
     ) {
       try {
         const ramps = getHighwayRamps();
-        ramps.forEach((ramp) => {
+        let renderedCount = 0;
+        const maxRampsToRender = 35;
+
+        for (const ramp of ramps) {
+          if (renderedCount >= maxRampsToRender) break;
+
           const coords = ramp.geometry.coordinates;
-          if (!coords || coords.length < 2) return;
+          if (!coords || coords.length < 2) continue;
 
           const midCoord = coords[Math.floor(coords.length / 2)];
-          if (!isPointVisible(midCoord[0], midCoord[1])) return;
+          if (!isPointVisible(midCoord[0], midCoord[1], ramp.properties.id, true)) continue;
 
+          renderedCount++;
           const latLngs = coords.map(([lng, lat]) => [lat, lng] as [number, number]);
 
           // Casing (outer dark glow for readability over all map basemaps)
@@ -911,7 +898,7 @@ export const MapComponent: React.FC<MapComponentProps> = React.memo<MapComponent
           });
 
           line.addTo(poiGroup);
-        });
+        }
       } catch (err) {
         console.warn('[MapComponent] Error rendering highway ramps:', err);
       }
@@ -925,7 +912,7 @@ export const MapComponent: React.FC<MapComponentProps> = React.memo<MapComponent
       const isOverviewZoom = currentZoom < 12;
 
       targets.forEach((target) => {
-        if (!isPointVisible(target.lng, target.lat)) return;
+        if (!isPointVisible(target.lng, target.lat, target.id, false)) return;
 
         if (isOverviewZoom) {
           // At overview zoom, show highway junctions and major transit hubs (multiple lines or U+S interchange)

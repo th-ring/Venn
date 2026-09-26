@@ -231,6 +231,16 @@ export interface IsochroneFallbackAlert {
   statusCode?: number;
 }
 
+export interface HeatmapZoneFeature {
+  geometry: GeoJSON.Polygon | GeoJSON.MultiPolygon;
+  tier: 'tier1' | 'tier2' | 'tier3';
+  color: string;
+  fillOpacity: number;
+  label: string;
+  description: string;
+  itemType: PriorityHeatmapItem;
+}
+
 export interface CalculationResult {
   isochrones: Record<string, GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon>>;
   intersection: GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon | GeoJSON.GeometryCollection> | null;
@@ -240,6 +250,9 @@ export interface CalculationResult {
   emptyIntersection: boolean;
   suggestions: FallbackSuggestion[];
   fallbackAlerts?: IsochroneFallbackAlert[];
+  heatmapZones?: HeatmapZoneFeature[];
+  relevantTargetIds?: string[];
+  relevantRampIds?: string[];
 }
 
 export interface CommuteRouteDetails {

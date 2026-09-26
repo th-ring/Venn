@@ -11,6 +11,9 @@ export default defineConfig(() => {
         '@': path.resolve(__dirname, '.'),
       },
     },
+    worker: {
+      format: 'es',
+    },
     server: {
       proxy: {
         '/api/google-isochrone': {

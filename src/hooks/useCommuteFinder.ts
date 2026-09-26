@@ -276,10 +276,14 @@ export function useCommuteFinder() {
             setResult(newRes);
             resultRef.current = newRes;
             if (inspectionPointRef.current) {
-              handleSelectInspectionPointRef.current(
-                inspectionPointRef.current.lat,
-                inspectionPointRef.current.lng
-              );
+              setTimeout(() => {
+                if (inspectionPointRef.current) {
+                  handleSelectInspectionPointRef.current(
+                    inspectionPointRef.current.lat,
+                    inspectionPointRef.current.lng
+                  );
+                }
+              }, 16);
             }
           }
           setIsCalculating(false);
@@ -400,10 +404,14 @@ export function useCommuteFinder() {
         setResult(finalResult);
         resultRef.current = finalResult;
         if (inspectionPointRef.current) {
-          handleSelectInspectionPointRef.current(
-            inspectionPointRef.current.lat,
-            inspectionPointRef.current.lng
-          );
+          setTimeout(() => {
+            if (inspectionPointRef.current) {
+              handleSelectInspectionPointRef.current(
+                inspectionPointRef.current.lat,
+                inspectionPointRef.current.lng
+              );
+            }
+          }, 16);
         }
         setLastCalculatedAt(new Date());
       } catch (err) {

@@ -1,8 +1,10 @@
 import * as turf from '@turf/turf';
-import { PriorityHeatmapMode, PriorityHeatmapItem, HeatmapSettings } from '../types';
+import { PriorityHeatmapMode, PriorityHeatmapItem, HeatmapSettings, HeatmapZoneFeature } from '../types';
 import { getTransitRegion } from './mvvMatrixService';
 import { MUNICH_HIGHWAY_JUNCTIONS } from '../data/highwayJunctions';
 import { getHighwayJunctions, getHighwayRamps } from './highwayService';
+
+export type { HeatmapZoneFeature };
 
 export interface PriorityTarget {
   id: string;
@@ -104,16 +106,6 @@ export function getPriorityTargets(
   }
 
   return targets;
-}
-
-export interface HeatmapZoneFeature {
-  geometry: GeoJSON.Polygon | GeoJSON.MultiPolygon;
-  tier: 'tier1' | 'tier2' | 'tier3'; // tier1 = closest/best (e.g. < 500m), tier2 = < 1000m, tier3 = < 1500m
-  color: string;
-  fillOpacity: number;
-  label: string;
-  description: string;
-  itemType: PriorityHeatmapItem;
 }
 
 function generateSingleItemZones(

@@ -1,6 +1,7 @@
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import { useCommuteFinder } from './hooks/useCommuteFinder';
 import { MapComponent } from './components/MapComponent';
+import { MapErrorBoundary } from './components/MapErrorBoundary';
 import { Sidebar } from './components/Sidebar';
 import { InspectionPanel } from './components/InspectionPanel';
 import { FallbackWarningBanner } from './components/FallbackWarningBanner';
@@ -131,17 +132,52 @@ export default function App() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  const handleOpenSettings = (tab: SettingsTabId = 'basemap') => {
+  const handleOpenSettings = useCallback((tab: SettingsTabId = 'basemap') => {
     setSettingsModalTab(tab);
     setIsSettingsModalOpen(true);
-  };
+  }, []);
 
-  const handleCloseSettings = () => {
+  const handleCloseSettings = useCallback(() => {
     setIsSettingsModalOpen(false);
-  };
+  }, []);
+
+  const handleToggleIntersectionLayer = useCallback(() => {
+    setShowIntersectionLayer((prev) => !prev);
+  }, [setShowIntersectionLayer]);
+
+  const handleUpdateHeatmap = useCallback((upd: any) => {
+    setSchedule((prev) => ({
+      ...prev,
+      options: {
+        ...(prev.options || { liveTraffic: false, enableSmoothing: true, fidelity: 'AUTOMATIC' }),
+        heatmap: {
+          ...(prev.options?.heatmap || { mode: 'none', radiusKm: 1.5, intensity: 0.65 }),
+          ...upd,
+        },
+      },
+    }));
+  }, [setSchedule]);
+
+  const handleUpdateRentalOverlay = useCallback((upd: any) => {
+    saveRentalOverlaySettings(upd);
+    setSchedule((prev) => ({
+      ...prev,
+      options: {
+        ...(prev.options || { liveTraffic: false, enableSmoothing: true, fidelity: 'AUTOMATIC' }),
+        rentalOverlay: {
+          ...(prev.options?.rentalOverlay || { enabled: false, opacity: 0.35, selectedRegionId: 'munich-mvv' }),
+          ...upd,
+        },
+      },
+    }));
+  }, [setSchedule]);
+
+  const handleOpenApiKeySettings = useCallback(() => {
+    handleOpenSettings('keys');
+  }, [handleOpenSettings]);
 
   return (
-    <div className="flex h-screen h-[100dvh] w-screen overflow-hidden bg-slate-100 dark:bg-[#131314] text-slate-900 dark:text-[#e3e3e3] font-sans antialiased">
+    <div className="fixed inset-0 flex h-full w-full max-w-full overflow-hidden bg-slate-100 dark:bg-[#131314] text-slate-900 dark:text-[#e3e3e3] font-sans antialiased">
       {/* Sidebar with Inputs, Controls, Presets & Settings */}
       <Sidebar
         profiles={profiles}
@@ -259,62 +295,41 @@ export default function App() {
           }}
         />
 
-        {/* Leaflet Map with Controls */}
-        <MapComponent
-          profiles={profiles}
-          result={result}
-          inspectionPoint={inspectionPoint}
-          isCalculating={isCalculating}
-          isPending={isPending}
-          onSelectInspectionPoint={handleSelectInspectionPoint}
-          onUpdatePersonPosition={handleUpdatePersonPosition}
-          showIntersectionLayer={showIntersectionLayer}
-          onToggleIntersectionLayer={() => setShowIntersectionLayer((prev) => !prev)}
-          showIndividualIsochrones={showIndividualIsochrones}
-          onToggleIndividualIsochrones={handleToggleIndividualIsochrones}
-          showOnlyIntersection={showOnlyIntersection}
-          onToggleOnlyIntersection={handleToggleOnlyIntersection}
-          onlyResidential={onlyResidential}
-          onToggleOnlyResidential={handleToggleOnlyResidential}
-          heatmapSettings={schedule.options?.heatmap}
-          onUpdateHeatmap={(upd) =>
-            setSchedule((prev) => ({
-              ...prev,
-              options: {
-                ...(prev.options || { liveTraffic: false, enableSmoothing: true, fidelity: 'AUTOMATIC' }),
-                heatmap: {
-                  ...(prev.options?.heatmap || { mode: 'none', radiusKm: 1.5, intensity: 0.65 }),
-                  ...upd,
-                },
-              },
-            }))
-          }
-          rentalSettings={schedule.options?.rentalOverlay}
-          onUpdateRentalOverlay={(upd) => {
-            saveRentalOverlaySettings(upd);
-            setSchedule((prev) => ({
-              ...prev,
-              options: {
-                ...(prev.options || { liveTraffic: false, enableSmoothing: true, fidelity: 'AUTOMATIC' }),
-                rentalOverlay: {
-                  ...(prev.options?.rentalOverlay || { enabled: false, opacity: 0.35, selectedRegionId: 'munich-mvv' }),
-                  ...upd,
-                },
-              },
-            }));
-          }}
-          basemap={basemap}
-          onBasemapChange={handleBasemapChange}
-          onOpenApiKeySettings={() => handleOpenSettings('keys')}
-          layerOrder={layerOrder}
-          onReorderLayer={handleReorderLayer}
-          onResetLayerOrder={handleResetLayerOrder}
-          hiddenLayers={hiddenLayers}
-          onToggleLayerVisibility={handleToggleLayerVisibility}
-          poiIconSettings={poiIconSettings}
-          onUpdatePoiIcons={handleUpdatePoiIcons}
-          onToggleProfileVisibility={handleToggleProfileVisibility}
-        />
+        {/* Leaflet Map with Controls wrapped in Error Boundary */}
+        <MapErrorBoundary>
+          <MapComponent
+            profiles={profiles}
+            result={result}
+            inspectionPoint={inspectionPoint}
+            isCalculating={isCalculating}
+            isPending={isPending}
+            onSelectInspectionPoint={handleSelectInspectionPoint}
+            onUpdatePersonPosition={handleUpdatePersonPosition}
+            showIntersectionLayer={showIntersectionLayer}
+            onToggleIntersectionLayer={handleToggleIntersectionLayer}
+            showIndividualIsochrones={showIndividualIsochrones}
+            onToggleIndividualIsochrones={handleToggleIndividualIsochrones}
+            showOnlyIntersection={showOnlyIntersection}
+            onToggleOnlyIntersection={handleToggleOnlyIntersection}
+            onlyResidential={onlyResidential}
+            onToggleOnlyResidential={handleToggleOnlyResidential}
+            heatmapSettings={schedule.options?.heatmap}
+            onUpdateHeatmap={handleUpdateHeatmap}
+            rentalSettings={schedule.options?.rentalOverlay}
+            onUpdateRentalOverlay={handleUpdateRentalOverlay}
+            basemap={basemap}
+            onBasemapChange={handleBasemapChange}
+            onOpenApiKeySettings={handleOpenApiKeySettings}
+            layerOrder={layerOrder}
+            onReorderLayer={handleReorderLayer}
+            onResetLayerOrder={handleResetLayerOrder}
+            hiddenLayers={hiddenLayers}
+            onToggleLayerVisibility={handleToggleLayerVisibility}
+            poiIconSettings={poiIconSettings}
+            onUpdatePoiIcons={handleUpdatePoiIcons}
+            onToggleProfileVisibility={handleToggleProfileVisibility}
+          />
+        </MapErrorBoundary>
 
         {/* Floating Inspection Panel / Mobile Bottom Sheet */}
         {inspectionPoint && (

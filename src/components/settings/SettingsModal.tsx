@@ -139,10 +139,22 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const [modalTab, setModalTab] = useState<SettingsTabId>(initialTab);
   const [searchQuery, setSearchQuery] = useState('');
   const { themePreference, resolvedTheme, setThemePreference } = useTheme();
+  const activeTabButtonRef = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {
     setModalTab(initialTab);
   }, [initialTab]);
+
+  useEffect(() => {
+    // Keep active tab centered in horizontal view on mobile
+    if (activeTabButtonRef.current) {
+      activeTabButtonRef.current.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest',
+        inline: 'center',
+      });
+    }
+  }, [modalTab]);
 
   // Keys & Engine State
   const [googleKeyInput, setGoogleKeyInput] = useState(() => getGoogleMapsApiKey());
@@ -440,15 +452,15 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         {/* Modal Body: Navigation Drawer + Content Pane */}
         <div className="flex flex-col md:flex-row flex-1 min-h-0 overflow-hidden">
           {/* M3 Navigation Rail / Sidebar */}
-          <nav className="w-full md:w-64 bg-[#f8fafd] dark:bg-[#131314] border-b md:border-b-0 md:border-r border-slate-200/80 dark:border-[#2d2f31] p-2 sm:p-3 flex md:flex-col justify-between shrink-0 overflow-x-auto md:overflow-y-auto select-none gap-2 sm:gap-4 no-scrollbar">
-            <div className="flex md:flex-col gap-2 sm:gap-4 w-full">
+          <nav className="w-full md:w-64 bg-[#f8fafd] dark:bg-[#131314] border-b md:border-b-0 md:border-r border-slate-200/80 dark:border-[#2d2f31] p-2 sm:p-3 flex md:flex-col justify-start md:justify-between shrink-0 overflow-x-auto md:overflow-y-auto select-none gap-2 sm:gap-4 no-scrollbar touch-scroll-x md:touch-scroll-y">
+            <div className="flex flex-row md:flex-col gap-1.5 md:gap-4 min-w-max md:min-w-0 w-auto md:w-full items-center md:items-stretch">
               {SETTINGS_SECTIONS.map((sec) => (
-                <div key={sec.title} className="space-y-1">
+                <div key={sec.title} className="flex flex-row md:flex-col items-center md:items-stretch gap-1 md:space-y-1">
                   <div className="hidden md:block px-3 py-1 text-[11px] font-semibold text-slate-500 dark:text-[#9aa0a6] uppercase tracking-wider">
                     {sec.title}
                   </div>
 
-                  <div className="flex md:flex-col gap-1">
+                  <div className="flex flex-row md:flex-col gap-1">
                     {sec.items.map((item) => {
                       const Icon = item.icon;
                       const isSelected = modalTab === item.id;
@@ -456,11 +468,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       return (
                         <button
                           key={item.id}
+                          ref={isSelected ? activeTabButtonRef : undefined}
                           type="button"
                           onClick={() => setModalTab(item.id)}
-                          className={`px-3.5 py-2 rounded-full text-left transition-all flex items-center gap-3 cursor-pointer whitespace-nowrap shrink-0 md:shrink ${
+                          className={`px-3.5 py-2 rounded-full text-left transition-all flex items-center gap-2.5 cursor-pointer whitespace-nowrap shrink-0 md:shrink touch-pan-x md:touch-manipulation ${
                             isSelected
-                              ? 'bg-blue-100/90 text-blue-900 font-semibold dark:bg-[#004a77] dark:text-[#c2e7ff]'
+                              ? 'bg-blue-100/90 text-blue-900 font-semibold dark:bg-[#004a77] dark:text-[#c2e7ff] shadow-xs'
                               : 'text-slate-600 dark:text-[#9aa0a6] hover:text-slate-900 dark:hover:text-[#e3e3e3] hover:bg-slate-200/60 dark:hover:bg-[#202124]'
                           }`}
                         >
@@ -490,7 +503,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           {/* Main Content Area */}
           <div className="flex-1 flex flex-col min-w-0 bg-white dark:bg-[#1e1f20]">
             {/* Scrollable Content Pane */}
-            <div className="flex-1 overflow-y-auto p-5 sm:p-7">
+            <div className="flex-1 overflow-y-auto p-4 sm:p-7 touch-scroll-y">
               {modalTab === 'appearance' && (
                 <AppearanceTab
                   themePreference={themePreference}

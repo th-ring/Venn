@@ -1,11 +1,11 @@
-/// <reference lib="webworker" />
-
+import * as turf from '@turf/turf';
 import {
   PersonProfile,
   CommuteSchedule,
   CalculationResult,
   TransitRegion,
   IsochroneFallbackAlert,
+  HeatmapZoneFeature,
 } from '../types';
 import { generateIsochrone, IsochroneProvider } from '../services/isochroneEngine';
 import {
@@ -15,6 +15,8 @@ import {
 } from '../services/geometry';
 import { maskByResidentialAreas } from '../data/residentialZones';
 import { setTransitRegion } from '../services/mvvMatrixService';
+import { generatePriorityHeatmapZones, getPriorityTargets } from '../services/priorityHeatmapEngine';
+import { getHighwayRamps } from '../services/highwayService';
 
 export interface CommuteWorkerRequest {
   requestId: string;
@@ -128,6 +130,77 @@ self.addEventListener('message', async (event: MessageEvent<CommuteWorkerRequest
 
     if (currentRequestId !== latestRequestId) return;
 
+    // Background computation: Priority Heatmap Zones (Turf buffer, union, intersect)
+    let heatmapZones: HeatmapZoneFeature[] | undefined;
+    if (
+      finalIntersection &&
+      schedule.options?.heatmap &&
+      schedule.options.heatmap.mode !== 'none'
+    ) {
+      try {
+        heatmapZones = generatePriorityHeatmapZones(finalIntersection as any, schedule.options.heatmap);
+      } catch (e) {
+        console.warn('[commuteWorker] Heatmap zone generation failed:', e);
+      }
+    }
+
+    if (currentRequestId !== latestRequestId) return;
+
+    // Background computation: POI Target & Ramp Pre-filtering
+    let relevantTargetIds: string[] | undefined;
+    let relevantRampIds: string[] | undefined;
+
+    if (finalIntersection) {
+      try {
+        const rawBbox = turf.bbox(finalIntersection as any);
+        const radiusKm = schedule.options?.heatmap?.radiusKm || 1.5;
+        const latMargin = radiusKm / 110.574;
+        const midLat = (rawBbox[1] + rawBbox[3]) / 2;
+        const lngMargin = radiusKm / (111.32 * Math.max(0.1, Math.cos((midLat * Math.PI) / 180)));
+        const searchBbox = [
+          rawBbox[0] - lngMargin,
+          rawBbox[1] - latMargin,
+          rawBbox[2] + lngMargin,
+          rawBbox[3] + latMargin,
+        ];
+
+        const allTargets = getPriorityTargets(['ubahn', 'sbahn', 'highway']);
+        relevantTargetIds = allTargets
+          .filter((t) => {
+            if (t.lng < searchBbox[0] || t.lng > searchBbox[2] || t.lat < searchBbox[1] || t.lat > searchBbox[3]) {
+              return false;
+            }
+            try {
+              return turf.booleanPointInPolygon(turf.point([t.lng, t.lat]), finalIntersection as any);
+            } catch {
+              return false;
+            }
+          })
+          .map((t) => t.id);
+
+        const allRamps = getHighwayRamps();
+        relevantRampIds = allRamps
+          .filter((r) => {
+            const coords = r.geometry.coordinates;
+            if (!coords || coords.length === 0) return false;
+            const mid = coords[Math.floor(coords.length / 2)];
+            if (mid[0] < searchBbox[0] || mid[0] > searchBbox[2] || mid[1] < searchBbox[1] || mid[1] > searchBbox[3]) {
+              return false;
+            }
+            try {
+              return turf.booleanPointInPolygon(turf.point(mid), finalIntersection as any);
+            } catch {
+              return false;
+            }
+          })
+          .map((r) => r.properties.id);
+      } catch (err) {
+        console.warn('[commuteWorker] POI pre-filtering failed:', err);
+      }
+    }
+
+    if (currentRequestId !== latestRequestId) return;
+
     const isEmpty = !finalIntersection || finalAreaKm2 <= 0;
     const suggestions = isEmpty ? generateEmptyIntersectionSuggestions(active) : [];
 
@@ -140,6 +213,9 @@ self.addEventListener('message', async (event: MessageEvent<CommuteWorkerRequest
       emptyIntersection: isEmpty,
       suggestions,
       fallbackAlerts: fallbackAlerts.length > 0 ? fallbackAlerts : undefined,
+      heatmapZones,
+      relevantTargetIds,
+      relevantRampIds,
     };
 
     const response: CommuteWorkerResponse = {
