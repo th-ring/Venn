@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-09-26
+
+### Fixed
+- **Mobile Viewport Bouncing**: Das Gesamtdokument wurde fest verankert; versehentliches Verschieben oder Überdehnen des Viewports auf mobilen Browsern ist unterbunden.
+- **Mobile Einstellungsnavigation**: Das Navigationsmenü der Einstellungen ist auf Mobilgeräten nun flüssig horizontal scrollbar und zentriert aktive Reiter automatisch.
+- **Speicherlecks & Kartenblockaden**: Vollständige Bereinigung von Leaflet-Layern und Begrenzung von Vektorpfaden zur Vermeidung von Speicherabstürzen auf mobilen Geräten.
+
+### Performance
+- **Entkopplung der Berechnungs-Engine**: Prioritäts-Heatmap-Zonen und POI-Vorfilterungen laufen vollständig im Hintergrund-Web-Worker, wodurch die Benutzeroberfläche und die Karte jederzeit reaktionsschnell und ruckelfrei bleiben.
+
 ## [1.0.0] - 2026-09-26
 
 ### Added
