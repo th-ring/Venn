@@ -254,9 +254,21 @@ export const LayerManagerPanel: React.FC<LayerManagerPanelProps> = ({
   };
 
   return (
-    <div className="absolute top-4 right-4 bottom-4 z-40 w-88 sm:w-96 bg-white/95 dark:bg-[#1e1f20]/95 backdrop-blur-md rounded-2xl shadow-2xl border border-slate-200/90 dark:border-[#3c4043] flex flex-col overflow-hidden animate-in fade-in slide-in-from-right-4 duration-200">
-      {/* Header */}
-      <div className="p-3.5 border-b border-slate-200/80 dark:border-[#3c4043] bg-white/80 dark:bg-[#1e1f20]/80 flex items-center justify-between shrink-0">
+    <>
+      {/* Mobile Backdrop */}
+      <div
+        id="layer-manager-backdrop"
+        className="fixed inset-0 z-35 bg-slate-900/50 dark:bg-black/70 backdrop-blur-xs sm:hidden animate-in fade-in duration-150"
+        onClick={onClose}
+        aria-hidden="true"
+      />
+
+      <div className="fixed inset-x-0 bottom-0 top-14 sm:top-[max(1rem,env(safe-area-inset-top))] sm:bottom-4 sm:left-auto sm:right-[max(1rem,env(safe-area-inset-right))] sm:w-96 z-40 bg-white/95 dark:bg-[#1e1f20]/95 backdrop-blur-md rounded-t-3xl sm:rounded-2xl shadow-2xl border-t sm:border border-slate-200/90 dark:border-[#3c4043] flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-4 sm:slide-in-from-right-4 duration-200 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:pb-0">
+        {/* Mobile Grabber Handle */}
+        <div className="w-10 h-1 bg-slate-300 dark:bg-[#5f6368] rounded-full mx-auto my-2 sm:hidden shrink-0" />
+
+        {/* Header */}
+        <div className="p-3.5 border-b border-slate-200/80 dark:border-[#3c4043] bg-white/80 dark:bg-[#1e1f20]/80 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-2">
           <div className="p-1.5 rounded-xl bg-blue-600 dark:bg-[#8ab4f8] text-white dark:text-[#131314] shadow-xs">
             <Layers className="w-4 h-4" />
@@ -942,5 +954,6 @@ export const LayerManagerPanel: React.FC<LayerManagerPanelProps> = ({
         )}
       </div>
     </div>
+  </>
   );
 };

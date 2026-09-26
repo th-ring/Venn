@@ -862,10 +862,22 @@ export const MapComponent: React.FC<MapComponentProps> = React.memo<MapComponent
     }
 
     // C. Render Target Node Pins (Station & Junction Badges)
+    // On zoom < 12 (overview zoom on iPhone/iPad), only render major interchange hubs and junctions
+    // to prevent visual clutter and avoid hundreds of overlapping DOM markers
     const targets = getPriorityTargets(activeTypes);
     if (targets.length > 0) {
+      const isOverviewZoom = currentZoom < 12;
+
       targets.forEach((target) => {
         if (!isPointVisible(target.lng, target.lat)) return;
+
+        if (isOverviewZoom) {
+          // At overview zoom, show highway junctions and major transit hubs (multiple lines or U+S interchange)
+          const isMajorHub =
+            target.type === 'highway' ||
+            (target.linesOrRoad && target.linesOrRoad.includes(','));
+          if (!isMajorHub) return;
+        }
 
         const markerIcon = createPriorityTargetIcon(target.type);
         const marker = L.marker([target.lat, target.lng], {
@@ -1022,7 +1034,7 @@ export const MapComponent: React.FC<MapComponentProps> = React.memo<MapComponent
 
       {/* Calculating overlay spinner */}
       {(isCalculating || isPending) && (
-        <div className="absolute top-4 left-4 z-20 bg-white/95 dark:bg-[#1e1f20]/95 backdrop-blur-md px-3.5 py-2 rounded-2xl shadow-lg border border-slate-200/90 dark:border-[#3c4043] flex items-center gap-2.5 text-xs font-semibold text-slate-800 dark:text-[#e3e3e3] animate-in fade-in duration-200">
+        <div className="absolute top-[max(4.5rem,calc(env(safe-area-inset-top)+3.5rem))] left-[max(1rem,env(safe-area-inset-left))] z-20 bg-white/95 dark:bg-[#1e1f20]/95 backdrop-blur-md px-3.5 py-2 rounded-2xl shadow-lg border border-slate-200/90 dark:border-[#3c4043] flex items-center gap-2.5 text-xs font-semibold text-slate-800 dark:text-[#e3e3e3] animate-in fade-in duration-200">
           <Loader2 className="w-4 h-4 animate-spin text-blue-600 dark:text-blue-400" />
           <span>{isCalculating ? 'Berechne Isochronen...' : 'Aktualisierung ausstehend...'}</span>
         </div>

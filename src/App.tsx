@@ -135,7 +135,7 @@ export default function App() {
   };
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-slate-100 dark:bg-[#131314] text-slate-900 dark:text-[#e3e3e3] font-sans antialiased">
+    <div className="flex h-screen h-[100dvh] w-screen overflow-hidden bg-slate-100 dark:bg-[#131314] text-slate-900 dark:text-[#e3e3e3] font-sans antialiased">
       {/* Sidebar with Inputs, Controls, Presets & Settings */}
       <Sidebar
         profiles={profiles}
@@ -175,7 +175,7 @@ export default function App() {
         {/* Floating Sidebar Toggle Button when sidebar is collapsed (Desktop or Mobile) */}
         {(!isDesktopSidebarOpen || !isMobileSidebarOpen) && (
           <div
-            className={`absolute top-4 left-4 z-20 flex items-center gap-2 ${
+            className={`absolute top-[max(1rem,env(safe-area-inset-top))] left-[max(1rem,env(safe-area-inset-left))] z-20 flex items-center gap-2 ${
               isDesktopSidebarOpen ? 'md:hidden' : 'flex'
             }`}
           >
@@ -284,16 +284,18 @@ export default function App() {
           onToggleProfileVisibility={handleToggleProfileVisibility}
         />
 
-        {/* Floating Inspection Panel */}
+        {/* Floating Inspection Panel / Mobile Bottom Sheet */}
         {inspectionPoint && (
-          <div className="absolute bottom-6 right-4 sm:right-6 z-20 max-w-sm w-full">
-            <InspectionPanel
-              inspection={inspectionPoint}
-              onClose={() => setInspectionPoint(null)}
-              showRentalInfo={Boolean(
-                schedule.options?.rentalOverlay?.enabled && !hiddenLayers.has('rental')
-              )}
-            />
+          <div className="absolute bottom-0 inset-x-0 sm:bottom-6 sm:inset-x-auto sm:right-6 z-20 sm:max-w-sm w-full px-2 sm:px-0 pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:pb-0 pointer-events-none">
+            <div className="pointer-events-auto">
+              <InspectionPanel
+                inspection={inspectionPoint}
+                onClose={() => setInspectionPoint(null)}
+                showRentalInfo={Boolean(
+                  schedule.options?.rentalOverlay?.enabled && !hiddenLayers.has('rental')
+                )}
+              />
+            </div>
           </div>
         )}
       </main>

@@ -367,17 +367,23 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/60 dark:bg-black/75 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-150">
-      <div className="bg-white dark:bg-[#1e1f20] rounded-[24px] sm:rounded-[28px] w-full max-w-5xl h-[740px] max-h-[92vh] shadow-2xl border border-slate-200/90 dark:border-[#3c4043] flex flex-col overflow-hidden">
+    <div
+      className="fixed inset-0 z-50 bg-slate-900/60 dark:bg-black/75 backdrop-blur-xs flex items-center justify-center p-0 sm:p-6 animate-in fade-in duration-150"
+      onClick={handleSaveAndClose}
+    >
+      <div
+        className="bg-white dark:bg-[#1e1f20] sm:rounded-[28px] w-full max-w-5xl h-full sm:h-[740px] sm:max-h-[92vh] shadow-2xl border-0 sm:border border-slate-200/90 dark:border-[#3c4043] flex flex-col overflow-hidden pt-[env(safe-area-inset-top)] sm:pt-0"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Top App Bar (Google M3 Style) */}
-        <div className="px-5 sm:px-6 py-3.5 border-b border-slate-200/80 dark:border-[#3c4043] bg-white dark:bg-[#1e1f20] flex items-center justify-between gap-4 shrink-0">
-          <div className="flex items-center gap-3 shrink-0">
-            <div className="w-9 h-9 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-[#8ab4f8] flex items-center justify-center shrink-0">
+        <div className="px-4 sm:px-6 py-3 border-b border-slate-200/80 dark:border-[#3c4043] bg-white dark:bg-[#1e1f20] flex items-center justify-between gap-3 shrink-0">
+          <div className="flex items-center gap-2.5 shrink-0">
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-[#8ab4f8] flex items-center justify-center shrink-0">
               <SettingsIcon className="w-4 h-4" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-base font-medium text-slate-900 dark:text-[#e3e3e3] leading-none">
+                <h2 className="text-sm sm:text-base font-medium text-slate-900 dark:text-[#e3e3e3] leading-none">
                   Einstellungen
                 </h2>
                 <span className="hidden md:inline-flex items-center gap-1 text-[11px] font-normal text-slate-500 dark:text-[#9aa0a6] bg-slate-100 dark:bg-[#282a2c] px-2 py-0.5 rounded-full">
@@ -388,29 +394,40 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             </div>
           </div>
 
-          {/* Centered Search Bar */}
-          <SettingsSearch
-            searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
-            onSelectResult={(tabId) => setModalTab(tabId)}
-          />
+          {/* Desktop Search Bar */}
+          <div className="hidden sm:block flex-1 max-w-md mx-2">
+            <SettingsSearch
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+              onSelectResult={(tabId) => setModalTab(tabId)}
+            />
+          </div>
 
           {/* Close Button */}
           <button
             type="button"
             onClick={handleSaveAndClose}
-            className="w-9 h-9 rounded-full flex items-center justify-center text-slate-500 hover:text-slate-800 dark:text-[#9aa0a6] dark:hover:text-[#e3e3e3] hover:bg-slate-100 dark:hover:bg-[#282a2c] transition-colors cursor-pointer shrink-0"
+            className="w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center text-slate-500 hover:text-slate-800 dark:text-[#9aa0a6] dark:hover:text-[#e3e3e3] hover:bg-slate-100 dark:hover:bg-[#282a2c] transition-colors cursor-pointer shrink-0"
             title="Schließen"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
+        {/* Mobile Search Bar Sub-row */}
+        <div className="sm:hidden px-3.5 py-2 border-b border-slate-200/80 dark:border-[#3c4043] bg-white dark:bg-[#1e1f20] shrink-0">
+          <SettingsSearch
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            onSelectResult={(tabId) => setModalTab(tabId)}
+          />
+        </div>
+
         {/* Modal Body: Navigation Drawer + Content Pane */}
         <div className="flex flex-col md:flex-row flex-1 min-h-0 overflow-hidden">
           {/* M3 Navigation Rail / Sidebar */}
-          <nav className="w-full md:w-64 bg-[#f8fafd] dark:bg-[#131314] border-b md:border-b-0 md:border-r border-slate-200/80 dark:border-[#2d2f31] p-3 flex md:flex-col justify-between shrink-0 overflow-x-auto md:overflow-y-auto select-none gap-4">
-            <div className="flex md:flex-col gap-4 w-full">
+          <nav className="w-full md:w-64 bg-[#f8fafd] dark:bg-[#131314] border-b md:border-b-0 md:border-r border-slate-200/80 dark:border-[#2d2f31] p-2 sm:p-3 flex md:flex-col justify-between shrink-0 overflow-x-auto md:overflow-y-auto select-none gap-2 sm:gap-4 no-scrollbar">
+            <div className="flex md:flex-col gap-2 sm:gap-4 w-full">
               {SETTINGS_SECTIONS.map((sec) => (
                 <div key={sec.title} className="space-y-1">
                   <div className="hidden md:block px-3 py-1 text-[11px] font-semibold text-slate-500 dark:text-[#9aa0a6] uppercase tracking-wider">
@@ -544,7 +561,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             </div>
 
             {/* M3 Bottom Bar */}
-            <div className="px-5 sm:px-6 py-3 border-t border-slate-200/80 dark:border-[#3c4043] bg-[#f8fafd] dark:bg-[#18191a] flex items-center justify-between shrink-0">
+            <div className="px-4 sm:px-6 py-3 border-t border-slate-200/80 dark:border-[#3c4043] bg-[#f8fafd] dark:bg-[#18191a] flex items-center justify-between shrink-0 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:pb-3">
               <div className="text-xs text-slate-500 dark:text-[#9aa0a6] flex items-center gap-1.5">
                 <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                 <span>Alle Anpassungen werden live angewendet.</span>

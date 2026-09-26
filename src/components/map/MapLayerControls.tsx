@@ -224,7 +224,7 @@ export const MapLayerControls: React.FC<MapLayerControlsProps> = ({
   return (
     <>
       {/* Floating Map Controls Top-Right */}
-      <div className="absolute top-4 right-4 z-20 flex flex-col items-end gap-2.5">
+      <div className="absolute top-[max(1rem,env(safe-area-inset-top))] right-[max(1rem,env(safe-area-inset-right))] z-20 flex flex-col items-end gap-2.5">
         {/* Main Layer Panel Trigger Button (Google M3 Pill) */}
         <div className="relative">
           <button
@@ -393,7 +393,7 @@ export const MapLayerControls: React.FC<MapLayerControlsProps> = ({
 
       {/* Active "Nur überlagerter Treffbereich" Floating Banner */}
       {isOnlyIntersectionActive && hasIntersection && onToggleOnlyIntersection && (
-        <div className="absolute bottom-6 left-4 z-20 bg-white/95 dark:bg-[#1e1f20]/95 backdrop-blur-md px-3.5 py-2 rounded-xl shadow-md border border-emerald-300 dark:border-emerald-700 flex items-center gap-2.5 text-xs text-emerald-950 dark:text-emerald-300 animate-in fade-in duration-150">
+        <div className="absolute bottom-[max(1.5rem,calc(env(safe-area-inset-bottom)+0.5rem))] left-[max(1rem,env(safe-area-inset-left))] z-20 bg-white/95 dark:bg-[#1e1f20]/95 backdrop-blur-md px-3.5 py-2 rounded-xl shadow-md border border-emerald-300 dark:border-emerald-700 flex items-center gap-2.5 text-xs text-emerald-950 dark:text-emerald-300 animate-in fade-in duration-150">
           <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-emerald-300 dark:ring-emerald-700" />
           <span className="font-semibold">Nur überlagerter Treffbereich (Grün)</span>
           <button
@@ -411,9 +411,9 @@ export const MapLayerControls: React.FC<MapLayerControlsProps> = ({
         <div
           className={`absolute ${
             isOnlyIntersectionActive && hasIntersection && onToggleOnlyIntersection
-              ? 'bottom-20'
-              : 'bottom-6'
-          } left-4 z-20 bg-white/95 dark:bg-[#1e1f20]/95 backdrop-blur-md px-3 py-2 rounded-2xl shadow-lg border border-slate-200/90 dark:border-[#3c4043] flex flex-col gap-1.5 text-xs text-slate-800 dark:text-[#e3e3e3] animate-in fade-in slide-in-from-bottom-2 duration-150 max-w-xs`}
+              ? 'bottom-[max(5rem,calc(env(safe-area-inset-bottom)+4rem))]'
+              : 'bottom-[max(1.5rem,calc(env(safe-area-inset-bottom)+0.5rem))]'
+          } left-[max(1rem,env(safe-area-inset-left))] z-20 bg-white/95 dark:bg-[#1e1f20]/95 backdrop-blur-md px-3 py-2 rounded-2xl shadow-lg border border-slate-200/90 dark:border-[#3c4043] flex flex-col gap-1.5 text-xs text-slate-800 dark:text-[#e3e3e3] animate-in fade-in slide-in-from-bottom-2 duration-150 max-w-xs`}
         >
           <div className="flex items-center justify-between gap-2 border-b border-slate-100 dark:border-[#3c4043] pb-1">
             <div className="flex items-center gap-1.5 font-bold text-slate-900 dark:text-[#e3e3e3] text-[11px]">

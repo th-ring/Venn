@@ -100,8 +100,14 @@ export const ShareModal: React.FC<ShareModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
-      <div className="bg-white dark:bg-[#1e1f20] rounded-3xl p-6 max-w-lg w-full shadow-2xl border border-slate-200 dark:border-[#3c4043] flex flex-col max-h-[90vh]">
+    <div
+      className="fixed inset-0 z-50 bg-slate-900/60 dark:bg-black/75 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white dark:bg-[#1e1f20] rounded-2xl sm:rounded-3xl p-4 sm:p-6 max-w-lg w-full shadow-2xl border border-slate-200 dark:border-[#3c4043] flex flex-col max-h-[92vh] pb-[max(1rem,env(safe-area-inset-bottom))] sm:pb-6"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
         <div className="flex items-start justify-between mb-4">
           <div>

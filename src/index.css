@@ -13,6 +13,12 @@
   --mode-car: #4f46e5;
   --mode-bike: #059669;
   --mode-walk: #d97706;
+
+  /* Safe Area Insets for iOS (iPhone notch, Dynamic Island, Home Indicator) */
+  --sat: env(safe-area-inset-top, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
+  --sal: env(safe-area-inset-left, 0px);
+  --sar: env(safe-area-inset-right, 0px);
 }
 
 html.dark {
@@ -25,8 +31,43 @@ html.dark {
   --mode-walk: #fbbf24;
 }
 
+html,
+body,
+#root {
+  height: 100%;
+  height: 100dvh;
+  margin: 0;
+  padding: 0;
+  overscroll-behavior: none;
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
 body {
   font-family: 'Roboto', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  touch-action: manipulation;
+}
+
+/* Eliminate 300ms tap delay and ensure responsive mobile touches */
+button,
+a,
+input,
+select,
+[role="button"] {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Prevent unwanted iOS Safari auto-zoom on input focus */
+@media (max-width: 639px) {
+  input[type="text"],
+  input[type="search"],
+  input[type="number"],
+  input[type="password"],
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
 }
 
 /* Leaflet & Custom Marker Styles */

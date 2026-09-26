@@ -33,6 +33,7 @@ import {
   Sun,
   Moon,
   Monitor,
+  X,
 } from 'lucide-react';
 
 const PALETTE = ['#3B82F6', '#F97316', '#10B981', '#A855F7', '#EC4899', '#06B6D4', '#EAB308'];
@@ -115,36 +116,61 @@ export const Sidebar: React.FC<SidebarProps> = ({
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const handleResizeStart = (e: React.MouseEvent) => {
+  // Adaptive sidebar width for tablets (iPad portrait)
+  const effectiveWidth = React.useMemo(() => {
+    if (typeof window === 'undefined') return sidebarWidth;
+    if (window.innerWidth >= 768 && window.innerWidth < 1024) {
+      // Tablet portrait: cap width to 44% of screen or 380px so map gets ample space
+      return Math.min(sidebarWidth, Math.max(320, Math.floor(window.innerWidth * 0.44)));
+    }
+    return sidebarWidth;
+  }, [sidebarWidth, isMobileScreen]);
+
+  const handleResizeStart = (e: React.MouseEvent | React.TouchEvent) => {
     if (!onResizeWidth) return;
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(true);
 
-    const startX = e.clientX;
-    const startWidth = sidebarWidth;
+    const clientX = 'clientX' in e ? e.clientX : e.touches[0].clientX;
+    const startX = clientX;
+    const startWidth = effectiveWidth;
 
     document.body.style.cursor = 'col-resize';
     document.body.style.userSelect = 'none';
 
-    const handleMouseMove = (moveEvent: MouseEvent) => {
-      const deltaX = moveEvent.clientX - startX;
+    const onMove = (currentX: number) => {
+      const deltaX = currentX - startX;
       const maxWidth = Math.min(840, Math.floor(window.innerWidth * 0.65));
-      const minWidth = 360;
+      const minWidth = 320;
       const newWidth = Math.max(minWidth, Math.min(maxWidth, startWidth + deltaX));
       onResizeWidth(newWidth);
     };
 
-    const handleMouseUp = () => {
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      onMove(moveEvent.clientX);
+    };
+
+    const handleTouchMove = (touchEvent: TouchEvent) => {
+      if (touchEvent.touches.length > 0) {
+        onMove(touchEvent.touches[0].clientX);
+      }
+    };
+
+    const handleEnd = () => {
       setIsDragging(false);
       document.body.style.cursor = '';
       document.body.style.userSelect = '';
       window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener('mouseup', handleEnd);
+      window.removeEventListener('touchmove', handleTouchMove);
+      window.removeEventListener('touchend', handleEnd);
     };
 
     window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mouseup', handleMouseUp);
+    window.addEventListener('mouseup', handleEnd);
+    window.addEventListener('touchmove', handleTouchMove, { passive: false });
+    window.addEventListener('touchend', handleEnd);
   };
 
   const handleResetWidth = () => {
@@ -157,27 +183,38 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const hasIntersection = !!result?.intersection && (result?.intersectionAreaKm2 || 0) > 0;
 
   return (
-    <aside
-      id="commute-sidebar"
-      style={{
-        width: !isMobileScreen ? (isDesktopOpen ? `${sidebarWidth}px` : '0px') : undefined,
-      }}
-      className={`fixed md:relative inset-y-0 left-0 z-30 flex-shrink-0 bg-slate-50 dark:bg-[#131314] flex flex-col border-slate-200/90 dark:border-[#3c4043] shadow-xl md:shadow-none overflow-hidden ${
-        isDragging ? 'transition-none select-none' : 'transition-[width,transform] duration-300 ease-in-out'
-      } ${
-        isMobileOpen ? 'translate-x-0 w-full sm:w-[420px]' : '-translate-x-full md:translate-x-0'
-      } ${
-        isDesktopOpen ? 'md:border-r' : 'md:w-0 md:border-r-0 md:pointer-events-none'
-      }`}
-    >
-      <div
-        className="h-full flex flex-col flex-shrink-0 overflow-hidden relative"
+    <>
+      {/* Mobile Backdrop Scrim */}
+      {isMobileOpen && (
+        <div
+          id="sidebar-mobile-backdrop"
+          onClick={onToggleMobile}
+          className="fixed inset-0 z-25 bg-slate-900/50 dark:bg-black/70 backdrop-blur-xs md:hidden animate-in fade-in duration-200"
+          aria-label="Seitenleiste schließen"
+        />
+      )}
+
+      <aside
+        id="commute-sidebar"
         style={{
-          width: !isMobileScreen ? `${sidebarWidth}px` : '100%',
+          width: !isMobileScreen ? (isDesktopOpen ? `${effectiveWidth}px` : '0px') : undefined,
         }}
+        className={`fixed md:relative inset-y-0 left-0 z-30 flex-shrink-0 bg-slate-50 dark:bg-[#131314] flex flex-col border-slate-200/90 dark:border-[#3c4043] shadow-xl md:shadow-none overflow-hidden ${
+          isDragging ? 'transition-none select-none' : 'transition-[width,transform] duration-300 ease-in-out'
+        } ${
+          isMobileOpen ? 'translate-x-0 w-full sm:w-[420px]' : '-translate-x-full md:translate-x-0'
+        } ${
+          isDesktopOpen ? 'md:border-r' : 'md:w-0 md:border-r-0 md:pointer-events-none'
+        }`}
       >
-        {/* App Header (Google M3 App Bar) */}
-        <div className="h-14 px-4 bg-white dark:bg-[#1e1f20] border-b border-slate-200 dark:border-[#3c4043] flex items-center justify-between shrink-0">
+        <div
+          className="h-full flex flex-col flex-shrink-0 overflow-hidden relative"
+          style={{
+            width: !isMobileScreen ? `${effectiveWidth}px` : '100%',
+          }}
+        >
+          {/* App Header (Google M3 App Bar with iOS Safe-Area support) */}
+          <div className="h-14 sm:h-14 pt-[env(safe-area-inset-top)] box-content px-4 bg-white dark:bg-[#1e1f20] border-b border-slate-200 dark:border-[#3c4043] flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
             {/* Standalone Brand Vector Mark (No glowing box, no card frame) */}
             <div className="w-10 h-7 flex items-center justify-center shrink-0">
@@ -265,9 +302,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
               type="button"
               onClick={onToggleMobile}
               className="md:hidden w-9 h-9 flex items-center justify-center rounded-full text-slate-500 hover:text-slate-800 dark:text-[#9aa0a6] dark:hover:text-[#e3e3e3] hover:bg-slate-100 dark:hover:bg-[#282a2c] transition-colors cursor-pointer"
-              title="Schließen"
+              title="Zur Karte zurückkehren"
             >
-              <ChevronRight className="w-5 h-5" />
+              <X className="w-5 h-5" />
             </button>
           </div>
         </div>
@@ -470,8 +507,25 @@ export const Sidebar: React.FC<SidebarProps> = ({
           )}
         </div>
 
-        {/* Footer Info */}
-        <div className="p-3 bg-white dark:bg-[#1e1f20] border-t border-slate-200 dark:border-[#3c4043] text-[11px] text-slate-400 dark:text-[#9aa0a6] flex items-center justify-between">
+        {/* Mobile Sticky Quick Action Bar: "Karte anzeigen" */}
+        <div className="md:hidden p-3 bg-white/95 dark:bg-[#1e1f20]/95 border-t border-slate-200 dark:border-[#3c4043] pb-[max(0.75rem,env(safe-area-inset-bottom))] shrink-0 backdrop-blur-md">
+          <button
+            type="button"
+            onClick={onToggleMobile}
+            className="w-full py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 dark:bg-[#8ab4f8] dark:hover:bg-[#aecbfa] text-white dark:text-[#131314] font-semibold text-xs flex items-center justify-center gap-2 shadow-md cursor-pointer transition-colors"
+          >
+            <MapPin className="w-4 h-4" />
+            <span>Karte anzeigen</span>
+            {hasIntersection && (
+              <span className="text-[10px] bg-white/20 dark:bg-black/20 px-2 py-0.5 rounded-full font-bold ml-1">
+                {result?.intersectionAreaKm2} km²
+              </span>
+            )}
+          </button>
+        </div>
+
+        {/* Footer Info (Desktop / Tablet) */}
+        <div className="hidden md:flex p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] bg-white dark:bg-[#1e1f20] border-t border-slate-200 dark:border-[#3c4043] text-[11px] text-slate-400 dark:text-[#9aa0a6] items-center justify-between">
           <span className="flex items-center gap-1">
             <MapPin className="w-3.5 h-3.5" />
             Marker auf Karte verschiebbar
@@ -480,11 +534,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
       </div>
 
-      {/* Drag-to-Resize Handle (Desktop only when open) */}
+      {/* Drag-to-Resize Handle (Desktop and Tablet with Touch/Mouse) */}
       {isDesktopOpen && onResizeWidth && (
         <div
           id="sidebar-resize-handle"
           onMouseDown={handleResizeStart}
+          onTouchStart={handleResizeStart}
           onDoubleClick={handleResetWidth}
           className={`hidden md:flex absolute top-0 right-0 bottom-0 w-2 cursor-col-resize z-40 group items-center justify-center transition-colors select-none ${
             isDragging ? 'bg-blue-500/20' : 'hover:bg-blue-500/15'
@@ -499,5 +554,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
       )}
     </aside>
+  </>
   );
 };

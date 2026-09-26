@@ -63,6 +63,9 @@ export const InspectionPanel: React.FC<InspectionPanelProps> = ({
       id="inspection-detail-panel"
       className="bg-white dark:bg-[#1e1f20] rounded-2xl border border-slate-200/90 dark:border-[#3c4043] shadow-2xl overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-200 max-w-md w-full"
     >
+      {/* Mobile Top Grabber Pill */}
+      <div className="w-10 h-1 bg-slate-300 dark:bg-[#5f6368] rounded-full mx-auto my-1.5 sm:hidden" />
+
       {/* Header */}
       <div
         className={`px-4 py-3 border-b flex items-start justify-between gap-3 ${
@@ -168,7 +171,7 @@ export const InspectionPanel: React.FC<InspectionPanelProps> = ({
       )}
 
       {/* Breakdown Table */}
-      <div className="p-3.5 space-y-2 max-h-[70vh] overflow-y-auto">
+      <div className="p-3.5 space-y-2 max-h-[46vh] sm:max-h-[65vh] overflow-y-auto">
         <div className="text-xs font-medium text-slate-600 dark:text-[#9aa0a6] mb-2 flex items-center justify-between">
           <div className="flex items-center gap-1.5">
             <Clock className="w-3.5 h-3.5 text-slate-500 dark:text-[#9aa0a6]" />
