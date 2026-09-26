@@ -59,12 +59,14 @@ export const SettingsSlider: React.FC<SettingsSliderProps> = ({
           max={max}
           step={step}
           value={value}
+          aria-label={label}
+          aria-valuetext={displayVal}
           onChange={(e) => onChange(parseFloat(e.target.value))}
           disabled={disabled}
-          className="w-full h-1.5 bg-slate-200 dark:bg-[#3c4043] rounded-lg appearance-none cursor-pointer accent-blue-600 dark:accent-[#8ab4f8] transition-all focus:outline-none"
+          className="w-full h-2 bg-slate-300 dark:bg-[#4a4d51] border border-slate-300 dark:border-[#5f6368] rounded-lg appearance-none cursor-pointer accent-blue-600 dark:accent-[#8ab4f8] transition-all focus-visible:ring-2 focus-visible:ring-blue-500"
         />
         {(minLabel || maxLabel) && (
-          <div className="flex items-center justify-between text-[11px] text-slate-400 dark:text-[#747775] mt-1.5">
+          <div className="flex items-center justify-between text-[11px] font-medium text-slate-600 dark:text-[#9aa0a6] mt-1.5">
             <span>{minLabel}</span>
             <span>{maxLabel}</span>
           </div>

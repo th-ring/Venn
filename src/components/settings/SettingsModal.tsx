@@ -292,6 +292,16 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     onClose();
   };
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        handleSaveAndClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   const options = schedule.options ?? {
     liveTraffic: false,
     enableSmoothing: true,
@@ -372,6 +382,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       onClick={handleSaveAndClose}
     >
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="settings-dialog-title"
         className="bg-white dark:bg-[#1e1f20] sm:rounded-[28px] w-full max-w-5xl h-full sm:h-[740px] sm:max-h-[92vh] shadow-2xl border-0 sm:border border-slate-200/90 dark:border-[#3c4043] flex flex-col overflow-hidden pt-[env(safe-area-inset-top)] sm:pt-0"
         onClick={(e) => e.stopPropagation()}
       >
@@ -383,7 +396,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-sm sm:text-base font-medium text-slate-900 dark:text-[#e3e3e3] leading-none">
+                <h2 id="settings-dialog-title" className="text-sm sm:text-base font-medium text-slate-900 dark:text-[#e3e3e3] leading-none">
                   Einstellungen
                 </h2>
                 <span className="hidden md:inline-flex items-center gap-1 text-[11px] font-normal text-slate-500 dark:text-[#9aa0a6] bg-slate-100 dark:bg-[#282a2c] px-2 py-0.5 rounded-full">
@@ -407,6 +420,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           <button
             type="button"
             onClick={handleSaveAndClose}
+            aria-label="Einstellungen schließen"
             className="w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center text-slate-500 hover:text-slate-800 dark:text-[#9aa0a6] dark:hover:text-[#e3e3e3] hover:bg-slate-100 dark:hover:bg-[#282a2c] transition-colors cursor-pointer shrink-0"
             title="Schließen"
           >

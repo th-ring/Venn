@@ -58,6 +58,29 @@ select,
   -webkit-tap-highlight-color: transparent;
 }
 
+/* Accessibility Focus Rings (WCAG 2.4.7 & 2.4.11) */
+:focus-visible {
+  outline: 2.5px solid #2563eb !important;
+  outline-offset: 2px !important;
+}
+
+html.dark :focus-visible {
+  outline-color: #60a5fa !important;
+}
+
+/* Screenreader Utility (WCAG 1.1.1 & 4.1.2) */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
 /* Prevent unwanted iOS Safari auto-zoom on input focus */
 @media (max-width: 639px) {
   input[type="text"],

@@ -21,6 +21,10 @@ import {
   getPriorityTargets,
 } from '../services/priorityHeatmapEngine';
 import {
+  getProfileLineSignature,
+  injectMapPatternDefs,
+} from '../services/mapPatterns';
+import {
   getHighwayRamps,
   getHighwayAreas,
   subscribeHighwayData,
@@ -526,20 +530,28 @@ export const MapComponent: React.FC<MapComponentProps> = React.memo<MapComponent
 
     if (!result || !showIndividualIsochrones || hiddenLayers.has('isochrones')) return;
 
-    profiles.forEach((profile) => {
+    if (mapContainerRef.current) {
+      injectMapPatternDefs(mapContainerRef.current, isDark);
+    }
+
+    profiles.forEach((profile, profileIdx) => {
       if (!profile.visible) return;
       const poly = result.isochrones[profile.id];
       if (!poly) return;
+
+      const signature = getProfileLineSignature(profileIdx, isDark);
 
       const layer = L.geoJSON(poly as any, {
         pane: 'pane-isochrones',
         style: {
           color: profile.color,
-          weight: isDark ? 2.5 : 2,
+          weight: signature.weight,
           opacity: isDark ? 0.95 : 0.85,
           fillColor: profile.color,
           fillOpacity: isDark ? 0.22 : 0.15,
-          dashArray: '4, 4',
+          dashArray: signature.dashArray,
+          lineCap: 'round',
+          lineJoin: 'round',
         },
         onEachFeature: (_, fLayer) => {
           fLayer.on({
@@ -551,7 +563,7 @@ export const MapComponent: React.FC<MapComponentProps> = React.memo<MapComponent
       });
 
       layer.bindTooltip(
-        `<strong>${profile.name}</strong><br/>Max. ${profile.travelTimeMinutes} Min (${
+        `<strong>${profile.name}</strong> (${signature.label})<br/>Max. ${profile.travelTimeMinutes} Min (${
           profile.mode === 'transit'
             ? 'ÖPNV'
             : profile.mode === 'driving'
@@ -576,20 +588,24 @@ export const MapComponent: React.FC<MapComponentProps> = React.memo<MapComponent
 
     if (!result?.intersection || !showIntersectionLayer || hiddenLayers.has('intersection')) return;
 
+    if (mapContainerRef.current) {
+      injectMapPatternDefs(mapContainerRef.current, isDark);
+    }
+
     const intersectionLayer = L.geoJSON(result.intersection as any, {
       pane: 'pane-intersection',
       style: {
         color: isDark
           ? (onlyResidential ? '#34d399' : '#10b981')
           : (onlyResidential ? '#065f46' : '#047857'),
-        weight: isDark ? 4 : 3.5,
-        opacity: 0.95,
+        weight: isDark ? 4.5 : 4,
+        opacity: 1,
         fillColor: isDark
           ? (onlyResidential ? '#10b981' : '#34d399')
           : (onlyResidential ? '#059669' : '#10b981'),
         fillOpacity: isDark
-          ? (onlyResidential ? 0.42 : 0.35)
-          : (onlyResidential ? 0.45 : 0.38),
+          ? (onlyResidential ? 0.45 : 0.38)
+          : (onlyResidential ? 0.48 : 0.42),
         lineJoin: 'round',
       },
       onEachFeature: (_, fLayer) => {

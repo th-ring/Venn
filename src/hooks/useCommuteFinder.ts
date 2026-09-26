@@ -55,7 +55,9 @@ import {
   clearLocalProfileState,
 } from '../services/configShareService';
 
-const PALETTE = ['#3B82F6', '#F97316', '#10B981', '#A855F7', '#EC4899', '#06B6D4', '#EAB308'];
+// WCAG 1.4.1: Emerald Green (#10B981) is reserved strictly for the intersection layer.
+// Individual profiles use distinct, high-contrast, colorblind-safe tones.
+const PALETTE = ['#2563EB', '#F97316', '#8B5CF6', '#EC4899', '#06B6D4', '#EAB308', '#64748B'];
 
 export function useCommuteFinder() {
   // 0. Initial Startup Config: 1) URL-Hash (#zone= / #config=), 2) LocalProfile (localStorage), 3) Defaults

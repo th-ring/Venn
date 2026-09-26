@@ -4,6 +4,7 @@ import { MapComponent } from './components/MapComponent';
 import { Sidebar } from './components/Sidebar';
 import { InspectionPanel } from './components/InspectionPanel';
 import { FallbackWarningBanner } from './components/FallbackWarningBanner';
+import { A11yLiveRegion } from './components/a11y/A11yLiveRegion';
 import { clearIsochroneCache } from './services/isochroneEngine';
 import { saveRentalOverlaySettings } from './services/rentalService';
 import type { SettingsTabId } from './components/settings/SettingsModal';
@@ -216,6 +217,13 @@ export default function App() {
             </button>
           </div>
         )}
+
+        {/* Screenreader Live Region for WCAG 4.1.3 */}
+        <A11yLiveRegion
+          result={result}
+          profiles={profiles}
+          isCalculating={isCalculating}
+        />
 
         {/* Prominent Fallback Warning Banner if an online API fails */}
         <FallbackWarningBanner

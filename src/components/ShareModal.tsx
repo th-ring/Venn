@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { PersonProfile, CommuteSchedule } from '../types';
 import {
   FullShareConfig,
@@ -43,6 +43,17 @@ export const ShareModal: React.FC<ShareModalProps> = ({
   const [importText, setImportText] = useState('');
   const [importError, setImportError] = useState<string | null>(null);
   const [importSuccess, setImportSuccess] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
@@ -105,18 +116,22 @@ export const ShareModal: React.FC<ShareModalProps> = ({
       onClick={onClose}
     >
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="share-dialog-title"
         className="bg-white dark:bg-[#1e1f20] rounded-2xl sm:rounded-3xl p-4 sm:p-6 max-w-lg w-full shadow-2xl border border-slate-200 dark:border-[#3c4043] flex flex-col max-h-[92vh] pb-[max(1rem,env(safe-area-inset-bottom))] sm:pb-6"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex items-start justify-between mb-4">
           <div>
-            <h3 className="text-lg font-medium text-slate-900 dark:text-[#e3e3e3]">Wohnortsuche teilen & verwalten</h3>
+            <h3 id="share-dialog-title" className="text-lg font-medium text-slate-900 dark:text-[#e3e3e3]">Wohnortsuche teilen & verwalten</h3>
             <p className="text-xs text-slate-500 dark:text-[#9aa0a6] mt-0.5">Profile, Adressen, Filter & Ebenen als Link oder Code</p>
           </div>
           <button
             type="button"
             onClick={onClose}
+            aria-label="Teilen-Dialog schließen"
             className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 dark:text-[#9aa0a6] hover:text-slate-600 dark:hover:text-[#e3e3e3] hover:bg-slate-100 dark:hover:bg-[#282a2c] transition-colors cursor-pointer shrink-0"
           >
             <X className="w-4 h-4" />

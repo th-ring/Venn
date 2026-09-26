@@ -28,14 +28,16 @@ import {
   ArrowRightLeft,
   Clock,
 } from 'lucide-react';
+import { getProfileLineSignature } from '../services/mapPatterns';
 
+// WCAG 1.4.1: Colorblind-safe presets without emerald green (reserved for intersection)
 const COLOR_PRESETS = [
   '#3B82F6', // Blue
   '#2563EB', // Royal Blue
   '#0EA5E9', // Sky Blue
   '#06B6D4', // Cyan
-  '#10B981', // Emerald Green
-  '#059669', // Dark Green
+  '#0D9488', // Teal
+  '#6366F1', // Indigo
   '#84CC16', // Lime
   '#EAB308', // Amber / Yellow
   '#F97316', // Orange
@@ -205,6 +207,8 @@ export const PersonCard: React.FC<PersonCardProps> = React.memo<PersonCardProps>
     setIsSearchOpen(false);
   };
 
+  const lineSig = getProfileLineSignature(index);
+
   return (
     <div
       id={`person-card-${profile.id}`}
@@ -213,18 +217,38 @@ export const PersonCard: React.FC<PersonCardProps> = React.memo<PersonCardProps>
       {/* Header: Name, interactive color badge & popover, toggle & delete */}
       <div className="flex items-center justify-between gap-2 mb-3">
         <div className="flex items-center gap-2 flex-1 min-w-0">
-          {/* Interactive Color Badge & Picker */}
-          <div ref={colorPickerContainerRef} className="relative flex-shrink-0">
+          {/* Interactive Color Badge & Picker + WCAG 1.4.1 Line Style Indicator */}
+          <div ref={colorPickerContainerRef} className="relative flex-shrink-0 flex items-center gap-1.5">
             <button
               id={`btn-color-picker-${profile.id}`}
               type="button"
               onClick={() => setIsColorPickerOpen((prev) => !prev)}
               className="w-5 h-5 rounded-full ring-2 ring-white dark:ring-[#1e1f20] shadow-sm flex items-center justify-center transition-all opacity-90 hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
               style={{ backgroundColor: profile.color }}
-              title="Klicken, um Farbe anzupassen"
+              title={`Klicken, um Farbe anzupassen (${lineSig.label})`}
+              aria-label={`Farbe für ${profile.name} anpassen. Aktuelle Kartenkontur: ${lineSig.label}`}
             >
               <span className="sr-only">Farbe anpassen</span>
             </button>
+
+            {/* Visual line pattern indicator for colorblindness */}
+            <span
+              className="inline-flex items-center justify-center px-1 py-0.5 rounded bg-slate-100 dark:bg-[#282a2c] text-[10px] border border-slate-200 dark:border-[#3c4043]"
+              title={`Karten-Konturstil: ${lineSig.label}`}
+              aria-label={`Karten-Konturstil: ${lineSig.label}`}
+            >
+              <svg className="w-4 h-1.5" viewBox="0 0 16 3" aria-hidden="true">
+                <line
+                  x1="0"
+                  y1="1.5"
+                  x2="16"
+                  y2="1.5"
+                  stroke={profile.color}
+                  strokeWidth="2.5"
+                  strokeDasharray={lineSig.dashArray || 'none'}
+                />
+              </svg>
+            </span>
 
             {/* Color Picker Popover */}
             {isColorPickerOpen && (
@@ -475,7 +499,7 @@ export const PersonCard: React.FC<PersonCardProps> = React.memo<PersonCardProps>
           </span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-[11px] text-slate-400 dark:text-[#9aa0a6]">10m</span>
+          <span className="text-[11px] font-medium text-slate-600 dark:text-[#9aa0a6]">10m</span>
           <input
             id={`slider-time-${profile.id}`}
             type="range"
@@ -483,10 +507,12 @@ export const PersonCard: React.FC<PersonCardProps> = React.memo<PersonCardProps>
             max="90"
             step="5"
             value={profile.travelTimeMinutes}
+            aria-label={`Maximale Reisezeit für ${profile.name}`}
+            aria-valuetext={`${profile.travelTimeMinutes} Minuten`}
             onChange={(e) => onUpdate({ travelTimeMinutes: parseInt(e.target.value, 10) })}
-            className="w-full accent-blue-600 dark:accent-[#8ab4f8] cursor-pointer h-1.5 bg-slate-200 dark:bg-[#3c4043] rounded-lg appearance-none"
+            className="w-full accent-blue-600 dark:accent-[#8ab4f8] cursor-pointer h-2 bg-slate-300 dark:bg-[#4a4d51] border border-slate-300 dark:border-[#5f6368] rounded-lg appearance-none focus-visible:ring-2 focus-visible:ring-blue-500"
           />
-          <span className="text-[11px] text-slate-400 dark:text-[#9aa0a6]">90m</span>
+          <span className="text-[11px] font-medium text-slate-600 dark:text-[#9aa0a6]">90m</span>
         </div>
       </div>
 
