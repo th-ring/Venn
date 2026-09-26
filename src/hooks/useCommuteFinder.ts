@@ -618,42 +618,14 @@ export function useCommuteFinder() {
     [handleUpdateProfile]
   );
 
-  // Residential filter with instant local geometry update if rawIntersection is present
+  // Residential filter with background worker offloading (ISO/IEC 25010)
   const handleToggleOnlyResidential = useCallback(() => {
     setOnlyResidential((prevOnly) => {
       const nextVal = !prevOnly;
-      if (result && result.rawIntersection) {
-        if (nextVal) {
-          const masked = maskByResidentialAreas(result.rawIntersection);
-          const area = calculateAreaKm2(masked);
-          setResult((prev) =>
-            prev
-              ? {
-                  ...prev,
-                  intersection: masked,
-                  intersectionAreaKm2: area,
-                  emptyIntersection: !masked || area <= 0,
-                }
-              : null
-          );
-        } else {
-          setResult((prev) =>
-            prev
-              ? {
-                  ...prev,
-                  intersection: prev.rawIntersection || null,
-                  intersectionAreaKm2: prev.rawIntersectionAreaKm2 || 0,
-                  emptyIntersection: !prev.rawIntersection || (prev.rawIntersectionAreaKm2 || 0) <= 0,
-                }
-              : null
-          );
-        }
-      } else {
-        runCalculation(profiles, schedule, nextVal);
-      }
+      runCalculation(profiles, schedule, nextVal);
       return nextVal;
     });
-  }, [result, profiles, schedule, runCalculation]);
+  }, [profiles, schedule, runCalculation]);
 
   // Scenario selection
   const handleSelectScenario = useCallback((scenario: PresetScenario) => {

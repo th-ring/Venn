@@ -34,9 +34,14 @@ export interface CommuteWorkerResponse {
   error?: string;
 }
 
+let latestRequestId = '';
+
 self.addEventListener('message', async (event: MessageEvent<CommuteWorkerRequest>) => {
   const data = event.data;
   if (!data || !data.requestId) return;
+
+  latestRequestId = data.requestId;
+  const currentRequestId = data.requestId;
 
   const {
     requestId,
@@ -61,7 +66,9 @@ self.addEventListener('message', async (event: MessageEvent<CommuteWorkerRequest
         success: true,
         result: undefined,
       };
-      self.postMessage(emptyResponse);
+      if (currentRequestId === latestRequestId) {
+        self.postMessage(emptyResponse);
+      }
       return;
     }
 
@@ -77,6 +84,9 @@ self.addEventListener('message', async (event: MessageEvent<CommuteWorkerRequest
     });
 
     const generated = await Promise.all(isochronePromises);
+    // Cooperative cancellation check
+    if (currentRequestId !== latestRequestId) return;
+
     const isochronesMap: Record<string, GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon>> = {};
     const polygonList: Array<GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon>> = [];
     const fallbackAlerts: IsochroneFallbackAlert[] = [];
@@ -98,6 +108,9 @@ self.addEventListener('message', async (event: MessageEvent<CommuteWorkerRequest
     });
 
     const rawIntersection = calculateMultiIntersection(polygonList);
+    // Cooperative cancellation check
+    if (currentRequestId !== latestRequestId) return;
+
     const rawAreaKm2 = calculateAreaKm2(rawIntersection);
 
     let finalIntersection = rawIntersection;
@@ -105,11 +118,15 @@ self.addEventListener('message', async (event: MessageEvent<CommuteWorkerRequest
 
     if (onlyResidential && rawIntersection) {
       const masked = maskByResidentialAreas(rawIntersection);
+      // Cooperative cancellation check
+      if (currentRequestId !== latestRequestId) return;
       if (masked) {
         finalIntersection = masked;
         finalAreaKm2 = calculateAreaKm2(masked);
       }
     }
+
+    if (currentRequestId !== latestRequestId) return;
 
     const isEmpty = !finalIntersection || finalAreaKm2 <= 0;
     const suggestions = isEmpty ? generateEmptyIntersectionSuggestions(active) : [];
@@ -133,11 +150,13 @@ self.addEventListener('message', async (event: MessageEvent<CommuteWorkerRequest
 
     self.postMessage(response);
   } catch (err: any) {
-    const errorResponse: CommuteWorkerResponse = {
-      requestId,
-      success: false,
-      error: err instanceof Error ? err.message : String(err),
-    };
-    self.postMessage(errorResponse);
+    if (currentRequestId === latestRequestId) {
+      const errorResponse: CommuteWorkerResponse = {
+        requestId,
+        success: false,
+        error: err instanceof Error ? err.message : String(err),
+      };
+      self.postMessage(errorResponse);
+    }
   }
 });

@@ -134,6 +134,15 @@ export const MapComponent: React.FC<MapComponentProps> = React.memo<MapComponent
   const [isBasemapLoading, setIsBasemapLoading] = useState(false);
   const [basemapError, setBasemapError] = useState<string | null>(null);
   const [highwayVersion, setHighwayVersion] = useState(0);
+  const [computedHeatmapZones, setComputedHeatmapZones] = useState<any[]>([]);
+
+  const profilesRef = useRef(profiles);
+  profilesRef.current = profiles;
+
+  // Memoize visual properties of profiles to prevent re-parsing Leaflet layers during slider drag
+  const profilesVisualKey = profiles
+    .map((p) => `${p.id}:${p.visible}:${p.color}:${p.name}:${p.mode}`)
+    .join('|');
 
   // Subscribe to live highway dataset updates
   useEffect(() => {
@@ -534,7 +543,7 @@ export const MapComponent: React.FC<MapComponentProps> = React.memo<MapComponent
       injectMapPatternDefs(mapContainerRef.current, isDark);
     }
 
-    profiles.forEach((profile, profileIdx) => {
+    profilesRef.current.forEach((profile, profileIdx) => {
       if (!profile.visible) return;
       const poly = result.isochrones[profile.id];
       if (!poly) return;
@@ -577,7 +586,7 @@ export const MapComponent: React.FC<MapComponentProps> = React.memo<MapComponent
 
       layer.addTo(isochronesGroup);
     });
-  }, [result, profiles, showIndividualIsochrones, hiddenLayers, onSelectInspectionPoint, isDark]);
+  }, [result, profilesVisualKey, showIndividualIsochrones, hiddenLayers, onSelectInspectionPoint, isDark]);
 
   // 4. Render Golden Intersection Layer (Pane: pane-intersection)
   useEffect(() => {
@@ -637,40 +646,70 @@ export const MapComponent: React.FC<MapComponentProps> = React.memo<MapComponent
     intersectionLayer.addTo(intersectionGroup);
   }, [result, showIntersectionLayer, onlyResidential, hiddenLayers, onSelectInspectionPoint, isDark]);
 
-  // 5. Render Priority Heatmap Layer (Pane: pane-heatmap)
+  // 5a. Asynchronously compute Priority Heatmap Zones (ISO/IEC 25010 & INP optimization)
   useEffect(() => {
-    const heatmapGroup = heatmapLayerRef.current;
-    if (!heatmapGroup || !mapRef.current) return;
-
-    heatmapGroup.clearLayers();
-
     if (
       !result?.intersection ||
       !heatmapSettings ||
       heatmapSettings.mode === 'none' ||
       hiddenLayers.has('heatmap')
     ) {
+      setComputedHeatmapZones([]);
+      return;
+    }
+
+    let isCurrent = true;
+    // Yield to the browser paint loop & user interaction before running heavy Turf binary unions
+    const timer = setTimeout(() => {
+      try {
+        const zones = generatePriorityHeatmapZones(
+          result.intersection as any,
+          heatmapSettings
+        );
+        if (isCurrent) {
+          setComputedHeatmapZones(zones);
+        }
+      } catch (err) {
+        console.warn('Error computing heatmap zones:', err);
+      }
+    }, 25);
+
+    return () => {
+      isCurrent = false;
+      clearTimeout(timer);
+    };
+  }, [
+    result?.intersection,
+    heatmapSettings?.mode,
+    JSON.stringify(heatmapSettings?.selectedItems),
+    heatmapSettings?.radiusKm,
+    hiddenLayers,
+  ]);
+
+  // 5b. Render Priority Heatmap Layer (Pane: pane-heatmap)
+  useEffect(() => {
+    const heatmapGroup = heatmapLayerRef.current;
+    if (!heatmapGroup || !mapRef.current) return;
+
+    heatmapGroup.clearLayers();
+
+    if (computedHeatmapZones.length === 0 || hiddenLayers.has('heatmap')) {
       return;
     }
 
     try {
-      const heatmapZones = generatePriorityHeatmapZones(
-        result.intersection as any,
-        heatmapSettings
-      );
-
-      heatmapZones.forEach((zone) => {
+      computedHeatmapZones.forEach((zone) => {
         const zoneLayer = L.geoJSON(zone.geometry as any, {
           pane: 'pane-heatmap',
           style: {
             stroke: true,
             color: zone.color,
             weight: isDark ? 2 : 1.5,
-            opacity: Math.min(0.95, (heatmapSettings.intensity ?? 0.65) * 1.15),
+            opacity: Math.min(0.95, (heatmapSettings?.intensity ?? 0.65) * 1.15),
             fillColor: zone.color,
             fillOpacity: Math.min(
               0.85,
-              (heatmapSettings.intensity ?? 0.65) *
+              (heatmapSettings?.intensity ?? 0.65) *
                 (zone.tier === 'tier1' ? 0.75 : zone.tier === 'tier2' ? 0.55 : 0.38)
             ),
             lineJoin: 'round',
@@ -694,7 +733,7 @@ export const MapComponent: React.FC<MapComponentProps> = React.memo<MapComponent
     } catch (err) {
       console.warn('Error rendering heatmap zones:', err);
     }
-  }, [result, heatmapSettings, hiddenLayers, onSelectInspectionPoint, isDark]);
+  }, [computedHeatmapZones, heatmapSettings?.intensity, hiddenLayers, onSelectInspectionPoint, isDark]);
 
   // 6. Render POI Station & Highway Badges & Vector Ramps (Pane: pane-poi_icons)
   useEffect(() => {
