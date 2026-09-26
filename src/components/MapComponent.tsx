@@ -193,6 +193,7 @@ export const MapComponent: React.FC<MapComponentProps> = ({
       center: [48.14, 11.45],
       zoom: 11,
       zoomControl: false,
+      preferCanvas: true,
     });
 
     L.control
@@ -238,15 +239,24 @@ export const MapComponent: React.FC<MapComponentProps> = ({
       onSelectInspectionPoint(e.latlng.lat, e.latlng.lng);
     });
 
-    // Observe container size changes
-    let animationFrameId: number | null = null;
-    const resizeObserver = new ResizeObserver(() => {
-      if (animationFrameId) cancelAnimationFrame(animationFrameId);
-      animationFrameId = requestAnimationFrame(() => {
-        if (mapRef.current) {
-          mapRef.current.invalidateSize({ pan: false });
+    // Observe container size changes with debouncing to avoid mobile address-bar jitter
+    let lastWidth = 0;
+    let lastHeight = 0;
+    let resizeTimer: ReturnType<typeof setTimeout> | null = null;
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const { width, height } = entry.contentRect;
+        if (Math.abs(width - lastWidth) > 2 || Math.abs(height - lastHeight) > 2) {
+          lastWidth = width;
+          lastHeight = height;
+          if (resizeTimer) clearTimeout(resizeTimer);
+          resizeTimer = setTimeout(() => {
+            if (mapRef.current) {
+              mapRef.current.invalidateSize({ pan: false });
+            }
+          }, 120);
         }
-      });
+      }
     });
 
     if (mapContainerRef.current) {
@@ -254,7 +264,7 @@ export const MapComponent: React.FC<MapComponentProps> = ({
     }
 
     return () => {
-      if (animationFrameId) cancelAnimationFrame(animationFrameId);
+      if (resizeTimer) clearTimeout(resizeTimer);
       resizeObserver.disconnect();
       map.remove();
       mapRef.current = null;
@@ -687,48 +697,104 @@ export const MapComponent: React.FC<MapComponentProps> = ({
 
     if (activeTypes.length === 0) return;
 
+    // Guard: When configured to show only within intersection, do NOT render all items while calculation is pending
+    if (poiIconSettings.onlyWithinIntersection && !result?.intersection) {
+      return;
+    }
+
+    const currentMap = mapRef.current;
+    const currentZoom = currentMap ? currentMap.getZoom() : 11;
+    const radiusKm = heatmapSettings?.radiusKm || 1.5;
+
+    // Fast BBOX calculation for spatial pre-filtering (< 0.001ms check instead of expensive Turf distance)
+    let filterBbox: [number, number, number, number] | null = null;
+    if (poiIconSettings.onlyWithinIntersection && result?.intersection) {
+      try {
+        const rawBbox = turf.bbox(result.intersection as any);
+        const latMargin = radiusKm / 110.574;
+        const midLat = (rawBbox[1] + rawBbox[3]) / 2;
+        const lngMargin = radiusKm / (111.320 * Math.max(0.1, Math.cos((midLat * Math.PI) / 180)));
+        filterBbox = [
+          rawBbox[0] - lngMargin,
+          rawBbox[1] - latMargin,
+          rawBbox[2] + lngMargin,
+          rawBbox[3] + latMargin,
+        ];
+      } catch (err) {
+        console.warn('Failed to compute intersection bbox:', err);
+      }
+    }
+
+    // Viewport bounds for when onlyWithinIntersection is false (prevents drawing thousands of out-of-screen geometries)
+    const viewportBounds = !poiIconSettings.onlyWithinIntersection && currentMap
+      ? currentMap.getBounds().pad(0.25)
+      : null;
+
+    const isPointVisible = (lng: number, lat: number): boolean => {
+      if (poiIconSettings.onlyWithinIntersection) {
+        if (!result?.intersection || !filterBbox) return false;
+        // 1. Ultra-fast BBOX rejection (filters out 95% of candidates instantaneously)
+        if (
+          lng < filterBbox[0] ||
+          lng > filterBbox[2] ||
+          lat < filterBbox[1] ||
+          lat > filterBbox[3]
+        ) {
+          return false;
+        }
+        // 2. High-speed point-in-polygon check
+        const pt = turf.point([lng, lat]);
+        try {
+          if (turf.booleanPointInPolygon(pt, result.intersection as any)) {
+            return true;
+          }
+          // 3. Distance check only for edge-cases within BBOX
+          const dist = turf.pointToPolygonDistance(pt, result.intersection as any, { units: 'kilometers' });
+          return dist <= radiusKm;
+        } catch {
+          return false;
+        }
+      } else {
+        if (viewportBounds) {
+          return viewportBounds.contains([lat, lng]);
+        }
+        return true;
+      }
+    };
+
     // A. If Highway is active, render Area Enclosures (Umkreisung)
     if (activeTypes.includes('highway') && poiIconSettings.showHighwayAreas !== false) {
       try {
         const areas = getHighwayAreas();
         areas.forEach((area) => {
-          let isAreaVisible = true;
-          if (poiIconSettings.onlyWithinIntersection && result?.intersection) {
-            try {
-              const center = turf.center(area as any);
-              const dist = turf.pointToPolygonDistance(
-                center,
-                result.intersection as any,
-                { units: 'kilometers' }
-              );
-              if (dist > (heatmapSettings?.radiusKm || 1.5)) {
-                isAreaVisible = false;
-              }
-            } catch {
-              isAreaVisible = true;
-            }
+          let centerCoord: [number, number] | null = null;
+          try {
+            const center = turf.center(area as any);
+            centerCoord = center.geometry.coordinates as [number, number];
+          } catch {
+            return;
           }
 
-          if (isAreaVisible) {
-            const polyLayer = L.geoJSON(area as any, {
-              pane: 'pane-poi_icons',
-              style: {
-                color: isDark ? '#fb923c' : '#ea580c',
-                weight: 1.5,
-                dashArray: '5, 5',
-                fillColor: isDark ? '#ea580c' : '#fdba74',
-                fillOpacity: isDark ? 0.22 : 0.16,
-              },
-            });
-            polyLayer.bindTooltip(
-              `<div style="font-size: 11px;">
-                <strong>⭕ Autobahnanschluss-Areal</strong><br/>
-                ${area.properties.name}${area.properties.ref ? ` (AS ${area.properties.ref})` : ''}
-              </div>`,
-              { direction: 'center', opacity: 0.95 }
-            );
-            polyLayer.addTo(poiGroup);
-          }
+          if (!isPointVisible(centerCoord[0], centerCoord[1])) return;
+
+          const polyLayer = L.geoJSON(area as any, {
+            pane: 'pane-poi_icons',
+            style: {
+              color: isDark ? '#fb923c' : '#ea580c',
+              weight: 1.5,
+              dashArray: '5, 5',
+              fillColor: isDark ? '#ea580c' : '#fdba74',
+              fillOpacity: isDark ? 0.22 : 0.16,
+            },
+          });
+          polyLayer.bindTooltip(
+            `<div style="font-size: 11px;">
+              <strong>⭕ Autobahnanschluss-Areal</strong><br/>
+              ${area.properties.name}${area.properties.ref ? ` (AS ${area.properties.ref})` : ''}
+            </div>`,
+            { direction: 'center', opacity: 0.95 }
+          );
+          polyLayer.addTo(poiGroup);
         });
       } catch (err) {
         console.warn('[MapComponent] Error rendering highway areas:', err);
@@ -736,72 +802,59 @@ export const MapComponent: React.FC<MapComponentProps> = ({
     }
 
     // B. If Highway is active, render Ramp Vector Lines (straßenmäßig)
-    if (activeTypes.includes('highway') && poiIconSettings.showHighwayRamps !== false) {
+    // Only render detailed individual road lines when zoom >= 10 to avoid unnecessary GPU overhead
+    if (
+      activeTypes.includes('highway') &&
+      poiIconSettings.showHighwayRamps !== false &&
+      currentZoom >= 10
+    ) {
       try {
         const ramps = getHighwayRamps();
         ramps.forEach((ramp) => {
           const coords = ramp.geometry.coordinates;
           if (!coords || coords.length < 2) return;
 
-          let isRampVisible = true;
-          if (poiIconSettings.onlyWithinIntersection && result?.intersection) {
-            try {
-              const midCoord = coords[Math.floor(coords.length / 2)];
-              const midPt = turf.point(midCoord);
-              const dist = turf.pointToPolygonDistance(
-                midPt,
-                result.intersection as any,
-                { units: 'kilometers' }
-              );
-              if (dist > (heatmapSettings?.radiusKm || 1.5)) {
-                isRampVisible = false;
-              }
-            } catch {
-              isRampVisible = true;
-            }
-          }
+          const midCoord = coords[Math.floor(coords.length / 2)];
+          if (!isPointVisible(midCoord[0], midCoord[1])) return;
 
-          if (isRampVisible) {
-            const latLngs = coords.map(([lng, lat]) => [lat, lng] as [number, number]);
+          const latLngs = coords.map(([lng, lat]) => [lat, lng] as [number, number]);
 
-            // Casing (outer dark glow for readability over all map basemaps)
-            const casing = L.polyline(latLngs, {
-              pane: 'pane-poi_icons',
-              color: isDark ? '#18181b' : '#7c2d12',
-              weight: 4.5,
-              opacity: isDark ? 0.9 : 0.7,
-              lineCap: 'round',
-              lineJoin: 'round',
-            });
-            casing.addTo(poiGroup);
+          // Casing (outer dark glow for readability over all map basemaps)
+          const casing = L.polyline(latLngs, {
+            pane: 'pane-poi_icons',
+            color: isDark ? '#18181b' : '#7c2d12',
+            weight: 4.5,
+            opacity: isDark ? 0.9 : 0.7,
+            lineCap: 'round',
+            lineJoin: 'round',
+          });
+          casing.addTo(poiGroup);
 
-            // Core road line (vibrant orange/amber)
-            const line = L.polyline(latLngs, {
-              pane: 'pane-poi_icons',
-              color: isDark ? '#fb923c' : '#f97316',
-              weight: 2.5,
-              opacity: 0.95,
-              lineCap: 'round',
-              lineJoin: 'round',
-            });
+          // Core road line (vibrant orange/amber)
+          const line = L.polyline(latLngs, {
+            pane: 'pane-poi_icons',
+            color: isDark ? '#fb923c' : '#f97316',
+            weight: 2.5,
+            opacity: 0.95,
+            lineCap: 'round',
+            lineJoin: 'round',
+          });
 
-            line.bindTooltip(
-              `<div style="font-size: 11px;">
-                <strong style="color:${isDark ? '#fb923c' : '#c2410c'};">${ramp.properties.name}</strong>
-                ${ramp.properties.ref ? `<br/><span style="color:${isDark ? '#e2e8f0' : '#0f172a'}; font-weight:600;">${ramp.properties.ref}</span>` : ''}
-                ${ramp.properties.maxspeed ? `<br/><span style="color:${isDark ? '#94a3b8' : '#64748b'};">Tempo: ${ramp.properties.maxspeed} km/h</span>` : ''}
-              </div>`,
-              { direction: 'top', sticky: true }
-            );
+          line.bindTooltip(
+            `<div style="font-size: 11px;">
+              <strong style="color:${isDark ? '#fb923c' : '#c2410c'};">${ramp.properties.name}</strong>
+              ${ramp.properties.ref ? `<br/><span style="color:${isDark ? '#e2e8f0' : '#0f172a'}; font-weight:600;">${ramp.properties.ref}</span>` : ''}
+              ${ramp.properties.maxspeed ? `<br/><span style="color:${isDark ? '#94a3b8' : '#64748b'};">Tempo: ${ramp.properties.maxspeed} km/h</span>` : ''}
+            </div>`,
+            { direction: 'top', sticky: true }
+          );
 
-            line.on('click', (e) => {
-              L.DomEvent.stopPropagation(e);
-              const mid = coords[Math.floor(coords.length / 2)];
-              onSelectInspectionPoint(mid[1], mid[0]);
-            });
+          line.on('click', (e) => {
+            L.DomEvent.stopPropagation(e);
+            onSelectInspectionPoint(midCoord[1], midCoord[0]);
+          });
 
-            line.addTo(poiGroup);
-          }
+          line.addTo(poiGroup);
         });
       } catch (err) {
         console.warn('[MapComponent] Error rendering highway ramps:', err);
@@ -812,41 +865,23 @@ export const MapComponent: React.FC<MapComponentProps> = ({
     const targets = getPriorityTargets(activeTypes);
     if (targets.length > 0) {
       targets.forEach((target) => {
-        let isVisible = true;
+        if (!isPointVisible(target.lng, target.lat)) return;
 
-        if (poiIconSettings.onlyWithinIntersection && result?.intersection) {
-          try {
-            const pt = turf.point([target.lng, target.lat]);
-            const distToIntersection = turf.pointToPolygonDistance(
-              pt,
-              result.intersection as any,
-              { units: 'kilometers' }
-            );
-            if (distToIntersection > (heatmapSettings?.radiusKm || 1.5)) {
-              isVisible = false;
-            }
-          } catch {
-            isVisible = true;
-          }
-        }
-
-        if (isVisible) {
-          const markerIcon = createPriorityTargetIcon(target.type);
-          const marker = L.marker([target.lat, target.lng], {
-            icon: markerIcon,
-            pane: 'pane-poi_icons',
-          });
-          marker.bindTooltip(
-            `<div style="font-size: 11px;"><strong>${target.name}</strong><br/>${
-              target.linesOrRoad ? `<span style="color:${isDark ? '#94a3b8' : '#64748b'}">${target.linesOrRoad}</span>` : ''
-            }</div>`,
-            { direction: 'top', offset: [0, -8] }
-          );
-          marker.on('click', () => {
-            onSelectInspectionPoint(target.lat, target.lng);
-          });
-          marker.addTo(poiGroup);
-        }
+        const markerIcon = createPriorityTargetIcon(target.type);
+        const marker = L.marker([target.lat, target.lng], {
+          icon: markerIcon,
+          pane: 'pane-poi_icons',
+        });
+        marker.bindTooltip(
+          `<div style="font-size: 11px;"><strong>${target.name}</strong><br/>${
+            target.linesOrRoad ? `<span style="color:${isDark ? '#94a3b8' : '#64748b'}">${target.linesOrRoad}</span>` : ''
+          }</div>`,
+          { direction: 'top', offset: [0, -8] }
+        );
+        marker.on('click', () => {
+          onSelectInspectionPoint(target.lat, target.lng);
+        });
+        marker.addTo(poiGroup);
       });
     }
   }, [

@@ -194,6 +194,13 @@ function generateSingleItemZones(
     shapes.push(...circles);
 
     if (shapes.length === 0) return null;
+    if (shapes.length === 1) return shapes[0];
+
+    try {
+      const fc = turf.featureCollection(shapes as any);
+      const unified = (turf.union as any)(fc);
+      if (unified) return unified;
+    } catch {}
 
     let current: Array<GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon>> = [...shapes];
     while (current.length > 1) {
