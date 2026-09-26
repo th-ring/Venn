@@ -450,7 +450,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               profile={profile}
               index={index}
               totalProfiles={profiles.length}
-              isochroneFeature={result?.isochrones?.[profile.id]}
+              isochroneInfo={result?.isochrones?.[profile.id]?.properties}
               onUpdate={(updated) => onUpdateProfile(profile.id, updated)}
               onRemove={() => onRemoveProfile(profile.id)}
             />

@@ -39,6 +39,18 @@ interface IsochroneCacheKey {
 }
 
 const isochroneCache = new Map<string, GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon>>();
+const MAX_ISOCHRONE_CACHE_SIZE = 120;
+
+function setIsochroneCache(
+  key: string,
+  value: GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon>
+): void {
+  if (isochroneCache.size >= MAX_ISOCHRONE_CACHE_SIZE) {
+    const oldestKey = isochroneCache.keys().next().value;
+    if (oldestKey) isochroneCache.delete(oldestKey);
+  }
+  isochroneCache.set(key, value);
+}
 
 export function clearIsochroneCache(): void {
   isochroneCache.clear();
@@ -528,7 +540,7 @@ export async function generateIsochrone(
           provider: 'transit_metro_matrix',
           isFallback: false,
         };
-        isochroneCache.set(cacheKey, mvvPolygon);
+        setIsochroneCache(cacheKey, mvvPolygon);
         return mvvPolygon;
       }
     } catch (err: any) {
@@ -542,7 +554,7 @@ export async function generateIsochrone(
         isFallback: true,
         fallbackReason: `ÖPNV-Fahrzeitmatrix fehlgeschlagen (${err?.message || 'Unerwarteter Fehler'})`,
       };
-      isochroneCache.set(cacheKey, fallbackPoly);
+      setIsochroneCache(cacheKey, fallbackPoly);
       return fallbackPoly;
     }
   }
@@ -559,13 +571,13 @@ export async function generateIsochrone(
         isFallback: true,
         fallbackReason: 'Google Maps gewählt, aber kein API-Key in den Einstellungen hinterlegt.',
       };
-      isochroneCache.set(cacheKey, fallbackPoly);
+      setIsochroneCache(cacheKey, fallbackPoly);
       return fallbackPoly;
     }
 
     const res = await fetchGoogleIsochrone(profile, schedule, googleKey);
     if (res.feature) {
-      isochroneCache.set(cacheKey, res.feature);
+      setIsochroneCache(cacheKey, res.feature);
       return res.feature;
     }
 
@@ -580,7 +592,7 @@ export async function generateIsochrone(
       fallbackReason: res.error || 'Google Maps Isochronen API fehlgeschlagen',
       statusCode: res.statusCode,
     };
-    isochroneCache.set(cacheKey, fallbackPoly);
+    setIsochroneCache(cacheKey, fallbackPoly);
     return fallbackPoly;
   }
 
@@ -596,13 +608,13 @@ export async function generateIsochrone(
         isFallback: true,
         fallbackReason: 'OpenRouteService gewählt, aber kein API-Key in den Einstellungen hinterlegt.',
       };
-      isochroneCache.set(cacheKey, fallbackPoly);
+      setIsochroneCache(cacheKey, fallbackPoly);
       return fallbackPoly;
     }
 
     const res = await fetchOrsIsochrone(profile, schedule, orsKey);
     if (res.feature) {
-      isochroneCache.set(cacheKey, res.feature);
+      setIsochroneCache(cacheKey, res.feature);
       return res.feature;
     }
 
@@ -617,7 +629,7 @@ export async function generateIsochrone(
       fallbackReason: res.error || 'OpenRouteService API fehlgeschlagen',
       statusCode: res.statusCode,
     };
-    isochroneCache.set(cacheKey, fallbackPoly);
+    setIsochroneCache(cacheKey, fallbackPoly);
     return fallbackPoly;
   }
 
@@ -629,7 +641,7 @@ export async function generateIsochrone(
     provider: 'calibrated',
     isFallback: false,
   };
-  isochroneCache.set(cacheKey, polygon);
+  setIsochroneCache(cacheKey, polygon);
   return polygon;
 }
 

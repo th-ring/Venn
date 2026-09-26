@@ -52,7 +52,11 @@ interface PersonCardProps {
   profile: PersonProfile;
   index: number;
   totalProfiles: number;
-  isochroneFeature?: GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon>;
+  isochroneInfo?: {
+    isFallback?: boolean;
+    fallbackReason?: string;
+    source?: string;
+  } | null;
   onUpdate: (updated: Partial<PersonProfile>) => void;
   onRemove: () => void;
 }
@@ -135,11 +139,11 @@ const MinutePicker: React.FC<MinutePickerProps> = ({
   );
 };
 
-export const PersonCard: React.FC<PersonCardProps> = ({
+export const PersonCard: React.FC<PersonCardProps> = React.memo<PersonCardProps>(({
   profile,
   index,
   totalProfiles,
-  isochroneFeature,
+  isochroneInfo,
   onUpdate,
   onRemove,
 }) => {
@@ -423,31 +427,31 @@ export const PersonCard: React.FC<PersonCardProps> = ({
             <span className="text-xs font-medium text-slate-600 dark:text-[#9aa0a6]">
               Maximale Reisezeit
             </span>
-            {isochroneFeature && (
+            {isochroneInfo && (
               <>
-                {isochroneFeature.properties?.isFallback ? (
+                {isochroneInfo.isFallback ? (
                   <span
                     className="text-[9px] font-medium text-rose-700 dark:text-rose-300 bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800 px-1.5 py-0.5 rounded-full inline-flex items-center gap-1"
-                    title={isochroneFeature.properties?.fallbackReason || 'API-Fehler: Offline-Fallback aktiv'}
+                    title={isochroneInfo.fallbackReason || 'API-Fehler: Offline-Fallback aktiv'}
                   >
                     <AlertTriangle className="w-2.5 h-2.5 text-rose-600 dark:text-rose-400 shrink-0" />
                     <span>Fallback</span>
                   </span>
-                ) : isochroneFeature.properties?.source === 'ors' ? (
+                ) : isochroneInfo.source === 'ors' ? (
                   <span
                     className="text-[9px] font-medium text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800 px-1.5 py-0.2 rounded-full"
                     title="Berechnet über OpenRouteService (OSM)"
                   >
                     ORS (OSM)
                   </span>
-                ) : isochroneFeature.properties?.source === 'google' || isochroneFeature.properties?.source === 'google_maps_isochrones' ? (
+                ) : isochroneInfo.source === 'google' || isochroneInfo.source === 'google_maps_isochrones' ? (
                   <span
                     className="text-[9px] font-medium text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 px-1.5 py-0.2 rounded-full"
                     title="Berechnet über Google Maps Isochrones API"
                   >
                     Google Maps
                   </span>
-                ) : isochroneFeature.properties?.source === 'transit_metro_matrix' ? (
+                ) : isochroneInfo.source === 'transit_metro_matrix' ? (
                   <span
                     className="text-[9px] font-medium text-blue-700 dark:text-[#8ab4f8] bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800 px-1.5 py-0.2 rounded-full"
                     title="Berechnet über regionale ÖPNV-Fahrplanmatrix"
@@ -628,4 +632,4 @@ export const PersonCard: React.FC<PersonCardProps> = ({
   )}
 </div>
 );
-};
+});

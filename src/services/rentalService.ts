@@ -5,7 +5,6 @@ import {
   RentalOverlaySettings,
   RentalRegionCatalogEntry,
 } from '../types';
-import { MUNICH_RENTAL_DISTRICTS_GEOJSON } from '../data/rental/munichRentalDistricts';
 import { RENTAL_REGIONS_CATALOG } from '../data/rental/rentalCatalog';
 
 const RENTAL_SETTINGS_KEY = 'commute_rental_overlay_settings_v1';
@@ -92,14 +91,34 @@ export function getRentalChoroplethColor(avgRentColdSqm: number): string {
   return '#8B5CF6';
 }
 
+let cachedRentalGeoJson: RentalDistrictFeatureCollection | null = null;
+let loadRentalPromise: Promise<RentalDistrictFeatureCollection | null> | null = null;
+
 /**
- * Retrieves the GeoJSON FeatureCollection for the selected region.
+ * Asynchronously loads the rental GeoJSON dataset on demand (code-splits ~205 KB from initial bundle).
+ */
+export async function loadRentalGeoJson(
+  regionId: string = 'munich-mvv'
+): Promise<RentalDistrictFeatureCollection | null> {
+  if (regionId !== 'munich-mvv') return null;
+  if (cachedRentalGeoJson) return cachedRentalGeoJson;
+  if (!loadRentalPromise) {
+    loadRentalPromise = import('../data/rental/munichRentalDistricts').then((m) => {
+      cachedRentalGeoJson = m.MUNICH_RENTAL_DISTRICTS_GEOJSON;
+      return cachedRentalGeoJson;
+    });
+  }
+  return loadRentalPromise;
+}
+
+/**
+ * Retrieves the GeoJSON FeatureCollection for the selected region if already loaded.
  */
 export function getRentalGeoJsonForRegion(
   regionId: string = 'munich-mvv'
 ): RentalDistrictFeatureCollection | null {
   if (regionId === 'munich-mvv') {
-    return MUNICH_RENTAL_DISTRICTS_GEOJSON;
+    return cachedRentalGeoJson;
   }
   return null;
 }
@@ -114,6 +133,11 @@ export function getRentalDistrictAtPoint(
 ): RentalDistrictProperties | null {
   const geojson = getRentalGeoJsonForRegion(regionId);
   if (!geojson) return null;
+
+  // Munich Metropolitan Bounding Box filter (instant rejection without polygon math)
+  if (lng < 11.35 || lng > 11.75 || lat < 48.05 || lat > 48.25) {
+    return null;
+  }
 
   const pt = turf.point([lng, lat]);
 

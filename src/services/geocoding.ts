@@ -9,8 +9,17 @@ export interface GeocodingResult {
   isStation?: boolean;
 }
 
+const MAX_GEOCODE_CACHE = 100;
 const searchCache = new Map<string, GeocodingResult[]>();
 const reverseCache = new Map<string, string>();
+
+function setBoundedCache<K, V>(map: Map<K, V>, key: K, value: V, limit: number = MAX_GEOCODE_CACHE): void {
+  if (map.size >= limit) {
+    const oldestKey = map.keys().next().value;
+    if (oldestKey !== undefined) map.delete(oldestKey);
+  }
+  map.set(key, value);
+}
 
 let currentAbortController: AbortController | null = null;
 
@@ -101,7 +110,7 @@ export async function searchAddress(query: string): Promise<GeocodingResult[]> {
     }
   }
 
-  searchCache.set(cacheKey, combined);
+  setBoundedCache(searchCache, cacheKey, combined);
   return combined;
 }
 
@@ -118,7 +127,7 @@ export async function reverseGeocode(lat: number, lng: number): Promise<string> 
     const dLng = Math.abs(st.lng - lng);
     if (dLat < 0.0018 && dLng < 0.0025) {
       const stationLabel = `${st.name}, ${activeRegion.name}`;
-      reverseCache.set(key, stationLabel);
+      setBoundedCache(reverseCache, key, stationLabel);
       return stationLabel;
     }
   }
@@ -150,7 +159,7 @@ export async function reverseGeocode(lat: number, lng: number): Promise<string> 
       formatted = data.display_name?.split(',').slice(0, 2).join(',') || `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
     }
 
-    reverseCache.set(key, formatted);
+    setBoundedCache(reverseCache, key, formatted);
     return formatted;
   } catch {
     return `${lat.toFixed(4)}, ${lng.toFixed(4)}`;

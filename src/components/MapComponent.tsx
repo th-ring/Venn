@@ -26,7 +26,7 @@ import {
   subscribeHighwayData,
 } from '../services/highwayService';
 import {
-  getRentalGeoJsonForRegion,
+  loadRentalGeoJson,
   getRentalChoroplethColor,
   getRentalRelativeTier,
 } from '../services/rentalService';
@@ -87,7 +87,7 @@ interface MapComponentProps {
   onToggleProfileVisibility?: (id: string) => void;
 }
 
-export const MapComponent: React.FC<MapComponentProps> = ({
+export const MapComponent: React.FC<MapComponentProps> = React.memo<MapComponentProps>(({
   profiles,
   result,
   inspectionPoint,
@@ -903,77 +903,85 @@ export const MapComponent: React.FC<MapComponentProps> = ({
 
     if (!rentalSettings?.enabled || hiddenLayers.has('rental')) return;
 
-    const geojson = getRentalGeoJsonForRegion(rentalSettings.selectedRegionId || 'munich-mvv');
-    if (!geojson) return;
+    let isSubscribed = true;
+    const regionId = rentalSettings.selectedRegionId || 'munich-mvv';
 
-    const opacity = rentalSettings.opacity ?? 0.35;
+    loadRentalGeoJson(regionId).then((geojson) => {
+      if (!isSubscribed || !geojson || !rentalGroup) return;
 
-    const layer = L.geoJSON(geojson as any, {
-      pane: 'pane-rental',
-      style: (feature) => {
-        const price = feature?.properties?.avgRentColdSqm || 18.0;
-        const color = getRentalChoroplethColor(price);
-        return {
-          color: color,
-          weight: isDark ? 2 : 1.5,
-          opacity: isDark ? 0.95 : 0.85,
-          fillColor: color,
-          fillOpacity: opacity,
-          lineJoin: 'round',
-        };
-      },
-      onEachFeature: (feature, fLayer) => {
-        const p = feature.properties;
-        const color = getRentalChoroplethColor(p.avgRentColdSqm);
-        const relativeTier = getRentalRelativeTier(p.avgRentColdSqm);
+      const opacity = rentalSettings.opacity ?? 0.35;
 
-        fLayer.bindTooltip(
-          `<div style="font-family: inherit; font-size: 12px; line-height: 1.35; padding: 2px;">
-            <div style="font-weight: 700; color: ${isDark ? '#f1f5f9' : '#0f172a'}; font-size: 13px;">
-              ${p.name} <span style="font-weight: 400; color: ${isDark ? '#94a3b8' : '#64748b'};">(Bezirk ${p.districtNumber})</span>
-            </div>
-            <div style="margin-top: 4px; font-weight: 800; font-size: 14px; color: ${color};">
-              Ø ${p.avgRentColdSqm.toFixed(2)} €/m² <span style="font-size: 11px; font-weight: 500; color: ${isDark ? '#94a3b8' : '#475569'};">Kaltmiete</span>
-            </div>
-            <div style="font-size: 11px; color: ${isDark ? '#94a3b8' : '#64748b'}; margin-top: 2px;">
-              Amtliche Spanne: ${p.minRentColdSqm.toFixed(2)} – ${p.maxRentColdSqm.toFixed(2)} €/m²
-            </div>
-            <div style="font-size: 10px; color: ${relativeTier.color}; font-weight: 600; margin-top: 3px;">
-              ${relativeTier.label} • ${p.qualityLabel}
-            </div>
-            <div style="font-size: 9px; color: ${isDark ? '#64748b' : '#94a3b8'}; margin-top: 4px; border-top: 1px solid ${isDark ? '#334155' : '#f1f5f9'}; padding-top: 2px;">
-              ${p.source} (Mietspiegel Bestand/Neuabschlüsse)
-            </div>
-          </div>`,
-          { sticky: true, className: 'rental-choropleth-tooltip' }
-        );
+      const layer = L.geoJSON(geojson as any, {
+        pane: 'pane-rental',
+        style: (feature) => {
+          const price = feature?.properties?.avgRentColdSqm || 18.0;
+          const color = getRentalChoroplethColor(price);
+          return {
+            color: color,
+            weight: isDark ? 2 : 1.5,
+            opacity: isDark ? 0.95 : 0.85,
+            fillColor: color,
+            fillOpacity: opacity,
+            lineJoin: 'round',
+          };
+        },
+        onEachFeature: (feature, fLayer) => {
+          const p = feature.properties;
+          const color = getRentalChoroplethColor(p.avgRentColdSqm);
+          const relativeTier = getRentalRelativeTier(p.avgRentColdSqm);
 
-        fLayer.on({
-          mouseover: (e: any) => {
-            const target = e.target;
-            target.setStyle({
-              weight: isDark ? 3 : 2.5,
-              opacity: 1,
-              fillOpacity: Math.min(0.85, opacity + 0.15),
-            });
-            // NO target.bringToFront() - Keeps Leaflet Pane hierarchy completely intact!
-          },
-          mouseout: (e: any) => {
-            const target = e.target;
-            target.setStyle({
-              weight: isDark ? 2 : 1.5,
-              opacity: isDark ? 0.95 : 0.85,
-              fillOpacity: opacity,
-            });
-          },
-          click: (e: L.LeafletMouseEvent) => {
-            onSelectInspectionPoint(e.latlng.lat, e.latlng.lng);
-          },
-        });
-      },
+          fLayer.bindTooltip(
+            `<div style="font-family: inherit; font-size: 12px; line-height: 1.35; padding: 2px;">
+              <div style="font-weight: 700; color: ${isDark ? '#f1f5f9' : '#0f172a'}; font-size: 13px;">
+                ${p.name} <span style="font-weight: 400; color: ${isDark ? '#94a3b8' : '#64748b'};">(Bezirk ${p.districtNumber})</span>
+              </div>
+              <div style="margin-top: 4px; font-weight: 800; font-size: 14px; color: ${color};">
+                Ø ${p.avgRentColdSqm.toFixed(2)} €/m² <span style="font-size: 11px; font-weight: 500; color: ${isDark ? '#94a3b8' : '#475569'};">Kaltmiete</span>
+              </div>
+              <div style="font-size: 11px; color: ${isDark ? '#94a3b8' : '#64748b'}; margin-top: 2px;">
+                Amtliche Spanne: ${p.minRentColdSqm.toFixed(2)} – ${p.maxRentColdSqm.toFixed(2)} €/m²
+              </div>
+              <div style="font-size: 10px; color: ${relativeTier.color}; font-weight: 600; margin-top: 3px;">
+                ${relativeTier.label} • ${p.qualityLabel}
+              </div>
+              <div style="font-size: 9px; color: ${isDark ? '#64748b' : '#94a3b8'}; margin-top: 4px; border-top: 1px solid ${isDark ? '#334155' : '#f1f5f9'}; padding-top: 2px;">
+                ${p.source} (Mietspiegel Bestand/Neuabschlüsse)
+              </div>
+            </div>`,
+            { sticky: true, className: 'rental-choropleth-tooltip' }
+          );
+
+          fLayer.on({
+            mouseover: (e: any) => {
+              const target = e.target;
+              target.setStyle({
+                weight: isDark ? 3 : 2.5,
+                opacity: 1,
+                fillOpacity: Math.min(0.85, opacity + 0.15),
+              });
+              // NO target.bringToFront() - Keeps Leaflet Pane hierarchy completely intact!
+            },
+            mouseout: (e: any) => {
+              const target = e.target;
+              target.setStyle({
+                weight: isDark ? 2 : 1.5,
+                opacity: isDark ? 0.95 : 0.85,
+                fillOpacity: opacity,
+              });
+            },
+            click: (e: L.LeafletMouseEvent) => {
+              onSelectInspectionPoint(e.latlng.lat, e.latlng.lng);
+            },
+          });
+        },
+      });
+
+      layer.addTo(rentalGroup);
     });
 
-    layer.addTo(rentalGroup);
+    return () => {
+      isSubscribed = false;
+    };
   }, [
     rentalSettings?.enabled,
     rentalSettings?.opacity,
@@ -1075,4 +1083,4 @@ export const MapComponent: React.FC<MapComponentProps> = ({
       />
     </div>
   );
-};
+});

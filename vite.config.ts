@@ -24,11 +24,27 @@ export default defineConfig(() => {
     build: {
       rollupOptions: {
         output: {
-          manualChunks: {
-            'vendor-react': ['react', 'react-dom'],
-            'vendor-leaflet': ['leaflet', 'leaflet.gridlayer.googlemutant'],
-            'vendor-turf': ['@turf/turf'],
-            'vendor-icons': ['lucide-react'],
+          manualChunks(id) {
+            const normalizedId = id.replace(/\\/g, '/');
+            if (
+              normalizedId.includes('/node_modules/react/') ||
+              normalizedId.includes('/node_modules/react-dom/') ||
+              normalizedId.includes('/node_modules/scheduler/')
+            ) {
+              return 'vendor-react';
+            }
+            if (
+              normalizedId.includes('/node_modules/leaflet/') ||
+              normalizedId.includes('/node_modules/leaflet.gridlayer.googlemutant/')
+            ) {
+              return 'vendor-leaflet';
+            }
+            if (normalizedId.includes('/node_modules/@turf/')) {
+              return 'vendor-turf';
+            }
+            if (normalizedId.includes('/node_modules/lucide-react/')) {
+              return 'vendor-icons';
+            }
           },
         },
       },

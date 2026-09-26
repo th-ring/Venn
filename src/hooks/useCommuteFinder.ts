@@ -103,6 +103,12 @@ export function useCommuteFinder() {
   const resultRef = useRef<CalculationResult | null>(null);
   resultRef.current = result;
 
+  const profilesRef = useRef<PersonProfile[]>(profiles);
+  profilesRef.current = profiles;
+
+  const scheduleRef = useRef<CommuteSchedule>(schedule);
+  scheduleRef.current = schedule;
+
   const [isCalculating, setIsCalculating] = useState(false);
   const [isPending, setIsPending] = useState(false);
   const [autoUpdate, setAutoUpdate] = useState(true);
@@ -493,8 +499,9 @@ export function useCommuteFinder() {
   // Map Inspection
   const handleSelectInspectionPoint = useCallback(
     async (lat: number, lng: number) => {
-      const active = profiles.filter((p) => p.visible);
+      const active = profilesRef.current.filter((p) => p.visible);
       const currentResult = resultRef.current;
+      const currentSchedule = scheduleRef.current;
 
       const isInIntersection = currentResult?.intersection
         ? isPointInPolygon([lng, lat], currentResult.intersection)
@@ -510,7 +517,7 @@ export function useCommuteFinder() {
           { lat, lng },
           { lat: p.lat, lng: p.lng },
           p.mode,
-          schedule,
+          currentSchedule,
           p.maxTransfers,
           p.maxWalkToStationMin,
           p.maxWalkFromStationMin,
@@ -565,7 +572,7 @@ export function useCommuteFinder() {
       const rentalInfo = getRentalDistrictAtPoint(
         lat,
         lng,
-        schedule.options?.rentalOverlay?.selectedRegionId || 'munich-mvv'
+        currentSchedule.options?.rentalOverlay?.selectedRegionId || 'munich-mvv'
       );
 
       setInspectionPoint({
@@ -582,7 +589,7 @@ export function useCommuteFinder() {
       const addr = await reverseGeocode(lat, lng);
       setInspectionPoint((prev) => (prev && prev.lat === lat && prev.lng === lng ? { ...prev, address: addr } : prev));
     },
-    [profiles, schedule]
+    []
   );
   handleSelectInspectionPointRef.current = handleSelectInspectionPoint;
 
