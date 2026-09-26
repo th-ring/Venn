@@ -595,9 +595,16 @@ export function useCommuteFinder() {
   );
   handleSelectInspectionPointRef.current = handleSelectInspectionPoint;
 
-  // Fallback suggestions
+  const undoProfilesSnapshotRef = useRef<PersonProfile[] | null>(null);
+  const [undoToastMessage, setUndoToastMessage] = useState<string | null>(null);
+
+  // Fallback suggestions with 1-click Undo capability (ISO 9241-110)
   const handleApplySuggestion = useCallback(
     (suggestion: FallbackSuggestion) => {
+      // Snapshot state for reversibility
+      undoProfilesSnapshotRef.current = JSON.parse(JSON.stringify(profiles));
+      setUndoToastMessage(`Vorschlag angewendet: ${suggestion.title}`);
+
       if (suggestion.type === 'increase_time' && suggestion.personId && suggestion.suggestedMinutes) {
         handleUpdateProfile(suggestion.personId, {
           travelTimeMinutes: suggestion.suggestedMinutes,
@@ -615,8 +622,20 @@ export function useCommuteFinder() {
         );
       }
     },
-    [handleUpdateProfile]
+    [profiles, handleUpdateProfile]
   );
+
+  const handleUndoLastSuggestion = useCallback(() => {
+    if (undoProfilesSnapshotRef.current) {
+      setProfiles(undoProfilesSnapshotRef.current);
+      undoProfilesSnapshotRef.current = null;
+      setUndoToastMessage(null);
+    }
+  }, []);
+
+  const handleDismissUndoToast = useCallback(() => {
+    setUndoToastMessage(null);
+  }, []);
 
   // Residential filter with background worker offloading (ISO/IEC 25010)
   const handleToggleOnlyResidential = useCallback(() => {
@@ -782,5 +801,8 @@ export function useCommuteFinder() {
     currentFullConfig,
     applyFullConfig,
     handleResetToDefaults,
+    undoToastMessage,
+    handleUndoLastSuggestion,
+    handleDismissUndoToast,
   };
 }

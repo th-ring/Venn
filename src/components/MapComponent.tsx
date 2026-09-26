@@ -24,6 +24,7 @@ import {
   getProfileLineSignature,
   injectMapPatternDefs,
 } from '../services/mapPatterns';
+import { MapLegend } from './map/MapLegend';
 import {
   getHighwayRamps,
   getHighwayAreas,
@@ -1112,6 +1113,14 @@ export const MapComponent: React.FC<MapComponentProps> = React.memo<MapComponent
           )}
         </div>
       )}
+
+      {/* Accessible Map Legend for Laien & Users (ISO 9241-110 & WCAG 1.4.1) */}
+      <MapLegend
+        profiles={profiles}
+        hasIntersection={hasIntersection}
+        intersectionAreaKm2={result?.intersectionAreaKm2}
+        onlyResidential={onlyResidential}
+      />
 
       {/* Modular Map Controls Top-Right & Layer Manager Drawer */}
       <MapLayerControls

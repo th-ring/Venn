@@ -397,20 +397,32 @@ export const PersonCard: React.FC<PersonCardProps> = React.memo<PersonCardProps>
         </div>
 
         {/* Search Results Dropdown */}
-        {isSearchOpen && searchResults.length > 0 && (
-          <div className="absolute top-full left-0 right-0 mt-1.5 bg-white dark:bg-[#282a2c] rounded-xl shadow-xl border border-slate-200 dark:border-[#3c4043] z-50 overflow-hidden py-1 max-h-56 overflow-y-auto">
-            {searchResults.map((res) => (
-              <button
-                key={res.placeId}
-                type="button"
-                onClick={() => handleSelectResult(res)}
-                className="w-full text-left px-3 py-2 text-xs hover:bg-blue-50 dark:hover:bg-[#3c4043] transition-colors flex flex-col gap-0.5 border-b border-slate-100 dark:border-[#3c4043] last:border-0"
-              >
-                <span className="font-semibold text-slate-800 dark:text-[#e3e3e3]">{res.shortName}</span>
-                <span className="text-[11px] text-slate-400 dark:text-[#9aa0a6] truncate">{res.displayName}</span>
-              </button>
-            ))}
-          </div>
+        {isSearchOpen && (
+          searchResults.length > 0 ? (
+            <div className="absolute top-full left-0 right-0 mt-1.5 bg-white dark:bg-[#282a2c] rounded-xl shadow-xl border border-slate-200 dark:border-[#3c4043] z-50 overflow-hidden py-1 max-h-56 overflow-y-auto">
+              {searchResults.map((res) => (
+                <button
+                  key={res.placeId}
+                  type="button"
+                  onClick={() => handleSelectResult(res)}
+                  className="w-full text-left px-3 py-2 text-xs hover:bg-blue-50 dark:hover:bg-[#3c4043] transition-colors flex flex-col gap-0.5 border-b border-slate-100 dark:border-[#3c4043] last:border-0 cursor-pointer"
+                >
+                  <span className="font-semibold text-slate-800 dark:text-[#e3e3e3]">{res.shortName}</span>
+                  <span className="text-[11px] text-slate-500 dark:text-[#9aa0a6] truncate">{res.displayName}</span>
+                </button>
+              ))}
+            </div>
+          ) : !isSearching && searchQuery.trim().length >= 3 ? (
+            <div className="absolute top-full left-0 right-0 mt-1.5 bg-white dark:bg-[#282a2c] rounded-xl shadow-xl border border-slate-200 dark:border-[#3c4043] z-50 p-3 text-xs text-slate-600 dark:text-[#9aa0a6]">
+              <div className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400 font-semibold mb-1">
+                <AlertTriangle className="w-3.5 h-3.5" />
+                <span>Keine Adresse gefunden</span>
+              </div>
+              <p className="text-[11px] leading-relaxed">
+                Für „{searchQuery}“ konnte kein Zielort ermittelt werden. Bitte prüfe Schreibweise oder Postleitzahl.
+              </p>
+            </div>
+          ) : null
         )}
       </div>
 

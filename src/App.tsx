@@ -5,6 +5,8 @@ import { Sidebar } from './components/Sidebar';
 import { InspectionPanel } from './components/InspectionPanel';
 import { FallbackWarningBanner } from './components/FallbackWarningBanner';
 import { A11yLiveRegion } from './components/a11y/A11yLiveRegion';
+import { OnMapEmptyState } from './components/map/OnMapEmptyState';
+import { UndoToast } from './components/common/UndoToast';
 import { clearIsochroneCache } from './services/isochroneEngine';
 import { saveRentalOverlaySettings } from './services/rentalService';
 import type { SettingsTabId } from './components/settings/SettingsModal';
@@ -67,6 +69,9 @@ export default function App() {
     handleToggleProfileVisibility,
     currentFullConfig,
     applyFullConfig,
+    undoToastMessage,
+    handleUndoLastSuggestion,
+    handleDismissUndoToast,
   } = useCommuteFinder();
 
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
@@ -223,6 +228,25 @@ export default function App() {
           result={result}
           profiles={profiles}
           isCalculating={isCalculating}
+        />
+
+        {/* On-Map Empty State Guidance (DIN EN ISO 9241-110) */}
+        <OnMapEmptyState
+          emptyIntersection={!!result?.emptyIntersection}
+          activeProfiles={profiles.filter((p) => p.visible)}
+          suggestions={result?.suggestions || []}
+          onApplySuggestion={handleApplySuggestion}
+          onOpenSidebar={() => {
+            setIsDesktopSidebarOpen(true);
+            setIsMobileSidebarOpen(true);
+          }}
+        />
+
+        {/* Reversible Action Toast (DIN EN ISO 9241-110) */}
+        <UndoToast
+          message={undoToastMessage}
+          onUndo={handleUndoLastSuggestion}
+          onClose={handleDismissUndoToast}
         />
 
         {/* Prominent Fallback Warning Banner if an online API fails */}
