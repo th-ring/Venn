@@ -98,6 +98,7 @@ interface MapComponentProps {
   onOpenApartmentManager?: () => void;
   apartmentFilterSettings?: ApartmentFilterSettings;
   onUpdateApartmentFilter?: (settings: Partial<ApartmentFilterSettings>) => void;
+  isInspectionActive?: boolean;
 }
 
 export const MapComponent: React.FC<MapComponentProps> = React.memo<MapComponentProps>(({
@@ -137,6 +138,7 @@ export const MapComponent: React.FC<MapComponentProps> = React.memo<MapComponent
   onOpenApartmentManager,
   apartmentFilterSettings: propApartmentFilter,
   onUpdateApartmentFilter: propOnUpdateApartmentFilter,
+  isInspectionActive = false,
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -1220,9 +1222,9 @@ export const MapComponent: React.FC<MapComponentProps> = React.memo<MapComponent
 
       {/* Calculating overlay spinner */}
       {(isCalculating || isPending) && (
-        <div className="absolute top-[max(4.5rem,calc(env(safe-area-inset-top)+3.5rem))] left-[max(1rem,env(safe-area-inset-left))] z-20 bg-white/95 dark:bg-[#1e1f20]/95 backdrop-blur-md px-3.5 py-2 rounded-2xl shadow-lg border border-slate-200/90 dark:border-[#3c4043] flex items-center gap-2.5 text-xs font-semibold text-slate-800 dark:text-[#e3e3e3] animate-in fade-in duration-200">
-          <Loader2 className="w-4 h-4 animate-spin text-blue-600 dark:text-blue-400" />
-          <span>{isCalculating ? 'Berechne Isochronen...' : 'Aktualisierung ausstehend...'}</span>
+        <div className="absolute top-[max(3.75rem,calc(env(safe-area-inset-top)+3.25rem))] sm:top-[max(4.5rem,calc(env(safe-area-inset-top)+3.5rem))] left-[max(0.75rem,env(safe-area-inset-left))] z-20 bg-white/95 dark:bg-[#1e1f20]/95 backdrop-blur-md px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-xl sm:rounded-2xl shadow-lg border border-slate-200/90 dark:border-[#3c4043] flex items-center gap-2 text-xs font-semibold text-slate-800 dark:text-[#e3e3e3] animate-in fade-in duration-200">
+          <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin text-blue-600 dark:text-blue-400" />
+          <span>{isCalculating ? 'Berechne Isochronen...' : 'Aktualisierung...'}</span>
         </div>
       )}
 
@@ -1250,6 +1252,7 @@ export const MapComponent: React.FC<MapComponentProps> = React.memo<MapComponent
         hasIntersection={hasIntersection}
         intersectionAreaKm2={result?.intersectionAreaKm2}
         onlyResidential={onlyResidential}
+        isInspectionActive={isInspectionActive}
       />
 
       {/* Modular Map Controls Top-Right & Layer Manager Drawer */}
@@ -1291,6 +1294,7 @@ export const MapComponent: React.FC<MapComponentProps> = React.memo<MapComponent
         apartmentFilterSettings={activeApartmentFilter}
         onUpdateApartmentFilter={handleUpdateApartmentFilter}
         intersectionFeature={result?.intersection || result?.rawIntersection || null}
+        isInspectionActive={isInspectionActive}
       />
     </div>
   );

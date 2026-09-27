@@ -610,7 +610,7 @@ export const PersonCard: React.FC<PersonCardProps> = React.memo<PersonCardProps>
                 {/* Sub-settings in unified Google M3 list */}
                 <div className="bg-white dark:bg-[#1e1f20] rounded-xl border border-slate-200/80 dark:border-[#3c4043] divide-y divide-slate-100 dark:divide-[#3c4043] overflow-hidden">
                   {/* 1. First Mile: Wohnort -> Haltestelle */}
-                  <div className="p-2.5 flex items-center justify-between gap-2">
+                  <div className="p-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <div className="min-w-0 flex-1">
                       <label htmlFor={`picker-walk-to-station-${profile.id}`} className="text-xs font-medium text-slate-800 dark:text-[#e8eaed] flex items-center gap-1.5 cursor-pointer">
                         <Footprints className="w-3.5 h-3.5 text-slate-500 dark:text-[#9aa0a6] shrink-0" />
@@ -620,7 +620,7 @@ export const PersonCard: React.FC<PersonCardProps> = React.memo<PersonCardProps>
                         Max. Gehzeit von der Haustür zum Einstieg
                       </p>
                     </div>
-                    <div className="w-24 shrink-0">
+                    <div className="w-full sm:w-24 shrink-0">
                       <MinutePicker
                         id={`picker-walk-to-station-${profile.id}`}
                         value={profile.maxWalkToStationMin}
@@ -631,7 +631,7 @@ export const PersonCard: React.FC<PersonCardProps> = React.memo<PersonCardProps>
                   </div>
 
                   {/* 2. Last Mile: Haltestelle -> Arbeitsplatz / Ziel */}
-                  <div className="p-2.5 flex items-center justify-between gap-2">
+                  <div className="p-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <div className="min-w-0 flex-1">
                       <label htmlFor={`picker-walk-from-station-${profile.id}`} className="text-xs font-medium text-slate-800 dark:text-[#e8eaed] flex items-center gap-1.5 cursor-pointer">
                         <MapPin className="w-3.5 h-3.5 text-slate-500 dark:text-[#9aa0a6] shrink-0" />
@@ -641,7 +641,7 @@ export const PersonCard: React.FC<PersonCardProps> = React.memo<PersonCardProps>
                         Max. Gehzeit vom Ausstieg zum Ziel
                       </p>
                     </div>
-                    <div className="w-24 shrink-0">
+                    <div className="w-full sm:w-24 shrink-0">
                       <MinutePicker
                         id={`picker-walk-from-station-${profile.id}`}
                         value={profile.maxWalkFromStationMin}
@@ -652,7 +652,7 @@ export const PersonCard: React.FC<PersonCardProps> = React.memo<PersonCardProps>
                   </div>
 
                   {/* 3. Max. Umstiege */}
-                  <div className="p-2.5 flex items-center justify-between gap-2">
+                  <div className="p-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <div className="min-w-0 flex-1">
                       <label htmlFor={`select-transfers-${profile.id}`} className="text-xs font-medium text-slate-800 dark:text-[#e8eaed] flex items-center gap-1.5 cursor-pointer">
                         <ArrowRightLeft className="w-3.5 h-3.5 text-slate-500 dark:text-[#9aa0a6] shrink-0" />
@@ -662,7 +662,7 @@ export const PersonCard: React.FC<PersonCardProps> = React.memo<PersonCardProps>
                         Maximal tolerierte Linienwechsel
                       </p>
                     </div>
-                    <div className="w-36 shrink-0">
+                    <div className="w-full sm:w-36 shrink-0">
                       <select
                         id={`select-transfers-${profile.id}`}
                         value={profile.maxTransfers ?? 1}
@@ -683,7 +683,7 @@ export const PersonCard: React.FC<PersonCardProps> = React.memo<PersonCardProps>
                   </div>
 
                   {/* 4. Max. Umstiegszeit */}
-                  <div className="p-2.5 flex items-center justify-between gap-2">
+                  <div className="p-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <div className="min-w-0 flex-1">
                       <label htmlFor={`picker-transfer-wait-${profile.id}`} className="text-xs font-medium text-slate-800 dark:text-[#e8eaed] flex items-center gap-1.5 cursor-pointer">
                         <Clock className="w-3.5 h-3.5 text-slate-500 dark:text-[#9aa0a6] shrink-0" />
@@ -693,7 +693,7 @@ export const PersonCard: React.FC<PersonCardProps> = React.memo<PersonCardProps>
                         Zeitpuffer beim Wechsel der Linie
                       </p>
                     </div>
-                    <div className="w-24 shrink-0">
+                    <div className="w-full sm:w-24 shrink-0">
                       <MinutePicker
                         id={`picker-transfer-wait-${profile.id}`}
                         value={profile.maxTransferWaitMin}

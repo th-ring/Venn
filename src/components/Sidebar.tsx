@@ -221,10 +221,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
           }}
         >
           {/* App Header (Google M3 App Bar with iOS Safe-Area support) */}
-          <div className="h-14 sm:h-14 pt-[env(safe-area-inset-top)] box-content px-4 bg-white dark:bg-[#1e1f20] border-b border-slate-200 dark:border-[#3c4043] flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-3">
+          <div className="h-14 sm:h-14 pt-[env(safe-area-inset-top)] box-content px-3 sm:px-4 bg-white dark:bg-[#1e1f20] border-b border-slate-200 dark:border-[#3c4043] flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             {/* Standalone Brand Vector Mark (No glowing box, no card frame) */}
-            <div className="w-10 h-7 flex items-center justify-center shrink-0">
+            <div className="w-8 h-6 sm:w-10 sm:h-7 flex items-center justify-center shrink-0">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 44 28" className="w-full h-full" fill="none">
                 <defs>
                   <clipPath id="sb-venn-clip">
@@ -246,7 +246,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 </g>
               </svg>
             </div>
-            <span className="text-[18px] font-medium tracking-tight text-slate-900 dark:text-[#e8eaed]">
+            <span className="text-base sm:text-[18px] font-medium tracking-tight text-slate-900 dark:text-[#e8eaed]">
               Venn
             </span>
           </div>
@@ -257,7 +257,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               id="btn-toggle-theme-quick"
               type="button"
               onClick={toggleTheme}
-              className="w-9 h-9 flex items-center justify-center rounded-full text-slate-500 dark:text-[#9aa0a6] hover:text-slate-900 dark:hover:text-[#e8eaed] hover:bg-slate-100 dark:hover:bg-[#282a2c] transition-colors cursor-pointer"
+              className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-full text-slate-500 dark:text-[#9aa0a6] hover:text-slate-900 dark:hover:text-[#e8eaed] hover:bg-slate-100 dark:hover:bg-[#282a2c] transition-colors cursor-pointer"
               title={`Design wechseln (Aktuell: ${themePreference === 'system' ? 'System' : themePreference === 'dark' ? 'Dunkel' : 'Hell'})`}
             >
               {themePreference === 'system' ? (
@@ -273,7 +273,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               id="btn-open-share"
               type="button"
               onClick={onOpenShareModal}
-              className="w-9 h-9 flex items-center justify-center rounded-full text-slate-500 dark:text-[#9aa0a6] hover:text-slate-900 dark:hover:text-[#e8eaed] hover:bg-slate-100 dark:hover:bg-[#282a2c] transition-colors cursor-pointer"
+              className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-full text-slate-500 dark:text-[#9aa0a6] hover:text-slate-900 dark:hover:text-[#e8eaed] hover:bg-slate-100 dark:hover:bg-[#282a2c] transition-colors cursor-pointer"
               title="Suche als Link teilen"
             >
               <Share2 className="w-4 h-4" />
@@ -284,12 +284,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 id="btn-open-apartments"
                 type="button"
                 onClick={onOpenApartmentManager}
-                className="w-9 h-9 flex items-center justify-center rounded-full text-slate-500 dark:text-[#9aa0a6] hover:text-slate-900 dark:hover:text-[#e8eaed] hover:bg-slate-100 dark:hover:bg-[#282a2c] transition-colors cursor-pointer relative"
+                className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-full text-slate-500 dark:text-[#9aa0a6] hover:text-slate-900 dark:hover:text-[#e8eaed] hover:bg-slate-100 dark:hover:bg-[#282a2c] transition-colors cursor-pointer relative"
                 title={`Aktive Wohnungssuche & Scraper (${apartmentsCount} Angebote)`}
               >
                 <Home className="w-4 h-4" />
                 {apartmentsCount > 0 && (
-                  <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-rose-500 ring-2 ring-white dark:ring-[#1e1f20]" />
+                  <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-rose-500 ring-2 ring-white dark:ring-[#1e1f20]" />
                 )}
               </button>
             )}
@@ -299,7 +299,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 id="btn-open-walkthrough"
                 type="button"
                 onClick={onOpenWalkthrough}
-                className="w-9 h-9 flex items-center justify-center rounded-full text-slate-500 dark:text-[#9aa0a6] hover:text-slate-900 dark:hover:text-[#e8eaed] hover:bg-slate-100 dark:hover:bg-[#282a2c] transition-colors cursor-pointer"
+                className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-full text-slate-500 dark:text-[#9aa0a6] hover:text-slate-900 dark:hover:text-[#e8eaed] hover:bg-slate-100 dark:hover:bg-[#282a2c] transition-colors cursor-pointer"
                 title="Einführung & Tour starten (Hilfe)"
                 aria-label="Einführungstour starten"
               >
@@ -312,7 +312,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 id="btn-open-settings"
                 type="button"
                 onClick={() => onOpenSettings('appearance')}
-                className="w-9 h-9 flex items-center justify-center rounded-full text-slate-500 dark:text-[#9aa0a6] hover:text-slate-900 dark:hover:text-[#e8eaed] hover:bg-slate-100 dark:hover:bg-[#282a2c] transition-colors cursor-pointer"
+                className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-full text-slate-500 dark:text-[#9aa0a6] hover:text-slate-900 dark:hover:text-[#e8eaed] hover:bg-slate-100 dark:hover:bg-[#282a2c] transition-colors cursor-pointer"
                 title="Zentrale Anwendungseinstellungen (Design, Karten, APIs, ÖPNV, Heatmap)"
               >
                 <Settings className="w-4 h-4" />
@@ -336,7 +336,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <button
               type="button"
               onClick={onToggleMobile}
-              className="md:hidden w-9 h-9 flex items-center justify-center rounded-full text-slate-500 hover:text-slate-800 dark:text-[#9aa0a6] dark:hover:text-[#e3e3e3] hover:bg-slate-100 dark:hover:bg-[#282a2c] transition-colors cursor-pointer"
+              className="md:hidden w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-full text-slate-500 hover:text-slate-800 dark:text-[#9aa0a6] dark:hover:text-[#e3e3e3] hover:bg-slate-100 dark:hover:bg-[#282a2c] transition-colors cursor-pointer"
               title="Zur Karte zurückkehren"
             >
               <X className="w-5 h-5" />
@@ -346,7 +346,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         {/* Preset Scenario Quick-Switch Bar */}
         {onSelectScenario && (
-          <div className="px-4 py-2.5 bg-white dark:bg-[#1e1f20] border-b border-slate-200 dark:border-[#3c4043]">
+          <div className="px-3 sm:px-4 py-2 bg-white dark:bg-[#1e1f20] border-b border-slate-200 dark:border-[#3c4043]">
             <PresetSelector
               onSelectScenario={onSelectScenario}
               activeScenarioId={activeScenarioId}
@@ -355,7 +355,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         )}
 
         {/* Commute Direction & Time Settings */}
-        <div className="px-4 py-2.5 bg-slate-50 dark:bg-[#131314] border-b border-slate-200/80 dark:border-[#3c4043]">
+        <div className="px-3 sm:px-4 py-2.5 bg-slate-50 dark:bg-[#131314] border-b border-slate-200/80 dark:border-[#3c4043]">
           <CommuteSettings
             schedule={schedule}
             profiles={profiles}
@@ -368,7 +368,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
 
         {/* Status & Summary Banner with Calculation State Transparency & Wohnbereichs-Filter */}
-        <div className="px-4 py-2.5 bg-white dark:bg-[#1e1f20] border-b border-slate-200 dark:border-[#3c4043] flex flex-col gap-2 text-xs">
+        <div className="px-3 sm:px-4 py-2.5 bg-white dark:bg-[#1e1f20] border-b border-slate-200 dark:border-[#3c4043] flex flex-col gap-2 text-xs">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               {hasIntersection ? (
@@ -395,13 +395,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
           {/* Schnell-Filter: Google M3 Filter Chips */}
           {hasIntersection && (onToggleOnlyIntersection || onToggleOnlyResidential) && (
-            <div className="flex items-center gap-2 pt-0.5">
+            <div className="flex items-center gap-1.5 sm:gap-2 pt-0.5 overflow-x-auto no-scrollbar pb-0.5 touch-scroll-x">
               {onToggleOnlyIntersection && (
                 <button
                   id="btn-sidebar-only-intersection"
                   type="button"
                   onClick={onToggleOnlyIntersection}
-                  className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium transition-colors cursor-pointer ${
+                  className={`shrink-0 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium transition-colors cursor-pointer ${
                     showOnlyIntersection
                       ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700 font-semibold'
                       : 'bg-transparent text-slate-700 dark:text-[#c4c7c5] border-slate-300 dark:border-[#5f6368] hover:bg-slate-100 dark:hover:bg-[#282a2c]'
@@ -413,7 +413,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   }
                 >
                   <Focus className="w-3.5 h-3.5 shrink-0" />
-                  <span className="truncate">Nur Treffbereich</span>
+                  <span>Nur Treffbereich</span>
                 </button>
               )}
 
@@ -422,7 +422,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   id="btn-sidebar-only-residential"
                   type="button"
                   onClick={onToggleOnlyResidential}
-                  className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium transition-colors cursor-pointer ${
+                  className={`shrink-0 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium transition-colors cursor-pointer ${
                     onlyResidential
                       ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700 font-semibold'
                       : 'bg-transparent text-slate-700 dark:text-[#c4c7c5] border-slate-300 dark:border-[#5f6368] hover:bg-slate-100 dark:hover:bg-[#282a2c]'
@@ -430,7 +430,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   title="Filtert Forste, Gewässer & Industriegebiete aus dem Treffbereich"
                 >
                   <Home className="w-3.5 h-3.5 shrink-0" />
-                  <span className="truncate">Nur Wohnbereich</span>
+                  <span>Nur Wohnbereich</span>
                 </button>
               )}
 
@@ -439,11 +439,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   id="btn-sidebar-apartments-chip"
                   type="button"
                   onClick={onOpenApartmentManager}
-                  className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium transition-colors cursor-pointer bg-rose-50 dark:bg-rose-950/50 text-rose-800 dark:text-rose-200 border-rose-200 dark:border-rose-800/80 hover:bg-rose-100"
+                  className="shrink-0 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium transition-colors cursor-pointer bg-rose-50 dark:bg-rose-950/50 text-rose-800 dark:text-rose-200 border-rose-200 dark:border-rose-800/80 hover:bg-rose-100"
                   title="Wohnungsangebote im Treffbereich anzeigen & Scraper aufrufen"
                 >
                   <Home className="w-3.5 h-3.5 shrink-0 text-rose-600 dark:text-rose-400" />
-                  <span className="truncate font-semibold">Wohnungen ({apartmentsCount})</span>
+                  <span className="font-semibold">Wohnungen ({apartmentsCount})</span>
                 </button>
               )}
             </div>

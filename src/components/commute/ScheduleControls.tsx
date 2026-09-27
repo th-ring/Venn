@@ -123,10 +123,10 @@ export const ScheduleControls: React.FC<ScheduleControlsProps> = ({
       {/* Content Body */}
       {!isCollapsed && (
         <div className="p-3 pt-0 border-t border-slate-100 dark:border-[#3c4043] mt-1 space-y-2.5">
-          <div className="flex items-center justify-between gap-2 pt-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2">
             {/* Richtung */}
-            <div className="flex items-center gap-1.5">
-              <span className="text-xs font-medium text-slate-600 dark:text-[#9aa0a6]">
+            <div className="flex items-center justify-between sm:justify-start gap-1.5">
+              <span className="text-xs font-medium text-slate-600 dark:text-[#9aa0a6] shrink-0">
                 Richtung:
               </span>
               <div className="flex bg-slate-100 dark:bg-[#131314] p-0.5 rounded-xl">
@@ -162,8 +162,8 @@ export const ScheduleControls: React.FC<ScheduleControlsProps> = ({
             </div>
 
             {/* Tag */}
-            <div className="flex items-center gap-1.5">
-              <span className="text-xs font-medium text-slate-600 dark:text-[#9aa0a6]">
+            <div className="flex items-center justify-between sm:justify-start gap-1.5">
+              <span className="text-xs font-medium text-slate-600 dark:text-[#9aa0a6] shrink-0">
                 Tag:
               </span>
               <div className="flex bg-slate-100 dark:bg-[#131314] p-0.5 rounded-xl">
@@ -198,9 +198,9 @@ export const ScheduleControls: React.FC<ScheduleControlsProps> = ({
           </div>
 
           {/* Uhrzeit */}
-          <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-[#3c4043]">
+          <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-[#3c4043]">
             <div className="flex items-center gap-2">
-              <span className="text-xs font-medium text-slate-600 dark:text-[#9aa0a6]">Abfahrt:</span>
+              <span className="text-xs font-medium text-slate-600 dark:text-[#9aa0a6] shrink-0">Abfahrt:</span>
               <input
                 id="input-departure-time"
                 type="time"
@@ -216,13 +216,13 @@ export const ScheduleControls: React.FC<ScheduleControlsProps> = ({
             </div>
 
             {/* Presets (Google M3 chips) */}
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 flex-wrap">
               {['07:00', '07:30', '08:00', '17:00'].map((preset) => (
                 <button
                   key={preset}
                   type="button"
                   onClick={() => onChangeSchedule({ time: preset })}
-                  className={`text-[11px] px-2 py-0.5 rounded-full transition-colors cursor-pointer ${
+                  className={`text-[11px] px-2 py-0.5 rounded-full transition-colors cursor-pointer shrink-0 ${
                     schedule.time === preset
                       ? 'bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-[#8ab4f8] font-medium'
                       : 'text-slate-600 dark:text-[#9aa0a6] hover:bg-slate-100 dark:hover:bg-[#282a2c]'

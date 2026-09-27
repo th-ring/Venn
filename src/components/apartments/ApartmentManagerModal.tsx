@@ -184,19 +184,19 @@ export const ApartmentManagerModal: React.FC<ApartmentManagerModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-[1200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white dark:bg-[#1e1f20] rounded-3xl border border-slate-200 dark:border-[#3c4043] shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+    <div className="fixed inset-0 z-[1200] flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="bg-white dark:bg-[#1e1f20] rounded-3xl border border-slate-200 dark:border-[#3c4043] shadow-2xl max-w-2xl w-full max-h-[92dvh] sm:max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-slate-200 dark:border-[#3c4043] flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-2xl bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400">
+        <div className="px-4 sm:px-6 py-3.5 sm:py-4 border-b border-slate-200 dark:border-[#3c4043] flex items-center justify-between">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="p-2 sm:p-2.5 rounded-2xl bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 shrink-0">
               <Home className="w-5 h-5" />
             </div>
-            <div>
-              <h3 className="text-base font-bold text-slate-900 dark:text-white">
+            <div className="min-w-0">
+              <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white truncate">
                 Wohnungsangebote & Ingestion-Manager
               </h3>
-              <p className="text-xs text-slate-500 dark:text-[#9aa0a6]">
+              <p className="text-[11px] sm:text-xs text-slate-500 dark:text-[#9aa0a6] truncate">
                 Zwei Ingestion-Pfade: Strukturierte JSON-Dateien & Scraper für Überlappungsfelder
               </p>
             </div>
@@ -205,14 +205,14 @@ export const ApartmentManagerModal: React.FC<ApartmentManagerModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-[#282a2c] transition-colors cursor-pointer"
+            className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-[#282a2c] transition-colors shrink-0 cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Content Body */}
-        <div className="p-6 overflow-y-auto space-y-5 text-sm">
+        <div className="p-4 sm:p-6 overflow-y-auto space-y-5 text-sm">
           {/* Status Message Alert */}
           {importStatus && (
             <div
@@ -241,9 +241,9 @@ export const ApartmentManagerModal: React.FC<ApartmentManagerModalProps> = ({
           )}
 
           {/* Section 1: Aktiver Datenbestand */}
-          <div className="bg-slate-50 dark:bg-[#131314] rounded-2xl p-4 border border-slate-200/80 dark:border-[#3c4043] flex items-center justify-between gap-3">
+          <div className="bg-slate-50 dark:bg-[#131314] rounded-2xl p-3 sm:p-4 border border-slate-200/80 dark:border-[#3c4043] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <FileJson className="w-5 h-5 text-slate-500" />
+              <FileJson className="w-5 h-5 text-slate-500 shrink-0" />
               <div>
                 <div className="font-bold text-slate-900 dark:text-white text-xs">
                   Aktueller Datenbestand
@@ -254,11 +254,11 @@ export const ApartmentManagerModal: React.FC<ApartmentManagerModalProps> = ({
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
               <button
                 type="button"
                 onClick={handleDownloadJson}
-                className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-[#3c4043] bg-white dark:bg-[#1e1f20] text-slate-700 dark:text-[#e3e3e3] hover:bg-slate-100 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                className="flex-1 sm:flex-initial px-3 py-1.5 rounded-xl border border-slate-200 dark:border-[#3c4043] bg-white dark:bg-[#1e1f20] text-slate-700 dark:text-[#e3e3e3] hover:bg-slate-100 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                 title="Aktuelle Wohnungsdaten als JSON herunterladen"
               >
                 <Download className="w-3.5 h-3.5" />
@@ -268,7 +268,7 @@ export const ApartmentManagerModal: React.FC<ApartmentManagerModalProps> = ({
               <button
                 type="button"
                 onClick={handleResetDefaults}
-                className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-[#3c4043] bg-white dark:bg-[#1e1f20] text-slate-700 dark:text-[#e3e3e3] hover:bg-slate-100 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                className="flex-1 sm:flex-initial px-3 py-1.5 rounded-xl border border-slate-200 dark:border-[#3c4043] bg-white dark:bg-[#1e1f20] text-slate-700 dark:text-[#e3e3e3] hover:bg-slate-100 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                 title="Münchner Musterdaten neu laden"
               >
                 <RotateCcw className="w-3.5 h-3.5" />

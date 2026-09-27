@@ -173,6 +173,7 @@ interface MapLayerControlsProps {
   apartmentFilterSettings?: ApartmentFilterSettings;
   onUpdateApartmentFilter?: (settings: Partial<ApartmentFilterSettings>) => void;
   intersectionFeature?: GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon | GeoJSON.GeometryCollection> | null;
+  isInspectionActive?: boolean;
 }
 
 export const MapLayerControls: React.FC<MapLayerControlsProps> = ({
@@ -213,6 +214,7 @@ export const MapLayerControls: React.FC<MapLayerControlsProps> = ({
   apartmentFilterSettings,
   onUpdateApartmentFilter,
   intersectionFeature = null,
+  isInspectionActive = false,
 }) => {
   const [isLayerPanelOpen, setIsLayerPanelOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -238,7 +240,7 @@ export const MapLayerControls: React.FC<MapLayerControlsProps> = ({
   return (
     <>
       {/* Floating Map Controls Top-Right */}
-      <div className="absolute top-[max(1rem,env(safe-area-inset-top))] right-[max(1rem,env(safe-area-inset-right))] z-20 flex flex-col items-end gap-2.5">
+      <div className="absolute top-[max(0.75rem,env(safe-area-inset-top))] right-[max(0.75rem,env(safe-area-inset-right))] z-20 flex flex-col items-end gap-2">
         {/* Main Layer Panel Trigger Button (Google M3 Pill) */}
         <div className="relative">
           <button
@@ -246,7 +248,7 @@ export const MapLayerControls: React.FC<MapLayerControlsProps> = ({
             type="button"
             onClick={() => setIsLayerPanelOpen((prev) => !prev)}
             title="Karten-Ebenen, Reihenfolge & Filter anpassen"
-            className={`px-3 py-2 rounded-full shadow-md border transition-colors flex items-center gap-2 backdrop-blur-md text-xs font-medium cursor-pointer ${
+            className={`px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-full shadow-md border transition-colors flex items-center gap-1.5 sm:gap-2 backdrop-blur-md text-xs font-medium cursor-pointer ${
               isLayerPanelOpen
                 ? 'bg-blue-600 text-white border-blue-600 dark:bg-[#8ab4f8] dark:text-[#131314] dark:border-[#8ab4f8]'
                 : 'bg-white/95 dark:bg-[#1e1f20]/95 hover:bg-slate-50 dark:hover:bg-[#282a2c] text-slate-800 dark:text-[#e8eaed] border-slate-200/90 dark:border-[#3c4043]'
@@ -436,15 +438,19 @@ export const MapLayerControls: React.FC<MapLayerControlsProps> = ({
 
       {/* Active "Nur überlagerter Treffbereich" Floating Banner */}
       {isOnlyIntersectionActive && hasIntersection && onToggleOnlyIntersection && (
-        <div className="absolute bottom-[max(1.5rem,calc(env(safe-area-inset-bottom)+0.5rem))] left-[max(1rem,env(safe-area-inset-left))] z-20 bg-white/95 dark:bg-[#1e1f20]/95 backdrop-blur-md px-3.5 py-2 rounded-xl shadow-md border border-emerald-300 dark:border-emerald-700 flex items-center gap-2.5 text-xs text-emerald-950 dark:text-emerald-300 animate-in fade-in duration-150">
-          <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-emerald-300 dark:ring-emerald-700" />
-          <span className="font-semibold">Nur überlagerter Treffbereich (Grün)</span>
+        <div
+          className={`absolute bottom-[max(3.5rem,calc(env(safe-area-inset-bottom)+3rem))] left-[max(0.75rem,env(safe-area-inset-left))] z-20 bg-white/95 dark:bg-[#1e1f20]/95 backdrop-blur-md px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-xl shadow-md border border-emerald-300 dark:border-emerald-700 items-center gap-2 text-xs text-emerald-950 dark:text-emerald-300 animate-in fade-in duration-150 ${
+            isInspectionActive ? 'hidden sm:flex' : 'flex'
+          }`}
+        >
+          <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-emerald-300 dark:ring-emerald-700 shrink-0" />
+          <span className="font-semibold truncate">Nur Treffbereich (Grün)</span>
           <button
             type="button"
             onClick={onToggleOnlyIntersection}
-            className="text-[11px] font-bold text-emerald-700 dark:text-emerald-400 hover:text-emerald-950 dark:hover:text-emerald-200 underline cursor-pointer ml-1"
+            className="text-[11px] font-bold text-emerald-700 dark:text-emerald-400 hover:text-emerald-950 dark:hover:text-emerald-200 underline cursor-pointer ml-1 shrink-0"
           >
-            Alle Bereiche einblenden
+            Alle einblenden
           </button>
         </div>
       )}
@@ -454,9 +460,11 @@ export const MapLayerControls: React.FC<MapLayerControlsProps> = ({
         <div
           className={`absolute ${
             isOnlyIntersectionActive && hasIntersection && onToggleOnlyIntersection
-              ? 'bottom-[max(5rem,calc(env(safe-area-inset-bottom)+4rem))]'
-              : 'bottom-[max(1.5rem,calc(env(safe-area-inset-bottom)+0.5rem))]'
-          } left-[max(1rem,env(safe-area-inset-left))] z-20 bg-white/95 dark:bg-[#1e1f20]/95 backdrop-blur-md px-3 py-2 rounded-2xl shadow-lg border border-slate-200/90 dark:border-[#3c4043] flex flex-col gap-1.5 text-xs text-slate-800 dark:text-[#e3e3e3] animate-in fade-in slide-in-from-bottom-2 duration-150 max-w-xs`}
+              ? 'bottom-[max(6.75rem,calc(env(safe-area-inset-bottom)+6.25rem))]'
+              : 'bottom-[max(3.5rem,calc(env(safe-area-inset-bottom)+3rem))]'
+          } left-[max(0.75rem,env(safe-area-inset-left))] z-20 bg-white/95 dark:bg-[#1e1f20]/95 backdrop-blur-md px-3 py-2 rounded-2xl shadow-lg border border-slate-200/90 dark:border-[#3c4043] flex-col gap-1.5 text-xs text-slate-800 dark:text-[#e3e3e3] animate-in fade-in slide-in-from-bottom-2 duration-150 max-w-[calc(100vw-1.5rem)] sm:max-w-xs ${
+            isInspectionActive ? 'hidden sm:flex' : 'flex'
+          }`}
         >
           <div className="flex items-center justify-between gap-2 border-b border-slate-100 dark:border-[#3c4043] pb-1">
             <div className="flex items-center gap-1.5 font-bold text-slate-900 dark:text-[#e3e3e3] text-[11px]">

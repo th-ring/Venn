@@ -8,6 +8,7 @@ interface MapLegendProps {
   hasIntersection: boolean;
   intersectionAreaKm2?: number;
   onlyResidential: boolean;
+  isInspectionActive?: boolean;
 }
 
 /**
@@ -20,13 +21,18 @@ export const MapLegend: React.FC<MapLegendProps> = ({
   hasIntersection,
   intersectionAreaKm2,
   onlyResidential,
+  isInspectionActive = false,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
 
   const activeProfiles = profiles.filter((p) => p.visible);
 
   return (
-    <div className="absolute bottom-6 left-3 sm:left-4 z-20">
+    <div
+      className={`absolute bottom-[max(1.25rem,calc(env(safe-area-inset-bottom)+0.5rem))] left-[max(0.75rem,env(safe-area-inset-left))] z-20 ${
+        isInspectionActive ? 'hidden sm:block' : 'block'
+      }`}
+    >
       {!isOpen ? (
         <button
           type="button"
@@ -42,7 +48,7 @@ export const MapLegend: React.FC<MapLegendProps> = ({
         <div
           role="region"
           aria-label="Kartenlegende"
-          className="bg-white/95 dark:bg-[#1e1f20]/95 backdrop-blur-md rounded-2xl shadow-xl border border-slate-200/90 dark:border-[#3c4043] p-3 sm:p-3.5 w-64 sm:w-72 text-xs space-y-3 animate-in fade-in zoom-in-95 duration-150"
+          className="bg-white/95 dark:bg-[#1e1f20]/95 backdrop-blur-md rounded-2xl shadow-xl border border-slate-200/90 dark:border-[#3c4043] p-3 sm:p-3.5 w-[calc(100vw-4.5rem)] max-w-[280px] sm:w-72 sm:max-w-xs text-xs space-y-3 animate-in fade-in zoom-in-95 duration-150"
         >
           <div className="flex items-center justify-between pb-1.5 border-b border-slate-100 dark:border-[#3c4043]">
             <span className="font-bold text-slate-900 dark:text-[#f1f3f4] flex items-center gap-1.5">

@@ -269,7 +269,7 @@ export default function App() {
         {/* Floating Sidebar Toggle Button when sidebar is collapsed (Desktop or Mobile) */}
         {(!isDesktopSidebarOpen || !isMobileSidebarOpen) && (
           <div
-            className={`absolute top-[max(1rem,env(safe-area-inset-top))] left-[max(1rem,env(safe-area-inset-left))] z-20 flex items-center gap-2 ${
+            className={`absolute top-[max(0.75rem,env(safe-area-inset-top))] left-[max(0.75rem,env(safe-area-inset-left))] z-20 flex items-center gap-2 ${
               isDesktopSidebarOpen ? 'md:hidden' : 'flex'
             }`}
           >
@@ -283,27 +283,29 @@ export default function App() {
                   localStorage.setItem('commute_sidebar_open', 'true');
                 } catch {}
               }}
-              className="bg-white/95 dark:bg-[#1e1f20]/95 hover:bg-slate-50 dark:hover:bg-[#282a2c] text-slate-800 dark:text-[#e3e3e3] hover:text-blue-700 dark:hover:text-[#8ab4f8] px-3 py-2 rounded-xl shadow-md border border-slate-200/90 dark:border-[#3c4043] backdrop-blur-md flex items-center gap-2 text-xs font-bold cursor-pointer transition-colors group"
+              className="bg-white/95 dark:bg-[#1e1f20]/95 hover:bg-slate-50 dark:hover:bg-[#282a2c] text-slate-800 dark:text-[#e3e3e3] hover:text-blue-700 dark:hover:text-[#8ab4f8] px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl shadow-md border border-slate-200/90 dark:border-[#3c4043] backdrop-blur-md flex items-center gap-1.5 sm:gap-2 text-xs font-bold cursor-pointer transition-colors group max-w-[calc(100vw-110px)] sm:max-w-none"
               title="Seitenleiste einblenden (Strg+B)"
             >
-              <div className="p-1 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-[#8ab4f8] group-hover:bg-blue-600 group-hover:text-white dark:group-hover:bg-[#8ab4f8] dark:group-hover:text-[#131314] transition-colors">
-                <PanelLeftOpen className="w-4 h-4" />
+              <div className="p-1 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-[#8ab4f8] group-hover:bg-blue-600 group-hover:text-white dark:group-hover:bg-[#8ab4f8] dark:group-hover:text-[#131314] transition-colors shrink-0">
+                <PanelLeftOpen className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               </div>
-              <span>Referenzorte ({profiles.length})</span>
+              <span className="truncate">
+                <span className="hidden sm:inline">Referenzorte</span> ({profiles.length})
+              </span>
 
               {/* Status Badge inside floating trigger */}
               {result?.intersection && (result?.intersectionAreaKm2 || 0) > 0 ? (
-                <span className="text-[10px] font-semibold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-200/80 dark:border-emerald-800/80 flex items-center gap-1">
+                <span className="text-[10px] font-semibold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 px-1.5 sm:px-2 py-0.5 rounded-full border border-emerald-200/80 dark:border-emerald-800/80 flex items-center gap-1 shrink-0">
                   <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
-                  {result?.intersectionAreaKm2} km²
+                  <span>{result?.intersectionAreaKm2} km²</span>
                 </span>
               ) : isCalculating ? (
-                <span className="text-[10px] font-semibold bg-blue-100 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300 px-2 py-0.5 rounded-full border border-blue-200/80 dark:border-blue-800/80 flex items-center gap-1">
+                <span className="text-[10px] font-semibold bg-blue-100 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300 px-1.5 sm:px-2 py-0.5 rounded-full border border-blue-200/80 dark:border-blue-800/80 flex items-center gap-1 shrink-0">
                   <Loader2 className="w-3 h-3 text-blue-600 dark:text-blue-400 animate-spin" />
-                  Berechne...
+                  <span className="hidden sm:inline">Berechne...</span>
                 </span>
               ) : (
-                <span className="text-[10px] font-medium bg-slate-100 dark:bg-[#282a2c] text-slate-600 dark:text-[#9aa0a6] px-2 py-0.5 rounded-full border border-slate-200 dark:border-[#3c4043]">
+                <span className="text-[10px] font-medium bg-slate-100 dark:bg-[#282a2c] text-slate-600 dark:text-[#9aa0a6] px-1.5 sm:px-2 py-0.5 rounded-full border border-slate-200 dark:border-[#3c4043] shrink-0">
                   0 km²
                 </span>
               )}
@@ -384,6 +386,7 @@ export default function App() {
             selectedApartmentId={selectedApartmentId || undefined}
             onSelectApartment={handleSelectApartment}
             onOpenApartmentManager={() => setIsApartmentManagerOpen(true)}
+            isInspectionActive={Boolean(inspectionPoint)}
           />
         </MapErrorBoundary>
 

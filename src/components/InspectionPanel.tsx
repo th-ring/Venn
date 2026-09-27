@@ -103,14 +103,14 @@ export const InspectionPanel: React.FC<InspectionPanelProps> = ({
   return (
     <div
       id="inspection-detail-panel"
-      className="bg-white dark:bg-[#1e1f20] rounded-2xl border border-slate-200/90 dark:border-[#3c4043] shadow-2xl overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-200 max-w-lg w-full"
+      className="bg-white dark:bg-[#1e1f20] rounded-t-3xl sm:rounded-2xl border border-slate-200/90 dark:border-[#3c4043] shadow-2xl overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-200 max-w-lg w-full flex flex-col max-h-[78dvh] sm:max-h-[85vh]"
     >
       {/* Mobile Top Grabber Pill */}
-      <div className="w-10 h-1 bg-slate-300 dark:bg-[#5f6368] rounded-full mx-auto my-1.5 sm:hidden" />
+      <div className="w-10 h-1 bg-slate-300 dark:bg-[#5f6368] rounded-full mx-auto my-1.5 sm:hidden shrink-0" />
 
-      {/* Header */}
+      {/* Header (Fixed at top) */}
       <div
-        className={`px-4 py-3 border-b flex items-start justify-between gap-3 ${
+        className={`px-4 py-3 border-b flex items-start justify-between gap-3 shrink-0 ${
           isIdealLocation
             ? 'bg-emerald-50/90 dark:bg-emerald-950/40 border-emerald-100 dark:border-emerald-800/60'
             : 'bg-amber-50/90 dark:bg-amber-950/40 border-amber-200/70 dark:border-amber-800/60'
@@ -177,15 +177,17 @@ export const InspectionPanel: React.FC<InspectionPanelProps> = ({
         </button>
       </div>
 
-      {/* Warning/Clarification Banner if outside intersection */}
-      {!isIdealLocation && (
-        <div className="bg-amber-500/10 dark:bg-amber-950/30 border-b border-amber-200/60 dark:border-amber-800/50 px-4 py-2 text-[11px] text-amber-800 dark:text-amber-300 flex items-center gap-1.5 leading-tight">
-          <AlertCircle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
-          <span>
-            Dieser Punkt liegt nicht in der gemeinsamen Schnittmenge, weil mindestens ein Ziel das Zeitbudget überschreitet.
-          </span>
-        </div>
-      )}
+      {/* Scrollable Content Body */}
+      <div className="overflow-y-auto flex-1 touch-scroll-y overscroll-contain">
+        {/* Warning/Clarification Banner if outside intersection */}
+        {!isIdealLocation && (
+          <div className="bg-amber-500/10 dark:bg-amber-950/30 border-b border-amber-200/60 dark:border-amber-800/50 px-4 py-2 text-[11px] text-amber-800 dark:text-amber-300 flex items-center gap-1.5 leading-tight">
+            <AlertCircle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
+            <span>
+              Dieser Punkt liegt nicht in der gemeinsamen Schnittmenge, weil mindestens ein Ziel das Zeitbudget überschreitet.
+            </span>
+          </div>
+        )}
 
       {/* Selected Apartment Hero Card (when an apartment is explicitly selected) */}
       {selectedApt && (
@@ -498,6 +500,7 @@ export const InspectionPanel: React.FC<InspectionPanelProps> = ({
           </div>
         </>
       )}
+      </div>
     </div>
   );
 };
