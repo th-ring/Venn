@@ -96,6 +96,10 @@ Once the user confirms the agent's release proposal, the agent executes the rele
    - `git tag -a vX.Y.Z -m "Release vX.Y.Z"`
 6. **Push Branch and Tags**:
    - `git push origin <branch> --tags`
+7. **Publish Official GitHub Release**:
+   - Publish the release to GitHub via the GitHub CLI (`gh`), including the curated release notes from `CHANGELOG.md`:
+     `gh release create vX.Y.Z --title "vX.Y.Z" -F <notes-file> --verify-tag [--latest]`
+   - Verify the published release appears on GitHub (`gh release list`).
 
 ---
 
