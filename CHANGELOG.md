@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.1] - 2026-09-27
+
+### Fixed
+- **DSGVO-konforme Adressanonymisierung und Koordinaten-Unschärfe**: Optionales Verharmlosen von Hausnummern und Runden von Geo-Koordinaten (~110m Radius) beim Erstellen von Freigabe-Links zum Schutz privater Wohn- und Arbeitsorte.
+- **Main-Thread-Schutz bei Punktinspektionen**: Vollständige Auslagerung von Routen-, Dijkstra- und Sub-Area-Berechnungen in Web Worker zur Beseitigung von Rucklern bei Klicks auf Karte oder Wohnungen.
+- **Slider-Reaktionsverhalten & Event-Pufferung**: Pufferung kontinuierlicher Schieberegler-Eingaben zur Unterdrückung unnötiger Neuberechnungen und Render-Spikes.
+- **Bundle-Hygiene & Chunk-Größen**: Auslagerung statischer Autobahn-Rohdaten aus dem Anwendungs-Bundle nach `public/data/`, wodurch doppelte 1,24-MB-Chunks eliminiert wurden.
+- **Fehlerresilienz im ÖPNV-Routing & Web Worker**: Zuverlässiges Abfangen von Worker-Fehlern, direkte Fußweg-Shortcuts (< 800m) und Korrektur von Timeout-Fehlmeldungen im API-Diagnosetool.
+- **Laufzeit-Schemavalidierung & Speicher-Quota**: Absicherung von heruntergeladenen Transitpaketen und Begrenzung des lokalen Caches via LRU-Eviction.
+
+### Performance
+- **Multi-Polygon-Verschneidungen**: Optimiert auf durchschnittlich < 1 ms bei komplexen Schnitten (SLO: < 50 ms).
+- **A*- und Dijkstra-Netzwerktraversierung**: Optimiert auf durchschnittlich < 0,1 ms pro Abfrage (SLO: < 30 ms).
+
 ## [1.2.0] - 2026-09-27
 
 ### Added
