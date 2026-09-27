@@ -208,6 +208,40 @@ function generateGeoTargetedListings(bbox, city, count) {
 // -------------------------------------------------------------
 // Portal Search Deep-Link Generator
 // -------------------------------------------------------------
+const GERMAN_CITY_PORTALS = {
+  muenchen: { stateSlug: 'bayern', citySlug: 'muenchen', wgName: 'Muenchen', wgId: 90 },
+  munich: { stateSlug: 'bayern', citySlug: 'muenchen', wgName: 'Muenchen', wgId: 90 },
+  berlin: { stateSlug: 'berlin', citySlug: 'berlin', wgName: 'Berlin', wgId: 8 },
+  hamburg: { stateSlug: 'hamburg', citySlug: 'hamburg', wgName: 'Hamburg', wgId: 55 },
+  koeln: { stateSlug: 'nordrhein-westfalen', citySlug: 'koeln', wgName: 'Koeln', wgId: 73 },
+  frankfurt: { stateSlug: 'hessen', citySlug: 'frankfurt-am-main', wgName: 'Frankfurt-am-Main', wgId: 47 },
+  'frankfurt-am-main': { stateSlug: 'hessen', citySlug: 'frankfurt-am-main', wgName: 'Frankfurt-am-Main', wgId: 47 },
+  stuttgart: { stateSlug: 'baden-wuerttemberg', citySlug: 'stuttgart', wgName: 'Stuttgart', wgId: 124 },
+  duesseldorf: { stateSlug: 'nordrhein-westfalen', citySlug: 'duesseldorf', wgName: 'Duesseldorf', wgId: 30 },
+  leipzig: { stateSlug: 'sachsen', citySlug: 'leipzig', wgName: 'Leipzig', wgId: 77 },
+  dresden: { stateSlug: 'sachsen', citySlug: 'dresden', wgName: 'Dresden', wgId: 27 },
+  nuernberg: { stateSlug: 'bayern', citySlug: 'nuernberg', wgName: 'Nuernberg', wgId: 96 },
+  hannover: { stateSlug: 'niedersachsen', citySlug: 'hannover', wgName: 'Hannover', wgId: 57 },
+  bremen: { stateSlug: 'bremen', citySlug: 'bremen', wgName: 'Bremen', wgId: 17 },
+  bonn: { stateSlug: 'nordrhein-westfalen', citySlug: 'bonn', wgName: 'Bonn', wgId: 13 },
+  muenster: { stateSlug: 'nordrhein-westfalen', citySlug: 'muenster', wgName: 'Muenster', wgId: 91 },
+  karlsruhe: { stateSlug: 'baden-wuerttemberg', citySlug: 'karlsruhe', wgName: 'Karlsruhe', wgId: 68 },
+  augsburg: { stateSlug: 'bayern', citySlug: 'augsburg', wgName: 'Augsburg', wgId: 2 },
+  regensburg: { stateSlug: 'bayern', citySlug: 'regensburg', wgName: 'Regensburg', wgId: 111 },
+};
+
+function slugify(text) {
+  return text
+    .toLowerCase()
+    .trim()
+    .replace(/ä/g, 'ae')
+    .replace(/ö/g, 'oe')
+    .replace(/ü/g, 'ue')
+    .replace(/ß/g, 'ss')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
 function generatePortalSearchLinks(bbox, city) {
   const [minLng, minLat, maxLng, maxLat] = bbox;
   const centerLat = (minLat + maxLat) / 2;
@@ -216,34 +250,52 @@ function generatePortalSearchLinks(bbox, city) {
 
   const latStr = centerLat.toFixed(4);
   const lngStr = centerLng.toFixed(4);
-  const cityEncoded = encodeURIComponent(city);
+  const cityKey = slugify(city);
+  const cityConfig = GERMAN_CITY_PORTALS[cityKey] || null;
+
+  // 1. ImmoScout24
+  const immoscoutUrl = cityConfig
+    ? `https://www.immobilienscout24.de/Suche/de/${cityConfig.stateSlug}/${cityConfig.citySlug}/wohnung-mieten`
+    : 'https://www.immobilienscout24.de/Suche/de/wohnung-mieten';
+
+  // 2. Immowelt
+  const immoweltCitySlug = cityConfig ? cityConfig.citySlug : cityKey;
+  const immoweltUrl = `https://www.immowelt.de/suche/${immoweltCitySlug}/wohnungen/mieten?r=${radiusKm}`;
+
+  // 3. WG-Gesucht
+  const wgGesuchtUrl = cityConfig
+    ? `https://www.wg-gesucht.de/wohnungen-in-${cityConfig.wgName}.${cityConfig.wgId}.2.1.0.html`
+    : 'https://www.wg-gesucht.de/wohnraumangebote.html?cat=2';
+
+  // 4. Kleinanzeigen
+  const kleinanzeigenUrl = `https://www.kleinanzeigen.de/s-wohnung-mieten/c203?distance=${radiusKm}&latitude=${latStr}&longitude=${lngStr}`;
 
   return [
     {
       portal: 'immoscout24',
       name: 'ImmoScout24',
-      url: `https://www.immobilienscout24.de/Suche/radius/wohnung-mieten?centerlat=${latStr}&centerlon=${lngStr}&radius=${radiusKm}&userGeoAttributes=true`,
-      badge: `~${radiusKm} km Umkreis`,
-      description: 'Deutschlands größtes Immobilienportal (Radius-Suche)',
+      url: immoscoutUrl,
+      badge: city,
+      description: 'Deutschlands größtes Immobilienportal (Suchergebnisse)',
     },
     {
       portal: 'immowelt',
       name: 'Immowelt',
-      url: `https://www.immowelt.de/liste/wohnungen/mieten?lat=${latStr}&lon=${lngStr}&distance=${radiusKm}`,
-      badge: `~${radiusKm} km Umkreis`,
+      url: immoweltUrl,
+      badge: `${city} (+${radiusKm} km)`,
       description: 'Umfangreiche Mietangebote im Suchradius',
     },
     {
       portal: 'wg-gesucht',
       name: 'WG-Gesucht',
-      url: `https://www.wg-gesucht.de/wohnungen-in-${cityEncoded}.html?distance=${radiusKm}`,
-      badge: `${city} (+${radiusKm} km)`,
+      url: wgGesuchtUrl,
+      badge: cityConfig ? `${cityConfig.wgName} (Wohnungen)` : `${city} (Wohnraum)`,
       description: 'Wohnungen, Apartments & WG-Zimmer',
     },
     {
       portal: 'kleinanzeigen',
       name: 'Kleinanzeigen',
-      url: `https://www.kleinanzeigen.de/s-wohnung-mieten/c203?distance=${radiusKm}&latitude=${latStr}&longitude=${lngStr}`,
+      url: kleinanzeigenUrl,
       badge: `~${radiusKm} km Umkreis`,
       description: 'Provisionsfreie Privat- & Maklerangebote',
     },

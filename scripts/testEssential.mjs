@@ -412,19 +412,24 @@ test('generates valid portal search deep-links with radius and coordinate attrib
 
   const is24 = links.find((l) => l.portal === 'immoscout24');
   assert.ok(is24, 'ImmoScout24 link must be present');
-  assert.ok(is24.url.includes('centerlat=48.1582') && is24.url.includes('centerlon=11.5741'));
+  assert.ok(is24.url.includes('/Suche/de/bayern/muenchen/wohnung-mieten'), 'IS24 must point to live state/city search route');
 
   const iw = links.find((l) => l.portal === 'immowelt');
   assert.ok(iw, 'Immowelt link must be present');
-  assert.ok(iw.url.includes('lat=48.1582') && iw.url.includes('lon=11.5741'));
+  assert.ok(iw.url.includes('/suche/muenchen/wohnungen/mieten?r=2'), 'Immowelt must point to live search route with radius');
 
   const wg = links.find((l) => l.portal === 'wg-gesucht');
   assert.ok(wg, 'WG-Gesucht link must be present');
-  assert.ok(wg.url.includes('wohnungen-in-M%C3%BCnchen.html'));
+  assert.ok(wg.url.includes('wohnungen-in-Muenchen.90.2.1.0.html'), 'WG-Gesucht must point to live city listing page');
 
   const ka = links.find((l) => l.portal === 'kleinanzeigen');
   assert.ok(ka, 'Kleinanzeigen link must be present');
-  assert.ok(ka.url.includes('latitude=48.1582') && ka.url.includes('longitude=11.5741'));
+  assert.ok(ka.url.includes('latitude=48.1582') && ka.url.includes('longitude=11.5741'), 'Kleinanzeigen must point to live radius search route');
+
+  // Also verify district integration
+  const linksWithDistrict = getPortalSearchLinks({ lat: 48.1582, lng: 11.5741 }, [11.55, 48.15, 11.58, 48.18], 2, 'München', 'Schwabing-West');
+  const is24District = linksWithDistrict.find((l) => l.portal === 'immoscout24');
+  assert.ok(is24District.url.includes('/Suche/de/bayern/muenchen/schwabing-west/wohnung-mieten'), 'IS24 must incorporate district when provided');
 });
 
 console.log(`\n========================================`);
