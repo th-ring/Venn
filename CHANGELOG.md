@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-09-27
+
+### Added
+- **Eigener Wohnungs-Kartenlayer**: Wohnungs-Pins können nun über die Floating-Dock-Leiste schnell ein- und ausgeblendet werden inklusive Echtzeit-Badge für aktive Angebote.
+- **Wohnungs-Filter im Ebenen-Manager**: Direktes Filtern nach Treffbereich-Schnittmenge, Raum-Anzahl (1+, 2+, 3+, 4+) sowie Anzeige von Preisstatistiken, Treffbereichs-Quote und Quellportalen.
+- **GitHub Pages CI/CD Workflow**: Automatisierter Build & Deploy über GitHub Actions mit Base-Path-Routing.
+
 ## [1.2.1] - 2026-09-27
 
 ### Fixed
