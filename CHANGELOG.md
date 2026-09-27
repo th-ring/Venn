@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.1] - 2026-09-27
+
+### Changed
+- **Release-Driven CI/CD Deployment**: Die Bereitstellung auf GitHub Pages wird nun dediziert bei jeder offiziellen GitHub-Release-Veröffentlichung (`release: published`) getriggert anstelle jedes einzelnen Pushes auf den Haupt-Branch.
+
+### Fixed
+- **GitHub Pages Environment Protection Policy**: Autorisierung von Versions-Tags (`v*`) in den Deployment-Branch-Policies des `github-pages`-Environments zur Beseitigung von Berechtigungsfehlern bei getaggten Release-Deployments.
+- **SPA-Fallback & Routing-Resilienz**: Automatischer 404-Fallback (`404.html`) im Build-Prozess zur Unterstützung von Direct-Links und Lesezeichen auf Unterpfaden.
+
 ## [1.4.0] - 2026-09-27
 
 ### Added
