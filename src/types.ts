@@ -279,6 +279,11 @@ export interface CommuteEstimate {
   isWithinLimit: boolean;
   distanceKm: number;
   details?: CommuteRouteDetails;
+  minMinutes?: number;
+  maxMinutes?: number;
+  spanPlusMinus?: number;
+  centerMinutes?: number;
+  centerDistanceKm?: number;
 }
 
 export type ResidentialQualityTier = 'average' | 'good' | 'prime';
@@ -320,6 +325,15 @@ export interface RentalRegionCatalogEntry {
   description: string;
 }
 
+export interface IntersectionAreaStats {
+  areaKm2: number;
+  centerLat: number;
+  centerLng: number;
+  centerAddress?: string;
+  avgCommuteMinutes: number;
+  commuteSpreadMinutes: number;
+}
+
 export interface InspectionPoint {
   lat: number;
   lng: number;
@@ -329,6 +343,8 @@ export interface InspectionPoint {
   activePersonsCount: number;
   withinLimitCount: number;
   rentalInfo?: RentalDistrictProperties;
+  isIntersectionInspection?: boolean;
+  intersectionStats?: IntersectionAreaStats;
 }
 
 export interface PresetScenario {

@@ -134,6 +134,77 @@ export function calculateDistanceKm(lat1: number, lng1: number, lat2: number, ln
 }
 
 /**
+ * Calculates a representative interior center point for a polygon or multipolygon.
+ * Uses turf.pointOnFeature to ensure the coordinate is guaranteed to lie inside the feature.
+ */
+export function getPolygonCenter(
+  feature: GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon | GeoJSON.GeometryCollection> | null
+): [number, number] | null {
+  if (!feature || !feature.geometry) return null;
+  try {
+    const pt = turf.pointOnFeature(feature as any);
+    if (pt && pt.geometry && pt.geometry.coordinates) {
+      return [pt.geometry.coordinates[0], pt.geometry.coordinates[1]]; // [lng, lat]
+    }
+  } catch (err) {
+    console.warn('Failed to calculate polygon center:', err);
+  }
+  return null;
+}
+
+/**
+ * Extracts a balanced set of coordinates (up to maxPoints) within and along the perimeter
+ * of the polygon feature to evaluate travel time spread (min, max, spread) across the area.
+ */
+export function samplePolygonPoints(
+  feature: GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon | GeoJSON.GeometryCollection> | null,
+  maxPoints = 20
+): Array<[number, number]> {
+  if (!feature || !feature.geometry) return [];
+  const points: Array<[number, number]> = [];
+
+  try {
+    const center = getPolygonCenter(feature);
+    if (center) {
+      points.push(center);
+    }
+
+    const rawCoords: Array<[number, number]> = [];
+
+    const extractCoords = (geom: GeoJSON.Geometry) => {
+      if (geom.type === 'Polygon') {
+        const poly = geom as GeoJSON.Polygon;
+        if (poly.coordinates[0]) {
+          poly.coordinates[0].forEach((c) => rawCoords.push([c[0], c[1]]));
+        }
+      } else if (geom.type === 'MultiPolygon') {
+        const multi = geom as GeoJSON.MultiPolygon;
+        multi.coordinates.forEach((poly) => {
+          if (poly[0]) {
+            poly[0].forEach((c) => rawCoords.push([c[0], c[1]]));
+          }
+        });
+      } else if (geom.type === 'GeometryCollection') {
+        geom.geometries.forEach(extractCoords);
+      }
+    };
+
+    extractCoords(feature.geometry);
+
+    if (rawCoords.length > 0) {
+      const step = Math.max(1, Math.floor(rawCoords.length / Math.max(1, maxPoints - 1)));
+      for (let i = 0; i < rawCoords.length && points.length < maxPoints; i += step) {
+        points.push(rawCoords[i]);
+      }
+    }
+  } catch (err) {
+    console.warn('Error sampling polygon points:', err);
+  }
+
+  return points;
+}
+
+/**
  * Generates smart suggestions when the intersection is empty (FR-3.3 Fallback-Handling)
  */
 export function generateEmptyIntersectionSuggestions(

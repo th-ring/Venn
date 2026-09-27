@@ -17,6 +17,7 @@ import {
   ShieldAlert,
   ShieldCheck,
   Building2,
+  Scale,
 } from 'lucide-react';
 import { getRentalChoroplethColor } from '../services/rentalService';
 
@@ -90,7 +91,7 @@ export const InspectionPanel: React.FC<InspectionPanelProps> = ({
                 }`}
               >
                 {isIdealLocation
-                  ? 'Gemeinsamer Treffbereich'
+                  ? (inspection.isIntersectionInspection ? 'Gemeinsamer Treffbereich' : 'Gemeinsamer Treffbereich')
                   : 'Außerhalb der Schnittmenge'}
               </h4>
               <span
@@ -107,7 +108,11 @@ export const InspectionPanel: React.FC<InspectionPanelProps> = ({
             </div>
             <p className="text-xs text-slate-600 dark:text-[#c4c7c5] flex items-center gap-1 mt-0.5 truncate">
               <MapPin className="w-3 h-3 text-slate-400 dark:text-[#9aa0a6] shrink-0" />
-              <span className="truncate">{inspection.address || `${inspection.lat.toFixed(4)}, ${inspection.lng.toFixed(4)}`}</span>
+              <span className="truncate">
+                {inspection.isIntersectionInspection && inspection.intersectionStats?.centerAddress
+                  ? `Mitte: ${inspection.intersectionStats.centerAddress}`
+                  : inspection.address || `${inspection.lat.toFixed(4)}, ${inspection.lng.toFixed(4)}`}
+              </span>
             </p>
           </div>
         </div>
@@ -130,6 +135,46 @@ export const InspectionPanel: React.FC<InspectionPanelProps> = ({
           <span>
             Dieser Punkt liegt nicht in der gemeinsamen Schnittmenge, weil mindestens ein Ziel das Zeitbudget überschreitet.
           </span>
+        </div>
+      )}
+
+      {/* Shared Area Pair-Average & Balance Card */}
+      {inspection.isIntersectionInspection && inspection.intersectionStats && (
+        <div className="bg-emerald-500/10 dark:bg-emerald-950/40 border-b border-emerald-200/70 dark:border-emerald-800/60 p-3 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="p-2 rounded-xl bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 shrink-0">
+              <Scale className="w-4 h-4" />
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="text-xs font-bold text-emerald-900 dark:text-emerald-200">
+                  Paar-Mittelwert (Mitte)
+                </span>
+                <span className="text-[10px] font-semibold px-1.5 py-0.2 rounded bg-emerald-200/70 dark:bg-emerald-900/80 text-emerald-800 dark:text-emerald-200">
+                  Flächenauswertung
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-500 dark:text-[#9aa0a6] mt-0.5 truncate">
+                Fläche ca. {inspection.intersectionStats.areaKm2} km² · Ausgewogene Mitte
+              </p>
+            </div>
+          </div>
+
+          <div className="text-right shrink-0">
+            <div className="text-sm font-bold text-emerald-900 dark:text-white flex items-baseline justify-end gap-1">
+              <span>Ø {inspection.intersectionStats.avgCommuteMinutes} Min</span>
+              {inspection.intersectionStats.commuteSpreadMinutes > 0 && (
+                <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">
+                  ± {inspection.intersectionStats.commuteSpreadMinutes}m
+                </span>
+              )}
+            </div>
+            <div className="text-[10px] text-emerald-700/90 dark:text-emerald-400 font-medium">
+              {inspection.activePersonsCount === 2
+                ? 'Differenz zw. beiden Orten'
+                : 'Spreizung zw. Zielorten'}
+            </div>
+          </div>
         </div>
       )}
 
@@ -214,7 +259,11 @@ export const InspectionPanel: React.FC<InspectionPanelProps> = ({
                         <Icon className="w-3 h-3 text-slate-500 dark:text-[#9aa0a6]" />
                         <span>{MODE_NAMES[est.mode]}</span>
                         <span>•</span>
-                        <span>{est.distanceKm} km</span>
+                        <span>
+                          {inspection.isIntersectionInspection && est.centerDistanceKm !== undefined
+                            ? `Ø ${est.centerDistanceKm} km`
+                            : `${est.distanceKm} km`}
+                        </span>
                         {est.details?.summary && (
                           <>
                             <span>•</span>
@@ -235,7 +284,10 @@ export const InspectionPanel: React.FC<InspectionPanelProps> = ({
                             est.isWithinLimit ? 'text-slate-900 dark:text-white' : 'text-rose-600 dark:text-rose-400'
                           }`}
                         >
-                          {est.travelTimeMinutes} Min
+                          {inspection.isIntersectionInspection && est.centerMinutes !== undefined
+                            ? `${est.centerMinutes}${est.spanPlusMinus ? ` ± ${est.spanPlusMinus}` : ''}`
+                            : est.travelTimeMinutes}{' '}
+                          Min
                         </span>
                         <span className="text-[10px] text-slate-400 dark:text-[#9aa0a6]">/ max. {est.limitMinutes}m</span>
                       </div>
@@ -245,7 +297,9 @@ export const InspectionPanel: React.FC<InspectionPanelProps> = ({
                           est.isWithinLimit ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
                         }`}
                       >
-                        {bufferMinutes >= 0
+                        {inspection.isIntersectionInspection && est.minMinutes !== undefined && est.maxMinutes !== undefined
+                          ? `Spanne: ${est.minMinutes} – ${est.maxMinutes} Min`
+                          : bufferMinutes >= 0
                           ? `${bufferMinutes} Min Puffer`
                           : `+${Math.abs(bufferMinutes)} Min über Limit`}
                       </div>
@@ -262,8 +316,19 @@ export const InspectionPanel: React.FC<InspectionPanelProps> = ({
                   <div className="px-3 pb-3 pt-1 border-t border-slate-100 dark:border-[#3c4043] bg-slate-50/80 dark:bg-[#131314] text-xs space-y-2 animate-in fade-in duration-150">
                     <div className="text-[11px] font-medium text-slate-600 dark:text-[#9aa0a6] flex items-center gap-1">
                       <Navigation className="w-3 h-3 text-blue-600 dark:text-[#8ab4f8]" />
-                      <span>Routen-Etappen & Zeitaufteilung:</span>
+                      <span>
+                        {inspection.isIntersectionInspection
+                          ? 'Routen-Etappen & Zeitaufteilung ab Mittelpunkt:'
+                          : 'Routen-Etappen & Zeitaufteilung:'}
+                      </span>
                     </div>
+
+                    {inspection.isIntersectionInspection && (
+                      <div className="text-[10px] text-slate-500 dark:text-[#9aa0a6] bg-white dark:bg-[#1e1f20] px-2 py-1 rounded border border-slate-200/60 dark:border-[#3c4043] flex items-center justify-between">
+                        <span>Fahrzeit am Klickpunkt:</span>
+                        <span className="font-semibold text-slate-700 dark:text-[#e3e3e3]">{est.travelTimeMinutes} Min ({est.distanceKm} km)</span>
+                      </div>
+                    )}
 
                     {est.details?.steps && est.details.steps.length > 0 ? (
                       <div className="space-y-1.5 pl-1">

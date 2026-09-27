@@ -18,6 +18,8 @@ import {
   calculateDistanceKm,
   isPointInPolygon,
   generateEmptyIntersectionSuggestions,
+  getPolygonCenter,
+  samplePolygonPoints,
 } from '../src/services/geometry.ts';
 import { getProfileLineSignature } from '../src/services/mapPatterns.ts';
 
@@ -139,6 +141,23 @@ test('correctly identifies interior and exterior points', () => {
   assert.equal(isPointInPolygon([11.5, 48.5], poly), true, 'Point inside boundary returns true');
   assert.equal(isPointInPolygon([10.5, 48.5], poly), false, 'Point outside boundary returns false');
   assert.equal(isPointInPolygon([11.5, 48.5], null), false, 'Null polygon returns false');
+});
+
+// Group 4b: Polygon Center & Spatial Sampling
+console.log('\n4b. Polygon Center & Area Sampling:');
+
+test('calculates interior center coordinate inside polygon', () => {
+  const poly = turf.polygon([[[11.0, 48.0], [11.0, 49.0], [12.0, 49.0], [12.0, 48.0], [11.0, 48.0]]]);
+  const center = getPolygonCenter(poly);
+  assert.ok(center !== null, 'Center must not be null');
+  assert.ok(isPointInPolygon(center, poly), 'Center point must be inside polygon');
+});
+
+test('samples representative points along polygon perimeter and center', () => {
+  const poly = turf.polygon([[[11.0, 48.0], [11.0, 49.0], [12.0, 49.0], [12.0, 48.0], [11.0, 48.0]]]);
+  const samples = samplePolygonPoints(poly, 10);
+  assert.ok(samples.length >= 2, 'Must sample at least 2 points');
+  assert.ok(samples.length <= 10, 'Must not exceed maxPoints');
 });
 
 // Group 5: ISO 9241-110 Fallback Suggestions Heuristic

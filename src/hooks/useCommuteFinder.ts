@@ -13,6 +13,7 @@ import {
   DEFAULT_LAYER_ORDER,
   PoiIconSettings,
   DEFAULT_POI_ICON_SETTINGS,
+  IntersectionAreaStats,
 } from '../types';
 import { DEFAULT_MUNICH_PROFILES } from '../data/presets';
 import {
@@ -33,6 +34,8 @@ import {
   calculateAreaKm2,
   generateEmptyIntersectionSuggestions,
   isPointInPolygon,
+  getPolygonCenter,
+  samplePolygonPoints,
 } from '../services/geometry';
 import { maskByResidentialAreas } from '../data/residentialZones';
 import { reverseGeocode } from '../services/geocoding';
@@ -513,11 +516,16 @@ export function useCommuteFinder() {
       const currentResult = resultRef.current;
       const currentSchedule = scheduleRef.current;
 
-      const isInIntersection = currentResult?.intersection
-        ? isPointInPolygon([lng, lat], currentResult.intersection)
-        : currentResult?.rawIntersection
-        ? isPointInPolygon([lng, lat], currentResult.rawIntersection)
+      const intersectionFeature = currentResult?.intersection || currentResult?.rawIntersection;
+
+      const isInIntersection = intersectionFeature
+        ? isPointInPolygon([lng, lat], intersectionFeature)
         : false;
+
+      // When inside the shared intersection, calculate area center and spread
+      const isIntersectionInspection = isInIntersection && !!intersectionFeature;
+      const centerCoord = isIntersectionInspection ? getPolygonCenter(intersectionFeature) : null;
+      const sampleCoords = isIntersectionInspection ? samplePolygonPoints(intersectionFeature, 24) : [];
 
       const estimates = active.map((p) => {
         const poly = currentResult?.isochrones?.[p.id];
@@ -561,6 +569,54 @@ export function useCommuteFinder() {
           }
         }
 
+        // Calculate area-based metrics when evaluating the shared intersection
+        let minMinutes: number | undefined;
+        let maxMinutes: number | undefined;
+        let spanPlusMinus: number | undefined;
+        let centerMinutes: number | undefined;
+        let centerDistanceKm: number | undefined;
+
+        if (isIntersectionInspection && centerCoord) {
+          const centerEst = estimateCommuteTime(
+            { lat: centerCoord[1], lng: centerCoord[0] },
+            { lat: p.lat, lng: p.lng },
+            p.mode,
+            currentSchedule,
+            p.maxTransfers,
+            p.maxWalkToStationMin,
+            p.maxWalkFromStationMin,
+            p.transitModes
+          );
+
+          centerMinutes = Math.min(p.travelTimeMinutes, centerEst.travelTimeMinutes);
+          centerDistanceKm = centerEst.distanceKm;
+
+          // Compute spread over sample coords
+          const sampleTimes: number[] = [centerMinutes];
+          sampleCoords.forEach((coord) => {
+            const sampleEst = estimateCommuteTime(
+              { lat: coord[1], lng: coord[0] },
+              { lat: p.lat, lng: p.lng },
+              p.mode,
+              currentSchedule,
+              p.maxTransfers,
+              p.maxWalkToStationMin,
+              p.maxWalkFromStationMin,
+              p.transitModes
+            );
+            sampleTimes.push(Math.min(p.travelTimeMinutes, sampleEst.travelTimeMinutes));
+          });
+
+          minMinutes = Math.min(...sampleTimes);
+          maxMinutes = Math.min(p.travelTimeMinutes, Math.max(...sampleTimes));
+          spanPlusMinus = Math.max(1, Math.round(Math.max(centerMinutes - minMinutes, maxMinutes - centerMinutes)));
+
+          // Prefer center route details if available for the area overview
+          if (centerEst.details) {
+            details = centerEst.details;
+          }
+        }
+
         return {
           personId: p.id,
           personName: p.name,
@@ -571,6 +627,11 @@ export function useCommuteFinder() {
           isWithinLimit,
           distanceKm,
           details,
+          minMinutes,
+          maxMinutes,
+          spanPlusMinus,
+          centerMinutes,
+          centerDistanceKm,
         };
       });
 
@@ -578,6 +639,36 @@ export function useCommuteFinder() {
         ? active.length
         : estimates.filter((e) => e.isWithinLimit).length;
       const allWithinLimit = isInIntersection || withinLimitCount === active.length;
+
+      // Compute combined intersection area stats
+      let intersectionStats: IntersectionAreaStats | undefined;
+      if (isIntersectionInspection && centerCoord) {
+        const centerTimes = estimates.map((e) => e.centerMinutes ?? e.travelTimeMinutes);
+        const avgCommuteMinutes = Math.round(
+          centerTimes.reduce((acc, t) => acc + t, 0) / (centerTimes.length || 1)
+        );
+        let commuteSpreadMinutes = 0;
+        if (centerTimes.length === 2) {
+          commuteSpreadMinutes = Math.round(Math.abs(centerTimes[0] - centerTimes[1]) / 2);
+        } else if (centerTimes.length > 2) {
+          commuteSpreadMinutes = Math.round(
+            Math.max(...centerTimes.map((t) => Math.abs(t - avgCommuteMinutes)))
+          );
+        }
+
+        const areaKm2 =
+          currentResult?.intersectionAreaKm2 ??
+          calculateAreaKm2(intersectionFeature as any);
+
+        intersectionStats = {
+          areaKm2,
+          centerLat: centerCoord[1],
+          centerLng: centerCoord[0],
+          centerAddress: 'Lade Mittelpunkt...',
+          avgCommuteMinutes,
+          commuteSpreadMinutes,
+        };
+      }
 
       const rentalInfo = getRentalDistrictAtPoint(
         lat,
@@ -594,10 +685,32 @@ export function useCommuteFinder() {
         activePersonsCount: active.length,
         withinLimitCount,
         rentalInfo: rentalInfo || undefined,
+        isIntersectionInspection,
+        intersectionStats,
       });
 
-      const addr = await reverseGeocode(lat, lng);
-      setInspectionPoint((prev) => (prev && prev.lat === lat && prev.lng === lng ? { ...prev, address: addr } : prev));
+      // Async reverse geocoding for clicked point and center point
+      const addrPromise = reverseGeocode(lat, lng);
+      const centerAddrPromise =
+        isIntersectionInspection && centerCoord
+          ? reverseGeocode(centerCoord[1], centerCoord[0])
+          : Promise.resolve(undefined);
+
+      const [addr, centerAddr] = await Promise.all([addrPromise, centerAddrPromise]);
+
+      setInspectionPoint((prev) => {
+        if (!prev || prev.lat !== lat || prev.lng !== lng) return prev;
+        return {
+          ...prev,
+          address: addr,
+          intersectionStats: prev.intersectionStats
+            ? {
+                ...prev.intersectionStats,
+                centerAddress: centerAddr || prev.intersectionStats.centerAddress,
+              }
+            : undefined,
+        };
+      });
     },
     []
   );
