@@ -5,7 +5,8 @@ import {
   HighwayJunctionFeature,
   HighwayRampFeature,
   HighwayAreaFeature,
-} from '../types';
+} from '../types.ts';
+import { resolveAssetUrl } from '../utils/assetUrl.ts';
 const STORAGE_KEY = 'living_area_highway_data_custom_v1';
 
 let cachedDataset: HighwayDataset | null = null;
@@ -74,7 +75,7 @@ export async function loadDefaultHighwayData(): Promise<HighwayDataset> {
     defaultDataPromise = (async () => {
       try {
         if (typeof fetch !== 'undefined') {
-          const res = await fetch('/data/highwayData.json');
+          const res = await fetch(resolveAssetUrl('data/highwayData.json'));
           if (res.ok) {
             const data = await res.json();
             const validated = validateHighwayDataset(data);

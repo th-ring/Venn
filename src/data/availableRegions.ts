@@ -1,4 +1,5 @@
 import type { TransitRegionMetadata } from '../types.ts';
+import { resolveAssetUrl } from '../utils/assetUrl.ts';
 
 export interface CatalogRegion extends TransitRegionMetadata {
   description: string;
@@ -17,7 +18,7 @@ export const AVAILABLE_REGIONS_CATALOG: CatalogRegion[] = [
     stationCount: 237,
     connectionCount: 646,
     downloadSizeApprox: '82 KB',
-    downloadUrl: '/transit-packages/munich.json',
+    downloadUrl: resolveAssetUrl('transit-packages/munich.json'),
     isBuiltIn: true,
     description: 'Vollständiges Netz: Alle S-Bahnen (S1–S8), U-Bahnen (U1–U8), Trams, Metro- & Regionalbusse und Regionalzüge im gesamten MVV-Tarifgebiet.',
     majorLines: ['S1-S8', 'U1-U8', 'Tram 16-28', 'Bus 50-68', 'ExpressBus', 'BRB / RE'],
@@ -33,7 +34,7 @@ export const AVAILABLE_REGIONS_CATALOG: CatalogRegion[] = [
     stationCount: 7850,
     connectionCount: 18200,
     downloadSizeApprox: '2.3 MB',
-    downloadUrl: '/transit-packages/berlin.json',
+    downloadUrl: resolveAssetUrl('transit-packages/berlin.json'),
     isBuiltIn: false,
     description: 'Hauptstadt-Netzwerk: S-Bahn Berlin, alle U-Bahn-Linien (U1–U9), MetroTrams, MetroBusse und Regionalbahnen in Berlin und Vororten.',
     majorLines: ['S1-S9', 'U1-U9', 'M1-M17', 'M11-M85', 'Fähren', 'FEX / RE'],
@@ -49,7 +50,7 @@ export const AVAILABLE_REGIONS_CATALOG: CatalogRegion[] = [
     stationCount: 4620,
     connectionCount: 10400,
     downloadSizeApprox: '1.5 MB',
-    downloadUrl: '/transit-packages/hamburg.json',
+    downloadUrl: resolveAssetUrl('transit-packages/hamburg.json'),
     isBuiltIn: false,
     description: 'Hansestadt-Netzwerk: U-Bahnen (U1–U4), S-Bahnen (S1–S5), MetroBusse, HADAG-Hafenfähren und Regionalverkehr.',
     majorLines: ['U1-U4', 'S1-S5', 'Metrobus 1-29', 'Hafenfähren 61-75', 'RB / RE'],
@@ -65,7 +66,7 @@ export const AVAILABLE_REGIONS_CATALOG: CatalogRegion[] = [
     stationCount: 5120,
     connectionCount: 11200,
     downloadSizeApprox: '1.7 MB',
-    downloadUrl: '/transit-packages/nuernberg.json',
+    downloadUrl: resolveAssetUrl('transit-packages/nuernberg.json'),
     isBuiltIn: false,
     description: 'Großraum Nürnberg, Fürth, Erlangen und Schwabach: U-Bahnen (U1–U3), Trams, S-Bahn Nürnberg und Regionalbusse.',
     majorLines: ['U1-U3', 'Tram 4-11', 'S1-S6', 'Stadt- & Landbusse'],
@@ -81,7 +82,7 @@ export const AVAILABLE_REGIONS_CATALOG: CatalogRegion[] = [
     stationCount: 7100,
     connectionCount: 16500,
     downloadSizeApprox: '2.1 MB',
-    downloadUrl: '/transit-packages/frankfurt.json',
+    downloadUrl: resolveAssetUrl('transit-packages/frankfurt.json'),
     isBuiltIn: false,
     description: 'Metropolregion Rhein-Main: S-Bahn Stammstrecke (S1–S9), U-Bahn Frankfurt (U1–U9), Straßenbahnen und Stadtbusse Frankfurt/Offenbach.',
     majorLines: ['S1-S9', 'U1-U9', 'Tram 11-21', 'Metrobusse', 'VIAS / HLB'],

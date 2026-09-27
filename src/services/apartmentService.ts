@@ -13,6 +13,7 @@ import type {
 } from '../types.ts';
 import { DEFAULT_APARTMENT_FILTER } from '../types.ts';
 import { DEFAULT_APARTMENT_LISTINGS } from '../data/apartments/defaultApartments.ts';
+import { resolveAssetUrl } from '../utils/assetUrl.ts';
 
 const STORAGE_KEY_CUSTOM_APARTMENTS = 'venn_custom_apartments';
 const STORAGE_KEY_FILTER_SETTINGS = 'venn_apartment_filters';
@@ -691,7 +692,7 @@ export async function loadApartmentCatalog(): Promise<ApartmentListing[]> {
   }
 
   try {
-    const res = await fetch('/data/apartments.json', { cache: 'no-cache' });
+    const res = await fetch(resolveAssetUrl('data/apartments.json'), { cache: 'no-cache' });
     if (res.ok) {
       const data = await res.json();
       const validated = validateApartmentDataset(data);
@@ -706,7 +707,7 @@ export async function loadApartmentCatalog(): Promise<ApartmentListing[]> {
   }
 
   try {
-    const resExample = await fetch('/data/apartments.example.json', { cache: 'no-cache' });
+    const resExample = await fetch(resolveAssetUrl('data/apartments.example.json'), { cache: 'no-cache' });
     if (resExample.ok) {
       const data = await resExample.json();
       const validated = validateApartmentDataset(data);

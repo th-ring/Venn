@@ -41,6 +41,7 @@ import {
 } from './transitStorage.ts';
 import type { CatalogRegion } from '../data/availableRegions.ts';
 import { AVAILABLE_REGIONS_CATALOG } from '../data/availableRegions.ts';
+import { resolveAssetUrl } from '../utils/assetUrl.ts';
 
 const MVV_STORAGE_KEY = 'mvv_transit_dataset_v1';
 const MVV_LAST_SYNC_KEY = 'mvv_last_sync_timestamp';
@@ -230,7 +231,7 @@ export async function switchTransitRegion(regionId: string): Promise<TransitRegi
 
   // 2. Check catalog to download package
   const catalogItem = AVAILABLE_REGIONS_CATALOG.find((r) => r.id === regionId);
-  const downloadUrl = catalogItem?.downloadUrl || `/transit-packages/${regionId}.json`;
+  const downloadUrl = resolveAssetUrl(catalogItem?.downloadUrl || `transit-packages/${regionId}.json`);
 
   try {
     const res = await fetch(downloadUrl);
@@ -303,7 +304,9 @@ export async function syncMvvDatasetFromEndpoint(): Promise<{
     const current = getTransitRegion();
     // Try to re-fetch package from server if available
     const catalogItem = AVAILABLE_REGIONS_CATALOG.find((r) => r.id === current.id);
-    const downloadUrl = catalogItem?.downloadUrl || `/transit-packages/${current.id.replace('-mvv', '')}.json`;
+    const downloadUrl = resolveAssetUrl(
+      catalogItem?.downloadUrl || `transit-packages/${current.id.replace('-mvv', '')}.json`
+    );
 
     try {
       const res = await fetch(downloadUrl);
