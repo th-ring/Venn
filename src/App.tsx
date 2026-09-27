@@ -342,6 +342,7 @@ export default function App() {
             apartmentListings={apartments}
             selectedApartmentId={selectedApartmentId || undefined}
             onSelectApartment={handleSelectApartment}
+            onOpenApartmentManager={() => setIsApartmentManagerOpen(true)}
           />
         </MapErrorBoundary>
 

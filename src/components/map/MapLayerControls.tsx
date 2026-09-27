@@ -7,6 +7,8 @@ import {
   RentalOverlaySettings,
   LayerId,
   PoiIconSettings,
+  ApartmentListing,
+  ApartmentFilterSettings,
 } from '../../types';
 import { getGoogleMapsApiKey, getOrsApiKey } from '../../services/isochroneEngine';
 import { RENTAL_LEGEND_TIERS } from '../../services/rentalService';
@@ -24,6 +26,7 @@ import {
   Sun,
   Moon,
   Palette,
+  Building2,
 } from 'lucide-react';
 import { LayerManagerPanel } from './LayerManagerPanel';
 
@@ -165,6 +168,11 @@ interface MapLayerControlsProps {
   intersectionAreaKm2?: number;
   showRailwayOverlay?: boolean;
   onToggleRailwayOverlay?: () => void;
+  apartmentListings?: ApartmentListing[];
+  onOpenApartmentManager?: () => void;
+  apartmentFilterSettings?: ApartmentFilterSettings;
+  onUpdateApartmentFilter?: (settings: Partial<ApartmentFilterSettings>) => void;
+  intersectionFeature?: GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon | GeoJSON.GeometryCollection> | null;
 }
 
 export const MapLayerControls: React.FC<MapLayerControlsProps> = ({
@@ -200,6 +208,11 @@ export const MapLayerControls: React.FC<MapLayerControlsProps> = ({
   poiIconSettings,
   onUpdatePoiIcons,
   intersectionAreaKm2,
+  apartmentListings = [],
+  onOpenApartmentManager,
+  apartmentFilterSettings,
+  onUpdateApartmentFilter,
+  intersectionFeature = null,
 }) => {
   const [isLayerPanelOpen, setIsLayerPanelOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -213,6 +226,7 @@ export const MapLayerControls: React.FC<MapLayerControlsProps> = ({
   const activeLayersCount = [
     !hiddenLayers.has('inspection'),
     !hiddenLayers.has('persons'),
+    apartmentListings.length > 0 && !hiddenLayers.has('apartments'),
     poiIconSettings.visible && !hiddenLayers.has('poi_icons'),
     showIntersectionLayer && !hiddenLayers.has('intersection'),
     heatmapSettings && heatmapSettings.mode !== 'none' && !hiddenLayers.has('heatmap'),
@@ -273,6 +287,30 @@ export const MapLayerControls: React.FC<MapLayerControlsProps> = ({
                 }`}
               >
                 <Home className="w-4 h-4" />
+              </button>
+            )}
+
+            {/* Quick-Toggle: Wohnungsangebote Layer */}
+            {apartmentListings.length > 0 && (
+              <button
+                id="btn-toggle-apartments-layer"
+                type="button"
+                onClick={() => onToggleLayerVisibility('apartments')}
+                title={
+                  !hiddenLayers.has('apartments')
+                    ? `Wohnungs-Pins ausblenden (${apartmentListings.length} Angebote aktiv)`
+                    : `Wohnungs-Pins einblenden (${apartmentListings.length} Angebote verfügbar)`
+                }
+                className={`w-10 h-10 flex items-center justify-center transition-colors cursor-pointer relative ${
+                  !hiddenLayers.has('apartments')
+                    ? 'bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400'
+                    : 'text-slate-600 dark:text-[#9aa0a6] hover:bg-slate-100 dark:hover:bg-[#282a2c] hover:text-slate-900 dark:hover:text-[#e8eaed]'
+                }`}
+              >
+                <Building2 className="w-4 h-4" />
+                <span className="absolute top-1 right-1 w-3.5 h-3.5 bg-rose-600 text-white rounded-full text-[9px] font-bold flex items-center justify-center leading-none">
+                  {apartmentListings.length > 9 ? '9+' : apartmentListings.length}
+                </span>
               </button>
             )}
 
@@ -389,6 +427,11 @@ export const MapLayerControls: React.FC<MapLayerControlsProps> = ({
         intersectionAreaKm2={intersectionAreaKm2}
         showRailwayOverlay={showRailwayOverlay}
         onToggleRailwayOverlay={onToggleRailwayOverlay}
+        apartmentListings={apartmentListings}
+        onOpenApartmentManager={onOpenApartmentManager}
+        apartmentFilterSettings={apartmentFilterSettings}
+        onUpdateApartmentFilter={onUpdateApartmentFilter}
+        intersectionFeature={intersectionFeature}
       />
 
       {/* Active "Nur überlagerter Treffbereich" Floating Banner */}

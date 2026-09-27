@@ -7,7 +7,10 @@ import {
   PersonProfile,
   BasemapPlatform,
   MapVariant,
+  ApartmentListing,
+  ApartmentFilterSettings,
 } from '../../types';
+import { filterApartmentsInPolygon } from '../../services/apartmentService';
 import {
   MAP_VARIANTS,
   OSM_VARIANTS,
@@ -32,6 +35,7 @@ import {
   Map as MapIcon,
   Globe,
   Home,
+  Building2,
   Palette,
 } from 'lucide-react';
 
@@ -70,6 +74,11 @@ interface LayerManagerPanelProps {
   intersectionAreaKm2?: number;
   showRailwayOverlay?: boolean;
   onToggleRailwayOverlay?: () => void;
+  apartmentListings?: ApartmentListing[];
+  onOpenApartmentManager?: () => void;
+  apartmentFilterSettings?: ApartmentFilterSettings;
+  onUpdateApartmentFilter?: (settings: Partial<ApartmentFilterSettings>) => void;
+  intersectionFeature?: GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon | GeoJSON.GeometryCollection> | null;
 }
 
 export const LayerManagerPanel: React.FC<LayerManagerPanelProps> = ({
@@ -106,6 +115,11 @@ export const LayerManagerPanel: React.FC<LayerManagerPanelProps> = ({
   intersectionAreaKm2,
   showRailwayOverlay = false,
   onToggleRailwayOverlay,
+  apartmentListings = [],
+  onOpenApartmentManager,
+  apartmentFilterSettings,
+  onUpdateApartmentFilter,
+  intersectionFeature = null,
 }) => {
   const [expandedLayer, setExpandedLayer] = useState<LayerId | null>('heatmap');
 
@@ -133,14 +147,22 @@ export const LayerManagerPanel: React.FC<LayerManagerPanelProps> = ({
           color: 'text-indigo-600 bg-indigo-50 border-indigo-200',
           canMove: true,
         };
-      case 'apartments':
+      case 'apartments': {
+        const total = apartmentListings.length;
+        const insideCount = intersectionFeature
+          ? filterApartmentsInPolygon(apartmentListings, intersectionFeature).length
+          : total;
         return {
           title: 'Wohnungsangebote (Pins)',
-          subtitle: 'Gefundene Wohnungen im Treffbereich',
-          icon: Home,
-          color: 'text-rose-600 bg-rose-50 border-rose-200',
+          subtitle:
+            total > 0
+              ? `${total} Angebote (${insideCount} im Treffbereich)`
+              : 'Keine Angebote geladen',
+          icon: Building2,
+          color: 'text-rose-600 bg-rose-50 border-rose-200 dark:bg-rose-950/40 dark:border-rose-800',
           canMove: true,
         };
+      }
       case 'poi_icons':
         return {
           title: 'Haltestellen & Knoten (Icons)',
@@ -510,6 +532,154 @@ export const LayerManagerPanel: React.FC<LayerManagerPanelProps> = ({
                             />
                           </div>
                         </>
+                      )}
+                    </div>
+                  )}
+
+                  {/* APARTMENTS SETTINGS */}
+                  {layerId === 'apartments' && (
+                    <div className="space-y-2.5">
+                      {/* Summary Badges */}
+                      <div className="grid grid-cols-2 gap-1.5 p-2 bg-white dark:bg-[#1e1f20] rounded-lg border border-slate-200/80 dark:border-[#3c4043]">
+                        <div>
+                          <div className="text-[10px] text-slate-500 dark:text-[#9aa0a6]">Wohnungsangebote</div>
+                          <div className="text-xs font-bold text-slate-800 dark:text-[#e3e3e3] flex items-baseline gap-1">
+                            <span>{apartmentListings.length} gesamt</span>
+                            {intersectionFeature && (
+                              <span className="text-[10.5px] font-semibold text-rose-600 dark:text-rose-400">
+                                ({filterApartmentsInPolygon(apartmentListings, intersectionFeature).length} Treffer)
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-[10px] text-slate-500 dark:text-[#9aa0a6]">Ø Warmmiete</div>
+                          <div className="text-xs font-bold text-slate-800 dark:text-[#e3e3e3]">
+                            {apartmentListings.length > 0
+                              ? `${Math.round(
+                                  apartmentListings.reduce((sum, a) => sum + (a.priceWarm || a.priceCold), 0) /
+                                    apartmentListings.length
+                                )} € / Monat`
+                              : '—'}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Filter: Nur im Treffbereich anzeigen */}
+                      {onUpdateApartmentFilter && hasIntersection && (
+                        <div className="flex items-center justify-between p-1.5 rounded-lg hover:bg-slate-100/60 dark:hover:bg-[#282a2c]/60 transition-colors">
+                          <div className="flex flex-col">
+                            <span className="text-[11px] font-medium text-slate-800 dark:text-[#e3e3e3]">
+                              Nur im Treffbereich anzeigen
+                            </span>
+                            <span className="text-[10px] text-slate-500 dark:text-[#9aa0a6]">
+                              Blendet Angebote außerhalb des Schnittbereichs aus
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              onUpdateApartmentFilter({
+                                onlyWithinIntersection: !apartmentFilterSettings?.onlyWithinIntersection,
+                              })
+                            }
+                            className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                              apartmentFilterSettings?.onlyWithinIntersection
+                                ? 'bg-rose-600'
+                                : 'bg-slate-300 dark:bg-slate-600'
+                            }`}
+                          >
+                            <span
+                              className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                                apartmentFilterSettings?.onlyWithinIntersection
+                                  ? 'translate-x-4'
+                                  : 'translate-x-0'
+                              }`}
+                            />
+                          </button>
+                        </div>
+                      )}
+
+                      {/* Filter: Zimmerzahl */}
+                      {onUpdateApartmentFilter && (
+                        <div className="space-y-1">
+                          <div className="text-[10px] font-semibold text-slate-600 dark:text-[#9aa0a6]">
+                            Mindest-Zimmerzahl filtern
+                          </div>
+                          <div className="grid grid-cols-4 gap-1">
+                            {[
+                              { id: 0, label: 'Alle' },
+                              { id: 2, label: '2+ Zi.' },
+                              { id: 3, label: '3+ Zi.' },
+                              { id: 4, label: '4+ Zi.' },
+                            ].map((item) => {
+                              const isSelected = (apartmentFilterSettings?.minRooms || 0) === item.id;
+                              return (
+                                <button
+                                  key={item.id}
+                                  type="button"
+                                  onClick={() =>
+                                    onUpdateApartmentFilter({
+                                      minRooms: item.id === 0 ? undefined : item.id,
+                                    })
+                                  }
+                                  className={`py-1 px-1 text-[10.5px] font-medium rounded-md border text-center transition-colors cursor-pointer ${
+                                    isSelected
+                                      ? 'bg-rose-50 dark:bg-rose-950/60 border-rose-300 dark:border-rose-700 text-rose-700 dark:text-rose-300 font-bold'
+                                      : 'bg-white dark:bg-[#1e1f20] border-slate-200 dark:border-[#3c4043] text-slate-600 dark:text-[#9aa0a6] hover:bg-slate-50 dark:hover:bg-[#282a2c]'
+                                  }`}
+                                >
+                                  {item.label}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Portal Sources Breakdown */}
+                      {apartmentListings.length > 0 && (
+                        <div className="space-y-1">
+                          <div className="text-[10px] font-semibold text-slate-600 dark:text-[#9aa0a6]">
+                            Quellen der Angebote
+                          </div>
+                          <div className="flex flex-wrap gap-1">
+                            {Array.from(new Set(apartmentListings.map((a) => a.source || 'custom'))).map(
+                              (src) => {
+                                const count = apartmentListings.filter(
+                                  (a) => (a.source || 'custom') === src
+                                ).length;
+                                const labels: Record<string, string> = {
+                                  immoscout24: 'ImmoScout24',
+                                  immowelt: 'Immowelt',
+                                  'wg-gesucht': 'WG-Gesucht',
+                                  kleinanzeigen: 'Kleinanzeigen',
+                                  custom: 'Manuell / CSV',
+                                };
+                                return (
+                                  <span
+                                    key={src}
+                                    className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 dark:bg-[#282a2c] text-slate-700 dark:text-[#c4c7c5] border border-slate-200/80 dark:border-[#3c4043]"
+                                  >
+                                    {labels[src] || src}: <strong>{count}</strong>
+                                  </span>
+                                );
+                              }
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Action: Open Apartment Manager */}
+                      {onOpenApartmentManager && (
+                        <button
+                          type="button"
+                          onClick={onOpenApartmentManager}
+                          className="w-full mt-1.5 py-1.5 px-2.5 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/50 dark:hover:bg-rose-900/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 rounded-lg text-[11px] font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                        >
+                          <Building2 className="w-3.5 h-3.5" />
+                          <span>Wohnungs-Manager öffnen (Suche & Import)</span>
+                        </button>
                       )}
                     </div>
                   )}

@@ -15,7 +15,10 @@ import {
   DEFAULT_LAYER_ORDER,
   DEFAULT_POI_ICON_SETTINGS,
   ApartmentListing,
+  ApartmentFilterSettings,
+  DEFAULT_APARTMENT_FILTER,
 } from '../types';
+import { filterApartmentsInPolygon } from '../services/apartmentService';
 import { Loader2, AlertCircle, Key } from 'lucide-react';
 import { getPriorityTargets } from '../services/priorityHeatmapEngine';
 import {
@@ -92,6 +95,9 @@ interface MapComponentProps {
   apartmentListings?: ApartmentListing[];
   selectedApartmentId?: string;
   onSelectApartment?: (apartment: ApartmentListing) => void;
+  onOpenApartmentManager?: () => void;
+  apartmentFilterSettings?: ApartmentFilterSettings;
+  onUpdateApartmentFilter?: (settings: Partial<ApartmentFilterSettings>) => void;
 }
 
 export const MapComponent: React.FC<MapComponentProps> = React.memo<MapComponentProps>(({
@@ -128,10 +134,26 @@ export const MapComponent: React.FC<MapComponentProps> = React.memo<MapComponent
   apartmentListings = [],
   selectedApartmentId,
   onSelectApartment,
+  onOpenApartmentManager,
+  apartmentFilterSettings: propApartmentFilter,
+  onUpdateApartmentFilter: propOnUpdateApartmentFilter,
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const { isDark } = useTheme();
+
+  // Apartment layer filter state (with local fallback)
+  const [internalApartmentFilter, setInternalApartmentFilter] = useState<ApartmentFilterSettings>(
+    () => propApartmentFilter || DEFAULT_APARTMENT_FILTER
+  );
+  const activeApartmentFilter = propApartmentFilter || internalApartmentFilter;
+  const handleUpdateApartmentFilter = (settings: Partial<ApartmentFilterSettings>) => {
+    if (propOnUpdateApartmentFilter) {
+      propOnUpdateApartmentFilter(settings);
+    } else {
+      setInternalApartmentFilter((prev) => ({ ...prev, ...settings }));
+    }
+  };
 
   // Basemap platform & variant management
   const [activePlatform, setActivePlatform] = useState<BasemapPlatform>(() => getBasemapPlatform());
@@ -991,7 +1013,24 @@ export const MapComponent: React.FC<MapComponentProps> = React.memo<MapComponent
       return;
     }
 
-    apartmentListings.forEach((apt) => {
+    // Apply apartment layer filters (intersection bounds, room count, price cap)
+    let filteredListings = apartmentListings;
+    if (activeApartmentFilter.onlyWithinIntersection && (result?.intersection || result?.rawIntersection)) {
+      filteredListings = filterApartmentsInPolygon(
+        filteredListings,
+        result.intersection || result.rawIntersection || null
+      );
+    }
+    if (activeApartmentFilter.minRooms && activeApartmentFilter.minRooms > 0) {
+      filteredListings = filteredListings.filter((a) => a.rooms >= activeApartmentFilter.minRooms!);
+    }
+    if (activeApartmentFilter.maxPriceWarm && activeApartmentFilter.maxPriceWarm > 0) {
+      filteredListings = filteredListings.filter(
+        (a) => (a.priceWarm || a.priceCold) <= activeApartmentFilter.maxPriceWarm!
+      );
+    }
+
+    filteredListings.forEach((apt) => {
       const isSelected = selectedApartmentId === apt.id;
       const markerIcon = createApartmentMarkerIcon(
         apt.priceWarm || apt.priceCold,
@@ -1045,6 +1084,9 @@ export const MapComponent: React.FC<MapComponentProps> = React.memo<MapComponent
     apartmentListings,
     selectedApartmentId,
     hiddenLayers,
+    activeApartmentFilter,
+    result?.intersection,
+    result?.rawIntersection,
     onSelectApartment,
     onSelectInspectionPoint,
     isDark,
@@ -1244,6 +1286,11 @@ export const MapComponent: React.FC<MapComponentProps> = React.memo<MapComponent
         intersectionAreaKm2={result?.intersectionAreaKm2}
         showRailwayOverlay={showRailwayOverlay}
         onToggleRailwayOverlay={handleToggleRailwayOverlay}
+        apartmentListings={apartmentListings}
+        onOpenApartmentManager={onOpenApartmentManager}
+        apartmentFilterSettings={activeApartmentFilter}
+        onUpdateApartmentFilter={handleUpdateApartmentFilter}
+        intersectionFeature={result?.intersection || result?.rawIntersection || null}
       />
     </div>
   );
