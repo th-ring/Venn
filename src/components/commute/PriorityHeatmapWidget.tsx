@@ -18,7 +18,12 @@ export const PriorityHeatmapWidget: React.FC<PriorityHeatmapWidgetProps> = ({
   onUpdateHeatmap,
 }) => {
   const highwayMeta = getHighwayMetadata();
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    if (typeof window !== 'undefined' && window.innerWidth < 768) {
+      return true;
+    }
+    return false;
+  });
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 

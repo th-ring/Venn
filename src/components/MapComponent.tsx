@@ -170,7 +170,7 @@ export const MapComponent: React.FC<MapComponentProps> = React.memo<MapComponent
 
   // Memoize visual properties of profiles to prevent re-parsing Leaflet layers during slider drag
   const profilesVisualKey = profiles
-    .map((p) => `${p.id}:${p.visible}:${p.color}:${p.name}:${p.mode}`)
+    .map((p) => `${p.id}:${p.visible}:${p.color}:${p.name}:${p.mode}:${p.lat}:${p.lng}:${p.travelTimeMinutes}`)
     .join('|');
 
   // Subscribe to live highway dataset updates
@@ -251,7 +251,7 @@ export const MapComponent: React.FC<MapComponentProps> = React.memo<MapComponent
       center: [48.14, 11.45],
       zoom: 11,
       zoomControl: false,
-      preferCanvas: true,
+      preferCanvas: false,
     });
 
     L.control

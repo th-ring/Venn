@@ -288,7 +288,11 @@ export function useCommuteFinder() {
     initializeTransitStorage().catch(() => {});
   }, []);
 
+  const onlyResidentialRef = useRef(onlyResidential);
+  onlyResidentialRef.current = onlyResidential;
+
   const workerRef = useRef<Worker | null>(null);
+  const workerWatchdogTimerRef = useRef<NodeJS.Timeout | null>(null);
   const activeRequestIdRef = useRef<string | null>(null);
   const activeInspectionRequestIdRef = useRef<string | null>(null);
   const pendingInspectContextRef = useRef<{
@@ -296,6 +300,105 @@ export function useCommuteFinder() {
     lng: number;
     matchedApartment?: ApartmentListing;
   } | null>(null);
+  const runMainThreadCalculationRef = useRef<(p?: PersonProfile[], s?: CommuteSchedule, r?: boolean) => Promise<void>>(
+    () => Promise.resolve()
+  );
+
+  // Main-Thread Calculation Fallback
+  const runMainThreadCalculation = useCallback(
+    async (
+      currentProfiles: PersonProfile[] = profilesRef.current,
+      currentSchedule: CommuteSchedule = scheduleRef.current,
+      residentialFilter: boolean = onlyResidentialRef.current
+    ) => {
+      setIsPending(false);
+      setIsCalculating(true);
+      const active = currentProfiles.filter((p) => p.visible);
+
+      if (active.length === 0) {
+        setResult(null);
+        setIsCalculating(false);
+        setLastCalculatedAt(new Date());
+        return;
+      }
+
+      try {
+        const isochronePromises = active.map(async (p) => {
+          const poly = await generateIsochrone(p, currentSchedule);
+          return { id: p.id, poly };
+        });
+
+        const generated = await Promise.all(isochronePromises);
+        const isochronesMap: Record<string, GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon>> = {};
+        const polygonList: Array<GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon>> = [];
+        const fallbackAlerts: IsochroneFallbackAlert[] = [];
+
+        generated.forEach(({ id, poly }) => {
+          isochronesMap[id] = poly;
+          polygonList.push(poly);
+          if (poly.properties?.isFallback && poly.properties?.fallbackReason) {
+            const p = active.find((person) => person.id === id);
+            fallbackAlerts.push({
+              personId: id,
+              personName: p?.name || p?.address || 'Referenzort',
+              mode: p?.mode || 'driving',
+              requestedProvider: poly.properties.requestedProvider || 'calibrated',
+              reason: poly.properties.fallbackReason,
+              statusCode: poly.properties.statusCode,
+            });
+          }
+        });
+
+        const rawIntersection = calculateMultiIntersection(polygonList);
+        const rawAreaKm2 = calculateAreaKm2(rawIntersection);
+
+        let finalIntersection = rawIntersection;
+        let finalAreaKm2 = rawAreaKm2;
+
+        if (residentialFilter && rawIntersection) {
+          const masked = maskByResidentialAreas(rawIntersection);
+          if (masked) {
+            finalIntersection = masked;
+            finalAreaKm2 = calculateAreaKm2(masked);
+          }
+        }
+
+        const isEmpty = !finalIntersection || finalAreaKm2 <= 0;
+        const suggestions = isEmpty ? generateEmptyIntersectionSuggestions(active) : [];
+
+        const finalResult: CalculationResult = {
+          isochrones: isochronesMap,
+          intersection: finalIntersection,
+          rawIntersection,
+          intersectionAreaKm2: finalAreaKm2,
+          rawIntersectionAreaKm2: rawAreaKm2,
+          emptyIntersection: isEmpty,
+          suggestions,
+          fallbackAlerts: fallbackAlerts.length > 0 ? fallbackAlerts : undefined,
+        };
+        setResult(finalResult);
+        resultRef.current = finalResult;
+        if (inspectionPointRef.current) {
+          setTimeout(() => {
+            if (inspectionPointRef.current) {
+              handleSelectInspectionPointRef.current(
+                inspectionPointRef.current.lat,
+                inspectionPointRef.current.lng
+              );
+            }
+          }, 16);
+        }
+        setLastCalculatedAt(new Date());
+      } catch (err) {
+        console.error('[useCommuteFinder] Main-thread calculation error:', err);
+      } finally {
+        setIsCalculating(false);
+        setIsPending(false);
+      }
+    },
+    []
+  );
+  runMainThreadCalculationRef.current = runMainThreadCalculation;
 
   // Initialize background computation Web Worker
   useEffect(() => {
@@ -306,6 +409,10 @@ export function useCommuteFinder() {
           type: 'module',
         });
         worker.onmessage = (e: MessageEvent<CommuteWorkerOutgoingMessage>) => {
+          if (workerWatchdogTimerRef.current) {
+            clearTimeout(workerWatchdogTimerRef.current);
+            workerWatchdogTimerRef.current = null;
+          }
           const resp = e.data;
           if (!resp) return;
 
@@ -365,8 +472,15 @@ export function useCommuteFinder() {
         };
         worker.onerror = (err) => {
           console.warn('[useCommuteFinder] Web Worker calculation error, falling back to main-thread:', err);
-          setIsCalculating(false);
-          setIsPending(false);
+          if (workerWatchdogTimerRef.current) {
+            clearTimeout(workerWatchdogTimerRef.current);
+            workerWatchdogTimerRef.current = null;
+          }
+          try {
+            worker?.terminate();
+          } catch {}
+          workerRef.current = null;
+          runMainThreadCalculationRef.current();
         };
         workerRef.current = worker;
       }
@@ -375,6 +489,10 @@ export function useCommuteFinder() {
     }
 
     return () => {
+      if (workerWatchdogTimerRef.current) {
+        clearTimeout(workerWatchdogTimerRef.current);
+        workerWatchdogTimerRef.current = null;
+      }
       if (worker) {
         worker.terminate();
       }
@@ -405,97 +523,52 @@ export function useCommuteFinder() {
 
       // Primary: Execute all matrix searches, Turf buffering, and geometric intersections in Web Worker
       if (workerRef.current) {
-        const workerPayload: CommuteWorkerRequest = {
-          requestId,
-          profiles: currentProfiles,
-          schedule: currentSchedule,
-          onlyResidential: residentialFilter,
-          activeTransitRegion: getTransitRegion(),
-          selectedProvider: getSelectedProvider(),
-          googleMapsApiKey: getGoogleMapsApiKey(),
-          orsApiKey: getOrsApiKey(),
-        };
-        workerRef.current.postMessage(workerPayload);
-        return;
+        if (workerWatchdogTimerRef.current) {
+          clearTimeout(workerWatchdogTimerRef.current);
+        }
+        workerWatchdogTimerRef.current = setTimeout(() => {
+          console.warn('[useCommuteFinder] Web Worker watchdog timeout (7s), falling back to main-thread:');
+          if (workerWatchdogTimerRef.current) {
+            clearTimeout(workerWatchdogTimerRef.current);
+            workerWatchdogTimerRef.current = null;
+          }
+          try {
+            workerRef.current?.terminate();
+          } catch {}
+          workerRef.current = null;
+          runMainThreadCalculationRef.current(currentProfiles, currentSchedule, residentialFilter);
+        }, 7000);
+
+        try {
+          const workerPayload: CommuteWorkerRequest = {
+            requestId,
+            profiles: currentProfiles,
+            schedule: currentSchedule,
+            onlyResidential: residentialFilter,
+            activeTransitRegion: getTransitRegion(),
+            selectedProvider: getSelectedProvider(),
+            googleMapsApiKey: getGoogleMapsApiKey(),
+            orsApiKey: getOrsApiKey(),
+          };
+          workerRef.current.postMessage(workerPayload);
+          return;
+        } catch (postErr) {
+          console.warn('[useCommuteFinder] worker.postMessage failed, executing on main thread:', postErr);
+          if (workerWatchdogTimerRef.current) {
+            clearTimeout(workerWatchdogTimerRef.current);
+            workerWatchdogTimerRef.current = null;
+          }
+          try { workerRef.current?.terminate(); } catch {}
+          workerRef.current = null;
+        }
       }
 
       // Fallback: Synchronous Main-Thread execution if Web Worker is unavailable
-      try {
-        const isochronePromises = active.map(async (p) => {
-          const poly = await generateIsochrone(p, currentSchedule);
-          return { id: p.id, poly };
-        });
-
-        const generated = await Promise.all(isochronePromises);
-        const isochronesMap: Record<string, GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon>> = {};
-        const polygonList: Array<GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon>> = [];
-        const fallbackAlerts: IsochroneFallbackAlert[] = [];
-
-        generated.forEach(({ id, poly }) => {
-          isochronesMap[id] = poly;
-          polygonList.push(poly);
-          if (poly.properties?.isFallback && poly.properties?.fallbackReason) {
-            const p = active.find((person) => person.id === id);
-            fallbackAlerts.push({
-              personId: id,
-              personName: p?.name || p?.address || 'Referenzort',
-              mode: p?.mode || 'driving',
-              requestedProvider: poly.properties.requestedProvider || 'calibrated',
-              reason: poly.properties.fallbackReason,
-              statusCode: poly.properties.statusCode,
-            });
-          }
-        });
-
-        const rawIntersection = calculateMultiIntersection(polygonList);
-        const rawAreaKm2 = calculateAreaKm2(rawIntersection);
-
-        let finalIntersection = rawIntersection;
-        let finalAreaKm2 = rawAreaKm2;
-
-        if (residentialFilter && rawIntersection) {
-          const masked = maskByResidentialAreas(rawIntersection);
-          if (masked) {
-            finalIntersection = masked;
-            finalAreaKm2 = calculateAreaKm2(masked);
-          }
-        }
-
-        const isEmpty = !finalIntersection || finalAreaKm2 <= 0;
-        const suggestions = isEmpty ? generateEmptyIntersectionSuggestions(active) : [];
-
-        const finalResult = {
-          isochrones: isochronesMap,
-          intersection: finalIntersection,
-          rawIntersection,
-          intersectionAreaKm2: finalAreaKm2,
-          rawIntersectionAreaKm2: rawAreaKm2,
-          emptyIntersection: isEmpty,
-          suggestions,
-          fallbackAlerts: fallbackAlerts.length > 0 ? fallbackAlerts : undefined,
-        };
-        setResult(finalResult);
-        resultRef.current = finalResult;
-        if (inspectionPointRef.current) {
-          setTimeout(() => {
-            if (inspectionPointRef.current) {
-              handleSelectInspectionPointRef.current(
-                inspectionPointRef.current.lat,
-                inspectionPointRef.current.lng
-              );
-            }
-          }, 16);
-        }
-        setLastCalculatedAt(new Date());
-      } catch (err) {
-        console.error('Calculation error:', err);
-      } finally {
-        setIsCalculating(false);
-        setIsPending(false);
-      }
+      await runMainThreadCalculation(currentProfiles, currentSchedule, residentialFilter);
     },
-    [profiles, schedule, onlyResidential]
+    [profiles, schedule, onlyResidential, runMainThreadCalculation]
   );
+
 
   // Debounced auto-calculation
   useEffect(() => {

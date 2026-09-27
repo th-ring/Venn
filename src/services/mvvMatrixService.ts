@@ -963,30 +963,68 @@ export function generateMvvTransitIsochrone(
   }
 
   // 3. Hierarchical union of origin walk area and station catchment bubbles
-  let currentList = [...polygonsToUnion];
-  while (currentList.length > 1) {
-    const nextList: GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon>[] = [];
-    for (let i = 0; i < currentList.length; i += 2) {
-      if (i + 1 < currentList.length) {
-        try {
-          const fc = turf.featureCollection([currentList[i] as any, currentList[i + 1] as any]);
-          const u = (turf.union as any)(fc);
-          if (u) {
-            nextList.push(u as GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon>);
+  let merged: GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon> = originWalkCircle;
+
+  if (polygonsToUnion.length === 1) {
+    merged = polygonsToUnion[0];
+  } else if (polygonsToUnion.length > 1) {
+    let united: GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon> | null = null;
+    try {
+      const fc = turf.featureCollection(polygonsToUnion as any);
+      const res = (turf.union as any)(fc);
+      if (res && res.geometry) {
+        united = res as GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon>;
+      }
+    } catch {}
+
+    if (united) {
+      merged = united;
+    } else {
+      // Pairwise reduction with bounded iterations
+      let currentList = [...polygonsToUnion];
+      let maxRounds = 8;
+      while (currentList.length > 1 && maxRounds > 0) {
+        maxRounds--;
+        const nextList: GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon>[] = [];
+        let mergedAny = false;
+        for (let i = 0; i < currentList.length; i += 2) {
+          if (i + 1 < currentList.length) {
+            try {
+              const fc = turf.featureCollection([currentList[i] as any, currentList[i + 1] as any]);
+              const u = (turf.union as any)(fc);
+              if (u && u.geometry) {
+                nextList.push(u as GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon>);
+                mergedAny = true;
+              } else {
+                nextList.push(currentList[i], currentList[i + 1]);
+              }
+            } catch {
+              nextList.push(currentList[i], currentList[i + 1]);
+            }
           } else {
-            nextList.push(currentList[i], currentList[i + 1]);
+            nextList.push(currentList[i]);
           }
-        } catch {
-          nextList.push(currentList[i]);
         }
+        currentList = nextList;
+        if (!mergedAny) break;
+      }
+
+      if (currentList.length === 1) {
+        merged = currentList[0];
       } else {
-        nextList.push(currentList[i]);
+        // Collect disjoint polygons into a MultiPolygon
+        const allPolys: GeoJSON.Position[][][] = [];
+        for (const item of currentList) {
+          if (item.geometry.type === 'Polygon') {
+            allPolys.push(item.geometry.coordinates);
+          } else if (item.geometry.type === 'MultiPolygon') {
+            allPolys.push(...item.geometry.coordinates);
+          }
+        }
+        merged = turf.multiPolygon(allPolys);
       }
     }
-    currentList = nextList;
   }
-
-  let merged: GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon> = currentList[0] || originWalkCircle;
 
   const dataset = getTransitRegion();
 

@@ -73,7 +73,7 @@ export type TransitSubMode = 'tram' | 'ubahn' | 'bus' | 'expressbus' | 'sbahn' |
 
 export const ALL_TRANSIT_SUBMODES: TransitSubMode[] = ['tram', 'ubahn', 'bus', 'expressbus', 'sbahn', 'train'];
 
-export const DEFAULT_TRANSIT_SUBMODES: TransitSubMode[] = ['tram', 'ubahn', 'bus', 'expressbus'];
+export const DEFAULT_TRANSIT_SUBMODES: TransitSubMode[] = ['tram', 'ubahn', 'bus', 'expressbus', 'sbahn', 'train'];
 
 export interface TransitStation {
   id: string;

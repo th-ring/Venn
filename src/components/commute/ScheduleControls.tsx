@@ -27,7 +27,12 @@ export const ScheduleControls: React.FC<ScheduleControlsProps> = ({
   autoUpdate = true,
   onToggleAutoUpdate,
 }) => {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    if (typeof window !== 'undefined' && window.innerWidth < 768) {
+      return true;
+    }
+    return false;
+  });
 
   return (
     <div
