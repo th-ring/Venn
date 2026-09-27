@@ -701,8 +701,23 @@ export async function loadApartmentCatalog(): Promise<ApartmentListing[]> {
         return validated.listings;
       }
     }
-  } catch (err) {
-    console.info('Using bundled default apartments (fetch /data/apartments.json not reachable in local dev):', err);
+  } catch {
+    // apartments.json not found or not readable, continue to example fallback
+  }
+
+  try {
+    const resExample = await fetch('/data/apartments.example.json', { cache: 'no-cache' });
+    if (resExample.ok) {
+      const data = await resExample.json();
+      const validated = validateApartmentDataset(data);
+      if (validated.valid && validated.listings.length > 0) {
+        inMemoryListings = validated.listings;
+        notifyListeners();
+        return validated.listings;
+      }
+    }
+  } catch {
+    // continue to bundled default
   }
 
   inMemoryListings = [...DEFAULT_APARTMENT_LISTINGS];

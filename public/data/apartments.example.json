@@ -1,7 +1,7 @@
 {
-  "version": "1.1.0",
-  "lastUpdated": "2026-09-27T09:25:21.798Z",
-  "source": "Venn Housing Aggregator",
+  "version": "1.2.0",
+  "lastUpdated": "2026-09-27T12:00:00.000Z",
+  "source": "Venn Housing Aggregator (Example Template)",
   "city": "München",
   "bbox": [
     11.54,
@@ -9,28 +9,28 @@
     11.59,
     48.17
   ],
-  "status": "bot_protection_active",
-  "message": "Automatisierter Portal-Abruf durch Bot-Schutz der Portale eingeschränkt. Nutze die Direktlinks für diesen Bereich.",
+  "status": "ready",
+  "message": "Beispieldatensatz für Venn. Echte Recherchen werden lokal in apartments.json gespeichert und nicht committet.",
   "portalLinks": [
     {
       "portal": "immoscout24",
       "name": "ImmoScout24",
-      "url": "https://www.immobilienscout24.de/Suche/radius/wohnung-mieten?centerlat=48.1550&centerlon=11.5650&radius=2&userGeoAttributes=true",
-      "badge": "~2 km Umkreis",
-      "description": "Deutschlands größtes Immobilienportal (Radius-Suche)"
+      "url": "https://www.immobilienscout24.de/Suche/de/bayern/muenchen/wohnung-mieten",
+      "badge": "München",
+      "description": "Deutschlands größtes Immobilienportal (Suchergebnisse)"
     },
     {
       "portal": "immowelt",
       "name": "Immowelt",
-      "url": "https://www.immowelt.de/liste/wohnungen/mieten?lat=48.1550&lon=11.5650&distance=2",
-      "badge": "~2 km Umkreis",
+      "url": "https://www.immowelt.de/suche/muenchen/wohnungen/mieten?r=2",
+      "badge": "München (+2 km)",
       "description": "Umfangreiche Mietangebote im Suchradius"
     },
     {
       "portal": "wg-gesucht",
       "name": "WG-Gesucht",
-      "url": "https://www.wg-gesucht.de/wohnungen-in-M%C3%BCnchen.html?distance=2",
-      "badge": "München (+2 km)",
+      "url": "https://www.wg-gesucht.de/wohnungen-in-Muenchen.90.2.1.0.html",
+      "badge": "Muenchen (Wohnungen)",
       "description": "Wohnungen, Apartments & WG-Zimmer"
     },
     {
