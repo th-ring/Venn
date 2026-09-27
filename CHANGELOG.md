@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-09-27
+
+### Added
+- **Flächenauswertung für den gemeinsamen Treffbereich**: Klicks in die Schnittmenge zeigen nun einen gemeinsamen Paar-Mittelwert am geometrischen Schwerpunkt (Centroid) sowie die individuelle Fahrzeitspanne (± Minuten) für die beiden Zielorte anstelle starrer Einzelpunktwerte.
+- **Geometrische Flächenabtastung**: Automatische Bestimmung des Mindest-, Mittel- und Höchstzeitaufwands innerhalb der Schnittmenge zur realistischen Einschätzung des Suchgebiets.
+
 ## [1.0.2] - 2026-09-27
 
 ### Fixed
