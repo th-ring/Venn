@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.3] - 2026-09-27
+
+### Fixed
+- **Mobile UI & Responsive Viewports**: Behebung von Element-Überlagerungen auf Mobilgeräten zwischen Kartenlegende, Zoom-Steuerung, Sidebar-Header und Floating-Badges.
+- **Touch-optimiertes Bottom Sheet für Inspektionen**: Der Klick-Inspektor besitzt nun einen festen Header, Drag-Indicator, optimierte Insets und einen eigenständig scrollbaren Inhaltsbereich.
+- **Responsives Umbrechen von Steuerelementen**: Pendelzeit-, Richtungs-, Wochentags- und Filter-Steuerungen passen sich auf schmalen Smartphones (<390px) sauber ohne visuelle Stauchung an.
+
 ## [1.4.2] - 2026-09-27
 
 ### Fixed
