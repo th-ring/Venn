@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.4] - 2026-09-27
+
+### Fixed
+- **ÖPNV-Isochronen auf iOS Safari**: Standardmäßige Aktivierung von S-Bahn und Zügen im ÖPNV-Submodus sowie Beseitigung von WebKit-Canvas-Speicherengpässen auf Retina-Displays, wodurch unvollständige oder fehlende Isochronen behoben wurden.
+- **Resilienz der Geometrie-Verschneidung**: Bounded-Pairwise-Union und automatischer MultiPolygon-Fallback verhindern Hänger bei unzusammenhängenden Haltestellen-Puffern.
+- **Web Worker Watchdog**: Automatischer 7s-Fallback auf den Hauptthread fängt etwaige Worker-Timeouts unter iOS sicher ab.
+
+### Changed
+- **Mobile Sidebar UI/UX**: Referenzorte wurden an die oberste Position der Seitenleiste verschoben und erhalten volle vertikale Priorität in einem einzigen durchgehenden Scroll-Container.
+- **Aufgeräumte Mobileinstellungen**: Pendelzeit-, Richtungs- und Heatmap-Steuerungen starten auf Smartphones standardmäßig eingeklappt unterhalb der Referenzorte.
+
 ## [1.4.3] - 2026-09-27
 
 ### Fixed
