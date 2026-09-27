@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { InspectionPoint, TransportMode, CommuteEstimate } from '../types';
+import React, { useState, useEffect } from 'react';
+import { InspectionPoint, TransportMode, CommuteEstimate, PersonProfile, CommuteSchedule, ApartmentListing } from '../types';
+import { ApartmentListSection } from './apartments/ApartmentListSection';
 import {
   MapPin,
   X,
@@ -18,6 +19,10 @@ import {
   ShieldCheck,
   Building2,
   Scale,
+  Home,
+  ExternalLink,
+  ChevronLeft,
+  SlidersHorizontal,
 } from 'lucide-react';
 import { getRentalChoroplethColor } from '../services/rentalService';
 
@@ -25,6 +30,12 @@ interface InspectionPanelProps {
   inspection: InspectionPoint | null;
   onClose: () => void;
   showRentalInfo?: boolean;
+  allListings?: ApartmentListing[];
+  intersectionFeature?: GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon | GeoJSON.GeometryCollection> | null;
+  profiles?: PersonProfile[];
+  schedule?: CommuteSchedule;
+  onSelectApartment?: (apartment: ApartmentListing | null) => void;
+  onOpenApartmentManager?: () => void;
 }
 
 const MODE_ICONS: Record<TransportMode, React.ComponentType<{ className?: string }>> = {
@@ -45,12 +56,30 @@ export const InspectionPanel: React.FC<InspectionPanelProps> = ({
   inspection,
   onClose,
   showRentalInfo = false,
+  allListings = [],
+  intersectionFeature = null,
+  profiles = [],
+  schedule,
+  onSelectApartment,
+  onOpenApartmentManager,
 }) => {
   const [expandedPersonIds, setExpandedPersonIds] = useState<Record<string, boolean>>({});
+  const [activeTab, setActiveTab] = useState<'apartments' | 'commute'>('commute');
+  const [imageError, setImageError] = useState(false);
+
+  // If entering an intersection inspection with apartments, default to apartments tab initially
+  useEffect(() => {
+    if (inspection?.isIntersectionInspection && allListings.length > 0) {
+      setActiveTab('apartments');
+    } else {
+      setActiveTab('commute');
+    }
+  }, [inspection?.lat, inspection?.lng, inspection?.isIntersectionInspection, allListings.length]);
 
   if (!inspection) return null;
 
   const isIdealLocation = inspection.allWithinLimit;
+  const selectedApt = inspection.selectedApartment;
 
   const toggleExpand = (personId: string) => {
     setExpandedPersonIds((prev) => ({
@@ -59,10 +88,22 @@ export const InspectionPanel: React.FC<InspectionPanelProps> = ({
     }));
   };
 
+  const handleSelectApt = (apt: ApartmentListing) => {
+    if (onSelectApartment) {
+      onSelectApartment(apt);
+    }
+  };
+
+  const handleClearSelectedApt = () => {
+    if (onSelectApartment) {
+      onSelectApartment(null);
+    }
+  };
+
   return (
     <div
       id="inspection-detail-panel"
-      className="bg-white dark:bg-[#1e1f20] rounded-2xl border border-slate-200/90 dark:border-[#3c4043] shadow-2xl overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-200 max-w-md w-full"
+      className="bg-white dark:bg-[#1e1f20] rounded-2xl border border-slate-200/90 dark:border-[#3c4043] shadow-2xl overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-200 max-w-lg w-full"
     >
       {/* Mobile Top Grabber Pill */}
       <div className="w-10 h-1 bg-slate-300 dark:bg-[#5f6368] rounded-full mx-auto my-1.5 sm:hidden" />
@@ -77,7 +118,11 @@ export const InspectionPanel: React.FC<InspectionPanelProps> = ({
       >
         <div className="flex items-start gap-2.5 min-w-0">
           <div className="mt-0.5">
-            {isIdealLocation ? (
+            {selectedApt ? (
+              <div className="p-1 rounded-lg bg-rose-100 dark:bg-rose-900/60 text-rose-700 dark:text-rose-300">
+                <Home className="w-4 h-4" />
+              </div>
+            ) : isIdealLocation ? (
               <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
             ) : (
               <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0" />
@@ -86,12 +131,14 @@ export const InspectionPanel: React.FC<InspectionPanelProps> = ({
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <h4
-                className={`text-sm font-bold ${
+                className={`text-sm font-bold truncate ${
                   isIdealLocation ? 'text-emerald-900 dark:text-emerald-300' : 'text-amber-900 dark:text-amber-300'
                 }`}
               >
-                {isIdealLocation
-                  ? (inspection.isIntersectionInspection ? 'Gemeinsamer Treffbereich' : 'Gemeinsamer Treffbereich')
+                {selectedApt
+                  ? 'Wohnungs-Fahrzeiten'
+                  : inspection.isIntersectionInspection
+                  ? 'Gemeinsamer Treffbereich'
                   : 'Außerhalb der Schnittmenge'}
               </h4>
               <span
@@ -109,7 +156,9 @@ export const InspectionPanel: React.FC<InspectionPanelProps> = ({
             <p className="text-xs text-slate-600 dark:text-[#c4c7c5] flex items-center gap-1 mt-0.5 truncate">
               <MapPin className="w-3 h-3 text-slate-400 dark:text-[#9aa0a6] shrink-0" />
               <span className="truncate">
-                {inspection.isIntersectionInspection && inspection.intersectionStats?.centerAddress
+                {selectedApt
+                  ? `${selectedApt.address}${selectedApt.district ? ` · ${selectedApt.district}` : ''}`
+                  : inspection.isIntersectionInspection && inspection.intersectionStats?.centerAddress
                   ? `Mitte: ${inspection.intersectionStats.centerAddress}`
                   : inspection.address || `${inspection.lat.toFixed(4)}, ${inspection.lng.toFixed(4)}`}
               </span>
@@ -138,8 +187,82 @@ export const InspectionPanel: React.FC<InspectionPanelProps> = ({
         </div>
       )}
 
-      {/* Shared Area Pair-Average & Balance Card */}
-      {inspection.isIntersectionInspection && inspection.intersectionStats && (
+      {/* Selected Apartment Hero Card (when an apartment is explicitly selected) */}
+      {selectedApt && (
+        <div className="bg-slate-50/90 dark:bg-[#1a1b1c] border-b border-slate-200 dark:border-[#3c4043] p-3 animate-in fade-in duration-150">
+          <div className="flex gap-3">
+            <div className="w-24 h-24 rounded-xl overflow-hidden bg-slate-200 dark:bg-[#282a2c] shrink-0 relative">
+              {selectedApt.thumbnailUrl && !imageError ? (
+                <img
+                  src={selectedApt.thumbnailUrl}
+                  alt={selectedApt.title}
+                  onError={() => setImageError(true)}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex flex-col items-center justify-center text-slate-400">
+                  <Home className="w-6 h-6" />
+                </div>
+              )}
+              <div className="absolute bottom-1 left-1 bg-black/80 backdrop-blur-md text-white text-[10px] font-bold px-1.5 py-0.5 rounded">
+                {selectedApt.priceWarm || selectedApt.priceCold} €
+              </div>
+            </div>
+
+            <div className="flex-1 min-w-0 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between gap-1 mb-1">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-rose-600 dark:text-rose-400">
+                    Ausgewählte Wohnung
+                  </span>
+                  {selectedApt.url && (
+                    <a
+                      href={selectedApt.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[11px] font-semibold text-blue-600 dark:text-[#8ab4f8] hover:underline flex items-center gap-1"
+                    >
+                      <span>Exposé</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  )}
+                </div>
+                <h5 className="text-xs font-bold text-slate-900 dark:text-white line-clamp-1">
+                  {selectedApt.title}
+                </h5>
+                <p className="text-[11px] text-slate-500 dark:text-[#9aa0a6] mt-0.5">
+                  {selectedApt.rooms} Zi. • {selectedApt.sizeSqm} m² • {selectedApt.address}
+                </p>
+              </div>
+
+              {selectedApt.features && selectedApt.features.length > 0 && (
+                <div className="flex items-center gap-1 mt-1 overflow-hidden flex-wrap">
+                  {selectedApt.features.slice(0, 3).map((f) => (
+                    <span
+                      key={f}
+                      className="text-[9px] px-1.5 py-0.2 bg-white dark:bg-[#282a2c] text-slate-700 dark:text-[#c4c7c5] rounded border border-slate-200 dark:border-[#3c4043]"
+                    >
+                      {f}
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              <button
+                type="button"
+                onClick={handleClearSelectedApt}
+                className="text-[10px] font-semibold text-slate-500 hover:text-slate-800 dark:text-[#9aa0a6] dark:hover:text-white flex items-center gap-1 mt-1 cursor-pointer"
+              >
+                <ChevronLeft className="w-3 h-3" />
+                <span>Zurück zur Gebietsübersicht</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Shared Area Pair-Average & Balance Card (when evaluating intersection area) */}
+      {!selectedApt && inspection.isIntersectionInspection && inspection.intersectionStats && (
         <div className="bg-emerald-500/10 dark:bg-emerald-950/40 border-b border-emerald-200/70 dark:border-emerald-800/60 p-3 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2.5 min-w-0">
             <div className="p-2 rounded-xl bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 shrink-0">
@@ -178,259 +301,203 @@ export const InspectionPanel: React.FC<InspectionPanelProps> = ({
         </div>
       )}
 
-      {/* Mietspiegel / Rental District Card (only shown when rental overlay is active) */}
-      {showRentalInfo && inspection.rentalInfo && (
-        <div className="bg-slate-50/80 dark:bg-[#282a2c]/60 border-b border-slate-200/80 dark:border-[#3c4043] p-3 flex items-start gap-2.5">
-          <div className="p-1.5 rounded-lg bg-blue-100 dark:bg-blue-950/50 text-blue-700 dark:text-[#8ab4f8] shrink-0 mt-0.5">
-            <Building2 className="w-4 h-4" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center justify-between gap-1">
-              <span className="text-xs font-semibold text-slate-800 dark:text-[#e3e3e3] truncate" title={inspection.rentalInfo.name}>
-                {inspection.rentalInfo.name} <span className="text-slate-400 dark:text-[#9aa0a6] font-normal">({inspection.rentalInfo.districtNumber})</span>
-              </span>
-              <span
-                className="text-[10px] font-medium px-2 py-0.5 rounded-full shrink-0"
-                style={{
-                  backgroundColor: `${getRentalChoroplethColor(inspection.rentalInfo.avgRentColdSqm)}20`,
-                  color: getRentalChoroplethColor(inspection.rentalInfo.avgRentColdSqm),
-                }}
-              >
-                {inspection.rentalInfo.qualityLabel}
-              </span>
-            </div>
-            <div className="flex items-baseline gap-2 mt-0.5">
-              <span className="text-sm font-semibold text-slate-900 dark:text-white">
-                Ø {inspection.rentalInfo.avgRentColdSqm.toFixed(2)} €/m²
-              </span>
-              <span className="text-[10px] text-slate-500 dark:text-[#9aa0a6]">
-                Spanne: {inspection.rentalInfo.minRentColdSqm.toFixed(2)} – {inspection.rentalInfo.maxRentColdSqm.toFixed(2)} €
-              </span>
-            </div>
-            <div className="text-[9px] text-slate-400 dark:text-[#9aa0a6] mt-0.5 flex items-center justify-between">
-              <span>{inspection.rentalInfo.source}</span>
-              <span className="font-medium text-slate-500 dark:text-[#9aa0a6]">Kaltmiete</span>
-            </div>
-          </div>
+      {/* Tab Navigation (when inside intersection area with apartments) */}
+      {inspection.isIntersectionInspection && allListings.length > 0 && (
+        <div className="flex items-center border-b border-slate-200 dark:border-[#3c4043] bg-slate-50/70 dark:bg-[#18191a] px-3 pt-2 gap-2">
+          <button
+            type="button"
+            onClick={() => setActiveTab('apartments')}
+            className={`pb-2 px-3 text-xs font-bold flex items-center gap-1.5 border-b-2 transition-colors cursor-pointer ${
+              activeTab === 'apartments'
+                ? 'border-rose-500 text-rose-600 dark:border-rose-400 dark:text-rose-400'
+                : 'border-transparent text-slate-500 hover:text-slate-800 dark:text-[#9aa0a6] dark:hover:text-white'
+            }`}
+          >
+            <Home className="w-3.5 h-3.5" />
+            <span>Wohnungsangebote</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('commute')}
+            className={`pb-2 px-3 text-xs font-bold flex items-center gap-1.5 border-b-2 transition-colors cursor-pointer ${
+              activeTab === 'commute'
+                ? 'border-blue-600 text-blue-600 dark:border-[#8ab4f8] dark:text-[#8ab4f8]'
+                : 'border-transparent text-slate-500 hover:text-slate-800 dark:text-[#9aa0a6] dark:hover:text-white'
+            }`}
+          >
+            <Navigation className="w-3.5 h-3.5" />
+            <span>Fahrzeiten & Routen</span>
+          </button>
         </div>
       )}
 
-      {/* Breakdown Table */}
-      <div className="p-3.5 space-y-2 max-h-[46vh] sm:max-h-[65vh] overflow-y-auto">
-        <div className="text-xs font-medium text-slate-600 dark:text-[#9aa0a6] mb-2 flex items-center justify-between">
-          <div className="flex items-center gap-1.5">
-            <Clock className="w-3.5 h-3.5 text-slate-500 dark:text-[#9aa0a6]" />
-            <span>Fahrzeiten & Routen-Details</span>
-          </div>
-          <span className="text-[10px] text-slate-400 dark:text-[#9aa0a6] font-normal">Klick für Details</span>
+      {/* TAB 1: APARTMENTS LIST */}
+      {activeTab === 'apartments' && inspection.isIntersectionInspection && (
+        <div className="p-3 bg-white dark:bg-[#1e1f20]">
+          <ApartmentListSection
+            listings={allListings}
+            intersection={intersectionFeature}
+            profiles={profiles}
+            schedule={schedule || { direction: 'to_work', dayOfWeek: 'workday', time: '07:00', options: { liveTraffic: false, enableSmoothing: true, fidelity: 'AUTOMATIC' } }}
+            selectedApartmentId={selectedApt?.id}
+            onSelectApartment={handleSelectApt}
+            onOpenImportModal={onOpenApartmentManager}
+          />
         </div>
+      )}
 
-        <div className="space-y-2">
-          {inspection.estimates.map((est) => {
-            const Icon = MODE_ICONS[est.mode] || Car;
-            const bufferMinutes = est.limitMinutes - est.travelTimeMinutes;
-            const isExpanded = !!expandedPersonIds[est.personId];
-
-            return (
+      {/* TAB 2: COMMUTE & RENTAL DETAILS */}
+      {(activeTab === 'commute' || !inspection.isIntersectionInspection) && (
+        <>
+          {/* Mietspiegel / Rental District Card (only shown when rental overlay is active) */}
+          {showRentalInfo && inspection.rentalInfo && (
+            <div className="bg-slate-50/80 dark:bg-[#282a2c]/60 border-b border-slate-200/80 dark:border-[#3c4043] p-3 flex items-start gap-2.5">
               <div
-                key={est.personId}
-                className={`rounded-xl border transition-all overflow-hidden ${
-                  est.isWithinLimit
-                    ? 'border-slate-200 dark:border-[#3c4043] bg-white dark:bg-[#282a2c] hover:border-slate-300 dark:hover:border-[#5f6368]'
-                    : 'border-rose-200/80 dark:border-rose-900/50 bg-rose-50/30 dark:bg-rose-950/20 hover:border-rose-300 dark:hover:border-rose-700'
-                }`}
+                className="w-8 h-8 rounded-xl flex items-center justify-center text-white shrink-0 mt-0.5 shadow-sm"
+                style={{
+                  backgroundColor: getRentalChoroplethColor(inspection.rentalInfo.avgRentColdSqm),
+                }}
               >
-                {/* Person Header Card */}
-                <button
-                  type="button"
-                  onClick={() => toggleExpand(est.personId)}
-                  className="w-full text-left p-2.5 flex items-center justify-between gap-3 cursor-pointer"
-                >
-                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                    <div
-                      className="w-3 h-3 rounded-full shrink-0 shadow-2xs"
-                      style={{ backgroundColor: est.personColor }}
-                    />
-                    <div className="min-w-0 truncate">
-                      <div className="font-semibold text-xs text-slate-900 dark:text-[#e3e3e3] truncate">
-                        {est.personName}
-                      </div>
-                      <div className="text-[11px] text-slate-500 dark:text-[#9aa0a6] flex items-center gap-1 mt-0.5">
-                        <Icon className="w-3 h-3 text-slate-500 dark:text-[#9aa0a6]" />
-                        <span>{MODE_NAMES[est.mode]}</span>
-                        <span>•</span>
-                        <span>
-                          {inspection.isIntersectionInspection && est.centerDistanceKm !== undefined
-                            ? `Ø ${est.centerDistanceKm} km`
-                            : `${est.distanceKm} km`}
-                        </span>
-                        {est.details?.summary && (
-                          <>
-                            <span>•</span>
-                            <span className="truncate text-slate-600 dark:text-[#c4c7c5] font-medium max-w-[130px]">
-                              {est.details.summary}
-                            </span>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  </div>
+                <Building2 className="w-4 h-4" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center justify-between gap-1 flex-wrap">
+                  <span className="text-xs font-bold text-slate-900 dark:text-white">
+                    {inspection.rentalInfo.name} (Bezirk {inspection.rentalInfo.districtNumber})
+                  </span>
+                  <span
+                    className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+                    style={{
+                      backgroundColor: `${getRentalChoroplethColor(inspection.rentalInfo.avgRentColdSqm)}22`,
+                      color: getRentalChoroplethColor(inspection.rentalInfo.avgRentColdSqm),
+                    }}
+                  >
+                    Ø {inspection.rentalInfo.avgRentColdSqm.toFixed(2)} €/m² Kaltmiete
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-500 dark:text-[#9aa0a6] mt-0.5">
+                  Amtliche Spanne: {inspection.rentalInfo.minRentColdSqm.toFixed(2)} –{' '}
+                  {inspection.rentalInfo.maxRentColdSqm.toFixed(2)} €/m² • {inspection.rentalInfo.qualityLabel}
+                </p>
+              </div>
+            </div>
+          )}
 
-                  <div className="text-right shrink-0 flex items-center gap-2">
-                    <div>
-                      <div className="flex items-baseline justify-end gap-1">
-                        <span
-                          className={`font-semibold text-sm ${
-                            est.isWithinLimit ? 'text-slate-900 dark:text-white' : 'text-rose-600 dark:text-rose-400'
+          {/* Commute Estimates List */}
+          <div className="p-3 max-h-[360px] overflow-y-auto space-y-2.5 touch-scroll-y">
+            <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-[#9aa0a6] px-1 flex items-center justify-between">
+              <span>Fahrzeiten der Profile</span>
+              <span className="font-normal text-[10px]">
+                {inspection.isIntersectionInspection ? 'Ab Mitte des Treffbereichs' : 'Direktroute ab Klickpunkt'}
+              </span>
+            </div>
+
+            <div className="space-y-2">
+              {inspection.estimates.map((est) => {
+                const Icon = MODE_ICONS[est.mode] || Train;
+                const bufferMinutes = est.limitMinutes - (est.centerMinutes ?? est.travelTimeMinutes);
+                const isExpanded = expandedPersonIds[est.personId];
+
+                return (
+                  <div
+                    key={est.personId}
+                    className="rounded-xl border border-slate-200/90 dark:border-[#3c4043] bg-white dark:bg-[#1e1f20] overflow-hidden"
+                  >
+                    <div
+                      onClick={() => toggleExpand(est.personId)}
+                      className="p-2.5 flex items-center justify-between gap-3 hover:bg-slate-50/80 dark:hover:bg-[#282a2c]/60 transition-colors cursor-pointer select-none"
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div
+                          className="w-3 h-3 rounded-full shrink-0 shadow-sm"
+                          style={{ backgroundColor: est.personColor }}
+                        />
+                        <div className="min-w-0">
+                          <h5 className="text-xs font-bold text-slate-900 dark:text-[#e3e3e3] truncate">
+                            {est.personName}
+                          </h5>
+                          <div className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-[#9aa0a6] mt-0.5">
+                            <Icon className="w-3 h-3 text-slate-500 dark:text-[#9aa0a6]" />
+                            <span>{MODE_NAMES[est.mode]}</span>
+                            <span>•</span>
+                            <span>
+                              {inspection.isIntersectionInspection && est.centerDistanceKm !== undefined
+                                ? `Ø ${est.centerDistanceKm} km`
+                                : `${est.distanceKm} km`}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="text-right shrink-0">
+                        <div className="flex items-baseline justify-end gap-1">
+                          <span
+                            className={`text-sm font-bold ${
+                              est.isWithinLimit ? 'text-slate-900 dark:text-white' : 'text-rose-600 dark:text-rose-400'
+                            }`}
+                          >
+                            {inspection.isIntersectionInspection && est.centerMinutes !== undefined
+                              ? `${est.centerMinutes}${est.spanPlusMinus ? ` ± ${est.spanPlusMinus}` : ''}`
+                              : est.travelTimeMinutes}{' '}
+                            Min
+                          </span>
+                          <span className="text-[10px] text-slate-400 dark:text-[#9aa0a6]">
+                            / max. {est.limitMinutes}m
+                          </span>
+                        </div>
+                        <div
+                          className={`text-[10px] font-medium ${
+                            est.isWithinLimit ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
                           }`}
                         >
-                          {inspection.isIntersectionInspection && est.centerMinutes !== undefined
-                            ? `${est.centerMinutes}${est.spanPlusMinus ? ` ± ${est.spanPlusMinus}` : ''}`
-                            : est.travelTimeMinutes}{' '}
-                          Min
-                        </span>
-                        <span className="text-[10px] text-slate-400 dark:text-[#9aa0a6]">/ max. {est.limitMinutes}m</span>
-                      </div>
-
-                      <div
-                        className={`text-[10px] font-semibold ${
-                          est.isWithinLimit ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
-                        }`}
-                      >
-                        {inspection.isIntersectionInspection && est.minMinutes !== undefined && est.maxMinutes !== undefined
-                          ? `Spanne: ${est.minMinutes} – ${est.maxMinutes} Min`
-                          : bufferMinutes >= 0
-                          ? `${bufferMinutes} Min Puffer`
-                          : `+${Math.abs(bufferMinutes)} Min über Limit`}
+                          {inspection.isIntersectionInspection && est.minMinutes !== undefined && est.maxMinutes !== undefined
+                            ? `Spanne: ${est.minMinutes} – ${est.maxMinutes} Min`
+                            : bufferMinutes >= 0
+                            ? `${bufferMinutes} Min Puffer`
+                            : `+${Math.abs(bufferMinutes)} Min über Limit`}
+                        </div>
                       </div>
                     </div>
 
-                    <div className="w-7 h-7 rounded-full flex items-center justify-center text-slate-400 dark:text-[#9aa0a6] hover:bg-slate-100 dark:hover:bg-[#3c4043] transition-colors">
-                      {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                    </div>
-                  </div>
-                </button>
-
-                {/* Expandable Route Details Drawer */}
-                {isExpanded && (
-                  <div className="px-3 pb-3 pt-1 border-t border-slate-100 dark:border-[#3c4043] bg-slate-50/80 dark:bg-[#131314] text-xs space-y-2 animate-in fade-in duration-150">
-                    <div className="text-[11px] font-medium text-slate-600 dark:text-[#9aa0a6] flex items-center gap-1">
-                      <Navigation className="w-3 h-3 text-blue-600 dark:text-[#8ab4f8]" />
-                      <span>
-                        {inspection.isIntersectionInspection
-                          ? 'Routen-Etappen & Zeitaufteilung ab Mittelpunkt:'
-                          : 'Routen-Etappen & Zeitaufteilung:'}
-                      </span>
-                    </div>
-
-                    {inspection.isIntersectionInspection && (
-                      <div className="text-[10px] text-slate-500 dark:text-[#9aa0a6] bg-white dark:bg-[#1e1f20] px-2 py-1 rounded border border-slate-200/60 dark:border-[#3c4043] flex items-center justify-between">
-                        <span>Fahrzeit am Klickpunkt:</span>
-                        <span className="font-semibold text-slate-700 dark:text-[#e3e3e3]">{est.travelTimeMinutes} Min ({est.distanceKm} km)</span>
-                      </div>
-                    )}
-
-                    {est.details?.steps && est.details.steps.length > 0 ? (
-                      <div className="space-y-1.5 pl-1">
-                        {est.details.steps.map((step, idx) => (
-                          <div key={idx} className="flex items-start gap-2 text-[11px] text-slate-700 dark:text-[#c4c7c5] leading-tight">
-                            <CornerDownRight className="w-3 h-3 text-slate-400 dark:text-[#9aa0a6] shrink-0 mt-0.5" />
-                            <span>{step}</span>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-[11px] text-slate-500 dark:text-[#9aa0a6] pl-1">
-                        Reisezeit berechnet über Wegstrecke ({est.distanceKm} km).
-                      </div>
-                    )}
-
-                    {/* Transit Lines Badges */}
-                    {est.details?.linesUsed && est.details.linesUsed.length > 0 && (
-                      <div className="flex items-center gap-1.5 pt-1 flex-wrap">
-                        <span className="text-[10px] text-slate-500 dark:text-[#9aa0a6] font-semibold">Genutzte Linien:</span>
-                        {est.details.linesUsed.map((line) => (
-                          <span
-                            key={line}
-                            className="text-[9px] font-bold px-1.5 py-0.5 bg-blue-100 dark:bg-blue-950/50 text-blue-800 dark:text-blue-300 rounded-md border border-blue-200 dark:border-blue-800"
-                          >
-                            {line}
+                    {/* Step by step stages */}
+                    {isExpanded && (
+                      <div className="px-3 pb-3 pt-1 border-t border-slate-100 dark:border-[#3c4043] bg-slate-50/80 dark:bg-[#131314] text-xs space-y-2 animate-in fade-in duration-150">
+                        <div className="text-[11px] font-medium text-slate-600 dark:text-[#9aa0a6] flex items-center gap-1">
+                          <Navigation className="w-3 h-3 text-blue-600 dark:text-[#8ab4f8]" />
+                          <span>
+                            {inspection.isIntersectionInspection
+                              ? 'Routen-Etappen & Zeitaufteilung ab Mittelpunkt:'
+                              : 'Routen-Etappen & Zeitaufteilung:'}
                           </span>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Sub-breakdown if available */}
-                    {est.details?.firstMileStationName && (
-                      <div className="grid grid-cols-3 gap-1.5 pt-1 text-[10px] text-slate-600 dark:text-[#c4c7c5] bg-white dark:bg-[#1e1f20] p-2 rounded-lg border border-slate-200/80 dark:border-[#3c4043]">
-                        <div>
-                          <div className="text-slate-400 dark:text-[#9aa0a6] font-medium">Zustieg (Fußweg)</div>
-                          <div className="flex items-baseline gap-1 mt-0.5">
-                            <span
-                              className={`font-semibold ${
-                                est.details.firstMileWalkLimitMin &&
-                                est.details.firstMileWalkMin !== undefined &&
-                                est.details.firstMileWalkMin > est.details.firstMileWalkLimitMin
-                                  ? 'text-rose-600 dark:text-rose-400 font-bold'
-                                  : 'text-slate-800 dark:text-[#e3e3e3]'
-                              }`}
-                            >
-                              {est.details.firstMileWalkMin} Min
-                            </span>
-                            {est.details.firstMileWalkLimitMin && (
-                              <span className="text-[9px] text-slate-400 dark:text-[#9aa0a6]">
-                                / max. {est.details.firstMileWalkLimitMin}m
-                              </span>
-                            )}
-                          </div>
-                          <div className="truncate text-slate-500 dark:text-[#9aa0a6] text-[9px] mt-0.5" title={est.details.firstMileStationName}>
-                            ➔ {est.details.firstMileStationName}
-                          </div>
                         </div>
 
-                        <div>
-                          <div className="text-slate-400 dark:text-[#9aa0a6] font-medium">ÖPNV-Fahrt</div>
-                          <div className="font-semibold text-slate-800 dark:text-[#e3e3e3] mt-0.5">{est.details.inVehicleMin} Min</div>
-                          <div className="text-slate-500 dark:text-[#9aa0a6] text-[9px] mt-0.5">
-                            {est.details.transfersCount === 0
-                              ? 'Direktfahrt'
-                              : `${est.details.transfersCount} ${est.details.transfersCount === 1 ? 'Umstieg' : 'Umstiege'}`}
+                        {est.details?.steps && est.details.steps.length > 0 ? (
+                          <div className="space-y-1.5 pl-1">
+                            {est.details.steps.map((step, idx) => (
+                              <div
+                                key={idx}
+                                className="flex items-start gap-2 text-[11px] text-slate-700 dark:text-[#c4c7c5]"
+                              >
+                                <CornerDownRight className="w-3 h-3 text-slate-400 shrink-0 mt-0.5" />
+                                <span>{step}</span>
+                              </div>
+                            ))}
                           </div>
-                        </div>
-
-                        <div>
-                          <div className="text-slate-400 dark:text-[#9aa0a6] font-medium">Ausstieg (Fußweg)</div>
-                          <div className="flex items-baseline gap-1 mt-0.5">
-                            <span
-                              className={`font-semibold ${
-                                est.details.lastMileWalkLimitMin &&
-                                est.details.lastMileWalkMin !== undefined &&
-                                est.details.lastMileWalkMin > est.details.lastMileWalkLimitMin
-                                  ? 'text-rose-600 dark:text-rose-400 font-bold'
-                                  : 'text-slate-800 dark:text-[#e3e3e3]'
-                              }`}
-                            >
-                              {est.details.lastMileWalkMin} Min
-                            </span>
-                            {est.details.lastMileWalkLimitMin && (
-                              <span className="text-[9px] text-slate-400 dark:text-[#9aa0a6]">
-                                / max. {est.details.lastMileWalkLimitMin}m
-                              </span>
-                            )}
+                        ) : (
+                          <div className="text-[11px] text-slate-500 italic">
+                            Direktverbindung ohne Zwischenhalte.
                           </div>
-                          <div className="truncate text-slate-500 dark:text-[#9aa0a6] text-[9px] mt-0.5" title={est.details.lastMileStationName}>
-                            ab {est.details.lastMileStationName}
-                          </div>
-                        </div>
+                        )}
                       </div>
                     )}
                   </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </div>
+                );
+              })}
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 };

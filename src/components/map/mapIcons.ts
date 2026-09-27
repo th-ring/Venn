@@ -122,3 +122,54 @@ export function createPersonPopupHtml(profile: PersonProfile): string {
     </div>
   `;
 }
+
+/**
+ * Creates an elegant price badge pin icon for an apartment listing on the map
+ */
+export function createApartmentMarkerIcon(
+  price: number,
+  isSelected = false,
+  isDark = false
+): L.DivIcon {
+  const formattedPrice = price >= 1000 ? `${(price / 1000).toFixed(price % 1000 === 0 ? 0 : 1)}k €` : `${price} €`;
+  const bg = isSelected
+    ? (isDark ? '#38bdf8' : '#0284c7')
+    : (isDark ? '#f43f5e' : '#e11d48');
+  const textColor = '#ffffff';
+
+  const markerHtml = `
+    <div style="
+      display: inline-flex;
+      align-items: center;
+      gap: 3.5px;
+      padding: 3px 7px;
+      background: ${bg};
+      color: ${textColor};
+      border: 1.8px solid #ffffff;
+      border-radius: 12px;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.35);
+      font-size: 10.5px;
+      font-weight: 800;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      white-space: nowrap;
+      cursor: pointer;
+      transform: ${isSelected ? 'scale(1.18)' : 'scale(1)'};
+      transition: transform 0.15s ease, background 0.15s ease;
+    ">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+        <polyline points="9 22 9 12 15 12 15 22"/>
+      </svg>
+      <span>${formattedPrice}</span>
+    </div>
+  `;
+
+  return L.divIcon({
+    html: markerHtml,
+    className: 'apartment-price-marker',
+    iconSize: [60, 24],
+    iconAnchor: [30, 12],
+    popupAnchor: [0, -14],
+  });
+}
+

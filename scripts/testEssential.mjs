@@ -22,6 +22,12 @@ import {
   samplePolygonPoints,
 } from '../src/services/geometry.ts';
 import { getProfileLineSignature } from '../src/services/mapPatterns.ts';
+import {
+  validateApartmentListing,
+  validateApartmentDataset,
+  filterApartmentsInPolygon,
+  calculateApartmentCommute,
+} from '../src/services/apartmentService.ts';
 
 let passCount = 0;
 let totalCount = 0;
@@ -248,6 +254,133 @@ test('assigns valid SVG pattern IDs and adjusts weight in dark mode', () => {
 
   assert.ok(lightSig.patternId.startsWith('venn-pat-'), 'Pattern ID must have venn-pat- prefix');
   assert.equal(darkSig.weight, lightSig.weight + 0.5, 'Dark mode enhances contour weight by 0.5px for contrast');
+});
+
+// Group 7: Apartment Data Models, Validation & Commute Scoring
+console.log('\n7. Apartment Data Models, Validation & Commute Scoring:');
+
+test('validates and sanitizes a complete apartment listing', () => {
+  const raw = {
+    id: 'apt-test-1',
+    title: 'Helle Altbauwohnung mit Südbalkon',
+    address: 'Theresienstraße 12',
+    district: 'Maxvorstadt',
+    city: 'München',
+    lat: 48.1501,
+    lng: 11.5712,
+    priceCold: 1450,
+    priceWarm: 1680,
+    sizeSqm: 65,
+    rooms: 2,
+    features: ['Balkon', 'Einbauküche', ''],
+    thumbnailUrl: 'https://images.unsplash.com/photo-123?w=800',
+    source: 'immoscout24',
+  };
+
+  const validated = validateApartmentListing(raw);
+  assert.ok(validated !== null, 'Listing should be valid');
+  assert.equal(validated.id, 'apt-test-1');
+  assert.equal(validated.title, 'Helle Altbauwohnung mit Südbalkon');
+  assert.equal(validated.priceCold, 1450);
+  assert.equal(validated.priceWarm, 1680);
+  assert.equal(validated.currency, 'EUR');
+  assert.equal(validated.features.length, 2, 'Empty feature strings must be filtered out');
+});
+
+test('rejects malformed apartment listings with missing coordinates or price', () => {
+  assert.equal(validateApartmentListing(null), null);
+  assert.equal(validateApartmentListing({ title: 'No coords', priceCold: 1000, sizeSqm: 50, rooms: 2 }), null);
+  assert.equal(validateApartmentListing({ title: 'Bad lat', lat: 95.0, lng: 11.5, priceCold: 1000, sizeSqm: 50, rooms: 2 }), null);
+  assert.equal(validateApartmentListing({ title: 'Negative price', lat: 48.1, lng: 11.5, priceCold: -100, sizeSqm: 50, rooms: 2 }), null);
+  assert.equal(validateApartmentListing({ title: 'Zero rooms', lat: 48.1, lng: 11.5, priceCold: 1000, sizeSqm: 50, rooms: 0 }), null);
+});
+
+test('validates dataset with valid and invalid entries', () => {
+  const dataset = {
+    version: '1.0.0',
+    listings: [
+      { id: '1', title: 'Apt 1', lat: 48.15, lng: 11.57, priceCold: 1200, sizeSqm: 55, rooms: 2 },
+      { id: '2', title: 'Invalid', lat: 200, lng: 11.57, priceCold: 1200, sizeSqm: 55, rooms: 2 },
+    ],
+  };
+
+  const res = validateApartmentDataset(dataset);
+  assert.equal(res.valid, true);
+  assert.equal(res.listings.length, 1);
+  assert.equal(res.errors.length, 1);
+});
+
+test('filters apartments inside common intersection polygon', () => {
+  // Polygon covering area around lng: [11.55, 11.60], lat: [48.14, 48.18]
+  const poly = turf.polygon([[
+    [11.55, 48.14],
+    [11.60, 48.14],
+    [11.60, 48.18],
+    [11.55, 48.18],
+    [11.55, 48.14],
+  ]]);
+
+  const listings = [
+    { id: 'inside', title: 'Inside', lat: 48.16, lng: 11.57, priceCold: 1000, sizeSqm: 50, rooms: 2, features: [], city: 'München', address: 'A', source: 'custom' },
+    { id: 'outside', title: 'Outside', lat: 48.25, lng: 11.75, priceCold: 1000, sizeSqm: 50, rooms: 2, features: [], city: 'München', address: 'B', source: 'custom' },
+  ];
+
+  const filtered = filterApartmentsInPolygon(listings, poly);
+  assert.equal(filtered.length, 1);
+  assert.equal(filtered[0].id, 'inside');
+});
+
+test('calculates commute fairness score and balance across multiple profiles', () => {
+  const apt = {
+    id: 'apt-schwabing',
+    title: 'Schwabing Apt',
+    lat: 48.16,
+    lng: 11.57,
+    priceCold: 1500,
+    sizeSqm: 70,
+    rooms: 2.5,
+    features: [],
+    city: 'München',
+    address: 'Teststraße 1',
+    source: 'custom',
+  };
+
+  const profiles = [
+    {
+      id: 'p1',
+      name: 'BMW (Norden)',
+      lat: 48.1772,
+      lng: 11.5595,
+      travelTimeMinutes: 30,
+      mode: 'driving',
+      color: '#3B82F6',
+      visible: true,
+    },
+    {
+      id: 'p2',
+      name: 'Marienplatz (Zentrum)',
+      lat: 48.1371,
+      lng: 11.5754,
+      travelTimeMinutes: 30,
+      mode: 'transit',
+      color: '#8B5CF6',
+      visible: true,
+    },
+  ];
+
+  const schedule = {
+    direction: 'to_work',
+    dayOfWeek: 'workday',
+    time: '07:00',
+    options: { liveTraffic: false, enableSmoothing: true, fidelity: 'AUTOMATIC' },
+  };
+
+  const score = calculateApartmentCommute(apt, profiles, schedule);
+  assert.equal(score.apartmentId, 'apt-schwabing');
+  assert.equal(score.personCommutes.length, 2);
+  assert.ok(score.avgCommuteMinutes > 0 && score.avgCommuteMinutes < 30);
+  assert.ok(typeof score.commuteSpreadMinutes === 'number');
+  assert.equal(score.allWithinLimit, true);
 });
 
 console.log(`\n========================================`);

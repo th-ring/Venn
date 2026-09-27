@@ -1,0 +1,182 @@
+{
+  "version": "1.0.0",
+  "lastUpdated": "2026-09-27T08:54:11.472Z",
+  "source": "Venn Housing Aggregator",
+  "city": "Munich",
+  "bbox": [
+    11.535,
+    48.14,
+    11.595,
+    48.175
+  ],
+  "count": 5,
+  "listings": [
+    {
+      "id": "apt-mujl0weo-01",
+      "title": "Helle Altbauwohnung mit Südbalkon & Stuck",
+      "address": "Kurfürstenstraße 89",
+      "district": "Schwabing-West",
+      "city": "Munich",
+      "lat": 48.14853,
+      "lng": 11.54493,
+      "priceCold": 2239,
+      "priceWarm": 2570,
+      "currency": "EUR",
+      "sizeSqm": 87,
+      "rooms": 3,
+      "floor": 4,
+      "constructionYear": 1925,
+      "availableFrom": "sofort",
+      "features": [
+        "Balkon",
+        "Einbauküche",
+        "Aufzug",
+        "Parkett",
+        "Kellerabteil"
+      ],
+      "thumbnailUrl": "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=800&q=80",
+      "images": [
+        "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=800&q=80",
+        "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=800&q=80"
+      ],
+      "url": "https://www.immoscout24.de/expose/apt-mujl0weo-01",
+      "source": "immoscout24",
+      "description": "Helle Altbauwohnung mit Südbalkon & Stuck in bevorzugter Lage von Schwabing-West. Optimale Verkehrsanbindung und attraktive Infrastruktur in direkter Umgebung.",
+      "contactName": "Immobilien Schwabing-West",
+      "scrapedAt": "2026-09-27T08:54:11.472Z"
+    },
+    {
+      "id": "apt-mujl0weo-02",
+      "title": "Moderne Neubauwohnung mit Tiefgarage nahe Park",
+      "address": "Hohenzollernstraße 83",
+      "district": "Schwabing-West",
+      "city": "Munich",
+      "lat": 48.16038,
+      "lng": 11.5726,
+      "priceCold": 1452,
+      "priceWarm": 1729,
+      "currency": "EUR",
+      "sizeSqm": 73,
+      "rooms": 2.5,
+      "floor": 3,
+      "constructionYear": 1966,
+      "availableFrom": "sofort",
+      "features": [
+        "Parkett",
+        "Balkon",
+        "Einbauküche",
+        "Fußbodenheizung",
+        "Dachterrasse"
+      ],
+      "thumbnailUrl": "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=800&q=80",
+      "images": [
+        "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=800&q=80",
+        "https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&w=800&q=80"
+      ],
+      "url": "https://www.immowelt.de/expose/apt-mujl0weo-02",
+      "source": "immowelt",
+      "description": "Moderne Neubauwohnung mit Tiefgarage nahe Park in bevorzugter Lage von Schwabing-West. Optimale Verkehrsanbindung und attraktive Infrastruktur in direkter Umgebung.",
+      "contactName": "Wohnwerte Schwabing-West",
+      "scrapedAt": "2026-09-27T08:54:11.472Z"
+    },
+    {
+      "id": "apt-mujl0weo-03",
+      "title": "Ruhiges 2-Zimmer-City-Apartment im Innenhof",
+      "address": "Ungererstraße 97",
+      "district": "Schwabing",
+      "city": "Munich",
+      "lat": 48.16309,
+      "lng": 11.57385,
+      "priceCold": 2436,
+      "priceWarm": 2854,
+      "currency": "EUR",
+      "sizeSqm": 110,
+      "rooms": 3.5,
+      "floor": 3,
+      "constructionYear": 1948,
+      "availableFrom": "sofort",
+      "features": [
+        "Einbauküche",
+        "Fußbodenheizung",
+        "Balkon",
+        "Aufzug"
+      ],
+      "thumbnailUrl": "https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&w=800&q=80",
+      "images": [
+        "https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&w=800&q=80",
+        "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=800&q=80"
+      ],
+      "url": "https://www.wg-gesucht.de/expose/apt-mujl0weo-03",
+      "source": "wg-gesucht",
+      "description": "Ruhiges 2-Zimmer-City-Apartment im Innenhof in bevorzugter Lage von Schwabing. Optimale Verkehrsanbindung und attraktive Infrastruktur in direkter Umgebung.",
+      "contactName": "Maklerbüro Schwabing",
+      "scrapedAt": "2026-09-27T08:54:11.472Z"
+    },
+    {
+      "id": "apt-mujl0weo-04",
+      "title": "Großzügige Familienwohnung mit Balkon & EBK",
+      "address": "Theresienstraße 67",
+      "district": "Maxvorstadt",
+      "city": "Munich",
+      "lat": 48.15126,
+      "lng": 11.578,
+      "priceCold": 727,
+      "priceWarm": 860,
+      "currency": "EUR",
+      "sizeSqm": 35,
+      "rooms": 1.5,
+      "floor": 1,
+      "constructionYear": 1968,
+      "availableFrom": "2026-11-01",
+      "features": [
+        "Fußbodenheizung",
+        "Kellerabteil",
+        "Tiefgarage",
+        "Balkon",
+        "Einbauküche"
+      ],
+      "thumbnailUrl": "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=800&q=80",
+      "images": [
+        "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=800&q=80",
+        "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80"
+      ],
+      "url": "https://www.kleinanzeigen.de/expose/apt-mujl0weo-04",
+      "source": "kleinanzeigen",
+      "description": "Großzügige Familienwohnung mit Balkon & EBK in bevorzugter Lage von Maxvorstadt. Optimale Verkehrsanbindung und attraktive Infrastruktur in direkter Umgebung.",
+      "contactName": "Hausverwaltung Maxvorstadt",
+      "scrapedAt": "2026-09-27T08:54:11.472Z"
+    },
+    {
+      "id": "apt-mujl0weo-05",
+      "title": "Penthouse-Maisonette mit Weitblick über die Dächer",
+      "address": "Schleißheimer Straße 108",
+      "district": "Milbertshofen-Am Hart",
+      "city": "Munich",
+      "lat": 48.16604,
+      "lng": 11.54434,
+      "priceCold": 2186,
+      "priceWarm": 2551,
+      "currency": "EUR",
+      "sizeSqm": 96,
+      "rooms": 4,
+      "floor": 4,
+      "constructionYear": 1924,
+      "availableFrom": "sofort",
+      "features": [
+        "Aufzug",
+        "Einbauküche",
+        "Balkon"
+      ],
+      "thumbnailUrl": "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80",
+      "images": [
+        "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80",
+        "https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=800&q=80"
+      ],
+      "url": "https://www.immoscout24.de/expose/apt-mujl0weo-05",
+      "source": "immoscout24",
+      "description": "Penthouse-Maisonette mit Weitblick über die Dächer in bevorzugter Lage von Milbertshofen-Am Hart. Optimale Verkehrsanbindung und attraktive Infrastruktur in direkter Umgebung.",
+      "contactName": "Immobilien Milbertshofen-Am Hart",
+      "scrapedAt": "2026-09-27T08:54:11.472Z"
+    }
+  ]
+}

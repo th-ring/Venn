@@ -14,7 +14,13 @@ import {
   PoiIconSettings,
   DEFAULT_POI_ICON_SETTINGS,
   IntersectionAreaStats,
+  ApartmentListing,
 } from '../types';
+import {
+  loadApartmentCatalog,
+  filterApartmentsInPolygon,
+  subscribeApartments,
+} from '../services/apartmentService';
 import { DEFAULT_MUNICH_PROFILES } from '../data/presets';
 import {
   generateIsochrone,
@@ -122,6 +128,21 @@ export function useCommuteFinder() {
   const inspectionPointRef = useRef<InspectionPoint | null>(null);
   inspectionPointRef.current = inspectionPoint;
   const handleSelectInspectionPointRef = useRef<(lat: number, lng: number) => Promise<void>>(() => Promise.resolve());
+
+  // Apartments State
+  const [apartments, setApartments] = useState<ApartmentListing[]>([]);
+  const apartmentsRef = useRef<ApartmentListing[]>([]);
+  apartmentsRef.current = apartments;
+  const [selectedApartmentId, setSelectedApartmentId] = useState<string | null>(null);
+
+  useEffect(() => {
+    loadApartmentCatalog().then((loaded) => {
+      setApartments(loaded);
+    });
+    return subscribeApartments((updated) => {
+      setApartments(updated);
+    });
+  }, []);
   const [showIntersectionLayer, setShowIntersectionLayer] = useState(
     initialConfig?.showIntersectionLayer ?? true
   );
@@ -511,7 +532,7 @@ export function useCommuteFinder() {
 
   // Map Inspection
   const handleSelectInspectionPoint = useCallback(
-    async (lat: number, lng: number) => {
+    async (lat: number, lng: number, specificApartment?: ApartmentListing | null) => {
       const active = profilesRef.current.filter((p) => p.visible);
       const currentResult = resultRef.current;
       const currentSchedule = scheduleRef.current;
@@ -676,10 +697,27 @@ export function useCommuteFinder() {
         currentSchedule.options?.rentalOverlay?.selectedRegionId || 'munich-mvv'
       );
 
+      let matchedApartment: ApartmentListing | undefined = specificApartment || undefined;
+      if (!matchedApartment) {
+        matchedApartment = apartmentsRef.current.find(
+          (apt) => Math.abs(apt.lat - lat) < 0.0003 && Math.abs(apt.lng - lng) < 0.0003
+        );
+      }
+
+      const areaApartments = isIntersectionInspection && intersectionFeature
+        ? filterApartmentsInPolygon(apartmentsRef.current, intersectionFeature)
+        : undefined;
+
+      if (matchedApartment) {
+        setSelectedApartmentId(matchedApartment.id);
+      } else {
+        setSelectedApartmentId(null);
+      }
+
       setInspectionPoint({
         lat,
         lng,
-        address: 'Lade Adresse...',
+        address: matchedApartment?.title || 'Lade Adresse...',
         estimates,
         allWithinLimit,
         activePersonsCount: active.length,
@@ -687,6 +725,8 @@ export function useCommuteFinder() {
         rentalInfo: rentalInfo || undefined,
         isIntersectionInspection,
         intersectionStats,
+        apartmentListings: areaApartments,
+        selectedApartment: matchedApartment,
       });
 
       // Async reverse geocoding for clicked point and center point
@@ -702,7 +742,7 @@ export function useCommuteFinder() {
         if (!prev || prev.lat !== lat || prev.lng !== lng) return prev;
         return {
           ...prev,
-          address: addr,
+          address: matchedApartment ? `${matchedApartment.address} (${matchedApartment.title})` : addr,
           intersectionStats: prev.intersectionStats
             ? {
                 ...prev.intersectionStats,
@@ -715,6 +755,24 @@ export function useCommuteFinder() {
     []
   );
   handleSelectInspectionPointRef.current = handleSelectInspectionPoint;
+
+  const handleSelectApartment = useCallback(
+    (apt: ApartmentListing | null) => {
+      if (!apt) {
+        setSelectedApartmentId(null);
+        setInspectionPoint((prev) => (prev ? { ...prev, selectedApartment: undefined } : null));
+        return;
+      }
+      setSelectedApartmentId(apt.id);
+      handleSelectInspectionPoint(apt.lat, apt.lng, apt);
+    },
+    [handleSelectInspectionPoint]
+  );
+
+  const handleReloadApartments = useCallback(async () => {
+    const loaded = await loadApartmentCatalog();
+    setApartments(loaded);
+  }, []);
 
   const undoProfilesSnapshotRef = useRef<PersonProfile[] | null>(null);
   const [undoToastMessage, setUndoToastMessage] = useState<string | null>(null);
@@ -925,5 +983,9 @@ export function useCommuteFinder() {
     undoToastMessage,
     handleUndoLastSuggestion,
     handleDismissUndoToast,
+    apartments,
+    selectedApartmentId,
+    handleSelectApartment,
+    handleReloadApartments,
   };
 }

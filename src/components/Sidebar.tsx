@@ -69,6 +69,8 @@ interface SidebarProps {
   onToggleDesktopCollapse?: () => void;
   sidebarWidth?: number;
   onResizeWidth?: (width: number) => void;
+  onOpenApartmentManager?: () => void;
+  apartmentsCount?: number;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -102,6 +104,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onToggleDesktopCollapse,
   sidebarWidth = 450,
   onResizeWidth,
+  onOpenApartmentManager,
+  apartmentsCount = 0,
 }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [isMobileScreen, setIsMobileScreen] = useState(() =>
@@ -272,6 +276,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <Share2 className="w-4 h-4" />
             </button>
 
+            {onOpenApartmentManager && (
+              <button
+                id="btn-open-apartments"
+                type="button"
+                onClick={onOpenApartmentManager}
+                className="w-9 h-9 flex items-center justify-center rounded-full text-slate-500 dark:text-[#9aa0a6] hover:text-slate-900 dark:hover:text-[#e8eaed] hover:bg-slate-100 dark:hover:bg-[#282a2c] transition-colors cursor-pointer relative"
+                title={`Aktive Wohnungssuche & Scraper (${apartmentsCount} Angebote)`}
+              >
+                <Home className="w-4 h-4" />
+                {apartmentsCount > 0 && (
+                  <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-rose-500 ring-2 ring-white dark:ring-[#1e1f20]" />
+                )}
+              </button>
+            )}
+
             {onOpenSettings && (
               <button
                 id="btn-open-settings"
@@ -396,6 +415,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 >
                   <Home className="w-3.5 h-3.5 shrink-0" />
                   <span className="truncate">Nur Wohnbereich</span>
+                </button>
+              )}
+
+              {onOpenApartmentManager && (
+                <button
+                  id="btn-sidebar-apartments-chip"
+                  type="button"
+                  onClick={onOpenApartmentManager}
+                  className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium transition-colors cursor-pointer bg-rose-50 dark:bg-rose-950/50 text-rose-800 dark:text-rose-200 border-rose-200 dark:border-rose-800/80 hover:bg-rose-100"
+                  title="Wohnungsangebote im Treffbereich anzeigen & Scraper aufrufen"
+                >
+                  <Home className="w-3.5 h-3.5 shrink-0 text-rose-600 dark:text-rose-400" />
+                  <span className="truncate font-semibold">Wohnungen ({apartmentsCount})</span>
                 </button>
               )}
             </div>

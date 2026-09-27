@@ -124,9 +124,81 @@ export interface RentalOverlaySettings {
   selectedRegionId?: string; // e.g. 'munich-mvv'
 }
 
+export type HousingSource =
+  | 'immoscout24'
+  | 'immowelt'
+  | 'wg-gesucht'
+  | 'kleinanzeigen'
+  | 'custom'
+  | string;
+
+export interface ApartmentListing {
+  id: string;
+  title: string;
+  address: string;
+  district?: string;
+  city: string;
+  lat: number;
+  lng: number;
+  priceCold: number;
+  priceWarm?: number;
+  currency?: string; // default 'EUR'
+  sizeSqm: number;
+  rooms: number;
+  floor?: number | string;
+  constructionYear?: number;
+  availableFrom?: string;
+  features?: string[]; // e.g. ['Balkon', 'Einbauküche', 'Aufzug', 'Keller']
+  images?: string[];
+  thumbnailUrl?: string;
+  url?: string; // Link to listing on portal
+  source: HousingSource;
+  description?: string;
+  contactName?: string;
+  scrapedAt?: string;
+}
+
+export interface PersonCommuteToApartment {
+  personId: string;
+  personName: string;
+  personColor: string;
+  travelTimeMinutes: number;
+  limitMinutes: number;
+  isWithinLimit: boolean;
+  distanceKm: number;
+  mode: string;
+}
+
+export interface ApartmentCommuteScore {
+  apartmentId: string;
+  personCommutes: PersonCommuteToApartment[];
+  avgCommuteMinutes: number;
+  maxCommuteMinutes: number;
+  commuteSpreadMinutes: number;
+  allWithinLimit: boolean;
+}
+
+export interface ApartmentFilterSettings {
+  enabled: boolean;
+  onlyWithinIntersection: boolean;
+  maxPriceWarm?: number;
+  minSizeSqm?: number;
+  minRooms?: number;
+  sortBy: 'commute_balance' | 'price_asc' | 'price_desc' | 'size_desc' | 'rent_sqm_asc';
+  selectedSources?: string[];
+  searchQuery?: string;
+}
+
+export const DEFAULT_APARTMENT_FILTER: ApartmentFilterSettings = {
+  enabled: true,
+  onlyWithinIntersection: true,
+  sortBy: 'commute_balance',
+};
+
 export type LayerId =
   | 'inspection'
   | 'persons'
+  | 'apartments'
   | 'poi_icons'
   | 'intersection'
   | 'heatmap'
@@ -137,6 +209,7 @@ export type LayerId =
 export const DEFAULT_LAYER_ORDER: LayerId[] = [
   'inspection',
   'persons',
+  'apartments',
   'poi_icons',
   'intersection',
   'heatmap',
@@ -345,6 +418,8 @@ export interface InspectionPoint {
   rentalInfo?: RentalDistrictProperties;
   isIntersectionInspection?: boolean;
   intersectionStats?: IntersectionAreaStats;
+  apartmentListings?: ApartmentListing[];
+  selectedApartment?: ApartmentListing;
 }
 
 export interface PresetScenario {

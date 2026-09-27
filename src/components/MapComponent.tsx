@@ -14,6 +14,7 @@ import {
   PoiIconSettings,
   DEFAULT_LAYER_ORDER,
   DEFAULT_POI_ICON_SETTINGS,
+  ApartmentListing,
 } from '../types';
 import { Loader2, AlertCircle, Key } from 'lucide-react';
 import { getPriorityTargets } from '../services/priorityHeatmapEngine';
@@ -52,6 +53,7 @@ import {
   createInspectionPinIcon,
   createPriorityTargetIcon,
   createPersonPopupHtml,
+  createApartmentMarkerIcon,
 } from './map/mapIcons';
 import { MapLayerControls } from './map/MapLayerControls';
 import { useTheme } from '../hooks/useTheme';
@@ -87,6 +89,9 @@ interface MapComponentProps {
   poiIconSettings?: PoiIconSettings;
   onUpdatePoiIcons?: (settings: Partial<PoiIconSettings>) => void;
   onToggleProfileVisibility?: (id: string) => void;
+  apartmentListings?: ApartmentListing[];
+  selectedApartmentId?: string;
+  onSelectApartment?: (apartment: ApartmentListing) => void;
 }
 
 export const MapComponent: React.FC<MapComponentProps> = React.memo<MapComponentProps>(({
@@ -120,6 +125,9 @@ export const MapComponent: React.FC<MapComponentProps> = React.memo<MapComponent
   poiIconSettings = DEFAULT_POI_ICON_SETTINGS,
   onUpdatePoiIcons = () => {},
   onToggleProfileVisibility,
+  apartmentListings = [],
+  selectedApartmentId,
+  onSelectApartment,
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -190,6 +198,7 @@ export const MapComponent: React.FC<MapComponentProps> = React.memo<MapComponent
   const isochronesLayerRef = useRef<L.LayerGroup | null>(null);
   const heatmapLayerRef = useRef<L.LayerGroup | null>(null);
   const intersectionLayerRef = useRef<L.LayerGroup | null>(null);
+  const apartmentsLayerRef = useRef<L.LayerGroup | null>(null);
   const poiIconsLayerRef = useRef<L.LayerGroup | null>(null);
   const personsLayerRef = useRef<L.LayerGroup | null>(null);
   const inspectionMarkerRef = useRef<L.Marker | null>(null);
@@ -239,6 +248,7 @@ export const MapComponent: React.FC<MapComponentProps> = React.memo<MapComponent
     map.createPane('pane-isochrones');
     map.createPane('pane-heatmap');
     map.createPane('pane-intersection');
+    map.createPane('pane-apartments');
     map.createPane('pane-poi_icons');
     map.createPane('pane-persons');
     map.createPane('pane-inspection');
@@ -248,6 +258,7 @@ export const MapComponent: React.FC<MapComponentProps> = React.memo<MapComponent
     const isochronesGroup = L.layerGroup().addTo(map);
     const heatmapGroup = L.layerGroup().addTo(map);
     const intersectionGroup = L.layerGroup().addTo(map);
+    const apartmentsGroup = L.layerGroup().addTo(map);
     const poiIconsGroup = L.layerGroup().addTo(map);
     const personsGroup = L.layerGroup().addTo(map);
 
@@ -255,6 +266,7 @@ export const MapComponent: React.FC<MapComponentProps> = React.memo<MapComponent
     isochronesLayerRef.current = isochronesGroup;
     heatmapLayerRef.current = heatmapGroup;
     intersectionLayerRef.current = intersectionGroup;
+    apartmentsLayerRef.current = apartmentsGroup;
     poiIconsLayerRef.current = poiIconsGroup;
     personsLayerRef.current = personsGroup;
     mapRef.current = map;
@@ -296,6 +308,7 @@ export const MapComponent: React.FC<MapComponentProps> = React.memo<MapComponent
         isochronesLayerRef.current?.clearLayers();
         heatmapLayerRef.current?.clearLayers();
         intersectionLayerRef.current?.clearLayers();
+        apartmentsLayerRef.current?.clearLayers();
         poiIconsLayerRef.current?.clearLayers();
         personsLayerRef.current?.clearLayers();
         if (inspectionMarkerRef.current) {
@@ -324,6 +337,7 @@ export const MapComponent: React.FC<MapComponentProps> = React.memo<MapComponent
         isochronesLayerRef.current = null;
         heatmapLayerRef.current = null;
         intersectionLayerRef.current = null;
+        apartmentsLayerRef.current = null;
         poiIconsLayerRef.current = null;
         personsLayerRef.current = null;
       }
@@ -963,6 +977,76 @@ export const MapComponent: React.FC<MapComponentProps> = React.memo<MapComponent
     hiddenLayers,
     onSelectInspectionPoint,
     highwayVersion,
+    isDark,
+  ]);
+
+  // 6b. Render Apartment Listings Pins (Pane: pane-apartments)
+  useEffect(() => {
+    const aptGroup = apartmentsLayerRef.current;
+    if (!aptGroup || !mapRef.current) return;
+
+    aptGroup.clearLayers();
+
+    if (!apartmentListings || apartmentListings.length === 0 || hiddenLayers.has('apartments')) {
+      return;
+    }
+
+    apartmentListings.forEach((apt) => {
+      const isSelected = selectedApartmentId === apt.id;
+      const markerIcon = createApartmentMarkerIcon(
+        apt.priceWarm || apt.priceCold,
+        isSelected,
+        isDark
+      );
+
+      const marker = L.marker([apt.lat, apt.lng], {
+        icon: markerIcon,
+        pane: 'pane-apartments',
+      });
+
+      const rentSqm = apt.sizeSqm > 0 ? (apt.priceCold / apt.sizeSqm).toFixed(1) : null;
+      const imgHtml = apt.thumbnailUrl
+        ? `<div style="width: 100%; height: 75px; border-radius: 8px; overflow: hidden; margin-bottom: 6px; background: #f1f5f9;">
+            <img src="${apt.thumbnailUrl}" style="width: 100%; height: 100%; object-fit: cover;" alt="${apt.title}" />
+           </div>`
+        : '';
+
+      marker.bindTooltip(
+        `<div style="max-width: 220px; font-family: inherit; font-size: 11.5px; padding: 2px;">
+          ${imgHtml}
+          <div style="font-weight: 700; color: ${isDark ? '#f1f5f9' : '#0f172a'}; font-size: 12px; line-height: 1.3;">
+            ${apt.title}
+          </div>
+          <div style="color: ${isDark ? '#94a3b8' : '#64748b'}; font-size: 10.5px; margin-top: 2px;">
+            ${apt.address}${apt.district ? ` · ${apt.district}` : ''}
+          </div>
+          <div style="margin-top: 4px; display: flex; align-items: baseline; gap: 6px; font-weight: 800; font-size: 13px; color: ${isDark ? '#38bdf8' : '#0284c7'};">
+            <span>${apt.priceWarm || apt.priceCold} € warm</span>
+            <span style="font-size: 10.5px; font-weight: 500; color: ${isDark ? '#94a3b8' : '#64748b'};">${apt.rooms} Zi. · ${apt.sizeSqm} m²</span>
+          </div>
+          ${rentSqm ? `<div style="font-size: 10px; color: ${isDark ? '#64748b' : '#94a3b8'};">Ø ${rentSqm} €/m² Kaltmiete</div>` : ''}
+          <div style="margin-top: 4px; font-size: 10px; color: ${isDark ? '#38bdf8' : '#2563eb'}; font-weight: 600;">
+            Klicken für Fahrzeit-Details
+          </div>
+        </div>`,
+        { direction: 'top', offset: [0, -12], opacity: 0.98 }
+      );
+
+      marker.on('click', () => {
+        if (onSelectApartment) {
+          onSelectApartment(apt);
+        }
+        onSelectInspectionPoint(apt.lat, apt.lng);
+      });
+
+      marker.addTo(aptGroup);
+    });
+  }, [
+    apartmentListings,
+    selectedApartmentId,
+    hiddenLayers,
+    onSelectApartment,
+    onSelectInspectionPoint,
     isDark,
   ]);
 

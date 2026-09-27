@@ -133,6 +133,14 @@ export const LayerManagerPanel: React.FC<LayerManagerPanelProps> = ({
           color: 'text-indigo-600 bg-indigo-50 border-indigo-200',
           canMove: true,
         };
+      case 'apartments':
+        return {
+          title: 'Wohnungsangebote (Pins)',
+          subtitle: 'Gefundene Wohnungen im Treffbereich',
+          icon: Home,
+          color: 'text-rose-600 bg-rose-50 border-rose-200',
+          canMove: true,
+        };
       case 'poi_icons':
         return {
           title: 'Haltestellen & Knoten (Icons)',

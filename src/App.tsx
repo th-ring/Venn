@@ -27,6 +27,10 @@ const SettingsModal = React.lazy(() =>
   import('./components/settings/SettingsModal').then((m) => ({ default: m.SettingsModal }))
 );
 
+const ApartmentManagerModal = React.lazy(() =>
+  import('./components/apartments/ApartmentManagerModal').then((m) => ({ default: m.ApartmentManagerModal }))
+);
+
 export default function App() {
   const { themePreference, resolvedTheme, isDark, toggleTheme } = useTheme();
   const {
@@ -73,11 +77,16 @@ export default function App() {
     undoToastMessage,
     handleUndoLastSuggestion,
     handleDismissUndoToast,
+    apartments,
+    selectedApartmentId,
+    handleSelectApartment,
+    handleReloadApartments,
   } = useCommuteFinder();
 
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const [isApartmentManagerOpen, setIsApartmentManagerOpen] = useState(false);
   const [settingsModalTab, setSettingsModalTab] = useState<SettingsTabId>('basemap');
 
   // Desktop sidebar collapse state (persisted)
@@ -210,6 +219,8 @@ export default function App() {
         onToggleDesktopCollapse={handleToggleDesktopSidebar}
         sidebarWidth={sidebarWidth}
         onResizeWidth={handleResizeSidebarWidth}
+        onOpenApartmentManager={() => setIsApartmentManagerOpen(true)}
+        apartmentsCount={apartments.length}
       />
 
       {/* Main Map Stage */}
@@ -328,12 +339,15 @@ export default function App() {
             poiIconSettings={poiIconSettings}
             onUpdatePoiIcons={handleUpdatePoiIcons}
             onToggleProfileVisibility={handleToggleProfileVisibility}
+            apartmentListings={apartments}
+            selectedApartmentId={selectedApartmentId || undefined}
+            onSelectApartment={handleSelectApartment}
           />
         </MapErrorBoundary>
 
         {/* Floating Inspection Panel / Mobile Bottom Sheet */}
         {inspectionPoint && (
-          <div className="absolute bottom-0 inset-x-0 sm:bottom-6 sm:inset-x-auto sm:right-6 z-20 sm:max-w-sm w-full px-2 sm:px-0 pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:pb-0 pointer-events-none">
+          <div className="absolute bottom-0 inset-x-0 sm:bottom-6 sm:inset-x-auto sm:right-6 z-20 sm:max-w-lg w-full px-2 sm:px-0 pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:pb-0 pointer-events-none">
             <div className="pointer-events-auto">
               <InspectionPanel
                 inspection={inspectionPoint}
@@ -341,6 +355,12 @@ export default function App() {
                 showRentalInfo={Boolean(
                   schedule.options?.rentalOverlay?.enabled && !hiddenLayers.has('rental')
                 )}
+                allListings={apartments}
+                intersectionFeature={result?.intersection || result?.rawIntersection || null}
+                profiles={profiles}
+                schedule={schedule}
+                onSelectApartment={handleSelectApartment}
+                onOpenApartmentManager={() => setIsApartmentManagerOpen(true)}
               />
             </div>
           </div>
@@ -374,6 +394,19 @@ export default function App() {
             showOnlyIntersection={showOnlyIntersection}
             onToggleOnlyIntersection={handleToggleOnlyIntersection}
             initialTab={settingsModalTab}
+          />
+        </Suspense>
+      )}
+
+      {/* Apartment Manager & Scraper Ingestion Modal */}
+      {isApartmentManagerOpen && (
+        <Suspense fallback={null}>
+          <ApartmentManagerModal
+            isOpen={isApartmentManagerOpen}
+            onClose={() => setIsApartmentManagerOpen(false)}
+            listings={apartments}
+            intersection={result?.intersection || result?.rawIntersection || null}
+            onRefreshListings={handleReloadApartments}
           />
         </Suspense>
       )}
