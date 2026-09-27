@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-09-27
+
+### Added
+- **Aktive Wohnungssuche im gemeinsamen Treffbereich**: Ermöglicht das direkte Suchen, Auflisten und Bewerten von Mietwohnungen innerhalb der Schnittmenge mit automatischem Pendelzeit-Fairness-Score für alle Personen.
+- **Teilflächen-Targeting für kombinierte Verkehrsmodi**: Erkennt und isoliert automatisch getrennte Sub-Polygone ("Punktbereiche", z. B. ÖPNV-Korridore vs. PKW-Autobahnachsen) und bietet gezielte Portal-Suchen pro Teilgebiet.
+- **Live verifizierte Portal-Deep-Links**: Direkte Einstiegslinks für ImmoScout24, Immowelt, WG-Gesucht und Kleinanzeigen mit exakter Geo- und Stadt-Routenführung.
+- **Agentic Browser Search Skill (`agentic-apartment-browser`)**: Ermöglicht agentische Recherchen über den integrierten Browser (Antigravity, Codex, Cloud Code), wenn Portale Bot-Schutz aktivieren.
+- **Wohnungsdaten-Management**: Import-, Export-, Validierungs- und Filter-Tools für strukturierte Wohnungsdatensätze (`public/data/apartments.json`).
+
+### Fixed
+- **Routing der Immobilienportale**: Veraltete und fehlerhafte URLs für ImmoScout24, Immowelt und WG-Gesucht durch live verifizierte Endpunkte ersetzt (Behebung von 410- und 404-Fehlern).
+
 ## [1.1.0] - 2026-09-27
 
 ### Added
