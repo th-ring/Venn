@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.2] - 2026-09-27
+
+### Fixed
+- **Mobiles Scrollen in Einstellungen & Formularen**: Behebung blockierter Touch-Gesten auf Mobilgeräten durch Korrektur von `touch-action: manipulation` auf dem `body` sowie Behebung von Höhenüberläufen in flexiblen Containern (`min-h-0` und `max-h-dvh`).
+
 ## [1.4.1] - 2026-09-27
 
 ### Changed
