@@ -31,9 +31,20 @@ const EMPTY_HIGHWAY_DATASET: HighwayDataset = {
 };
 
 /**
- * Asynchronously loads default highway data on demand.
- * This code-splits the 1.24 MB highway data JSON into an on-demand chunk,
- * removing it from the initial application bundle.
+ * Validates a HighwayDataset object against required structural schema
+ */
+export function validateHighwayDataset(raw: any): HighwayDataset | null {
+  if (!raw || typeof raw !== 'object') return null;
+  if (!raw.metadata || !Array.isArray(raw.junctions) || !Array.isArray(raw.ramps)) {
+    return null;
+  }
+  return raw as HighwayDataset;
+}
+
+/**
+ * Asynchronously loads default highway data on demand via static fetch.
+ * Removes the 1.24 MB highway data JSON completely from JS bundles,
+ * preventing double-chunking between client and worker.
  */
 export async function loadDefaultHighwayData(): Promise<HighwayDataset> {
   if (cachedDataset && cachedDataset.junctions.length > 0) {
@@ -45,9 +56,10 @@ export async function loadDefaultHighwayData(): Promise<HighwayDataset> {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
-        const parsed = JSON.parse(raw) as HighwayDataset;
-        if (parsed && parsed.metadata && parsed.junctions && parsed.ramps) {
-          cachedDataset = parsed;
+        const parsed = JSON.parse(raw);
+        const validated = validateHighwayDataset(parsed);
+        if (validated) {
+          cachedDataset = validated;
           notifyListeners(cachedDataset);
           return cachedDataset;
         }
@@ -57,14 +69,27 @@ export async function loadDefaultHighwayData(): Promise<HighwayDataset> {
     }
   }
 
-  // 2. Load chunk dynamically
+  // 2. Fetch static JSON on demand
   if (!defaultDataPromise) {
-    defaultDataPromise = import('../data/highwayData.json').then((mod) => {
-      const data = (mod.default || mod) as unknown as HighwayDataset;
-      cachedDataset = data;
-      notifyListeners(cachedDataset);
-      return data;
-    });
+    defaultDataPromise = (async () => {
+      try {
+        if (typeof fetch !== 'undefined') {
+          const res = await fetch('/data/highwayData.json');
+          if (res.ok) {
+            const data = await res.json();
+            const validated = validateHighwayDataset(data);
+            if (validated) {
+              cachedDataset = validated;
+              notifyListeners(cachedDataset);
+              return validated;
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('[HighwayService] Failed to fetch /data/highwayData.json:', err);
+      }
+      return EMPTY_HIGHWAY_DATASET;
+    })();
   }
 
   return defaultDataPromise;
@@ -202,10 +227,10 @@ out skel qt;`;
     throw new Error(`Konnte keine Verbindung zu OSM-Overpass aufbauen (${lastError})`);
   }
 
-  // Node coordinate lookup
+  // Node coordinate lookup with strict numeric validation
   const nodeMap = new Map<number, [number, number]>();
   for (const el of rawData.elements) {
-    if (el.type === 'node') {
+    if (el && el.type === 'node' && typeof el.lon === 'number' && typeof el.lat === 'number' && !isNaN(el.lon) && !isNaN(el.lat)) {
       nodeMap.set(el.id, [Number(el.lon.toFixed(5)), Number(el.lat.toFixed(5))]);
     }
   }

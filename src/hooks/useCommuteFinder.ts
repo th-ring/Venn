@@ -15,6 +15,9 @@ import {
   DEFAULT_POI_ICON_SETTINGS,
   IntersectionAreaStats,
   ApartmentListing,
+  CommuteEstimate,
+  IntersectionSubArea,
+  PortalSearchLink,
 } from '../types';
 import * as turf from '@turf/turf';
 import {
@@ -37,6 +40,9 @@ import {
 import {
   CommuteWorkerRequest,
   CommuteWorkerResponse,
+  CommuteWorkerInspectionRequest,
+  CommuteWorkerInspectionResponse,
+  CommuteWorkerOutgoingMessage,
 } from '../workers/commuteWorker';
 import {
   calculateMultiIntersection,
@@ -131,6 +137,7 @@ export function useCommuteFinder() {
   const inspectionPointRef = useRef<InspectionPoint | null>(null);
   inspectionPointRef.current = inspectionPoint;
   const handleSelectInspectionPointRef = useRef<(lat: number, lng: number) => Promise<void>>(() => Promise.resolve());
+  const applyInspectionDataRef = useRef<(data: any, specificApartment?: ApartmentListing | null) => Promise<void>>(() => Promise.resolve());
 
   // Apartments State
   const [apartments, setApartments] = useState<ApartmentListing[]>([]);
@@ -283,6 +290,12 @@ export function useCommuteFinder() {
 
   const workerRef = useRef<Worker | null>(null);
   const activeRequestIdRef = useRef<string | null>(null);
+  const activeInspectionRequestIdRef = useRef<string | null>(null);
+  const pendingInspectContextRef = useRef<{
+    lat: number;
+    lng: number;
+    matchedApartment?: ApartmentListing;
+  } | null>(null);
 
   // Initialize background computation Web Worker
   useEffect(() => {
@@ -292,9 +305,23 @@ export function useCommuteFinder() {
         worker = new Worker(new URL('../workers/commuteWorker.ts', import.meta.url), {
           type: 'module',
         });
-        worker.onmessage = (e: MessageEvent<CommuteWorkerResponse>) => {
+        worker.onmessage = (e: MessageEvent<CommuteWorkerOutgoingMessage>) => {
           const resp = e.data;
-          if (!resp || resp.requestId !== activeRequestIdRef.current) {
+          if (!resp) return;
+
+          if (resp.type === 'INSPECT_POINT_RESULT') {
+            if (resp.requestId !== activeInspectionRequestIdRef.current) {
+              return;
+            }
+            if (!resp.success) {
+              console.warn('[useCommuteFinder] Web Worker inspection failed:', resp.error);
+              return;
+            }
+            applyInspectionDataRef.current(resp, pendingInspectContextRef.current?.matchedApartment);
+            return;
+          }
+
+          if (resp.requestId !== activeRequestIdRef.current) {
             // Drop stale / cancelled calculation results
             return;
           }
@@ -312,6 +339,25 @@ export function useCommuteFinder() {
                 }
               }, 16);
             }
+          } else {
+            console.warn('[useCommuteFinder] Web Worker calculation failed:', resp.error);
+            setResult((prev) =>
+              prev
+                ? {
+                    ...prev,
+                    fallbackAlerts: [
+                      ...(prev.fallbackAlerts || []),
+                      {
+                        personId: 'worker-error',
+                        personName: 'Berechnungssystem',
+                        mode: 'transit',
+                        requestedProvider: 'calibrated',
+                        reason: resp.error || 'Hintergrundberechnung fehlgeschlagen',
+                      },
+                    ],
+                  }
+                : null
+            );
           }
           setIsCalculating(false);
           setIsPending(false);
@@ -533,9 +579,157 @@ export function useCommuteFinder() {
     [handleUpdateProfile]
   );
 
+  const applyInspectionData = useCallback(
+    async (
+      data: {
+        lat: number;
+        lng: number;
+        estimates: CommuteEstimate[];
+        allWithinLimit: boolean;
+        withinLimitCount: number;
+        isIntersectionInspection: boolean;
+        centerCoord: [number, number] | null;
+        avgCommuteMinutes?: number;
+        commuteSpreadMinutes?: number;
+        subAreas?: IntersectionSubArea[];
+        portalLinks?: PortalSearchLink[];
+        selectedSubAreaId?: string;
+      },
+      specificApartment?: ApartmentListing | null
+    ) => {
+      let matchedApartment: ApartmentListing | undefined = specificApartment || undefined;
+      if (!matchedApartment) {
+        matchedApartment = apartmentsRef.current.find(
+          (apt) => Math.abs(apt.lat - data.lat) < 0.0003 && Math.abs(apt.lng - data.lng) < 0.0003
+        );
+      }
+
+      if (matchedApartment) {
+        setSelectedApartmentId(matchedApartment.id);
+      } else {
+        setSelectedApartmentId(null);
+      }
+
+      const currentResult = resultRef.current;
+      const intersectionFeature = currentResult?.intersection || currentResult?.rawIntersection;
+
+      const areaApartments = data.isIntersectionInspection && intersectionFeature
+        ? filterApartmentsInPolygon(apartmentsRef.current, intersectionFeature)
+        : undefined;
+
+      let intersectionStats: IntersectionAreaStats | undefined;
+      if (data.isIntersectionInspection && data.centerCoord) {
+        const areaKm2 =
+          currentResult?.intersectionAreaKm2 ??
+          (intersectionFeature ? calculateAreaKm2(intersectionFeature as any) : 0);
+
+        intersectionStats = {
+          areaKm2,
+          centerLat: data.centerCoord[1],
+          centerLng: data.centerCoord[0],
+          centerAddress: 'Lade Mittelpunkt...',
+          avgCommuteMinutes: data.avgCommuteMinutes ?? 0,
+          commuteSpreadMinutes: data.commuteSpreadMinutes ?? 0,
+          subAreas: data.subAreas,
+          selectedSubAreaId: data.selectedSubAreaId,
+          portalLinks: data.portalLinks,
+        };
+      }
+
+      const rentalInfo = getRentalDistrictAtPoint(
+        data.lat,
+        data.lng,
+        scheduleRef.current.options?.rentalOverlay?.selectedRegionId || 'munich-mvv'
+      );
+
+      setInspectionPoint({
+        lat: data.lat,
+        lng: data.lng,
+        address: matchedApartment?.title || 'Lade Adresse...',
+        estimates: data.estimates,
+        allWithinLimit: data.allWithinLimit,
+        activePersonsCount: profilesRef.current.filter((p) => p.visible).length,
+        withinLimitCount: data.withinLimitCount,
+        rentalInfo: rentalInfo || undefined,
+        isIntersectionInspection: data.isIntersectionInspection,
+        intersectionStats,
+        apartmentListings: areaApartments,
+        selectedApartment: matchedApartment,
+        subAreas: intersectionStats?.subAreas,
+        selectedSubAreaId: intersectionStats?.selectedSubAreaId,
+        portalLinks: intersectionStats?.portalLinks,
+      });
+
+      // Async reverse geocoding for clicked point and center point
+      const addrPromise = reverseGeocode(data.lat, data.lng);
+      const centerAddrPromise =
+        data.isIntersectionInspection && data.centerCoord
+          ? reverseGeocode(data.centerCoord[1], data.centerCoord[0])
+          : Promise.resolve(undefined);
+
+      const [addr, centerAddr] = await Promise.all([addrPromise, centerAddrPromise]);
+
+      setInspectionPoint((prev) => {
+        if (!prev || prev.lat !== data.lat || prev.lng !== data.lng) return prev;
+        return {
+          ...prev,
+          address: matchedApartment ? `${matchedApartment.address} (${matchedApartment.title})` : addr,
+          intersectionStats: prev.intersectionStats
+            ? {
+                ...prev.intersectionStats,
+                centerAddress: centerAddr || prev.intersectionStats.centerAddress,
+              }
+            : undefined,
+        };
+      });
+    },
+    []
+  );
+  applyInspectionDataRef.current = applyInspectionData;
+
   // Map Inspection
   const handleSelectInspectionPoint = useCallback(
     async (lat: number, lng: number, specificApartment?: ApartmentListing | null) => {
+      let matchedApartment: ApartmentListing | undefined = specificApartment || undefined;
+      if (!matchedApartment) {
+        matchedApartment = apartmentsRef.current.find(
+          (apt) => Math.abs(apt.lat - lat) < 0.0003 && Math.abs(apt.lng - lng) < 0.0003
+        );
+      }
+      if (matchedApartment) {
+        setSelectedApartmentId(matchedApartment.id);
+      } else {
+        setSelectedApartmentId(null);
+      }
+
+      // If Web Worker is available, offload Dijkstra/matrix estimations, point-in-polygon & subarea extractions
+      if (workerRef.current) {
+        const inspectRequestId = `${Date.now()}_inspect_${Math.random().toString(36).substring(2, 9)}`;
+        activeInspectionRequestIdRef.current = inspectRequestId;
+        pendingInspectContextRef.current = { lat, lng, matchedApartment };
+
+        const currentResult = resultRef.current;
+        const currentSchedule = scheduleRef.current;
+        const intersectionFeature = currentResult?.intersection || currentResult?.rawIntersection || null;
+
+        const req: CommuteWorkerInspectionRequest = {
+          type: 'INSPECT_POINT',
+          requestId: inspectRequestId,
+          lat,
+          lng,
+          intersectionFeature,
+          profiles: profilesRef.current,
+          schedule: currentSchedule,
+          isochronesMap: currentResult?.isochrones,
+          activeTransitRegion: getTransitRegion(),
+          apartments: apartmentsRef.current,
+        };
+
+        workerRef.current.postMessage(req);
+        return;
+      }
+
+      // Fallback: Synchronous Main-Thread calculation if Web Worker is unavailable
       const active = profilesRef.current.filter((p) => p.visible);
       const currentResult = resultRef.current;
       const currentSchedule = scheduleRef.current;
@@ -549,7 +743,7 @@ export function useCommuteFinder() {
       // When inside the shared intersection, calculate area center and spread
       const isIntersectionInspection = isInIntersection && !!intersectionFeature;
       const centerCoord = isIntersectionInspection ? getPolygonCenter(intersectionFeature) : null;
-      const sampleCoords = isIntersectionInspection ? samplePolygonPoints(intersectionFeature, 24) : [];
+      const sampleCoords = isIntersectionInspection ? samplePolygonPoints(intersectionFeature, 12) : [];
 
       const estimates = active.map((p) => {
         const poly = currentResult?.isochrones?.[p.id];
@@ -664,27 +858,26 @@ export function useCommuteFinder() {
         : estimates.filter((e) => e.isWithinLimit).length;
       const allWithinLimit = isInIntersection || withinLimitCount === active.length;
 
-      // Compute combined intersection area stats
-      let intersectionStats: IntersectionAreaStats | undefined;
+      let avgCommuteMinutes: number | undefined;
+      let commuteSpreadMinutes: number | undefined;
+      let subAreas: IntersectionSubArea[] | undefined;
+      let portalLinks: PortalSearchLink[] | undefined;
+      let selectedSubAreaId: string | undefined;
+
       if (isIntersectionInspection && centerCoord) {
         const centerTimes = estimates.map((e) => e.centerMinutes ?? e.travelTimeMinutes);
-        const avgCommuteMinutes = Math.round(
+        avgCommuteMinutes = Math.round(
           centerTimes.reduce((acc, t) => acc + t, 0) / (centerTimes.length || 1)
         );
-        let commuteSpreadMinutes = 0;
         if (centerTimes.length === 2) {
           commuteSpreadMinutes = Math.round(Math.abs(centerTimes[0] - centerTimes[1]) / 2);
         } else if (centerTimes.length > 2) {
           commuteSpreadMinutes = Math.round(
-            Math.max(...centerTimes.map((t) => Math.abs(t - avgCommuteMinutes)))
+            Math.max(...centerTimes.map((t) => Math.abs(t - avgCommuteMinutes!)))
           );
         }
 
-        const areaKm2 =
-          currentResult?.intersectionAreaKm2 ??
-          calculateAreaKm2(intersectionFeature as any);
-
-        const subAreas = extractIntersectionSubAreas(
+        subAreas = extractIntersectionSubAreas(
           intersectionFeature,
           apartmentsRef.current
         );
@@ -698,88 +891,31 @@ export function useCommuteFinder() {
         });
 
         const activeBbox = clickedSubArea ? clickedSubArea.bbox : (turf.bbox(intersectionFeature as any) as [number, number, number, number]);
-        const portalLinks = clickedSubArea
+        portalLinks = clickedSubArea
           ? clickedSubArea.portalLinks
           : getPortalSearchLinks({ lat: centerCoord[1], lng: centerCoord[0] }, activeBbox);
+        selectedSubAreaId = clickedSubArea?.id;
+      }
 
-        intersectionStats = {
-          areaKm2,
-          centerLat: centerCoord[1],
-          centerLng: centerCoord[0],
-          centerAddress: 'Lade Mittelpunkt...',
+      applyInspectionData(
+        {
+          lat,
+          lng,
+          estimates,
+          allWithinLimit,
+          withinLimitCount,
+          isIntersectionInspection,
+          centerCoord,
           avgCommuteMinutes,
           commuteSpreadMinutes,
           subAreas,
-          selectedSubAreaId: clickedSubArea?.id,
           portalLinks,
-        };
-      }
-
-      const rentalInfo = getRentalDistrictAtPoint(
-        lat,
-        lng,
-        currentSchedule.options?.rentalOverlay?.selectedRegionId || 'munich-mvv'
+          selectedSubAreaId,
+        },
+        matchedApartment
       );
-
-      let matchedApartment: ApartmentListing | undefined = specificApartment || undefined;
-      if (!matchedApartment) {
-        matchedApartment = apartmentsRef.current.find(
-          (apt) => Math.abs(apt.lat - lat) < 0.0003 && Math.abs(apt.lng - lng) < 0.0003
-        );
-      }
-
-      const areaApartments = isIntersectionInspection && intersectionFeature
-        ? filterApartmentsInPolygon(apartmentsRef.current, intersectionFeature)
-        : undefined;
-
-      if (matchedApartment) {
-        setSelectedApartmentId(matchedApartment.id);
-      } else {
-        setSelectedApartmentId(null);
-      }
-
-      setInspectionPoint({
-        lat,
-        lng,
-        address: matchedApartment?.title || 'Lade Adresse...',
-        estimates,
-        allWithinLimit,
-        activePersonsCount: active.length,
-        withinLimitCount,
-        rentalInfo: rentalInfo || undefined,
-        isIntersectionInspection,
-        intersectionStats,
-        apartmentListings: areaApartments,
-        selectedApartment: matchedApartment,
-        subAreas: intersectionStats?.subAreas,
-        selectedSubAreaId: intersectionStats?.selectedSubAreaId,
-        portalLinks: intersectionStats?.portalLinks,
-      });
-
-      // Async reverse geocoding for clicked point and center point
-      const addrPromise = reverseGeocode(lat, lng);
-      const centerAddrPromise =
-        isIntersectionInspection && centerCoord
-          ? reverseGeocode(centerCoord[1], centerCoord[0])
-          : Promise.resolve(undefined);
-
-      const [addr, centerAddr] = await Promise.all([addrPromise, centerAddrPromise]);
-
-      setInspectionPoint((prev) => {
-        if (!prev || prev.lat !== lat || prev.lng !== lng) return prev;
-        return {
-          ...prev,
-          address: matchedApartment ? `${matchedApartment.address} (${matchedApartment.title})` : addr,
-          intersectionStats: prev.intersectionStats
-            ? {
-                ...prev.intersectionStats,
-                centerAddress: centerAddr || prev.intersectionStats.centerAddress,
-              }
-            : undefined,
-        };
-      });
     },
-    []
+    [applyInspectionData]
   );
   handleSelectInspectionPointRef.current = handleSelectInspectionPoint;
 

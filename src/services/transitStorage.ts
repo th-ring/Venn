@@ -5,13 +5,123 @@
  * with thousands of stations and connections, eliminating the 5MB localStorage limit.
  */
 
-import { TransitRegion, TransitRegionMetadata } from '../types';
+import type { TransitRegion, TransitRegionMetadata, TransitStation, TransitConnection } from '../types.ts';
 
 const DB_NAME = 'living_area_transit_v2';
 const DB_VERSION = 1;
 const STORE_REGIONS = 'regions';
 const STORE_SETTINGS = 'settings';
 const KEY_ACTIVE_REGION = 'active_region_id';
+const MAX_CACHED_REGIONS = 4;
+
+/**
+ * Validates external or stored TransitRegion data against structural and coordinate constraints.
+ */
+export function validateTransitRegion(raw: any): TransitRegion | null {
+  if (!raw || typeof raw !== 'object') return null;
+
+  const id = typeof raw.id === 'string' ? raw.id.trim() : '';
+  const name = typeof raw.name === 'string' ? raw.name.trim() : '';
+  if (!id || !name) return null;
+
+  if (!Array.isArray(raw.stations) || !Array.isArray(raw.connections)) return null;
+
+  if (
+    !Array.isArray(raw.bbox) ||
+    raw.bbox.length !== 4 ||
+    !raw.bbox.every((n: any) => typeof n === 'number' && !isNaN(n))
+  ) {
+    return null;
+  }
+
+  const validStations: TransitStation[] = [];
+  for (const s of raw.stations) {
+    if (
+      !s ||
+      typeof s.id !== 'string' ||
+      !s.id.trim() ||
+      typeof s.name !== 'string' ||
+      typeof s.lat !== 'number' ||
+      typeof s.lng !== 'number' ||
+      isNaN(s.lat) ||
+      isNaN(s.lng) ||
+      s.lat < -90 ||
+      s.lat > 90 ||
+      s.lng < -180 ||
+      s.lng > 180
+    ) {
+      return null;
+    }
+    validStations.push({
+      id: s.id.trim(),
+      name: s.name.trim(),
+      lat: s.lat,
+      lng: s.lng,
+      lines: Array.isArray(s.lines) ? s.lines.filter((l: any) => typeof l === 'string') : [],
+      types: Array.isArray(s.types) ? s.types.filter((t: any) => typeof t === 'string') : ['ubahn'],
+    });
+  }
+
+  const stationIdSet = new Set(validStations.map((s) => s.id));
+  const validConnections: TransitConnection[] = [];
+  for (const c of raw.connections) {
+    if (
+      !c ||
+      typeof c.from !== 'string' ||
+      typeof c.to !== 'string' ||
+      typeof c.minutes !== 'number' ||
+      isNaN(c.minutes) ||
+      c.minutes <= 0 ||
+      !stationIdSet.has(c.from) ||
+      !stationIdSet.has(c.to)
+    ) {
+      continue;
+    }
+    validConnections.push({
+      from: c.from,
+      to: c.to,
+      minutes: Math.max(0.2, c.minutes),
+      lines: Array.isArray(c.lines) ? c.lines.filter((l: any) => typeof l === 'string') : [],
+      type: typeof c.type === 'string' ? c.type : 'ubahn',
+    });
+  }
+
+  if (validStations.length === 0 || validConnections.length === 0) {
+    return null;
+  }
+
+  return {
+    id,
+    name,
+    version: typeof raw.version === 'string' ? raw.version : '1.0',
+    lastUpdated: typeof raw.lastUpdated === 'string' ? raw.lastUpdated : new Date().toISOString(),
+    source: typeof raw.source === 'string' ? raw.source : 'OpenTransit',
+    bbox: raw.bbox as [number, number, number, number],
+    stationCount: validStations.length,
+    connectionCount: validConnections.length,
+    downloadSizeApprox: typeof raw.downloadSizeApprox === 'string' ? raw.downloadSizeApprox : undefined,
+    downloadUrl: typeof raw.downloadUrl === 'string' ? raw.downloadUrl : undefined,
+    isBuiltIn: !!raw.isBuiltIn,
+    stations: validStations,
+    connections: validConnections,
+  };
+}
+
+async function checkStorageQuota(): Promise<boolean> {
+  if (typeof navigator !== 'undefined' && navigator.storage && navigator.storage.estimate) {
+    try {
+      const estimate = await navigator.storage.estimate();
+      if (estimate.quota && estimate.usage) {
+        const remainingBytes = estimate.quota - estimate.usage;
+        if (remainingBytes < 5 * 1024 * 1024) {
+          console.warn('[TransitStorage] Storage space constrained, available bytes:', remainingBytes);
+          return false;
+        }
+      }
+    } catch {}
+  }
+  return true;
+}
 
 function openDatabase(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
@@ -37,15 +147,31 @@ function openDatabase(): Promise<IDBDatabase> {
 }
 
 /**
- * Saves or updates a transit region package in IndexedDB
+ * Saves or updates a transit region package in IndexedDB with quota check and LRU eviction
  */
 export async function saveRegionToStorage(region: TransitRegion): Promise<void> {
+  const validated = validateTransitRegion(region);
+  if (!validated) {
+    console.warn('[TransitStorage] Rejected malformed transit region:', region?.id);
+    return;
+  }
+
+  await checkStorageQuota();
+
   try {
     const db = await openDatabase();
+    const installed = await listInstalledRegions();
+    if (installed.length >= MAX_CACHED_REGIONS && !installed.some((r) => r.id === validated.id)) {
+      const evictCandidate = installed.find((r) => !r.isBuiltIn && r.id !== validated.id);
+      if (evictCandidate) {
+        await deleteRegionFromStorage(evictCandidate.id);
+      }
+    }
+
     return new Promise((resolve, reject) => {
       const tx = db.transaction([STORE_REGIONS], 'readwrite');
       const store = tx.objectStore(STORE_REGIONS);
-      const req = store.put(region);
+      const req = store.put(validated);
 
       req.onsuccess = () => resolve();
       req.onerror = () => reject(req.error);
@@ -57,7 +183,7 @@ export async function saveRegionToStorage(region: TransitRegion): Promise<void> 
 }
 
 /**
- * Loads a transit region package by id
+ * Loads a transit region package by id with runtime schema validation
  */
 export async function loadRegionFromStorage(regionId: string): Promise<TransitRegion | null> {
   try {
@@ -68,7 +194,18 @@ export async function loadRegionFromStorage(regionId: string): Promise<TransitRe
       const req = store.get(regionId);
 
       req.onsuccess = () => {
-        resolve(req.result || null);
+        if (!req.result) {
+          resolve(null);
+          return;
+        }
+        const validated = validateTransitRegion(req.result);
+        if (!validated) {
+          console.warn('[TransitStorage] Corrupted region detected in storage, clearing:', regionId);
+          deleteRegionFromStorage(regionId).catch(() => {});
+          resolve(null);
+        } else {
+          resolve(validated);
+        }
       };
       req.onerror = () => reject(req.error);
       tx.oncomplete = () => db.close();

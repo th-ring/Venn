@@ -18,6 +18,7 @@ import {
   Upload,
   AlertCircle,
   SlidersHorizontal,
+  ShieldCheck,
 } from 'lucide-react';
 
 interface ShareModalProps {
@@ -43,6 +44,8 @@ export const ShareModal: React.FC<ShareModalProps> = ({
   const [importText, setImportText] = useState('');
   const [importError, setImportError] = useState<string | null>(null);
   const [importSuccess, setImportSuccess] = useState(false);
+  const [fuzzCoordinates, setFuzzCoordinates] = useState(true);
+  const [anonymizeAddresses, setAnonymizeAddresses] = useState(true);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -64,8 +67,8 @@ export const ShareModal: React.FC<ShareModalProps> = ({
     schedule,
   };
 
-  const shareUrl = serializeConfigToUrl(activeConfig);
-  const jsonString = serializeConfigToJson(activeConfig);
+  const shareUrl = serializeConfigToUrl(activeConfig, { fuzzCoordinates, anonymizeAddresses });
+  const jsonString = serializeConfigToJson(activeConfig, { fuzzCoordinates, anonymizeAddresses });
 
   const handleCopyLink = async () => {
     try {
@@ -189,6 +192,37 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                   <span className="text-slate-400 dark:text-[#9aa0a6] font-normal">({p.travelTimeMinutes}m)</span>
                 </div>
               ))}
+            </div>
+
+            {/* Privacy & PII Protection Controls (DS-GVO / GDPR Compliance) */}
+            <div className="p-3 bg-emerald-50/70 dark:bg-emerald-950/20 border border-emerald-200/80 dark:border-emerald-800/40 rounded-2xl space-y-2.5">
+              <div className="flex items-center gap-2 text-xs font-semibold text-emerald-900 dark:text-emerald-300">
+                <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                <span>Geodatenschutz & Privatsphäre (DS-GVO)</span>
+              </div>
+              <p className="text-[11px] text-emerald-800/90 dark:text-emerald-300/80 leading-relaxed">
+                Schützt private Wohn- und Arbeitsorte vor Identifikation bei Weitergabe des Links:
+              </p>
+              <div className="space-y-1.5 pt-0.5">
+                <label className="flex items-center gap-2 text-xs text-slate-700 dark:text-[#e3e3e3] cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={anonymizeAddresses}
+                    onChange={(e) => setAnonymizeAddresses(e.target.checked)}
+                    className="rounded border-slate-300 dark:border-[#5f6368] text-emerald-600 focus:ring-emerald-500 h-3.5 w-3.5"
+                  />
+                  <span>Hausnummern & private Adressdetails entfernen</span>
+                </label>
+                <label className="flex items-center gap-2 text-xs text-slate-700 dark:text-[#e3e3e3] cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={fuzzCoordinates}
+                    onChange={(e) => setFuzzCoordinates(e.target.checked)}
+                    className="rounded border-slate-300 dark:border-[#5f6368] text-emerald-600 focus:ring-emerald-500 h-3.5 w-3.5"
+                  />
+                  <span>Koordinaten verunschärfen (~100m Quartier-Fuzzing)</span>
+                </label>
+              </div>
             </div>
 
             {/* URL Input with Copy Button */}

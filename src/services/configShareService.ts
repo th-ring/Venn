@@ -75,28 +75,58 @@ interface CompactPayloadV2 {
   sc?: string;
 }
 
+export interface SharePrivacyOptions {
+  /** If true, fuzzed coordinates are used (~110m, 3 decimal places) instead of exact millimetric GPS coordinates */
+  fuzzCoordinates?: boolean;
+  /** If true, removes house numbers and exact street names, keeping only district / city or anonymized label */
+  anonymizeAddresses?: boolean;
+}
+
+export function sanitizeAddressForSharing(address: string, fallbackName: string): string {
+  if (!address || address.trim() === '' || address.toLowerCase() === 'neuer zielort') {
+    return fallbackName;
+  }
+  // Strip house numbers (e.g., "Musterstraße 42a, 80331 München" -> "Musterstraße, 80331 München")
+  const cleaned = address
+    .replace(/\b\d+[a-zA-Z]?(?=[,\s]|$)/g, '')
+    .replace(/\s{2,}/g, ' ')
+    .replace(/,\s*,/g, ',')
+    .trim()
+    .replace(/^,\s*|,\s*$/g, '');
+
+  return cleaned || fallbackName;
+}
+
 /**
  * Converts a full configuration into a compact JSON-serializable structure
  */
-function toCompactPayload(config: FullShareConfig): CompactPayloadV2 {
+function toCompactPayload(config: FullShareConfig, privacy?: SharePrivacyOptions): CompactPayloadV2 {
   return {
     v: 2,
-    p: config.profiles.map((p, idx) => ({
-      id: p.id || `p-${idx + 1}`,
-      n: p.name,
-      a: p.address,
-      lat: p.lat,
-      lng: p.lng,
-      t: p.travelTimeMinutes,
-      m: p.mode,
-      c: p.color,
-      v: p.visible,
-      mt: p.maxTransfers,
-      mw: p.maxWalkToStationMin,
-      mfw: p.maxWalkFromStationMin,
-      mtw: p.maxTransferWaitMin,
-      tm: p.transitModes,
-    })),
+    p: config.profiles.map((p, idx) => {
+      const lat = privacy?.fuzzCoordinates ? Math.round(p.lat * 1000) / 1000 : p.lat;
+      const lng = privacy?.fuzzCoordinates ? Math.round(p.lng * 1000) / 1000 : p.lng;
+      const address = privacy?.anonymizeAddresses
+        ? sanitizeAddressForSharing(p.address, p.name || `Standort ${idx + 1}`)
+        : p.address;
+
+      return {
+        id: p.id || `p-${idx + 1}`,
+        n: p.name,
+        a: address,
+        lat,
+        lng,
+        t: p.travelTimeMinutes,
+        m: p.mode,
+        c: p.color,
+        v: p.visible,
+        mt: p.maxTransfers,
+        mw: p.maxWalkToStationMin,
+        mfw: p.maxWalkFromStationMin,
+        mtw: p.maxTransferWaitMin,
+        tm: p.transitModes,
+      };
+    }),
     s: {
       d: config.schedule.direction,
       w: config.schedule.dayOfWeek,
@@ -206,19 +236,19 @@ function fromCompactPayload(parsed: any): FullShareConfig | null {
 }
 
 /**
- * Encodes full configuration into a shareable URL
+ * Encodes full configuration into a shareable URL with optional privacy protection
  */
-export function serializeConfigToUrl(config: FullShareConfig): string {
-  const compact = toCompactPayload(config);
+export function serializeConfigToUrl(config: FullShareConfig, privacy?: SharePrivacyOptions): string {
+  const compact = toCompactPayload(config, privacy);
   const encoded = encodeURIComponent(JSON.stringify(compact));
   return `${window.location.origin}${window.location.pathname}#zone=${encoded}`;
 }
 
 /**
- * Exports full configuration as formatted JSON
+ * Exports full configuration as formatted JSON with optional privacy protection
  */
-export function serializeConfigToJson(config: FullShareConfig): string {
-  return JSON.stringify(toCompactPayload(config), null, 2);
+export function serializeConfigToJson(config: FullShareConfig, privacy?: SharePrivacyOptions): string {
+  return JSON.stringify(toCompactPayload(config, privacy), null, 2);
 }
 
 /**

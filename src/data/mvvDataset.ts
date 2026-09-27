@@ -7,7 +7,7 @@
  * Regional rail (BRB, RE), key Trams and Expressbusses.
  */
 
-import { TransitRegion, TransitStation, TransitConnection } from '../types';
+import type { TransitRegion, TransitStation, TransitConnection } from '../types.ts';
 
 export type MvvStation = TransitStation;
 export type MvvConnection = TransitConnection;

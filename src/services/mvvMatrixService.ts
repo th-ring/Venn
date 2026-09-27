@@ -14,28 +14,33 @@
  */
 
 import * as turf from '@turf/turf';
-import { MvvDataset, MvvStation, DEFAULT_MVV_DATASET, MvvConnection } from '../data/mvvDataset';
-import {
+import type { MvvDataset, MvvStation, MvvConnection } from '../data/mvvDataset.ts';
+import { DEFAULT_MVV_DATASET } from '../data/mvvDataset.ts';
+import type {
   PersonProfile,
   TransitSubMode,
-  ALL_TRANSIT_SUBMODES,
-  DEFAULT_TRANSIT_SUBMODES,
   TransitRegion,
   TransitStation,
   TransitConnection,
   TransitRegionMetadata,
   IsochroneOptions,
+} from '../types.ts';
+import {
+  ALL_TRANSIT_SUBMODES,
+  DEFAULT_TRANSIT_SUBMODES,
   DEFAULT_ROUTING_PARAMETERS,
-} from '../types';
-import { PriorityQueue } from './priorityQueue';
+} from '../types.ts';
+import { PriorityQueue } from './priorityQueue.ts';
 import {
   saveRegionToStorage,
   loadRegionFromStorage,
   getActiveRegionId,
   setActiveRegionId,
   listInstalledRegions,
-} from './transitStorage';
-import { AVAILABLE_REGIONS_CATALOG, CatalogRegion } from '../data/availableRegions';
+  validateTransitRegion,
+} from './transitStorage.ts';
+import type { CatalogRegion } from '../data/availableRegions.ts';
+import { AVAILABLE_REGIONS_CATALOG } from '../data/availableRegions.ts';
 
 const MVV_STORAGE_KEY = 'mvv_transit_dataset_v1';
 const MVV_LAST_SYNC_KEY = 'mvv_last_sync_timestamp';
@@ -232,7 +237,11 @@ export async function switchTransitRegion(regionId: string): Promise<TransitRegi
     if (!res.ok) {
       throw new Error(`HTTP ${res.status}: Paket konnte nicht geladen werden`);
     }
-    const region = (await res.json()) as TransitRegion;
+    const raw = await res.json();
+    const region = validateTransitRegion(raw);
+    if (!region) {
+      throw new Error(`Ungültiges oder beschädigtes Transit-Paket für ${regionId}`);
+    }
     activeTransitRegion = region;
     await saveRegionToStorage(region);
     await setActiveRegionId(region.id);

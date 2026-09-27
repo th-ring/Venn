@@ -1,4 +1,4 @@
-import { TransitRegionMetadata } from '../types';
+import type { TransitRegionMetadata } from '../types.ts';
 
 export interface CatalogRegion extends TransitRegionMetadata {
   description: string;

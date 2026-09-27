@@ -58,14 +58,14 @@ async function checkMapsJsApi(key: string): Promise<GoogleServiceStatus> {
       if (!resolved) {
         resolved = true;
         cleanup();
-        // If timeout occurs, but no explicit auth error, assume valid since script may be suppressed or already running
+        // If timeout occurs, do NOT assume valid; return pending/timeout status
         resolve({
           id: 'maps_js',
           name: 'Maps JavaScript API',
-          status: 'valid',
-          message: 'Aktiv (im Browser initialisierbar)',
-          details: 'Wird direkt über den Google Maps Loader für die Kartenansicht geladen.',
-          statusCode: 200,
+          status: 'pending',
+          message: 'Keine Antwort erhalten (Timeout)',
+          details: 'Verbindung zu Google Maps konnte nicht bestätigt werden. Prüfe Netzwerk, Ad-Blocker oder Referrer-Einschränkungen.',
+          statusCode: 408,
         });
       }
     }, 4000);
@@ -112,7 +112,7 @@ async function checkMapsJsApi(key: string): Promise<GoogleServiceStatus> {
  */
 async function checkGoogleIsochronesApi(key: string): Promise<GoogleServiceStatus> {
   try {
-    const url = `https://isochrones.googleapis.com/v1/isochrones:generate?key=${encodeURIComponent(key)}`;
+    const url = 'https://isochrones.googleapis.com/v1/isochrones:generate';
     const res = await fetch(url, {
       method: 'POST',
       headers: {

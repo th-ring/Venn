@@ -30,6 +30,13 @@ import {
   extractIntersectionSubAreas,
   getPortalSearchLinks,
 } from '../src/services/apartmentService.ts';
+import { PriorityQueue } from '../src/services/priorityQueue.ts';
+import {
+  calculateReachableStations,
+  findShortestTransitTrip,
+  getTransitRegion,
+} from '../src/services/mvvMatrixService.ts';
+import { validateTransitRegion } from '../src/services/transitStorage.ts';
 
 let passCount = 0;
 let totalCount = 0;
@@ -430,6 +437,292 @@ test('generates valid portal search deep-links with radius and coordinate attrib
   const linksWithDistrict = getPortalSearchLinks({ lat: 48.1582, lng: 11.5741 }, [11.55, 48.15, 11.58, 48.18], 2, 'München', 'Schwabing-West');
   const is24District = linksWithDistrict.find((l) => l.portal === 'immoscout24');
   assert.ok(is24District.url.includes('/Suche/de/bayern/muenchen/schwabing-west/wohnung-mieten'), 'IS24 must incorporate district when provided');
+});
+
+// Group 8: PriorityQueue (Min-Heap invariant, order, duplicates, empty state, churn)
+console.log('\n8. PriorityQueue (Min-Heap Invariant & Ordering):');
+
+test('handles empty priority queue operations gracefully', () => {
+  const pq = new PriorityQueue((a, b) => a - b);
+  assert.equal(pq.isEmpty(), true);
+  assert.equal(pq.size, 0);
+  assert.equal(pq.pop(), undefined);
+});
+
+test('handles single item push and pop correctly', () => {
+  const pq = new PriorityQueue((a, b) => a.priority - b.priority);
+  pq.push({ id: 'item1', priority: 42 });
+  assert.equal(pq.size, 1);
+  assert.equal(pq.isEmpty(), false);
+
+  const popped = pq.pop();
+  assert.deepEqual(popped, { id: 'item1', priority: 42 });
+  assert.equal(pq.size, 0);
+  assert.equal(pq.isEmpty(), true);
+});
+
+test('maintains min-heap ordering with descending and random inputs', () => {
+  const pq = new PriorityQueue((a, b) => a - b);
+  const values = [50, 40, 30, 20, 10, 5, 2, 1];
+  values.forEach((v) => pq.push(v));
+
+  assert.equal(pq.size, values.length);
+
+  const extracted = [];
+  while (!pq.isEmpty()) {
+    extracted.push(pq.pop());
+  }
+
+  assert.deepEqual(extracted, [1, 2, 5, 10, 20, 30, 40, 50]);
+});
+
+test('correctly orders duplicate priorities without corruption', () => {
+  const pq = new PriorityQueue((a, b) => a.cost - b.cost);
+  const items = [
+    { name: 'c1', cost: 10 },
+    { name: 'a1', cost: 5 },
+    { name: 'b1', cost: 5 },
+    { name: 'c2', cost: 10 },
+    { name: 'd1', cost: 20 },
+    { name: 'a2', cost: 5 },
+  ];
+  items.forEach((item) => pq.push(item));
+
+  const sortedCosts = [];
+  while (!pq.isEmpty()) {
+    sortedCosts.push(pq.pop().cost);
+  }
+  assert.deepEqual(sortedCosts, [5, 5, 5, 10, 10, 20]);
+});
+
+test('stress test: maintains min-heap property over 200 pseudo-random numbers', () => {
+  const pq = new PriorityQueue((a, b) => a - b);
+  const randomNumbers = [];
+  for (let i = 0; i < 200; i++) {
+    const val = Math.floor(Math.random() * 1000);
+    randomNumbers.push(val);
+    pq.push(val);
+  }
+
+  assert.equal(pq.size, 200);
+
+  let prev = -Infinity;
+  let popCount = 0;
+  while (!pq.isEmpty()) {
+    const current = pq.pop();
+    assert.ok(current >= prev, `Current element (${current}) must be >= previous element (${prev})`);
+    prev = current;
+    popCount++;
+  }
+  assert.equal(popCount, 200);
+  assert.equal(pq.isEmpty(), true);
+});
+
+// Group 9: Transit Graph Routing & Schema Validation
+console.log('\n9. Transit Graph Routing & Schema Validation:');
+
+test('validateTransitRegion accepts valid metropolitan packages and rejects malformed datasets', () => {
+  const validMunich = getTransitRegion();
+  const resValid = validateTransitRegion(validMunich);
+  assert.ok(resValid !== null, 'Valid Munich dataset must pass validation');
+  assert.equal(resValid.id, 'munich-mvv');
+  assert.ok(resValid.stations.length > 50);
+
+  // Missing ID / Name
+  assert.equal(validateTransitRegion(null), null);
+  assert.equal(validateTransitRegion({}), null);
+  assert.equal(validateTransitRegion({ id: '', name: 'Test' }), null);
+
+  // Invalid BBOX (must be array of 4 numbers)
+  assert.equal(validateTransitRegion({ id: 't1', name: 'Test', bbox: [1, 2], stations: [], connections: [] }), null);
+  assert.equal(validateTransitRegion({ id: 't1', name: 'Test', bbox: ['a', 'b', 'c', 'd'], stations: [], connections: [] }), null);
+
+  // Rejects packages with corrupted station entries or coordinates
+  const withMalformedStations = {
+    id: 'test-custom',
+    name: 'Test Custom',
+    version: '1.0',
+    bbox: [11.0, 48.0, 12.0, 49.0],
+    stations: [
+      { id: 's1', name: 'Valid 1', lat: 48.1, lng: 11.5, modes: ['subway'] },
+      { id: 's3', name: 'Invalid Coords', lat: 999, lng: 11.7 },
+    ],
+    connections: [],
+  };
+  assert.equal(validateTransitRegion(withMalformedStations), null, 'Corrupt station coordinates (lat: 999) must cause package rejection');
+
+  // Accepts valid custom packages
+  const validCustom = {
+    id: 'test-custom-valid',
+    name: 'Test Custom Valid',
+    version: '1.0',
+    bbox: [11.0, 48.0, 12.0, 49.0],
+    stations: [
+      { id: 's1', name: 'Valid 1', lat: 48.1, lng: 11.5, lines: ['U1'], types: ['ubahn'] },
+      { id: 's2', name: 'Valid 2', lat: 48.2, lng: 11.6, lines: ['U1'], types: ['ubahn'] },
+    ],
+    connections: [
+      { from: 's1', to: 's2', line: 'U1', minutes: 3, mode: 'subway' },
+    ],
+  };
+  const sanitized = validateTransitRegion(validCustom);
+  assert.ok(sanitized !== null, 'Valid custom package should be accepted');
+  assert.equal(sanitized.stations.length, 2);
+  assert.equal(sanitized.connections.length, 1);
+});
+
+test('findShortestTransitTrip returns direct walk shortcut when within 800m', () => {
+  // Marienplatz to Sendlinger Tor (~700m direct walk)
+  const origin = { lat: 48.1371, lng: 11.5754 };
+  const destination = { lat: 48.1333, lng: 11.5667 };
+  const profile = {
+    id: 'p1',
+    name: 'Max',
+    lat: origin.lat,
+    lng: origin.lng,
+    travelTimeMinutes: 30,
+    mode: 'transit',
+    color: '#3B82F6',
+    visible: true,
+    maxWalkToStationMin: 15,
+    maxWalkFromStationMin: 15,
+  };
+
+  const trip = findShortestTransitTrip(origin, destination, profile);
+  assert.ok(trip !== null);
+  assert.equal(trip.routeFound, true);
+  assert.equal(trip.inVehicleMin, 0, 'No vehicle travel should be needed for direct walk shortcut');
+  assert.equal(trip.transfersCount, 0);
+  assert.ok(trip.travelTimeMinutes > 0 && trip.travelTimeMinutes < 20);
+  assert.ok(trip.steps[0].includes('Direkter Fußweg'));
+});
+
+test('findShortestTransitTrip computes multi-modal transit route between distant network nodes', () => {
+  // Garching Forschungszentrum (U6 north terminus) -> Marienplatz (city center)
+  const origin = { lat: 48.2650, lng: 11.6700 };
+  const destination = { lat: 48.1371, lng: 11.5754 };
+  const profile = {
+    id: 'p1',
+    name: 'Researcher',
+    lat: origin.lat,
+    lng: origin.lng,
+    travelTimeMinutes: 60,
+    mode: 'transit',
+    color: '#3B82F6',
+    visible: true,
+    maxWalkToStationMin: 10,
+    maxWalkFromStationMin: 10,
+  };
+
+  const trip = findShortestTransitTrip(origin, destination, profile);
+  assert.ok(trip !== null);
+  assert.equal(trip.routeFound, true);
+  assert.ok(trip.travelTimeMinutes >= 15 && trip.travelTimeMinutes <= 45, `Travel time (${trip.travelTimeMinutes}) should be within expected U6 schedule`);
+  assert.ok(trip.inVehicleMin > 0, 'In-vehicle transit minutes must be positive');
+  assert.ok(trip.linesUsed.length > 0, 'Should identify used transit line');
+});
+
+test('findShortestTransitTrip handles unreachable remote destinations outside region gracefully', () => {
+  const origin = { lat: 48.1371, lng: 11.5754 };
+  const remoteDest = { lat: 54.321, lng: 10.123 }; // Kiel, northern Germany ~700 km away
+  const profile = {
+    id: 'p1',
+    name: 'Test',
+    lat: origin.lat,
+    lng: origin.lng,
+    travelTimeMinutes: 30,
+    mode: 'transit',
+    color: '#3B82F6',
+    visible: true,
+  };
+
+  const trip = findShortestTransitTrip(origin, remoteDest, profile);
+  assert.equal(trip, null, 'Remote point outside transit network returns null cleanly without throwing');
+});
+
+test('calculateReachableStations returns transit stations within travel budget', () => {
+  const profile = {
+    id: 'p1',
+    name: 'Commuter',
+    lat: 48.1371,
+    lng: 11.5754, // Marienplatz
+    travelTimeMinutes: 20,
+    mode: 'transit',
+    color: '#3B82F6',
+    visible: true,
+    maxWalkFromStationMin: 5,
+  };
+
+  const reachable = calculateReachableStations(profile);
+  assert.ok(Array.isArray(reachable));
+  assert.ok(reachable.length >= 10, `Expected at least 10 reachable stations from central Munich within 20m, got ${reachable.length}`);
+  assert.ok(reachable.every((s) => s.totalTimeMin <= 20), 'Every reachable station must respect 20 min budget');
+  assert.ok(reachable.every((s) => s.remainingTimeMin >= 0), 'Remaining time must be non-negative');
+});
+
+test('calculateReachableStations returns empty for remote coordinates with no nearby station', () => {
+  const profile = {
+    id: 'p-remote',
+    name: 'Remote Lake',
+    lat: 47.9000,
+    lng: 11.1000, // Remote rural area with no station in pedestrian radius
+    travelTimeMinutes: 10,
+    mode: 'transit',
+    color: '#3B82F6',
+    visible: true,
+    maxWalkFromStationMin: 2,
+  };
+
+  const reachable = calculateReachableStations(profile);
+  assert.equal(reachable.length, 0, 'Should return empty array when no station is reachable within walk limit');
+});
+
+// Group 10: Performance Benchmarks & SLO Assertions
+console.log('\n10. Performance Benchmarks & SLO Assertions:');
+
+test('Benchmark: multi-polygon geometric intersection completes well within SLO (< 50ms)', () => {
+  const p1 = turf.polygon([[[11.45, 48.10], [11.45, 48.22], [11.65, 48.22], [11.65, 48.10], [11.45, 48.10]]]);
+  const p2 = turf.polygon([[[11.50, 48.12], [11.50, 48.25], [11.70, 48.25], [11.70, 48.12], [11.50, 48.12]]]);
+  const p3 = turf.polygon([[[11.48, 48.08], [11.48, 48.20], [11.68, 48.20], [11.68, 48.08], [11.48, 48.08]]]);
+
+  const iterations = 30;
+  const start = performance.now();
+  for (let i = 0; i < iterations; i++) {
+    const res = calculateMultiIntersection([p1, p2, p3]);
+    assert.ok(res !== null);
+  }
+  const totalMs = performance.now() - start;
+  const avgMs = totalMs / iterations;
+
+  console.log(`    ℹ Multi-intersection average: ${avgMs.toFixed(2)} ms/run (SLO threshold: < 50ms)`);
+  assert.ok(avgMs < 50, `Multi-intersection average latency (${avgMs.toFixed(2)}ms) exceeded 50ms SLO`);
+});
+
+test('Benchmark: Dijkstra / A* graph traversal completes well within SLO (< 30ms)', () => {
+  const origin = { lat: 48.2650, lng: 11.6700 };
+  const destination = { lat: 48.1371, lng: 11.5754 };
+  const profile = {
+    id: 'p1',
+    name: 'Benchmarker',
+    lat: origin.lat,
+    lng: origin.lng,
+    travelTimeMinutes: 45,
+    mode: 'transit',
+    color: '#3B82F6',
+    visible: true,
+  };
+
+  const iterations = 25;
+  const start = performance.now();
+  for (let i = 0; i < iterations; i++) {
+    const trip = findShortestTransitTrip(origin, destination, profile);
+    assert.ok(trip !== null && trip.routeFound === true);
+  }
+  const totalMs = performance.now() - start;
+  const avgMs = totalMs / iterations;
+
+  console.log(`    ℹ Dijkstra/A* traversal average: ${avgMs.toFixed(2)} ms/run (SLO threshold: < 30ms)`);
+  assert.ok(avgMs < 30, `Transit graph traversal average latency (${avgMs.toFixed(2)}ms) exceeded 30ms SLO`);
 });
 
 console.log(`\n========================================`);

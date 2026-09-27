@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 interface SettingsSliderProps {
   id?: string;
@@ -31,8 +31,44 @@ export const SettingsSlider: React.FC<SettingsSliderProps> = ({
   description,
   disabled = false,
 }) => {
-  const displayVal = formatValue ? formatValue(value) : `${value}${unit ? ` ${unit}` : ''}`;
-  const percentage = Math.min(100, Math.max(0, ((value - min) / (max - min)) * 100));
+  const [localValue, setLocalValue] = useState<number>(value);
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    setLocalValue(value);
+  }, [value]);
+
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, []);
+
+  const commitValue = (val: number) => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = null;
+    }
+    onChange(val);
+  };
+
+  const handleChange = (newVal: number) => {
+    setLocalValue(newVal);
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+    debounceTimerRef.current = setTimeout(() => {
+      commitValue(newVal);
+    }, 120);
+  };
+
+  const handleRelease = () => {
+    commitValue(localValue);
+  };
+
+  const displayVal = formatValue ? formatValue(localValue) : `${localValue}${unit ? ` ${unit}` : ''}`;
 
   return (
     <div className={`space-y-2 py-1 ${disabled ? 'opacity-50 pointer-events-none' : ''}`}>
@@ -58,10 +94,12 @@ export const SettingsSlider: React.FC<SettingsSliderProps> = ({
           min={min}
           max={max}
           step={step}
-          value={value}
+          value={localValue}
           aria-label={label}
           aria-valuetext={displayVal}
-          onChange={(e) => onChange(parseFloat(e.target.value))}
+          onChange={(e) => handleChange(parseFloat(e.target.value))}
+          onPointerUp={handleRelease}
+          onKeyUp={handleRelease}
           disabled={disabled}
           className="w-full h-2 bg-slate-300 dark:bg-[#4a4d51] border border-slate-300 dark:border-[#5f6368] rounded-lg appearance-none cursor-pointer accent-blue-600 dark:accent-[#8ab4f8] transition-all focus-visible:ring-2 focus-visible:ring-blue-500"
         />

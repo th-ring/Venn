@@ -160,6 +160,46 @@ export const PersonCard: React.FC<PersonCardProps> = React.memo<PersonCardProps>
   const searchContainerRef = useRef<HTMLDivElement>(null);
   const colorPickerContainerRef = useRef<HTMLDivElement>(null);
 
+  // Buffer slider movement with local state to prevent re-render spikes across the tree
+  const [localTravelTime, setLocalTravelTime] = useState(profile.travelTimeMinutes);
+  const travelTimeDebounceRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    setLocalTravelTime(profile.travelTimeMinutes);
+  }, [profile.travelTimeMinutes]);
+
+  useEffect(() => {
+    return () => {
+      if (travelTimeDebounceRef.current) {
+        clearTimeout(travelTimeDebounceRef.current);
+      }
+    };
+  }, []);
+
+  const commitTravelTime = (val: number) => {
+    if (travelTimeDebounceRef.current) {
+      clearTimeout(travelTimeDebounceRef.current);
+      travelTimeDebounceRef.current = null;
+    }
+    if (val !== profile.travelTimeMinutes) {
+      onUpdate({ travelTimeMinutes: val });
+    }
+  };
+
+  const handleTravelTimeChange = (newVal: number) => {
+    setLocalTravelTime(newVal);
+    if (travelTimeDebounceRef.current) {
+      clearTimeout(travelTimeDebounceRef.current);
+    }
+    travelTimeDebounceRef.current = setTimeout(() => {
+      commitTravelTime(newVal);
+    }, 150);
+  };
+
+  const handleTravelTimeRelease = () => {
+    commitTravelTime(localTravelTime);
+  };
+
   // Sync internal search input when address prop changes
   useEffect(() => {
     setSearchQuery(profile.address || '');
@@ -507,7 +547,7 @@ export const PersonCard: React.FC<PersonCardProps> = React.memo<PersonCardProps>
           </div>
           <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-100 dark:bg-[#282a2c] text-slate-900 dark:text-[#e8eaed]">
             <span className="w-2 h-2 rounded-full" style={{ backgroundColor: profile.color }} />
-            {profile.travelTimeMinutes} Min
+            {localTravelTime} Min
           </span>
         </div>
         <div className="flex items-center gap-2">
@@ -518,10 +558,12 @@ export const PersonCard: React.FC<PersonCardProps> = React.memo<PersonCardProps>
             min="10"
             max="90"
             step="5"
-            value={profile.travelTimeMinutes}
+            value={localTravelTime}
             aria-label={`Maximale Reisezeit für ${profile.name}`}
-            aria-valuetext={`${profile.travelTimeMinutes} Minuten`}
-            onChange={(e) => onUpdate({ travelTimeMinutes: parseInt(e.target.value, 10) })}
+            aria-valuetext={`${localTravelTime} Minuten`}
+            onChange={(e) => handleTravelTimeChange(parseInt(e.target.value, 10))}
+            onPointerUp={handleTravelTimeRelease}
+            onKeyUp={handleTravelTimeRelease}
             className="w-full accent-blue-600 dark:accent-[#8ab4f8] cursor-pointer h-2 bg-slate-300 dark:bg-[#4a4d51] border border-slate-300 dark:border-[#5f6368] rounded-lg appearance-none focus-visible:ring-2 focus-visible:ring-blue-500"
           />
           <span className="text-[11px] font-medium text-slate-600 dark:text-[#9aa0a6]">90m</span>

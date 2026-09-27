@@ -6,19 +6,28 @@ import {
   TransitRegion,
   IsochroneFallbackAlert,
   HeatmapZoneFeature,
+  CommuteEstimate,
+  ApartmentListing,
+  IntersectionSubArea,
+  PortalSearchLink,
 } from '../types';
-import { generateIsochrone, IsochroneProvider } from '../services/isochroneEngine';
+import { generateIsochrone, IsochroneProvider, estimateCommuteTime } from '../services/isochroneEngine';
 import {
   calculateMultiIntersection,
   calculateAreaKm2,
   generateEmptyIntersectionSuggestions,
+  isPointInPolygon,
+  getPolygonCenter,
+  samplePolygonPoints,
 } from '../services/geometry';
 import { maskByResidentialAreas } from '../data/residentialZones';
 import { setTransitRegion } from '../services/mvvMatrixService';
 import { generatePriorityHeatmapZones, getPriorityTargets } from '../services/priorityHeatmapEngine';
 import { getHighwayRamps } from '../services/highwayService';
+import { extractIntersectionSubAreas, getPortalSearchLinks } from '../services/apartmentService';
 
 export interface CommuteWorkerRequest {
+  type?: 'CALCULATE_COMMUTE';
   requestId: string;
   profiles: PersonProfile[];
   schedule: CommuteSchedule;
@@ -30,17 +39,64 @@ export interface CommuteWorkerRequest {
 }
 
 export interface CommuteWorkerResponse {
+  type?: 'COMMUTE_RESULT';
   requestId: string;
   success: boolean;
   result?: CalculationResult;
   error?: string;
 }
 
+export interface CommuteWorkerInspectionRequest {
+  type: 'INSPECT_POINT';
+  requestId: string;
+  lat: number;
+  lng: number;
+  intersectionFeature: GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon | GeoJSON.GeometryCollection> | null;
+  profiles: PersonProfile[];
+  schedule: CommuteSchedule;
+  isochronesMap?: Record<string, GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon>>;
+  activeTransitRegion?: TransitRegion;
+  apartments?: ApartmentListing[];
+}
+
+export interface CommuteWorkerInspectionResponse {
+  type: 'INSPECT_POINT_RESULT';
+  requestId: string;
+  success: boolean;
+  lat: number;
+  lng: number;
+  isInIntersection: boolean;
+  isIntersectionInspection: boolean;
+  estimates: CommuteEstimate[];
+  allWithinLimit: boolean;
+  withinLimitCount: number;
+  centerCoord: [number, number] | null;
+  avgCommuteMinutes?: number;
+  commuteSpreadMinutes?: number;
+  subAreas?: IntersectionSubArea[];
+  portalLinks?: PortalSearchLink[];
+  selectedSubAreaId?: string;
+  error?: string;
+}
+
+export type CommuteWorkerIncomingMessage =
+  | CommuteWorkerRequest
+  | CommuteWorkerInspectionRequest;
+
+export type CommuteWorkerOutgoingMessage =
+  | CommuteWorkerResponse
+  | CommuteWorkerInspectionResponse;
+
 let latestRequestId = '';
 
-self.addEventListener('message', async (event: MessageEvent<CommuteWorkerRequest>) => {
+self.addEventListener('message', async (event: MessageEvent<CommuteWorkerIncomingMessage>) => {
   const data = event.data;
   if (!data || !data.requestId) return;
+
+  if (data.type === 'INSPECT_POINT') {
+    handleInspectPoint(data);
+    return;
+  }
 
   latestRequestId = data.requestId;
   const currentRequestId = data.requestId;
@@ -236,3 +292,221 @@ self.addEventListener('message', async (event: MessageEvent<CommuteWorkerRequest
     }
   }
 });
+
+async function handleInspectPoint(data: CommuteWorkerInspectionRequest) {
+  const {
+    requestId,
+    lat,
+    lng,
+    intersectionFeature,
+    profiles,
+    schedule,
+    isochronesMap,
+    activeTransitRegion,
+    apartments,
+  } = data;
+
+  try {
+    if (activeTransitRegion) {
+      setTransitRegion(activeTransitRegion);
+    }
+
+    const active = profiles.filter((p) => p.visible);
+    const isInIntersection = intersectionFeature
+      ? isPointInPolygon([lng, lat], intersectionFeature)
+      : false;
+
+    const isIntersectionInspection = isInIntersection && !!intersectionFeature;
+    const centerCoord = isIntersectionInspection ? getPolygonCenter(intersectionFeature) : null;
+    const sampleCoords = isIntersectionInspection ? samplePolygonPoints(intersectionFeature, 12) : [];
+
+    const estimates: CommuteEstimate[] = active.map((p) => {
+      const poly = isochronesMap?.[p.id];
+      const isInIsochrone = poly ? isPointInPolygon([lng, lat], poly) : false;
+
+      let { travelTimeMinutes, distanceKm, details } = estimateCommuteTime(
+        { lat, lng },
+        { lat: p.lat, lng: p.lng },
+        p.mode,
+        schedule,
+        p.maxTransfers,
+        p.maxWalkToStationMin,
+        p.maxWalkFromStationMin,
+        p.transitModes
+      );
+
+      let isWithinLimit = travelTimeMinutes <= p.travelTimeMinutes;
+
+      if (isInIntersection || isInIsochrone) {
+        isWithinLimit = true;
+        if (travelTimeMinutes > p.travelTimeMinutes) {
+          travelTimeMinutes = p.travelTimeMinutes;
+        }
+        if (details) {
+          if (
+            details.firstMileWalkLimitMin !== undefined &&
+            details.firstMileWalkMin !== undefined &&
+            details.firstMileWalkMin > details.firstMileWalkLimitMin
+          ) {
+            details.firstMileWalkMin = details.firstMileWalkLimitMin;
+          }
+          if (
+            details.lastMileWalkLimitMin !== undefined &&
+            details.lastMileWalkMin !== undefined &&
+            details.lastMileWalkMin > details.lastMileWalkLimitMin
+          ) {
+            details.lastMileWalkMin = details.lastMileWalkLimitMin;
+          }
+        }
+      }
+
+      let minMinutes: number | undefined;
+      let maxMinutes: number | undefined;
+      let spanPlusMinus: number | undefined;
+      let centerMinutes: number | undefined;
+      let centerDistanceKm: number | undefined;
+
+      if (isIntersectionInspection && centerCoord) {
+        const centerEst = estimateCommuteTime(
+          { lat: centerCoord[1], lng: centerCoord[0] },
+          { lat: p.lat, lng: p.lng },
+          p.mode,
+          schedule,
+          p.maxTransfers,
+          p.maxWalkToStationMin,
+          p.maxWalkFromStationMin,
+          p.transitModes
+        );
+
+        centerMinutes = Math.min(p.travelTimeMinutes, centerEst.travelTimeMinutes);
+        centerDistanceKm = centerEst.distanceKm;
+
+        const sampleTimes: number[] = [centerMinutes];
+        sampleCoords.forEach((coord) => {
+          const sampleEst = estimateCommuteTime(
+            { lat: coord[1], lng: coord[0] },
+            { lat: p.lat, lng: p.lng },
+            p.mode,
+            schedule,
+            p.maxTransfers,
+            p.maxWalkToStationMin,
+            p.maxWalkFromStationMin,
+            p.transitModes
+          );
+          sampleTimes.push(Math.min(p.travelTimeMinutes, sampleEst.travelTimeMinutes));
+        });
+
+        minMinutes = Math.min(...sampleTimes);
+        maxMinutes = Math.min(p.travelTimeMinutes, Math.max(...sampleTimes));
+        spanPlusMinus = Math.max(1, Math.round(Math.max(centerMinutes - minMinutes, maxMinutes - centerMinutes)));
+
+        if (centerEst.details) {
+          details = centerEst.details;
+        }
+      }
+
+      return {
+        personId: p.id,
+        personName: p.name,
+        personColor: p.color,
+        mode: p.mode,
+        travelTimeMinutes,
+        limitMinutes: p.travelTimeMinutes,
+        isWithinLimit,
+        distanceKm,
+        details,
+        minMinutes,
+        maxMinutes,
+        spanPlusMinus,
+        centerMinutes,
+        centerDistanceKm,
+      };
+    });
+
+    const withinLimitCount = isInIntersection
+      ? active.length
+      : estimates.filter((e) => e.isWithinLimit).length;
+    const allWithinLimit = isInIntersection || withinLimitCount === active.length;
+
+    let avgCommuteMinutes: number | undefined;
+    let commuteSpreadMinutes: number | undefined;
+    let subAreas: IntersectionSubArea[] | undefined;
+    let portalLinks: PortalSearchLink[] | undefined;
+    let selectedSubAreaId: string | undefined;
+
+    if (isIntersectionInspection && centerCoord) {
+      const centerTimes = estimates.map((e) => e.centerMinutes ?? e.travelTimeMinutes);
+      avgCommuteMinutes = Math.round(
+        centerTimes.reduce((acc, t) => acc + t, 0) / (centerTimes.length || 1)
+      );
+      if (centerTimes.length === 2) {
+        commuteSpreadMinutes = Math.round(Math.abs(centerTimes[0] - centerTimes[1]) / 2);
+      } else if (centerTimes.length > 2) {
+        commuteSpreadMinutes = Math.round(
+          Math.max(...centerTimes.map((t) => Math.abs(t - (avgCommuteMinutes || 0))))
+        );
+      } else {
+        commuteSpreadMinutes = 0;
+      }
+
+      if (apartments && apartments.length > 0) {
+        subAreas = extractIntersectionSubAreas(intersectionFeature, apartments);
+      }
+
+      let clickedSubArea = subAreas?.find((sa) => {
+        try {
+          return turf.booleanPointInPolygon(turf.point([lng, lat]), sa.feature);
+        } catch {
+          return false;
+        }
+      });
+
+      const activeBbox = clickedSubArea
+        ? clickedSubArea.bbox
+        : (turf.bbox(intersectionFeature as any) as [number, number, number, number]);
+
+      portalLinks = clickedSubArea
+        ? clickedSubArea.portalLinks
+        : getPortalSearchLinks({ lat: centerCoord[1], lng: centerCoord[0] }, activeBbox);
+
+      selectedSubAreaId = clickedSubArea?.id;
+    }
+
+    const response: CommuteWorkerInspectionResponse = {
+      type: 'INSPECT_POINT_RESULT',
+      requestId,
+      success: true,
+      lat,
+      lng,
+      isInIntersection,
+      isIntersectionInspection,
+      estimates,
+      allWithinLimit,
+      withinLimitCount,
+      centerCoord,
+      avgCommuteMinutes,
+      commuteSpreadMinutes,
+      subAreas,
+      portalLinks,
+      selectedSubAreaId,
+    };
+
+    self.postMessage(response);
+  } catch (err: any) {
+    const errorResponse: CommuteWorkerInspectionResponse = {
+      type: 'INSPECT_POINT_RESULT',
+      requestId,
+      success: false,
+      lat,
+      lng,
+      isInIntersection: false,
+      isIntersectionInspection: false,
+      estimates: [],
+      allWithinLimit: false,
+      withinLimitCount: 0,
+      centerCoord: null,
+      error: err instanceof Error ? err.message : String(err),
+    };
+    self.postMessage(errorResponse);
+  }
+}

@@ -193,7 +193,7 @@ export async function runHighwayUpdate() {
     areas: areaFeatures,
   };
 
-  const outputPath = path.join(__dirname, '..', 'src', 'data', 'highwayData.json');
+  const outputPath = path.join(__dirname, '..', 'public', 'data', 'highwayData.json');
   fs.writeFileSync(outputPath, JSON.stringify(outputDataset), 'utf8');
   console.log(`Updated highwayData.json successfully (${outputPath})`);
   return outputDataset;

@@ -184,11 +184,13 @@ export function setRailwayOverlayEnabled(enabled: boolean): void {
  */
 export function getGoogleMapsApiKey(): string {
   if (typeof localStorage === 'undefined') return '';
-  return (
-    localStorage.getItem('google_maps_api_key') ||
-    ((import.meta as any).env?.VITE_GOOGLE_MAPS_API_KEY as string) ||
-    ''
-  );
+  const stored = localStorage.getItem('google_maps_api_key');
+  if (stored) return stored;
+  // In development mode only, allow .env fallback for local debugging without leaking into production builds
+  if ((import.meta as any).env?.DEV) {
+    return ((import.meta as any).env?.VITE_GOOGLE_MAPS_API_KEY as string) || '';
+  }
+  return '';
 }
 
 export function setGoogleMapsApiKey(key: string): void {
@@ -205,11 +207,13 @@ export function setGoogleMapsApiKey(key: string): void {
  */
 export function getOrsApiKey(): string {
   if (typeof localStorage === 'undefined') return '';
-  return (
-    localStorage.getItem('ors_api_key') ||
-    ((import.meta as any).env?.VITE_ORS_API_KEY as string) ||
-    ''
-  );
+  const stored = localStorage.getItem('ors_api_key');
+  if (stored) return stored;
+  // In development mode only, allow .env fallback for local debugging without leaking into production builds
+  if ((import.meta as any).env?.DEV) {
+    return ((import.meta as any).env?.VITE_ORS_API_KEY as string) || '';
+  }
+  return '';
 }
 
 export function setOrsApiKey(key: string): void {
@@ -286,9 +290,10 @@ async function fetchGoogleIsochrone(
   };
 
   // Attempt proxy endpoint first (avoids CORS issues), then direct API endpoint
+  // API key is strictly passed in headers ('X-Goog-Api-Key') to avoid leak in URL query logs
   const endpoints = [
-    `/api/google-isochrone?key=${encodeURIComponent(trimmedKey)}`,
-    `https://isochrones.googleapis.com/v1/isochrones:generate?key=${encodeURIComponent(trimmedKey)}`,
+    '/api/google-isochrone',
+    'https://isochrones.googleapis.com/v1/isochrones:generate',
   ];
 
   let lastError = 'Google Maps Isochronen API nicht erreichbar';
