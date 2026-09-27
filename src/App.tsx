@@ -451,6 +451,7 @@ export default function App() {
             onClose={() => setIsApartmentManagerOpen(false)}
             listings={apartments}
             intersection={result?.intersection || result?.rawIntersection || null}
+            intersectionStats={inspectionPoint?.intersectionStats}
             onRefreshListings={handleReloadApartments}
           />
         </Suspense>

@@ -29,6 +29,7 @@ import {
   calculateApartmentCommute,
   extractIntersectionSubAreas,
   getPortalSearchLinks,
+  buildAgenticBrowserSearchPrompt,
 } from '../src/services/apartmentService.ts';
 import { PriorityQueue } from '../src/services/priorityQueue.ts';
 import {
@@ -437,6 +438,93 @@ test('generates valid portal search deep-links with radius and coordinate attrib
   const linksWithDistrict = getPortalSearchLinks({ lat: 48.1582, lng: 11.5741 }, [11.55, 48.15, 11.58, 48.18], 2, 'München', 'Schwabing-West');
   const is24District = linksWithDistrict.find((l) => l.portal === 'immoscout24');
   assert.ok(is24District.url.includes('/Suche/de/bayern/muenchen/schwabing-west/wohnung-mieten'), 'IS24 must incorporate district when provided');
+});
+
+test('buildAgenticBrowserSearchPrompt generates rich prompt with coordinates, radius, BBOX, and target file schema', () => {
+  const prompt = buildAgenticBrowserSearchPrompt({
+    portalName: 'ImmoScout24',
+    portalUrl: 'https://www.immobilienscout24.de/Suche/de/bayern/muenchen/wohnung-mieten',
+    portalKey: 'immoscout24',
+    areaLabel: 'Bereich 1',
+    areaKm2: 1.85,
+    center: { lat: 48.1550, lng: 11.5650 },
+    bbox: [11.5350, 48.1400, 11.5950, 48.1750],
+    radiusKm: 1.8,
+    city: 'München',
+    addressOrDistrict: 'Karl-Theodor-Straße 34 (Schwabing-West)',
+  });
+
+  // Verify slash command and portal invocation
+  assert.ok(prompt.startsWith('/browser Öffne ImmoScout24 (https://www.immobilienscout24.de/Suche/de/bayern/muenchen/wohnung-mieten)'));
+  assert.ok(prompt.includes('agentic-apartment-browser Skill'));
+
+  // Verify full geographic context
+  assert.ok(prompt.includes('Bereich: Bereich 1 (ca. 1.85 km²)'));
+  assert.ok(prompt.includes('Zentrum: Breitengrad 48.1550, Längengrad 11.5650'));
+  assert.ok(prompt.includes('Suchradius: ca. 1.8 km um das Zentrum'));
+  assert.ok(prompt.includes('Bounding Box [minLng, minLat, maxLng, maxLat]: [11.5350, 48.1400, 11.5950, 48.1750]'));
+  assert.ok(prompt.includes('Karl-Theodor-Straße 34 (Schwabing-West)'));
+
+  // Verify geo-filtering instruction
+  assert.ok(prompt.includes('WICHTIGE GEO-FILTERUNG: Akzeptiere NUR Inserate, deren Koordinaten (lat, lng) tatsächlich innerhalb der Bounding Box'));
+
+  // Verify target file and schema
+  assert.ok(prompt.includes('Zieldatei: public/data/apartments.json'));
+  assert.ok(prompt.includes('"version": "1.1.0"'));
+  assert.ok(prompt.includes('"source": "Agentic Browser Extraction (ImmoScout24)"'));
+  assert.ok(prompt.includes('"bbox": [11.5350, 48.1400, 11.5950, 48.1750]'));
+  assert.ok(prompt.includes('"id": "<Eindeutige ID, z.B. is24-12345678>"'));
+  assert.ok(prompt.includes('Pflichtfelder pro Listing: id, title, lat, lng, priceCold, sizeSqm, rooms.'));
+});
+
+test('buildAgenticBrowserSearchPrompt correctly embeds Venn filter settings', () => {
+  const prompt = buildAgenticBrowserSearchPrompt({
+    portalName: 'Immowelt',
+    portalUrl: 'https://www.immowelt.de/suche/muenchen/wohnungen/mieten?r=2',
+    portalKey: 'immowelt',
+    areaLabel: 'Gemeinsamer Treffbereich',
+    center: { lat: 48.15, lng: 11.56 },
+    bbox: [11.53, 48.14, 11.59, 48.17],
+    radiusKm: 2.0,
+    filters: {
+      maxPriceWarm: 1750,
+      minRooms: 2.5,
+      minSizeSqm: 60,
+    },
+  });
+
+  assert.ok(prompt.includes('Suchkriterien aus Venn:'));
+  assert.ok(prompt.includes('Maximale Warmmiete: bis zu 1750 €'));
+  assert.ok(prompt.includes('Mindestzimmeranzahl: ab 2.5 Zimmer'));
+  assert.ok(prompt.includes('Mindestwohnfläche: ab 60 m²'));
+  assert.ok(prompt.includes('"source": "immowelt"'));
+  assert.ok(prompt.includes('iw-12345678'));
+});
+
+test('buildAgenticBrowserSearchPrompt handles different portal keys and sources properly', () => {
+  const kaPrompt = buildAgenticBrowserSearchPrompt({
+    portalName: 'Kleinanzeigen',
+    portalUrl: 'https://www.kleinanzeigen.de/s-wohnung-mieten/c203',
+    portalKey: 'kleinanzeigen',
+    areaLabel: 'Bereich 2',
+    center: { lat: 48.16, lng: 11.58 },
+    bbox: [11.55, 48.15, 11.60, 48.19],
+    radiusKm: 1.5,
+  });
+  assert.ok(kaPrompt.includes('ka-12345678'));
+  assert.ok(kaPrompt.includes('"source": "kleinanzeigen"'));
+
+  const wgPrompt = buildAgenticBrowserSearchPrompt({
+    portalName: 'WG-Gesucht',
+    portalUrl: 'https://www.wg-gesucht.de',
+    portalKey: 'wg-gesucht',
+    areaLabel: 'Bereich 1',
+    center: { lat: 48.15, lng: 11.55 },
+    bbox: [11.50, 48.10, 11.60, 48.20],
+    radiusKm: 2.0,
+  });
+  assert.ok(wgPrompt.includes('wg-12345678'));
+  assert.ok(wgPrompt.includes('"source": "wg-gesucht"'));
 });
 
 // Group 8: PriorityQueue (Min-Heap invariant, order, duplicates, empty state, churn)

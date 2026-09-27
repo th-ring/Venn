@@ -783,3 +783,151 @@ export function saveApartmentFilters(filters: ApartmentFilterSettings): void {
     localStorage.setItem(STORAGE_KEY_FILTER_SETTINGS, JSON.stringify(filters));
   } catch {}
 }
+
+export interface GenerateAgenticPromptOptions {
+  portalName: string;
+  portalUrl: string;
+  portalKey?: string;
+  areaLabel: string;
+  areaKm2?: number;
+  center: { lat: number; lng: number };
+  bbox: [number, number, number, number]; // [minLng, minLat, maxLng, maxLat]
+  radiusKm: number;
+  city?: string;
+  addressOrDistrict?: string;
+  maxListings?: number;
+  filters?: {
+    maxPriceWarm?: number;
+    minRooms?: number;
+    minSizeSqm?: number;
+  };
+}
+
+/**
+ * Builds an all-inclusive, self-contained prompt for an agentic apartment search
+ * via the integrated browser (/browser, Antigravity, Codex, Cloud Code).
+ *
+ * Provides:
+ * 1. Target portal name and pre-configured URL deep-link
+ * 2. Complete geographical constraints (area label, size, center coordinates, radius, BBOX)
+ * 3. Relevant search filters (max rent, min rooms, min sqm)
+ * 4. Strict geo-filtering rules (reject out-of-bounds listings)
+ * 5. Target output file path (public/data/apartments.json)
+ * 6. Complete JSON schema and deduplication protocol
+ */
+export function buildAgenticBrowserSearchPrompt(options: GenerateAgenticPromptOptions): string {
+  const {
+    portalName,
+    portalUrl,
+    portalKey,
+    areaLabel,
+    areaKm2,
+    center,
+    bbox,
+    radiusKm,
+    city = 'München',
+    addressOrDistrict,
+    maxListings = 15,
+    filters,
+  } = options;
+
+  const minLng = bbox[0].toFixed(4);
+  const minLat = bbox[1].toFixed(4);
+  const maxLng = bbox[2].toFixed(4);
+  const maxLat = bbox[3].toFixed(4);
+  const centerLat = center.lat.toFixed(4);
+  const centerLng = center.lng.toFixed(4);
+  const safeRadius = Math.max(0.5, radiusKm).toFixed(1);
+  const areaDesc = typeof areaKm2 === 'number' && areaKm2 > 0 ? ` (ca. ${areaKm2.toFixed(2)} km²)` : '';
+  const locDesc = addressOrDistrict ? ` / Lage: ${addressOrDistrict}` : '';
+
+  const portalKeyLower = (portalKey || portalName).toLowerCase();
+  let sourceKey = 'custom';
+  let sourcePrefix = 'apt';
+  if (portalKeyLower.includes('immoscout') || portalKeyLower.includes('is24')) {
+    sourceKey = 'immoscout24';
+    sourcePrefix = 'is24';
+  } else if (portalKeyLower.includes('immowelt') || portalKeyLower.includes('iw')) {
+    sourceKey = 'immowelt';
+    sourcePrefix = 'iw';
+  } else if (portalKeyLower.includes('wg-gesucht') || portalKeyLower.includes('wg')) {
+    sourceKey = 'wg-gesucht';
+    sourcePrefix = 'wg';
+  } else if (portalKeyLower.includes('kleinanzeigen') || portalKeyLower.includes('ka')) {
+    sourceKey = 'kleinanzeigen';
+    sourcePrefix = 'ka';
+  }
+
+  const filterLines: string[] = [];
+  if (filters?.maxPriceWarm) {
+    filterLines.push(`- Maximale Warmmiete: bis zu ${filters.maxPriceWarm} €`);
+  }
+  if (filters?.minRooms) {
+    filterLines.push(`- Mindestzimmeranzahl: ab ${filters.minRooms} Zimmer`);
+  }
+  if (filters?.minSizeSqm) {
+    filterLines.push(`- Mindestwohnfläche: ab ${filters.minSizeSqm} m²`);
+  }
+
+  const filterBlock = filterLines.length > 0
+    ? `\nSuchkriterien aus Venn:\n${filterLines.join('\n')}\n`
+    : '';
+
+  return `/browser Öffne ${portalName} (${portalUrl}) und nutze den agentic-apartment-browser Skill, um passende Mietwohnungen im gemeinsamen Pendelbereich zu recherchieren und strukturiert in public/data/apartments.json zu speichern.
+
+=== 1. GEOGRAFISCHER ZIELBEREICH (TREFFBEREICH) ===
+- Bereich: ${areaLabel}${areaDesc}
+- Stadt: ${city}${locDesc}
+- Zentrum: Breitengrad ${centerLat}, Längengrad ${centerLng}
+- Suchradius: ca. ${safeRadius} km um das Zentrum
+- Bounding Box [minLng, minLat, maxLng, maxLat]: [${minLng}, ${minLat}, ${maxLng}, ${maxLat}]
+
+=== 2. FILTER- & EXTRAKTIONSKRITERIEN ===
+- Maximalanzahl: Bis zu ${maxListings} Inserate
+- Mietart: Wohnung zur Miete (Wohnungen / Apartments)${filterBlock}
+- WICHTIGE GEO-FILTERUNG: Akzeptiere NUR Inserate, deren Koordinaten (lat, lng) tatsächlich innerhalb der Bounding Box [${minLng}, ${minLat}, ${maxLng}, ${maxLat}] bzw. im Umkreis von ${safeRadius} km um das Zentrum liegen. Verwerfe Angebote außerhalb dieses Bereichs!
+
+=== 3. ZIELDATEI & ZIELDATENFORMAT ===
+Zieldatei: public/data/apartments.json
+
+Vorgehen:
+1. Lies bestehende Inserate aus public/data/apartments.json (falls vorhanden).
+2. Dedupliziere Einträge anhand von 'id' oder 'url'.
+3. Hänge die neuen Inserate an und aktualisiere Metadaten (count, lastUpdated).
+4. Speichere das Gesamtergebnis im exakten JSON-Schema:
+
+{
+  "version": "1.1.0",
+  "lastUpdated": "<Aktueller ISO-Timestamp>",
+  "source": "Agentic Browser Extraction (${portalName})",
+  "city": "${city}",
+  "bbox": [${minLng}, ${minLat}, ${maxLng}, ${maxLat}],
+  "status": "ready",
+  "message": "Erfolgreich Inserate für ${areaLabel} extrahiert.",
+  "count": <Gesamtanzahl der Inserate als Zahl>,
+  "listings": [
+    {
+      "id": "<Eindeutige ID, z.B. ${sourcePrefix}-12345678>",
+      "title": "<Titel des Inserats>",
+      "address": "<Straße Hausnummer oder 'Adresse auf Anfrage'>",
+      "district": "<Stadtteil/Bezirk falls bekannt>",
+      "city": "${city}",
+      "lat": <Breitengrad als Float, z.B. ${centerLat}>,
+      "lng": <Längengrad als Float, z.B. ${centerLng}>,
+      "priceCold": <Kaltmiete in EUR als positive Zahl>,
+      "priceWarm": <Warmmiete in EUR als Zahl, optional>,
+      "currency": "EUR",
+      "sizeSqm": <Wohnfläche in m² als positive Zahl>,
+      "rooms": <Zimmeranzahl als Zahl, z.B. 2 oder 2.5>,
+      "features": ["Balkon", "Einbauküche"],
+      "thumbnailUrl": "<Bild-URL des Hauptbildes>",
+      "url": "<Direktlink zum Exposé>",
+      "source": "${sourceKey}",
+      "scrapedAt": "<Aktueller ISO-Timestamp>"
+    }
+  ]
+}
+
+Pflichtfelder pro Listing: id, title, lat, lng, priceCold, sizeSqm, rooms.`;
+}
+

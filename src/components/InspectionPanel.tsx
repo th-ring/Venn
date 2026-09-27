@@ -340,6 +340,7 @@ export const InspectionPanel: React.FC<InspectionPanelProps> = ({
           <ApartmentListSection
             listings={allListings}
             intersection={intersectionFeature}
+            intersectionStats={inspection.intersectionStats}
             profiles={profiles}
             schedule={schedule || { direction: 'to_work', dayOfWeek: 'workday', time: '07:00', options: { liveTraffic: false, enableSmoothing: true, fidelity: 'AUTOMATIC' } }}
             selectedApartmentId={selectedApt?.id}

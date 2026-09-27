@@ -1,6 +1,6 @@
 import React, { useState, useRef, useMemo } from 'react';
 import * as turf from '@turf/turf';
-import { ApartmentListing, IntersectionSubArea } from '../../types';
+import { ApartmentListing, IntersectionSubArea, IntersectionAreaStats } from '../../types';
 import {
   validateApartmentDataset,
   saveCustomApartments,
@@ -8,6 +8,7 @@ import {
   loadApartmentCatalog,
   extractIntersectionSubAreas,
   getPortalSearchLinks,
+  buildAgenticBrowserSearchPrompt,
 } from '../../services/apartmentService';
 import {
   X,
@@ -34,6 +35,7 @@ interface ApartmentManagerModalProps {
   onClose: () => void;
   listings: ApartmentListing[];
   intersection: GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon | GeoJSON.GeometryCollection> | null;
+  intersectionStats?: IntersectionAreaStats;
   onRefreshListings?: () => void;
 }
 
@@ -42,6 +44,7 @@ export const ApartmentManagerModal: React.FC<ApartmentManagerModalProps> = ({
   onClose,
   listings,
   intersection,
+  intersectionStats,
   onRefreshListings,
 }) => {
   const [copiedBbox, setCopiedBbox] = useState(false);
@@ -472,8 +475,25 @@ export const ApartmentManagerModal: React.FC<ApartmentManagerModalProps> = ({
               {/* Generated Agent Prompt Box */}
               {(() => {
                 const chosenLink = portalLinks.find((l) => l.portal === selectedPortalKey) || portalLinks[0];
-                const areaLabel = activeSubArea ? activeSubArea.label.split('(')[0].trim() : 'Gesamter Treffbereich';
-                const promptString = `/browser Öffne ${chosenLink?.name || 'Immobilienportal'} (${chosenLink?.url || ''}) und nutze den agentic-apartment-browser Skill, um bis zu 15 Wohnungsangebote im Bereich "${areaLabel}" zu extrahieren und in public/data/apartments.json zu speichern.`;
+                const areaLabel = activeSubArea ? activeSubArea.label.split('(')[0].trim() : 'Gemeinsamer Treffbereich';
+                const areaKm2 = activeSubArea ? activeSubArea.areaKm2 : intersectionStats?.areaKm2;
+                const rawBboxParts = bboxString.split(',').map((n) => parseFloat(n.trim()));
+                const bboxNumbers: [number, number, number, number] =
+                  rawBboxParts.length === 4 && rawBboxParts.every((n) => !isNaN(n))
+                    ? (rawBboxParts as [number, number, number, number])
+                    : [11.535, 48.140, 11.595, 48.175];
+
+                const promptString = buildAgenticBrowserSearchPrompt({
+                  portalName: chosenLink?.name || 'ImmoScout24',
+                  portalUrl: chosenLink?.url || 'https://www.immobilienscout24.de',
+                  portalKey: chosenLink?.portal || selectedPortalKey,
+                  areaLabel,
+                  areaKm2,
+                  center: activeCenter,
+                  bbox: bboxNumbers,
+                  radiusKm: activeRadiusKm,
+                  addressOrDistrict: intersectionStats?.centerAddress,
+                });
 
                 const handleCopyAgentPrompt = async () => {
                   try {
@@ -488,7 +508,7 @@ export const ApartmentManagerModal: React.FC<ApartmentManagerModalProps> = ({
                     <div className="flex items-center justify-between text-slate-400 text-[11px] border-b border-slate-800 pb-1.5">
                       <span className="flex items-center gap-1.5">
                         <Terminal className="w-3.5 h-3.5 text-purple-400" />
-                        <span>Prompt für deinen KI-Agenten:</span>
+                        <span>Prompt für deinen KI-Agenten (vollständiger Kontext & Schema):</span>
                       </span>
                       <button
                         type="button"
@@ -499,7 +519,7 @@ export const ApartmentManagerModal: React.FC<ApartmentManagerModalProps> = ({
                         <span>{copiedAgentPrompt ? 'Kopiert!' : 'Prompt kopieren'}</span>
                       </button>
                     </div>
-                    <div className="text-purple-300 text-[11px] leading-relaxed break-all select-all font-sans">
+                    <div className="text-purple-300 text-[11px] leading-relaxed break-words select-all font-mono whitespace-pre-wrap max-h-56 overflow-y-auto bg-slate-950/70 p-2.5 rounded-lg border border-purple-900/40">
                       {promptString}
                     </div>
                   </div>

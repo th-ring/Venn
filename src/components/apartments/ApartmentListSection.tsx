@@ -7,11 +7,13 @@ import {
   PersonProfile,
   CommuteSchedule,
   IntersectionSubArea,
+  IntersectionAreaStats,
 } from '../../types';
 import {
   filterAndRankApartments,
   extractIntersectionSubAreas,
   getPortalSearchLinks,
+  buildAgenticBrowserSearchPrompt,
 } from '../../services/apartmentService';
 import { ApartmentCard } from './ApartmentCard';
 import {
@@ -34,6 +36,7 @@ import {
 interface ApartmentListSectionProps {
   listings: ApartmentListing[];
   intersection: GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon | GeoJSON.GeometryCollection> | null;
+  intersectionStats?: IntersectionAreaStats;
   profiles: PersonProfile[];
   schedule: CommuteSchedule;
   selectedApartmentId?: string;
@@ -44,6 +47,7 @@ interface ApartmentListSectionProps {
 export const ApartmentListSection: React.FC<ApartmentListSectionProps> = ({
   listings,
   intersection,
+  intersectionStats,
   profiles,
   schedule,
   selectedApartmentId,
@@ -112,9 +116,49 @@ export const ApartmentListSection: React.FC<ApartmentListSectionProps> = ({
   };
 
   const handleTriggerBrowserAgent = async () => {
-    const targetName = activeSubArea ? activeSubArea.label.split('(')[0].trim() : 'gemeinsamer Treffbereich';
-    const topPortal = portalLinks[0] || { name: 'ImmoScout24', url: 'https://www.immobilienscout24.de' };
-    const promptText = `/browser Öffne ${topPortal.name} (${topPortal.url}) und nutze den agentic-apartment-browser Skill, um Wohnungen im Bereich "${targetName}" zu extrahieren und in public/data/apartments.json zu speichern.`;
+    const topPortal = portalLinks[0] || {
+      name: 'ImmoScout24',
+      url: 'https://www.immobilienscout24.de',
+      portal: 'immoscout24',
+    };
+    const areaLabel = activeSubArea ? activeSubArea.label.split('(')[0].trim() : 'Gemeinsamer Treffbereich';
+    const areaKm2 = activeSubArea ? activeSubArea.areaKm2 : intersectionStats?.areaKm2;
+
+    let center = { lat: 48.155, lng: 11.565 };
+    let bbox: [number, number, number, number] = [11.535, 48.140, 11.595, 48.175];
+    let radiusKm = 2;
+
+    if (activeSubArea) {
+      center = activeSubArea.center;
+      bbox = activeSubArea.bbox;
+      radiusKm = activeSubArea.radiusKm;
+    } else if (intersection) {
+      try {
+        const rawBbox = turf.bbox(intersection as any);
+        bbox = [rawBbox[0], rawBbox[1], rawBbox[2], rawBbox[3]];
+        center = { lat: (rawBbox[1] + rawBbox[3]) / 2, lng: (rawBbox[0] + rawBbox[2]) / 2 };
+        const areaM2 = turf.area(intersection as any);
+        radiusKm = Math.max(1, Math.round(Math.sqrt(areaM2 / Math.PI / 1_000_000) * 10) / 10);
+      } catch {}
+    }
+
+    const promptText = buildAgenticBrowserSearchPrompt({
+      portalName: topPortal.name,
+      portalUrl: topPortal.url,
+      portalKey: topPortal.portal,
+      areaLabel,
+      areaKm2,
+      center,
+      bbox,
+      radiusKm,
+      addressOrDistrict: intersectionStats?.centerAddress,
+      filters: {
+        maxPriceWarm: filters.maxPriceWarm,
+        minRooms: filters.minRooms,
+        minSizeSqm: filters.minSizeSqm,
+      },
+    });
+
     try {
       await navigator.clipboard.writeText(promptText);
       setCopiedAgentPrompt(true);
@@ -261,7 +305,7 @@ export const ApartmentListSection: React.FC<ApartmentListSectionProps> = ({
               ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-700 text-emerald-800 dark:text-emerald-200'
               : 'border-purple-200 dark:border-purple-800/60 bg-purple-50/70 dark:bg-purple-950/30 text-purple-900 dark:text-purple-200 hover:bg-purple-100 dark:hover:bg-purple-900/50'
           }`}
-          title="Erzeugt und kopiert den Agenten-Prompt für die interaktive Suche über den integrierten Browser (Antigravity / Codex)"
+          title="Kopiert den vollständigen Agenten-Prompt mit Geokoordinaten, BBOX, Kriterien und Ziel-JSON-Schema für /browser"
         >
           <span className="flex items-center gap-1.5">
             <Bot className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
