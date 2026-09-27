@@ -31,6 +31,10 @@ const ApartmentManagerModal = React.lazy(() =>
   import('./components/apartments/ApartmentManagerModal').then((m) => ({ default: m.ApartmentManagerModal }))
 );
 
+const WalkthroughModal = React.lazy(() =>
+  import('./components/walkthrough/WalkthroughModal').then((m) => ({ default: m.WalkthroughModal }))
+);
+
 export default function App() {
   const { themePreference, resolvedTheme, isDark, toggleTheme } = useTheme();
   const {
@@ -88,6 +92,7 @@ export default function App() {
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [isApartmentManagerOpen, setIsApartmentManagerOpen] = useState(false);
   const [settingsModalTab, setSettingsModalTab] = useState<SettingsTabId>('basemap');
+  const [isWalkthroughOpen, setIsWalkthroughOpen] = useState(false);
 
   // Desktop sidebar collapse state (persisted)
   const [isDesktopSidebarOpen, setIsDesktopSidebarOpen] = useState<boolean>(() => {
@@ -185,6 +190,41 @@ export default function App() {
     handleOpenSettings('keys');
   }, [handleOpenSettings]);
 
+  // First-time visit: auto-start walkthrough after a brief render delay
+  useEffect(() => {
+    try {
+      const seen = localStorage.getItem('venn_walkthrough_seen');
+      if (!seen) {
+        const timer = setTimeout(() => {
+          setIsWalkthroughOpen(true);
+        }, 600);
+        return () => clearTimeout(timer);
+      }
+    } catch {}
+  }, []);
+
+  const handleCloseWalkthrough = useCallback(() => {
+    setIsWalkthroughOpen(false);
+    try {
+      localStorage.setItem('venn_walkthrough_seen', 'true');
+    } catch {}
+  }, []);
+
+  const handleOpenWalkthrough = useCallback(() => {
+    setIsDesktopSidebarOpen(true);
+    setIsMobileSidebarOpen(true);
+    setIsWalkthroughOpen(true);
+  }, []);
+
+  const handleEnsureSidebarOpen = useCallback(() => {
+    setIsDesktopSidebarOpen(true);
+    setIsMobileSidebarOpen(true);
+  }, []);
+
+  const handleEnsureMapVisible = useCallback(() => {
+    setIsMobileSidebarOpen(false);
+  }, []);
+
   return (
     <div className="fixed inset-0 flex h-full w-full max-w-full overflow-hidden bg-slate-100 dark:bg-[#131314] text-slate-900 dark:text-[#e3e3e3] font-sans antialiased">
       {/* Sidebar with Inputs, Controls, Presets & Settings */}
@@ -221,6 +261,7 @@ export default function App() {
         onResizeWidth={handleResizeSidebarWidth}
         onOpenApartmentManager={() => setIsApartmentManagerOpen(true)}
         apartmentsCount={apartments.length}
+        onOpenWalkthrough={handleOpenWalkthrough}
       />
 
       {/* Main Map Stage */}
@@ -408,6 +449,18 @@ export default function App() {
             listings={apartments}
             intersection={result?.intersection || result?.rawIntersection || null}
             onRefreshListings={handleReloadApartments}
+          />
+        </Suspense>
+      )}
+
+      {/* Interactive Onboarding Walkthrough */}
+      {isWalkthroughOpen && (
+        <Suspense fallback={null}>
+          <WalkthroughModal
+            isOpen={isWalkthroughOpen}
+            onClose={handleCloseWalkthrough}
+            onEnsureSidebarOpen={handleEnsureSidebarOpen}
+            onEnsureMapVisible={handleEnsureMapVisible}
           />
         </Suspense>
       )}

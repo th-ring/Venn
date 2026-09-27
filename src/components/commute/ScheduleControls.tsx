@@ -30,7 +30,10 @@ export const ScheduleControls: React.FC<ScheduleControlsProps> = ({
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   return (
-    <div className="bg-white dark:bg-[#1e1f20] rounded-xl border border-slate-200/90 dark:border-[#3c4043] shadow-2xs overflow-hidden transition-all">
+    <div
+      id="commute-schedule-controls"
+      className="bg-white dark:bg-[#1e1f20] rounded-xl border border-slate-200/90 dark:border-[#3c4043] shadow-2xs overflow-hidden transition-all"
+    >
       {/* Header / Toggle-Leiste */}
       <div
         onClick={() => setIsCollapsed((prev) => !prev)}

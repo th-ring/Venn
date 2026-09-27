@@ -1216,7 +1216,7 @@ export const MapComponent: React.FC<MapComponentProps> = React.memo<MapComponent
   return (
     <div className="relative w-full h-full select-none">
       {/* Map DOM Element */}
-      <div ref={mapContainerRef} className="w-full h-full z-0 bg-slate-100 dark:bg-[#131314]" />
+      <div id="venn-map-stage" ref={mapContainerRef} className="w-full h-full z-0 bg-slate-100 dark:bg-[#131314]" />
 
       {/* Calculating overlay spinner */}
       {(isCalculating || isPending) && (

@@ -33,6 +33,7 @@ import {
   Sun,
   Moon,
   Monitor,
+  HelpCircle,
   X,
 } from 'lucide-react';
 
@@ -71,6 +72,7 @@ interface SidebarProps {
   onResizeWidth?: (width: number) => void;
   onOpenApartmentManager?: () => void;
   apartmentsCount?: number;
+  onOpenWalkthrough?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -106,6 +108,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onResizeWidth,
   onOpenApartmentManager,
   apartmentsCount = 0,
+  onOpenWalkthrough,
 }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [isMobileScreen, setIsMobileScreen] = useState(() =>
@@ -288,6 +291,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 {apartmentsCount > 0 && (
                   <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-rose-500 ring-2 ring-white dark:ring-[#1e1f20]" />
                 )}
+              </button>
+            )}
+
+            {onOpenWalkthrough && (
+              <button
+                id="btn-open-walkthrough"
+                type="button"
+                onClick={onOpenWalkthrough}
+                className="w-9 h-9 flex items-center justify-center rounded-full text-slate-500 dark:text-[#9aa0a6] hover:text-slate-900 dark:hover:text-[#e8eaed] hover:bg-slate-100 dark:hover:bg-[#282a2c] transition-colors cursor-pointer"
+                title="Einführung & Tour starten (Hilfe)"
+                aria-label="Einführungstour starten"
+              >
+                <HelpCircle className="w-4 h-4" />
               </button>
             )}
 
@@ -503,7 +519,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
 
         {/* Scrollable Profiles List */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-3.5 touch-scroll-y">
+        <div id="sidebar-profiles-section" className="flex-1 overflow-y-auto p-4 space-y-3.5 touch-scroll-y">
           {/* Empty Fallback Suggestions if no intersection */}
           {!hasIntersection && result?.suggestions && result.suggestions.length > 0 && (
             <FallbackAlert
@@ -514,15 +530,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
           {/* Profiles List */}
           {profiles.map((profile, index) => (
-            <PersonCard
+            <div
               key={profile.id}
-              profile={profile}
-              index={index}
-              totalProfiles={profiles.length}
-              isochroneInfo={result?.isochrones?.[profile.id]?.properties}
-              onUpdate={(updated) => onUpdateProfile(profile.id, updated)}
-              onRemove={() => onRemoveProfile(profile.id)}
-            />
+              id={index === 0 ? 'sidebar-first-person-card' : undefined}
+            >
+              <PersonCard
+                profile={profile}
+                index={index}
+                totalProfiles={profiles.length}
+                isochroneInfo={result?.isochrones?.[profile.id]?.properties}
+                onUpdate={(updated) => onUpdateProfile(profile.id, updated)}
+                onRemove={() => onRemoveProfile(profile.id)}
+              />
+            </div>
           ))}
 
           {/* Add Reference Location Button (FR-1.1) */}
