@@ -397,7 +397,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         role="dialog"
         aria-modal="true"
         aria-labelledby="settings-dialog-title"
-        className="bg-white dark:bg-[#1e1f20] sm:rounded-[28px] w-full max-w-5xl h-full sm:h-[740px] sm:max-h-[92vh] shadow-2xl border-0 sm:border border-slate-200/90 dark:border-[#3c4043] flex flex-col overflow-hidden pt-[env(safe-area-inset-top)] sm:pt-0"
+        className="bg-white dark:bg-[#1e1f20] sm:rounded-[28px] w-full max-w-5xl h-full max-h-dvh sm:max-h-[92vh] sm:h-[740px] shadow-2xl border-0 sm:border border-slate-200/90 dark:border-[#3c4043] flex flex-col overflow-hidden pt-[env(safe-area-inset-top)] sm:pt-0"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Top App Bar (Google M3 Style) */}
@@ -501,9 +501,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           </nav>
 
           {/* Main Content Area */}
-          <div className="flex-1 flex flex-col min-w-0 bg-white dark:bg-[#1e1f20]">
+          <div className="flex-1 flex flex-col min-w-0 min-h-0 bg-white dark:bg-[#1e1f20]">
             {/* Scrollable Content Pane */}
-            <div className="flex-1 overflow-y-auto p-4 sm:p-7 touch-scroll-y">
+            <div className="flex-1 overflow-y-auto p-4 sm:p-7 touch-scroll-y min-h-0">
               {modalTab === 'appearance' && (
                 <AppearanceTab
                   themePreference={themePreference}

@@ -238,7 +238,7 @@ export const SettingsSearch: React.FC<SettingsSearchProps> = ({
 
       {/* Floating search dropdown if results exist */}
       {trimmed && (
-        <div className="absolute top-full left-0 right-0 mt-1.5 bg-white dark:bg-[#1e1f20] rounded-2xl shadow-xl border border-slate-200 dark:border-[#3c4043] p-1.5 z-50 max-h-72 overflow-y-auto space-y-0.5">
+        <div className="absolute top-full left-0 right-0 mt-1.5 bg-white dark:bg-[#1e1f20] rounded-2xl shadow-xl border border-slate-200 dark:border-[#3c4043] p-1.5 z-50 max-h-72 overflow-y-auto space-y-0.5 touch-scroll-y">
           {results.length > 0 ? (
             results.map((res) => (
               <button

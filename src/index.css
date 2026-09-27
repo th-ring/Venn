@@ -49,7 +49,7 @@ body {
 
 body {
   font-family: 'Roboto', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  touch-action: none; /* Lock entire viewport from moving/dragging/shifting */
+  touch-action: manipulation;
 }
 
 #root {
