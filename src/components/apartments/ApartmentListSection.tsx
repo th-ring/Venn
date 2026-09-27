@@ -27,6 +27,8 @@ import {
   Copy,
   Check,
   Compass,
+  Bot,
+  Sparkles,
 } from 'lucide-react';
 
 interface ApartmentListSectionProps {
@@ -52,6 +54,7 @@ export const ApartmentListSection: React.FC<ApartmentListSectionProps> = ({
   const [showFilters, setShowFilters] = useState(false);
   const [selectedSubAreaId, setSelectedSubAreaId] = useState<string | null>(null);
   const [copiedCmd, setCopiedCmd] = useState(false);
+  const [copiedAgentPrompt, setCopiedAgentPrompt] = useState(false);
 
   // Extract individual sub-areas / islands from the intersection
   const subAreas = useMemo(() => {
@@ -105,6 +108,17 @@ export const ApartmentListSection: React.FC<ApartmentListSectionProps> = ({
       await navigator.clipboard.writeText(cmd);
       setCopiedCmd(true);
       setTimeout(() => setCopiedCmd(false), 2000);
+    } catch {}
+  };
+
+  const handleTriggerBrowserAgent = async () => {
+    const targetName = activeSubArea ? activeSubArea.label.split('(')[0].trim() : 'gemeinsamer Treffbereich';
+    const topPortal = portalLinks[0] || { name: 'ImmoScout24', url: 'https://www.immobilienscout24.de' };
+    const promptText = `/browser Öffne ${topPortal.name} (${topPortal.url}) und nutze den agentic-apartment-browser Skill, um Wohnungen im Bereich "${targetName}" zu extrahieren und in public/data/apartments.json zu speichern.`;
+    try {
+      await navigator.clipboard.writeText(promptText);
+      setCopiedAgentPrompt(true);
+      setTimeout(() => setCopiedAgentPrompt(false), 2500);
     } catch {}
   };
 
@@ -237,6 +251,27 @@ export const ApartmentListSection: React.FC<ApartmentListSectionProps> = ({
             </a>
           ))}
         </div>
+
+        {/* Agentic Browser Trigger Button */}
+        <button
+          type="button"
+          onClick={handleTriggerBrowserAgent}
+          className={`w-full mt-1.5 py-1.5 px-2.5 rounded-lg border text-xs font-semibold flex items-center justify-between transition-all cursor-pointer ${
+            copiedAgentPrompt
+              ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-700 text-emerald-800 dark:text-emerald-200'
+              : 'border-purple-200 dark:border-purple-800/60 bg-purple-50/70 dark:bg-purple-950/30 text-purple-900 dark:text-purple-200 hover:bg-purple-100 dark:hover:bg-purple-900/50'
+          }`}
+          title="Erzeugt und kopiert den Agenten-Prompt für die interaktive Suche über den integrierten Browser (Antigravity / Codex)"
+        >
+          <span className="flex items-center gap-1.5">
+            <Bot className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+            <span>Agentische Browser-Suche ({activeSubArea ? activeSubArea.label.split('(')[0].trim() : 'Treffbereich'})</span>
+          </span>
+          <span className="text-[10px] text-purple-700 dark:text-purple-300 flex items-center gap-1">
+            {copiedAgentPrompt ? <Check className="w-3 h-3 text-emerald-600" /> : <Sparkles className="w-3 h-3" />}
+            <span>{copiedAgentPrompt ? 'Prompt kopiert!' : 'Agenten-Prompt'}</span>
+          </span>
+        </button>
       </div>
 
       {/* Filter & Sort Drawer (collapsible) */}
@@ -328,6 +363,15 @@ export const ApartmentListSection: React.FC<ApartmentListSectionProps> = ({
             Nutze die Direktlinks oben, um aktuelle Live-Inserate für dieses Feld direkt auf den Portalen zu öffnen.
           </p>
           <div className="flex items-center justify-center gap-2 pt-1 flex-wrap">
+            <button
+              type="button"
+              onClick={handleTriggerBrowserAgent}
+              className="text-[11px] font-semibold px-2.5 py-1 rounded-lg bg-purple-600 text-white dark:bg-purple-500 hover:bg-purple-700 flex items-center gap-1.5 cursor-pointer shadow-sm transition-colors"
+              title="Kopiert den Agenten-Befehl für den integrierten Browser"
+            >
+              {copiedAgentPrompt ? <Check className="w-3.5 h-3.5 text-emerald-300" /> : <Bot className="w-3.5 h-3.5" />}
+              <span>{copiedAgentPrompt ? 'Prompt kopiert!' : 'Agentische Browser-Suche'}</span>
+            </button>
             <button
               type="button"
               onClick={resetFilters}

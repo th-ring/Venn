@@ -25,6 +25,8 @@ import {
   Layers,
   ExternalLink,
   Compass,
+  Bot,
+  Sparkles,
 } from 'lucide-react';
 
 interface ApartmentManagerModalProps {
@@ -44,6 +46,8 @@ export const ApartmentManagerModal: React.FC<ApartmentManagerModalProps> = ({
 }) => {
   const [copiedBbox, setCopiedBbox] = useState(false);
   const [copiedCommand, setCopiedCommand] = useState(false);
+  const [copiedAgentPrompt, setCopiedAgentPrompt] = useState(false);
+  const [selectedPortalKey, setSelectedPortalKey] = useState<string>('immoscout24');
   const [selectedSubAreaId, setSelectedSubAreaId] = useState<string | null>(null);
   const [importStatus, setImportStatus] = useState<{
     success?: boolean;
@@ -424,6 +428,83 @@ export const ApartmentManagerModal: React.FC<ApartmentManagerModalProps> = ({
                 <strong>Hinweis zum Bot-Schutz:</strong> Kommerzielle Portale schützen ihre Daten per WAF & Captcha.
                 Venn trifft bewusst keine Schein-Annahmen: Nutze die Direktlinks oben, um aktuelle Live-Inserate für dieses Feld direkt im Browser zu öffnen, oder importiere eine JSON-Datei.
               </span>
+            </div>
+          </div>
+
+          {/* Section 6: Weg 3: Agentische Browser-Suche */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-[#9aa0a6] flex items-center gap-1.5">
+                <Bot className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                <span>Weg 3: Agentische Browser-Suche (Antigravity, Codex & Cloud Code)</span>
+              </h4>
+              <span className="text-[10px] font-semibold text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/50 px-2 py-0.5 rounded-full border border-purple-200 dark:border-purple-800 flex items-center gap-1">
+                <Sparkles className="w-3 h-3 text-purple-500" />
+                <span>Integriertes Browser-Tool</span>
+              </span>
+            </div>
+
+            <div className="p-4 rounded-2xl border border-purple-200/80 dark:border-purple-900/60 bg-purple-50/40 dark:bg-purple-950/20 space-y-3">
+              <p className="text-xs text-slate-600 dark:text-[#c4c7c5]">
+                Wenn Portale automatisierte API-Anfragen per Bot-Schutz blockieren, kann der KI-Agent den
+                <strong> integrierten Browser</strong> (über <code className="font-semibold text-purple-700 dark:text-purple-300">/browser</code>) öffnen, die Angebote interaktiv rendern und die Daten direkt nach <code className="font-mono text-[11px] font-semibold">public/data/apartments.json</code> schreiben.
+              </p>
+
+              {/* Portal Selector for Browser Search */}
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="text-[10px] font-semibold text-slate-500 dark:text-[#9aa0a6]">Ziel-Portal:</span>
+                {portalLinks.map((link) => (
+                  <button
+                    key={link.portal}
+                    type="button"
+                    onClick={() => setSelectedPortalKey(link.portal)}
+                    className={`text-[10px] px-2.5 py-1 rounded-lg border font-semibold transition-colors cursor-pointer ${
+                      selectedPortalKey === link.portal
+                        ? 'bg-purple-600 text-white border-purple-600 dark:bg-purple-500'
+                        : 'bg-white dark:bg-[#1e1f20] text-slate-700 dark:text-[#c4c7c5] border-slate-200 dark:border-[#3c4043] hover:bg-slate-100'
+                    }`}
+                  >
+                    {link.name}
+                  </button>
+                ))}
+              </div>
+
+              {/* Generated Agent Prompt Box */}
+              {(() => {
+                const chosenLink = portalLinks.find((l) => l.portal === selectedPortalKey) || portalLinks[0];
+                const areaLabel = activeSubArea ? activeSubArea.label.split('(')[0].trim() : 'Gesamter Treffbereich';
+                const promptString = `/browser Öffne ${chosenLink?.name || 'Immobilienportal'} (${chosenLink?.url || ''}) und nutze den agentic-apartment-browser Skill, um bis zu 15 Wohnungsangebote im Bereich "${areaLabel}" zu extrahieren und in public/data/apartments.json zu speichern.`;
+
+                const handleCopyAgentPrompt = async () => {
+                  try {
+                    await navigator.clipboard.writeText(promptString);
+                    setCopiedAgentPrompt(true);
+                    setTimeout(() => setCopiedAgentPrompt(false), 2000);
+                  } catch {}
+                };
+
+                return (
+                  <div className="bg-slate-900 text-slate-100 rounded-xl p-3 font-mono text-xs space-y-2">
+                    <div className="flex items-center justify-between text-slate-400 text-[11px] border-b border-slate-800 pb-1.5">
+                      <span className="flex items-center gap-1.5">
+                        <Terminal className="w-3.5 h-3.5 text-purple-400" />
+                        <span>Prompt für deinen KI-Agenten:</span>
+                      </span>
+                      <button
+                        type="button"
+                        onClick={handleCopyAgentPrompt}
+                        className="hover:text-white flex items-center gap-1 text-[10px] bg-slate-800 hover:bg-slate-700 px-2 py-0.5 rounded transition-colors cursor-pointer text-purple-300"
+                      >
+                        {copiedAgentPrompt ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                        <span>{copiedAgentPrompt ? 'Kopiert!' : 'Prompt kopieren'}</span>
+                      </button>
+                    </div>
+                    <div className="text-purple-300 text-[11px] leading-relaxed break-all select-all font-sans">
+                      {promptString}
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           </div>
         </div>
