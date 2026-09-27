@@ -25,6 +25,12 @@ export class MapErrorBoundary extends Component<Props, State> {
   }
 
   handleReset = () => {
+    try {
+      const leafletContainers = document.querySelectorAll('.leaflet-container');
+      leafletContainers.forEach((el) => {
+        delete (el as any)._leaflet_id;
+      });
+    } catch (_) {}
     this.setState({ hasError: false, error: null });
   };
 

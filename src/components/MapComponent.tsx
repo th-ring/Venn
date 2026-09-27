@@ -196,10 +196,25 @@ export const MapComponent: React.FC<MapComponentProps> = React.memo<MapComponent
 
   // Initialize map once with custom panes for deterministic layer ordering & hover hierarchy
   useEffect(() => {
-    if (!mapContainerRef.current || mapRef.current) return;
+    const container = mapContainerRef.current;
+    if (!container) return;
+
+    // Guard against React StrictMode remount or leftover leaflet instance
+    if (mapRef.current) {
+      try {
+        mapRef.current.remove();
+      } catch (e) {
+        console.warn('[MapComponent] Error removing existing map ref:', e);
+      }
+      mapRef.current = null;
+    }
+
+    if ((container as any)._leaflet_id) {
+      delete (container as any)._leaflet_id;
+    }
 
     // Default center: Between Gilching and Munich
-    const map = L.map(mapContainerRef.current, {
+    const map = L.map(container, {
       center: [48.14, 11.45],
       zoom: 11,
       zoomControl: false,
@@ -269,8 +284,8 @@ export const MapComponent: React.FC<MapComponentProps> = React.memo<MapComponent
       }
     });
 
-    if (mapContainerRef.current) {
-      resizeObserver.observe(mapContainerRef.current);
+    if (container) {
+      resizeObserver.observe(container);
     }
 
     return () => {
@@ -295,21 +310,23 @@ export const MapComponent: React.FC<MapComponentProps> = React.memo<MapComponent
           mapRef.current.removeLayer(basemapLayerRef.current);
           basemapLayerRef.current = null;
         }
-        map.closePopup();
-        map.closeTooltip();
         map.off();
         map.remove();
       } catch (err) {
         console.warn('[MapComponent] Error during map unmount cleanup:', err);
+      } finally {
+        if (container) {
+          delete (container as any)._leaflet_id;
+        }
+        mapRef.current = null;
+        basemapLayerRef.current = null;
+        rentalLayerRef.current = null;
+        isochronesLayerRef.current = null;
+        heatmapLayerRef.current = null;
+        intersectionLayerRef.current = null;
+        poiIconsLayerRef.current = null;
+        personsLayerRef.current = null;
       }
-      mapRef.current = null;
-      basemapLayerRef.current = null;
-      rentalLayerRef.current = null;
-      isochronesLayerRef.current = null;
-      heatmapLayerRef.current = null;
-      intersectionLayerRef.current = null;
-      poiIconsLayerRef.current = null;
-      personsLayerRef.current = null;
     };
   }, []);
 
