@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-09-27
+
+### Added
+- **Interaktive Onboarding-Tour beim Erststart**: Führt Erstbesucher in 7 kompakten Schritten mit weicher Spotlight-Hervorhebung durch die Kernfunktionen (Referenzorte, Pendelzeiten, Treffbereich, Klick-Inspektion und Wohnungsangebote).
+- **Tour-Hilfe-Button im App-Header**: Ermöglicht das erneute Starten des Walkthroughs zu jedem beliebigen Zeitpunkt.
+- **Vollständige Mobil- und Tastaturunterstützung**: Responsive Bottom-Sheet-Darstellung auf Smartphones sowie Pfeiltasten- und Escape-Navigation.
+
 ## [1.3.0] - 2026-09-27
 
 ### Added
