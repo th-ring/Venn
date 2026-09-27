@@ -5,6 +5,7 @@ export interface WalkthroughStep {
   description: string;
   tip?: string;
   targetId?: string; // HTML ID of element to highlight; undefined for centered modal
+  mobileTargetId?: string; // HTML ID specifically on mobile screens (< 768px)
   targetView?: 'sidebar' | 'map' | 'any'; // Recommended view on mobile
   position?: 'bottom' | 'top' | 'left' | 'right' | 'center';
   iconName: 'Sparkles' | 'Users' | 'Clock' | 'Focus' | 'MapPin' | 'Building2' | 'CheckCircle';
@@ -54,7 +55,8 @@ export const WALKTHROUGH_STEPS: WalkthroughStep[] = [
       'Der grüne Bereich auf der Karte ist euer gemeinsamer Treffbereich: Wer hier wohnt, erreicht alle hinterlegten Ziele garantiert innerhalb des Zeitlimits.',
     tip: 'Nutze den Schnellfilter "Nur Wohnbereich", um Industriezonen, Forste und Gewässer automatisch herauszufiltern.',
     targetId: 'btn-sidebar-only-intersection',
-    targetView: 'sidebar',
+    mobileTargetId: 'btn-expand-sidebar',
+    targetView: 'map',
     position: 'right',
     iconName: 'Focus',
   },
@@ -65,9 +67,9 @@ export const WALKTHROUGH_STEPS: WalkthroughStep[] = [
     description:
       'Klicke auf einen beliebigen Punkt auf der Karte: Venn berechnet sofort die minutengenaue Pendelzeit und Route jeder Person zu diesem Standort.',
     tip: 'Zusätzlich erfährst du das durchschnittliche Mietpreisniveau (EUR/m²) des jeweiligen Stadtviertels.',
-    targetId: 'venn-map-stage',
+    targetId: undefined,
     targetView: 'map',
-    position: 'center',
+    position: 'bottom',
     iconName: 'MapPin',
   },
   {
@@ -78,7 +80,8 @@ export const WALKTHROUGH_STEPS: WalkthroughStep[] = [
       'Keine mühsame Suche auf verschiedenen Portalen: Venn filtert Mietangebote (ImmoScout24, Immowelt, WG-Gesucht, Kleinanzeigen) direkt passend für euren Treffbereich.',
     tip: 'Filtere nach Kaltmiete, Zimmeranzahl und Wohnfläche oder erstelle vorgefilterte Suchlinks mit einem Klick.',
     targetId: 'btn-open-apartments',
-    targetView: 'any',
+    mobileTargetId: 'btn-toggle-apartments-layer',
+    targetView: 'map',
     position: 'bottom',
     iconName: 'Building2',
   },

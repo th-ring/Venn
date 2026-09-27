@@ -25,11 +25,21 @@ export const SpotlightOverlay: React.FC<SpotlightOverlayProps> = ({
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  if (!targetRect) {
-    // Centered dimmed backdrop for steps without target
+  // Validate target visibility
+  const isValidTarget =
+    targetRect &&
+    targetRect.width > 0 &&
+    targetRect.height > 0 &&
+    targetRect.right > 0 &&
+    targetRect.bottom > 0 &&
+    targetRect.left < viewport.width &&
+    targetRect.top < viewport.height;
+
+  if (!isValidTarget) {
+    // Elegant dimmed backdrop for steps without target or when target is off-screen
     return (
       <div
-        className="fixed inset-0 z-50 bg-black/65 backdrop-blur-[2px] transition-opacity duration-300 pointer-events-auto"
+        className="fixed inset-0 z-50 bg-slate-950/40 dark:bg-black/55 transition-opacity duration-300 pointer-events-auto"
         aria-hidden="true"
       />
     );
@@ -40,6 +50,10 @@ export const SpotlightOverlay: React.FC<SpotlightOverlayProps> = ({
   const top = Math.max(0, targetRect.top - padding);
   const width = Math.min(viewport.width - left, targetRect.width + padding * 2);
   const height = Math.min(viewport.height - top, targetRect.height + padding * 2);
+
+  const isFullViewport = width >= viewport.width - 24 && height >= viewport.height - 24;
+  const isPillOrCircle = height <= 52;
+  const radius = isPillOrCircle ? Math.min(height / 2, 24) : 16;
 
   return (
     <div className="fixed inset-0 z-50 pointer-events-none overflow-hidden" aria-hidden="true">
@@ -59,8 +73,8 @@ export const SpotlightOverlay: React.FC<SpotlightOverlayProps> = ({
               y={top}
               width={width}
               height={height}
-              rx="16"
-              ry="16"
+              rx={radius}
+              ry={radius}
               fill="black"
               className="transition-all duration-300 ease-out"
             />
@@ -73,21 +87,24 @@ export const SpotlightOverlay: React.FC<SpotlightOverlayProps> = ({
           y="0"
           width="100%"
           height="100%"
-          fill="rgba(15, 23, 42, 0.72)"
+          fill="rgba(15, 23, 42, 0.65)"
           mask="url(#walkthrough-spotlight-mask)"
         />
       </svg>
 
-      {/* Glowing / pulsing highlight ring around the element */}
-      <div
-        style={{
-          left: `${left}px`,
-          top: `${top}px`,
-          width: `${width}px`,
-          height: `${height}px`,
-        }}
-        className="absolute rounded-2xl border-2 border-blue-500/90 dark:border-[#8ab4f8] shadow-[0_0_24px_rgba(59,130,246,0.5)] transition-all duration-300 ease-out pointer-events-none ring-4 ring-blue-500/20 animate-pulse"
-      />
+      {/* Glowing / pulsing highlight ring around the element (hidden if covering whole viewport) */}
+      {!isFullViewport && (
+        <div
+          style={{
+            left: `${left}px`,
+            top: `${top}px`,
+            width: `${width}px`,
+            height: `${height}px`,
+            borderRadius: `${radius}px`,
+          }}
+          className="absolute border-2 border-blue-500/90 dark:border-[#8ab4f8] shadow-[0_0_24px_rgba(59,130,246,0.45)] transition-all duration-300 ease-out pointer-events-none ring-4 ring-blue-500/20 animate-pulse"
+        />
+      )}
     </div>
   );
 };
