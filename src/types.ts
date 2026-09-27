@@ -132,6 +132,28 @@ export type HousingSource =
   | 'custom'
   | string;
 
+export interface PortalSearchLink {
+  portal: 'immoscout24' | 'immowelt' | 'wg-gesucht' | 'kleinanzeigen' | string;
+  name: string;
+  url: string;
+  badge?: string;
+  description: string;
+  color?: string;
+}
+
+export interface IntersectionSubArea {
+  id: string;
+  index: number;
+  label: string;
+  center: { lat: number; lng: number };
+  bbox: [number, number, number, number];
+  areaKm2: number;
+  radiusKm: number;
+  feature: GeoJSON.Feature<GeoJSON.Polygon>;
+  portalLinks: PortalSearchLink[];
+  listingsCount: number;
+}
+
 export interface ApartmentListing {
   id: string;
   title: string;
@@ -405,6 +427,9 @@ export interface IntersectionAreaStats {
   centerAddress?: string;
   avgCommuteMinutes: number;
   commuteSpreadMinutes: number;
+  subAreas?: IntersectionSubArea[];
+  selectedSubAreaId?: string;
+  portalLinks?: PortalSearchLink[];
 }
 
 export interface InspectionPoint {
@@ -420,6 +445,9 @@ export interface InspectionPoint {
   intersectionStats?: IntersectionAreaStats;
   apartmentListings?: ApartmentListing[];
   selectedApartment?: ApartmentListing;
+  subAreas?: IntersectionSubArea[];
+  selectedSubAreaId?: string;
+  portalLinks?: PortalSearchLink[];
 }
 
 export interface PresetScenario {

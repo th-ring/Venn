@@ -8,6 +8,8 @@ import type {
   PersonProfile,
   CommuteSchedule,
   TransportMode,
+  PortalSearchLink,
+  IntersectionSubArea,
 } from '../types.ts';
 import { DEFAULT_APARTMENT_FILTER } from '../types.ts';
 import { DEFAULT_APARTMENT_LISTINGS } from '../data/apartments/defaultApartments.ts';
@@ -206,6 +208,155 @@ export function filterApartmentsInPolygon(
 }
 
 /**
+ * Generates direct search deep-links for commercial housing portals (ImmoScout24, Immowelt, WG-Gesucht, Kleinanzeigen)
+ * for a specific geographic area (center coordinate, bounding box, radius).
+ * Allows users to instantly view live portal listings for any intersection or sub-area.
+ */
+export function getPortalSearchLinks(
+  center: { lat: number; lng: number },
+  bbox: [number, number, number, number],
+  radiusKm = 2,
+  city = 'München'
+): PortalSearchLink[] {
+  const safeRadius = Math.max(1, Math.min(25, Math.ceil(radiusKm)));
+  const latStr = center.lat.toFixed(4);
+  const lngStr = center.lng.toFixed(4);
+  const cityEncoded = encodeURIComponent(city);
+
+  // 1. ImmoScout24: Radius search with centerlat/centerlon & radius in km
+  const immoscoutUrl = `https://www.immobilienscout24.de/Suche/radius/wohnung-mieten?centerlat=${latStr}&centerlon=${lngStr}&radius=${safeRadius}&userGeoAttributes=true`;
+
+  // 2. Immowelt: Radius search with lat/lon & distance in km
+  const immoweltUrl = `https://www.immowelt.de/liste/wohnungen/mieten?lat=${latStr}&lon=${lngStr}&distance=${safeRadius}`;
+
+  // 3. WG-Gesucht: Radius search around city / coordinates
+  const wgGesuchtUrl = `https://www.wg-gesucht.de/wohnungen-in-${cityEncoded}.html?distance=${safeRadius}`;
+
+  // 4. Kleinanzeigen: Radius search around coordinates
+  const kleinanzeigenUrl = `https://www.kleinanzeigen.de/s-wohnung-mieten/c203?distance=${safeRadius}&latitude=${latStr}&longitude=${lngStr}`;
+
+  return [
+    {
+      portal: 'immoscout24',
+      name: 'ImmoScout24',
+      url: immoscoutUrl,
+      badge: `~${safeRadius} km Umkreis`,
+      description: 'Deutschlands größtes Immobilienportal (Radius-Suche)',
+      color: '#ff7500',
+    },
+    {
+      portal: 'immowelt',
+      name: 'Immowelt',
+      url: immoweltUrl,
+      badge: `~${safeRadius} km Umkreis`,
+      description: 'Umfangreiche Mietangebote im Suchradius',
+      color: '#ffd000',
+    },
+    {
+      portal: 'wg-gesucht',
+      name: 'WG-Gesucht',
+      url: wgGesuchtUrl,
+      badge: `${city} (+${safeRadius} km)`,
+      description: 'Wohnungen, Apartments & WG-Zimmer',
+      color: '#e05929',
+    },
+    {
+      portal: 'kleinanzeigen',
+      name: 'Kleinanzeigen',
+      url: kleinanzeigenUrl,
+      badge: `~${safeRadius} km Umkreis`,
+      description: 'Provisionsfreie Privat- & Maklerangebote',
+      color: '#86b817',
+    },
+  ];
+}
+
+/**
+ * Extracts individual contiguous sub-areas / islands from an intersection feature.
+ * When combining different transit modes (e.g. ÖPNV corridors with car isochrones),
+ * the intersection geometry often forms multiple disjoint polygons ("Punktbereiche").
+ * This function flattens and enriches each sub-area with area stats, center, BBOX, and portal links.
+ */
+export function extractIntersectionSubAreas(
+  intersection: GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon | GeoJSON.GeometryCollection> | null,
+  listings: ApartmentListing[] = [],
+  city = 'München'
+): IntersectionSubArea[] {
+  if (!intersection || !intersection.geometry) return [];
+
+  const subAreas: IntersectionSubArea[] = [];
+
+  try {
+    const flattened = turf.flatten(intersection as any);
+    const features = flattened.features as unknown as Array<GeoJSON.Feature<GeoJSON.Polygon>>;
+
+    features.forEach((feature, index) => {
+      if (!feature.geometry || feature.geometry.type !== 'Polygon') return;
+
+      const areaM2 = turf.area(feature);
+      const areaKm2 = Math.round((areaM2 / 1_000_000) * 100) / 100;
+      // Skip degenerate polygons (< 0.001 km² = 1000 m²)
+      if (areaKm2 < 0.001) return;
+
+      const bbox = turf.bbox(feature) as [number, number, number, number];
+
+      // Calculate interior representative point for center
+      let centerLat = (bbox[1] + bbox[3]) / 2;
+      let centerLng = (bbox[0] + bbox[2]) / 2;
+      try {
+        const pointOnPoly = turf.pointOnFeature(feature);
+        if (pointOnPoly && pointOnPoly.geometry) {
+          centerLng = pointOnPoly.geometry.coordinates[0];
+          centerLat = pointOnPoly.geometry.coordinates[1];
+        }
+      } catch {}
+
+      const radiusKm = Math.max(0.5, Math.round(Math.sqrt((areaKm2 || 0.1) / Math.PI) * 10) / 10);
+      const portalLinks = getPortalSearchLinks({ lat: centerLat, lng: centerLng }, bbox, radiusKm, city);
+
+      // Count listings inside this sub-polygon
+      const listingsInPoly = listings.filter((apt) => {
+        try {
+          const pt = turf.point([apt.lng, apt.lat]);
+          return turf.booleanPointInPolygon(pt, feature);
+        } catch {
+          return false;
+        }
+      });
+
+      subAreas.push({
+        id: `subarea-${index}`,
+        index,
+        label: features.length > 1
+          ? `Bereich ${index + 1} (${areaKm2} km² · ${listingsInPoly.length} Whg.)`
+          : `Treffbereich (${areaKm2} km² · ${listingsInPoly.length} Whg.)`,
+        center: { lat: centerLat, lng: centerLng },
+        bbox,
+        areaKm2,
+        radiusKm,
+        feature,
+        portalLinks,
+        listingsCount: listingsInPoly.length,
+      });
+    });
+
+    // Sort sub-areas by area descending (largest first)
+    subAreas.sort((a, b) => b.areaKm2 - a.areaKm2);
+    // Re-index after sorting
+    subAreas.forEach((sa, idx) => {
+      sa.index = idx;
+      if (subAreas.length > 1) {
+        sa.label = `Bereich ${idx + 1} (${sa.areaKm2} km² · ${sa.listingsCount} Whg.)`;
+      }
+    });
+  } catch (err) {
+    console.warn('Error extracting intersection sub-areas:', err);
+  }
+
+  return subAreas;
+}
+
+/**
  * Estimates commute time in minutes and road distance from an apartment to a workplace.
  * Provides fast, deterministic, self-contained travel calculations.
  */
@@ -336,13 +487,18 @@ export function filterAndRankApartments(
   intersection: GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon | GeoJSON.GeometryCollection> | null,
   filters: ApartmentFilterSettings,
   profiles: PersonProfile[],
-  schedule: CommuteSchedule
+  schedule: CommuteSchedule,
+  targetSubArea?: IntersectionSubArea | null
 ): Array<{ listing: ApartmentListing; score: ApartmentCommuteScore }> {
   let filtered = [...listings];
 
-  // 1. In-Intersection filter
-  if (filters.onlyWithinIntersection && intersection) {
-    filtered = filterApartmentsInPolygon(filtered, intersection);
+  // 1. In-Intersection / In-SubArea filter
+  if (filters.onlyWithinIntersection) {
+    if (targetSubArea?.feature) {
+      filtered = filterApartmentsInPolygon(filtered, targetSubArea.feature);
+    } else if (intersection) {
+      filtered = filterApartmentsInPolygon(filtered, intersection);
+    }
   }
 
   // 2. Price filter (uses priceWarm or priceCold)

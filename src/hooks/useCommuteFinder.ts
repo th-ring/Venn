@@ -16,10 +16,13 @@ import {
   IntersectionAreaStats,
   ApartmentListing,
 } from '../types';
+import * as turf from '@turf/turf';
 import {
   loadApartmentCatalog,
   filterApartmentsInPolygon,
   subscribeApartments,
+  extractIntersectionSubAreas,
+  getPortalSearchLinks,
 } from '../services/apartmentService';
 import { DEFAULT_MUNICH_PROFILES } from '../data/presets';
 import {
@@ -681,6 +684,24 @@ export function useCommuteFinder() {
           currentResult?.intersectionAreaKm2 ??
           calculateAreaKm2(intersectionFeature as any);
 
+        const subAreas = extractIntersectionSubAreas(
+          intersectionFeature,
+          apartmentsRef.current
+        );
+
+        let clickedSubArea = subAreas.find((sa) => {
+          try {
+            return turf.booleanPointInPolygon(turf.point([lng, lat]), sa.feature);
+          } catch {
+            return false;
+          }
+        });
+
+        const activeBbox = clickedSubArea ? clickedSubArea.bbox : (turf.bbox(intersectionFeature as any) as [number, number, number, number]);
+        const portalLinks = clickedSubArea
+          ? clickedSubArea.portalLinks
+          : getPortalSearchLinks({ lat: centerCoord[1], lng: centerCoord[0] }, activeBbox);
+
         intersectionStats = {
           areaKm2,
           centerLat: centerCoord[1],
@@ -688,6 +709,9 @@ export function useCommuteFinder() {
           centerAddress: 'Lade Mittelpunkt...',
           avgCommuteMinutes,
           commuteSpreadMinutes,
+          subAreas,
+          selectedSubAreaId: clickedSubArea?.id,
+          portalLinks,
         };
       }
 
@@ -727,6 +751,9 @@ export function useCommuteFinder() {
         intersectionStats,
         apartmentListings: areaApartments,
         selectedApartment: matchedApartment,
+        subAreas: intersectionStats?.subAreas,
+        selectedSubAreaId: intersectionStats?.selectedSubAreaId,
+        portalLinks: intersectionStats?.portalLinks,
       });
 
       // Async reverse geocoding for clicked point and center point

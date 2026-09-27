@@ -67,14 +67,14 @@ export const InspectionPanel: React.FC<InspectionPanelProps> = ({
   const [activeTab, setActiveTab] = useState<'apartments' | 'commute'>('commute');
   const [imageError, setImageError] = useState(false);
 
-  // If entering an intersection inspection with apartments, default to apartments tab initially
+  // If entering an intersection inspection, default to apartments tab initially
   useEffect(() => {
-    if (inspection?.isIntersectionInspection && allListings.length > 0) {
+    if (inspection?.isIntersectionInspection) {
       setActiveTab('apartments');
     } else {
       setActiveTab('commute');
     }
-  }, [inspection?.lat, inspection?.lng, inspection?.isIntersectionInspection, allListings.length]);
+  }, [inspection?.lat, inspection?.lng, inspection?.isIntersectionInspection]);
 
   if (!inspection) return null;
 
@@ -301,8 +301,8 @@ export const InspectionPanel: React.FC<InspectionPanelProps> = ({
         </div>
       )}
 
-      {/* Tab Navigation (when inside intersection area with apartments) */}
-      {inspection.isIntersectionInspection && allListings.length > 0 && (
+      {/* Tab Navigation (when inside intersection area) */}
+      {inspection.isIntersectionInspection && (
         <div className="flex items-center border-b border-slate-200 dark:border-[#3c4043] bg-slate-50/70 dark:bg-[#18191a] px-3 pt-2 gap-2">
           <button
             type="button"

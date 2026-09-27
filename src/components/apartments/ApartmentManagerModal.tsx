@@ -1,11 +1,13 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import * as turf from '@turf/turf';
-import { ApartmentListing } from '../../types';
+import { ApartmentListing, IntersectionSubArea } from '../../types';
 import {
   validateApartmentDataset,
   saveCustomApartments,
   clearCustomApartments,
   loadApartmentCatalog,
+  extractIntersectionSubAreas,
+  getPortalSearchLinks,
 } from '../../services/apartmentService';
 import {
   X,
@@ -20,6 +22,9 @@ import {
   CheckCircle2,
   Home,
   Info,
+  Layers,
+  ExternalLink,
+  Compass,
 } from 'lucide-react';
 
 interface ApartmentManagerModalProps {
@@ -39,6 +44,7 @@ export const ApartmentManagerModal: React.FC<ApartmentManagerModalProps> = ({
 }) => {
   const [copiedBbox, setCopiedBbox] = useState(false);
   const [copiedCommand, setCopiedCommand] = useState(false);
+  const [selectedSubAreaId, setSelectedSubAreaId] = useState<string | null>(null);
   const [importStatus, setImportStatus] = useState<{
     success?: boolean;
     message?: string;
@@ -47,16 +53,40 @@ export const ApartmentManagerModal: React.FC<ApartmentManagerModalProps> = ({
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Extract individual sub-areas / islands from the intersection
+  const subAreas = useMemo(() => {
+    return extractIntersectionSubAreas(intersection, listings);
+  }, [intersection, listings]);
+
+  const activeSubArea = useMemo<IntersectionSubArea | null>(() => {
+    if (!selectedSubAreaId) return null;
+    return subAreas.find((sa) => sa.id === selectedSubAreaId) || null;
+  }, [subAreas, selectedSubAreaId]);
+
   if (!isOpen) return null;
 
-  // Compute intersection BBOX
+  // Compute BBOX string based on active sub-area or full intersection
   let bboxString = '11.535,48.140,11.595,48.175';
-  if (intersection) {
+  let activeCenter = { lat: 48.155, lng: 11.565 };
+  let activeRadiusKm = 2;
+
+  if (activeSubArea) {
+    bboxString = activeSubArea.bbox.map((n) => Math.round(n * 10000) / 10000).join(',');
+    activeCenter = activeSubArea.center;
+    activeRadiusKm = activeSubArea.radiusKm;
+  } else if (intersection) {
     try {
       const rawBbox = turf.bbox(intersection as any);
       bboxString = rawBbox.map((n) => Math.round(n * 10000) / 10000).join(',');
+      activeCenter = { lat: (rawBbox[1] + rawBbox[3]) / 2, lng: (rawBbox[0] + rawBbox[2]) / 2 };
+      const areaM2 = turf.area(intersection as any);
+      activeRadiusKm = Math.max(1, Math.round(Math.sqrt(areaM2 / Math.PI / 1_000_000) * 10) / 10);
     } catch {}
   }
+
+  const portalLinks = activeSubArea
+    ? activeSubArea.portalLinks
+    : getPortalSearchLinks(activeCenter, bboxString.split(',').map(Number) as any, activeRadiusKm);
 
   const scraperCommand = `node scripts/scrapeApartments.mjs --bbox ${bboxString} --limit 15`;
 
@@ -115,13 +145,21 @@ export const ApartmentManagerModal: React.FC<ApartmentManagerModalProps> = ({
   };
 
   const handleDownloadJson = () => {
-    const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify({
-      version: '1.0.0',
-      exportedAt: new Date().toISOString(),
-      source: 'Venn Housing Export',
-      listings,
-    }, null, 2));
-
+    const dataStr =
+      'data:text/json;charset=utf-8,' +
+      encodeURIComponent(
+        JSON.stringify(
+          {
+            version: '1.1.0',
+            exportedAt: new Date().toISOString(),
+            count: listings.length,
+            portalLinks,
+            listings,
+          },
+          null,
+          2
+        )
+      );
     const downloadAnchor = document.createElement('a');
     downloadAnchor.setAttribute('href', dataStr);
     downloadAnchor.setAttribute('download', `venn-apartments-${new Date().toISOString().slice(0, 10)}.json`);
@@ -130,12 +168,11 @@ export const ApartmentManagerModal: React.FC<ApartmentManagerModalProps> = ({
     downloadAnchor.remove();
   };
 
-  const handleResetDefaults = async () => {
+  const handleResetDefaults = () => {
     clearCustomApartments();
-    await loadApartmentCatalog();
     setImportStatus({
       success: true,
-      message: 'Standard-Wohnungsdaten für München erfolgreich wiederhergestellt.',
+      message: 'Münchner Standard-Musterwohnungen wiederhergestellt.',
     });
     if (onRefreshListings) {
       onRefreshListings();
@@ -143,20 +180,20 @@ export const ApartmentManagerModal: React.FC<ApartmentManagerModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
-      <div className="bg-white dark:bg-[#1e1f20] rounded-3xl border border-slate-200 dark:border-[#3c4043] shadow-2xl max-w-xl w-full max-h-[90vh] flex flex-col overflow-hidden">
+    <div className="fixed inset-0 z-[1200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="bg-white dark:bg-[#1e1f20] rounded-3xl border border-slate-200 dark:border-[#3c4043] shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="px-6 py-4 border-b border-slate-200 dark:border-[#3c4043] flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-2xl bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400">
+            <div className="p-2.5 rounded-2xl bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400">
               <Home className="w-5 h-5" />
             </div>
             <div>
               <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                Wohnungssuche & Datenschnittstelle
+                Wohnungsangebote & Ingestion-Manager
               </h3>
               <p className="text-xs text-slate-500 dark:text-[#9aa0a6]">
-                Strukturierte Wohnungsdaten für den gemeinsamen Treffbereich verwalten
+                Zwei Ingestion-Pfade: Strukturierte JSON-Dateien & Scraper für Überlappungsfelder
               </p>
             </div>
           </div>
@@ -164,34 +201,34 @@ export const ApartmentManagerModal: React.FC<ApartmentManagerModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-[#e3e3e3] hover:bg-slate-100 dark:hover:bg-[#282a2c] transition-colors cursor-pointer"
+            className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-[#282a2c] transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Content Body */}
-        <div className="p-6 overflow-y-auto space-y-6 text-sm">
-          {/* Status Message if any */}
+        <div className="p-6 overflow-y-auto space-y-5 text-sm">
+          {/* Status Message Alert */}
           {importStatus && (
             <div
-              className={`p-3.5 rounded-2xl border flex items-start gap-3 ${
+              className={`p-3.5 rounded-2xl flex items-start gap-2.5 ${
                 importStatus.success
-                  ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200'
-                  : 'bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-800 text-rose-900 dark:text-rose-200'
+                  ? 'bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200'
+                  : 'bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-900 dark:text-rose-200'
               }`}
             >
               {importStatus.success ? (
-                <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+                <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
               ) : (
-                <AlertCircle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+                <AlertCircle className="w-5 h-5 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
               )}
-              <div className="text-xs space-y-1">
+              <div className="flex-1 text-xs">
                 <div className="font-bold">{importStatus.message}</div>
-                {importStatus.errors && importStatus.errors.length > 0 && (
-                  <ul className="list-disc pl-4 space-y-0.5 text-[11px] opacity-90">
-                    {importStatus.errors.map((err, idx) => (
-                      <li key={idx}>{err}</li>
+                {importStatus.errors && (
+                  <ul className="mt-1 list-disc list-inside space-y-0.5 text-[11px] opacity-80">
+                    {importStatus.errors.map((e, idx) => (
+                      <li key={idx}>{e}</li>
                     ))}
                   </ul>
                 )}
@@ -199,24 +236,31 @@ export const ApartmentManagerModal: React.FC<ApartmentManagerModalProps> = ({
             </div>
           )}
 
-          {/* Section 1: Aktive Daten */}
-          <div className="bg-slate-50 dark:bg-[#131314] rounded-2xl p-4 border border-slate-200/80 dark:border-[#3c4043] flex items-center justify-between">
-            <div>
-              <div className="text-xs text-slate-400 dark:text-[#9aa0a6] font-medium">Geladene Angebote</div>
-              <div className="text-lg font-bold text-slate-900 dark:text-white mt-0.5">
-                {listings.length} Wohnungen im Katalog
+          {/* Section 1: Aktiver Datenbestand */}
+          <div className="bg-slate-50 dark:bg-[#131314] rounded-2xl p-4 border border-slate-200/80 dark:border-[#3c4043] flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <FileJson className="w-5 h-5 text-slate-500" />
+              <div>
+                <div className="font-bold text-slate-900 dark:text-white text-xs">
+                  Aktueller Datenbestand
+                </div>
+                <div className="text-[11px] text-slate-500 dark:text-[#9aa0a6]">
+                  {listings.length} Wohnungen geladen und im Cache hinterlegt
+                </div>
               </div>
             </div>
+
             <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={handleDownloadJson}
                 className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-[#3c4043] bg-white dark:bg-[#1e1f20] text-slate-700 dark:text-[#e3e3e3] hover:bg-slate-100 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
-                title="Aktuelle Wohnungsdaten als JSON exportieren"
+                title="Aktuelle Wohnungsdaten als JSON herunterladen"
               >
                 <Download className="w-3.5 h-3.5" />
-                <span>Exportieren</span>
+                <span>Export</span>
               </button>
+
               <button
                 type="button"
                 onClick={handleResetDefaults}
@@ -229,7 +273,82 @@ export const ApartmentManagerModal: React.FC<ApartmentManagerModalProps> = ({
             </div>
           </div>
 
-          {/* Section 2: JSON Datei importieren */}
+          {/* Section 2: Sub-Area / Überlappungsfeld Auswahl */}
+          {subAreas.length > 1 && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-[#9aa0a6] flex items-center gap-1.5">
+                  <Layers className="w-3.5 h-3.5 text-blue-500" />
+                  <span>Überlappungsfelder (Getrennte Isochronen-Inseln)</span>
+                </h4>
+                <span className="text-[10px] text-slate-400">
+                  {subAreas.length} getrennte Bereiche erkannt
+                </span>
+              </div>
+
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => setSelectedSubAreaId(null)}
+                  className={`text-xs font-bold px-3 py-1.5 rounded-xl border transition-colors cursor-pointer ${
+                    selectedSubAreaId === null
+                      ? 'bg-rose-600 text-white border-rose-600 dark:bg-rose-500'
+                      : 'bg-white dark:bg-[#1e1f20] text-slate-700 dark:text-[#c4c7c5] border-slate-200 dark:border-[#3c4043] hover:bg-slate-100'
+                  }`}
+                >
+                  Gesamte Schnittmenge ({listings.length} Whg.)
+                </button>
+                {subAreas.map((sa) => (
+                  <button
+                    key={sa.id}
+                    type="button"
+                    onClick={() => setSelectedSubAreaId(sa.id)}
+                    className={`text-xs font-bold px-3 py-1.5 rounded-xl border transition-colors cursor-pointer ${
+                      selectedSubAreaId === sa.id
+                        ? 'bg-rose-600 text-white border-rose-600 dark:bg-rose-500'
+                        : 'bg-white dark:bg-[#1e1f20] text-slate-700 dark:text-[#c4c7c5] border-slate-200 dark:border-[#3c4043] hover:bg-slate-100'
+                    }`}
+                  >
+                    {sa.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Section 3: Live Portal Links für den Bereich */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-[#9aa0a6] flex items-center gap-1.5">
+                <Compass className="w-3.5 h-3.5 text-orange-500" />
+                <span>Portal-Direktsuche ({activeSubArea ? activeSubArea.label.split('(')[0].trim() : 'Gesamter Treffbereich'})</span>
+              </h4>
+              <span className="text-[10px] text-slate-400">1-Klick Live-Suche</span>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {portalLinks.map((link) => (
+                <a
+                  key={link.portal}
+                  href={link.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-2.5 rounded-xl border border-slate-200 dark:border-[#3c4043] bg-white dark:bg-[#1e1f20] hover:bg-slate-50 dark:hover:bg-[#282a2c] flex items-center justify-between text-left transition-colors group cursor-pointer"
+                  title={link.description}
+                >
+                  <div className="min-w-0 pr-1">
+                    <div className="text-xs font-bold text-slate-800 dark:text-white truncate group-hover:text-blue-600 dark:group-hover:text-[#8ab4f8]">
+                      {link.name}
+                    </div>
+                    <div className="text-[10px] text-slate-400 truncate">{link.badge}</div>
+                  </div>
+                  <ExternalLink className="w-3.5 h-3.5 text-slate-400 group-hover:text-blue-600 shrink-0" />
+                </a>
+              ))}
+            </div>
+          </div>
+
+          {/* Section 4: JSON Datei importieren */}
           <div className="space-y-2">
             <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-[#9aa0a6]">
               Weg 1: Eigene JSON-Datei importieren
@@ -255,11 +374,11 @@ export const ApartmentManagerModal: React.FC<ApartmentManagerModalProps> = ({
             </div>
           </div>
 
-          {/* Section 3: Scraper & Treffbereich-Koordinaten */}
+          {/* Section 5: Web-Scraper im Treffbereich */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-[#9aa0a6]">
-                Weg 2: Web-Scraper im Treffbereich
+                Weg 2: Web-Scraper für dieses Überlappungsfeld
               </h4>
               <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">
                 Antigravity Skill bereit
@@ -270,7 +389,7 @@ export const ApartmentManagerModal: React.FC<ApartmentManagerModalProps> = ({
               <div className="flex items-center justify-between text-slate-400 text-[11px] border-b border-slate-800 pb-2">
                 <span className="flex items-center gap-1.5">
                   <Terminal className="w-3.5 h-3.5 text-blue-400" />
-                  Terminal-Befehl (CLI Scraper)
+                  <span>CLI-Befehl {activeSubArea ? `(${activeSubArea.label.split('(')[0].trim()})` : '(Treffbereich)'}</span>
                 </span>
                 <button
                   type="button"
@@ -287,7 +406,7 @@ export const ApartmentManagerModal: React.FC<ApartmentManagerModalProps> = ({
               </div>
 
               <div className="pt-1 text-[11px] text-slate-400 flex items-center justify-between">
-                <span>BBOX der Schnittmenge: <code className="text-white font-mono">{bboxString}</code></span>
+                <span>BBOX: <code className="text-white font-mono">{bboxString}</code></span>
                 <button
                   type="button"
                   onClick={handleCopyBbox}
@@ -298,11 +417,12 @@ export const ApartmentManagerModal: React.FC<ApartmentManagerModalProps> = ({
               </div>
             </div>
 
-            <div className="p-3 bg-blue-50/70 dark:bg-blue-950/30 rounded-xl border border-blue-200/80 dark:border-blue-900/60 text-xs text-blue-900 dark:text-blue-200 flex items-start gap-2">
-              <Info className="w-4 h-4 text-blue-600 dark:text-[#8ab4f8] shrink-0 mt-0.5" />
+            {/* Transparent Bot-Protection Policy Card */}
+            <div className="p-3 bg-amber-50/70 dark:bg-amber-950/30 rounded-xl border border-amber-200/80 dark:border-amber-900/60 text-xs text-amber-900 dark:text-amber-200 flex items-start gap-2">
+              <Info className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
               <span>
-                Der Scraper schreibt direkt in <code className="font-semibold font-mono">public/data/apartments.json</code>.
-                Venn synchronisiert diese Datei automatisch mit dem Kartenlayer und der Treffbereich-Inspektion.
+                <strong>Hinweis zum Bot-Schutz:</strong> Kommerzielle Portale schützen ihre Daten per WAF & Captcha.
+                Venn trifft bewusst keine Schein-Annahmen: Nutze die Direktlinks oben, um aktuelle Live-Inserate für dieses Feld direkt im Browser zu öffnen, oder importiere eine JSON-Datei.
               </span>
             </div>
           </div>

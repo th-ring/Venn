@@ -27,6 +27,8 @@ import {
   validateApartmentDataset,
   filterApartmentsInPolygon,
   calculateApartmentCommute,
+  extractIntersectionSubAreas,
+  getPortalSearchLinks,
 } from '../src/services/apartmentService.ts';
 
 let passCount = 0;
@@ -381,6 +383,48 @@ test('calculates commute fairness score and balance across multiple profiles', (
   assert.ok(score.avgCommuteMinutes > 0 && score.avgCommuteMinutes < 30);
   assert.ok(typeof score.commuteSpreadMinutes === 'number');
   assert.equal(score.allWithinLimit, true);
+});
+
+test('extracts disjoint sub-areas from MultiPolygon intersection with labels and BBOX', () => {
+  // Construct a MultiPolygon representing 2 disjoint islands (e.g. transit corridor north vs highway west)
+  const polyA = [
+    [[11.55, 48.15], [11.55, 48.17], [11.57, 48.17], [11.57, 48.15], [11.55, 48.15]]
+  ];
+  const polyB = [
+    [[11.60, 48.18], [11.60, 48.20], [11.62, 48.20], [11.62, 48.18], [11.60, 48.18]]
+  ];
+  const multiPoly = turf.multiPolygon([polyA, polyB]);
+
+  const subAreas = extractIntersectionSubAreas(multiPoly, [
+    { id: '1', title: 'A', lat: 48.16, lng: 11.56, priceCold: 1000, sizeSqm: 50, rooms: 2, city: 'München', address: 'A', source: 'immoscout24' }
+  ]);
+
+  assert.equal(subAreas.length, 2, 'Should detect exactly 2 disjoint sub-areas');
+  assert.ok(subAreas[0].areaKm2 > 0, 'Sub-area 1 should have positive area');
+  assert.ok(subAreas[1].areaKm2 > 0, 'Sub-area 2 should have positive area');
+  assert.equal(subAreas[0].portalLinks.length, 4, 'Each sub-area should have 4 portal deep-links');
+  assert.ok(subAreas.some(sa => sa.listingsCount === 1), 'Sub-area covering [11.56, 48.16] should contain 1 listing');
+});
+
+test('generates valid portal search deep-links with radius and coordinate attributes', () => {
+  const links = getPortalSearchLinks({ lat: 48.1582, lng: 11.5741 }, [11.55, 48.15, 11.58, 48.18], 2, 'München');
+  assert.equal(links.length, 4);
+
+  const is24 = links.find((l) => l.portal === 'immoscout24');
+  assert.ok(is24, 'ImmoScout24 link must be present');
+  assert.ok(is24.url.includes('centerlat=48.1582') && is24.url.includes('centerlon=11.5741'));
+
+  const iw = links.find((l) => l.portal === 'immowelt');
+  assert.ok(iw, 'Immowelt link must be present');
+  assert.ok(iw.url.includes('lat=48.1582') && iw.url.includes('lon=11.5741'));
+
+  const wg = links.find((l) => l.portal === 'wg-gesucht');
+  assert.ok(wg, 'WG-Gesucht link must be present');
+  assert.ok(wg.url.includes('wohnungen-in-M%C3%BCnchen.html'));
+
+  const ka = links.find((l) => l.portal === 'kleinanzeigen');
+  assert.ok(ka, 'Kleinanzeigen link must be present');
+  assert.ok(ka.url.includes('latitude=48.1582') && ka.url.includes('longitude=11.5741'));
 });
 
 console.log(`\n========================================`);

@@ -1,13 +1,45 @@
 {
-  "version": "1.0.0",
-  "lastUpdated": "2026-09-27T08:54:11.472Z",
+  "version": "1.1.0",
+  "lastUpdated": "2026-09-27T09:25:21.798Z",
   "source": "Venn Housing Aggregator",
-  "city": "Munich",
+  "city": "München",
   "bbox": [
-    11.535,
+    11.54,
     48.14,
-    11.595,
-    48.175
+    11.59,
+    48.17
+  ],
+  "status": "bot_protection_active",
+  "message": "Automatisierter Portal-Abruf durch Bot-Schutz der Portale eingeschränkt. Nutze die Direktlinks für diesen Bereich.",
+  "portalLinks": [
+    {
+      "portal": "immoscout24",
+      "name": "ImmoScout24",
+      "url": "https://www.immobilienscout24.de/Suche/radius/wohnung-mieten?centerlat=48.1550&centerlon=11.5650&radius=2&userGeoAttributes=true",
+      "badge": "~2 km Umkreis",
+      "description": "Deutschlands größtes Immobilienportal (Radius-Suche)"
+    },
+    {
+      "portal": "immowelt",
+      "name": "Immowelt",
+      "url": "https://www.immowelt.de/liste/wohnungen/mieten?lat=48.1550&lon=11.5650&distance=2",
+      "badge": "~2 km Umkreis",
+      "description": "Umfangreiche Mietangebote im Suchradius"
+    },
+    {
+      "portal": "wg-gesucht",
+      "name": "WG-Gesucht",
+      "url": "https://www.wg-gesucht.de/wohnungen-in-M%C3%BCnchen.html?distance=2",
+      "badge": "München (+2 km)",
+      "description": "Wohnungen, Apartments & WG-Zimmer"
+    },
+    {
+      "portal": "kleinanzeigen",
+      "name": "Kleinanzeigen",
+      "url": "https://www.kleinanzeigen.de/s-wohnung-mieten/c203?distance=2&latitude=48.1550&longitude=11.5650",
+      "badge": "~2 km Umkreis",
+      "description": "Provisionsfreie Privat- & Maklerangebote"
+    }
   ],
   "count": 5,
   "listings": [
