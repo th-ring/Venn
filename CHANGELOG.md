@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Kontextreicher Agenten-Prompt für die Browser-Suche**: Der erzeugte Prompt für `/browser` und Antigravity/Codex enthält nun die vollständigen Geodaten (Zentrum, Radius, exakte BBOX `[minLng, minLat, maxLng, maxLat]`), aktive Venn-Suchfilter (Warmmiete, Zimmer, Fläche) sowie das exakte JSON-Zielformat von `public/data/apartments.json` inkl. strenger Geo-Validierungsregeln.
+
 ## [1.4.4] - 2026-09-27
 
 ### Fixed
