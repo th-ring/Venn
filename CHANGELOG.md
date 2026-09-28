@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.6.0] - 2026-09-28
+
+### Added
+- **Neues Brand Identity Logo**: Vollständige Neugestaltung des Venn-Markenzeichens nach professionellen Agency-Standards: Ein markanter Google-4-Farben Hero-Pin, verankert bei 2/3 Tiefe der Maximum-Overlap-Schnittlinse, mit einem monolithischen 5-Eck-Wohnsymbol.
+- **Interaktive Brand Identity Suite (`public/logo-showcase.html`)**: Dedizierte Design-Testbench mit simultanem `Light Mode` / `Dark Mode` Toggle, Skalierungsmatrix von 16px Favicon bis 128px Retina und SVG-Export.
+
+### Changed
+- **Aktualisierung aller Marken-Assets**: Ersetzung der bisherigen Prototyp-Grafiken in `public/venn-icon.svg`, `public/favicon.svg`, `public/venn-logo.svg`, `public/venn-logo-dark.svg` und direkt in der App-Header-Sidebar (`src/components/Sidebar.tsx`).
+
 ## [1.5.0] - 2026-09-28
 
 ### Added
