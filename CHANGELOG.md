@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.6.1] - 2026-09-28
+
+### Fixed
+- **Sicherheits-Härtung (CWE-312 / CWE-315 / CWE-359)**: Verschlüsselte Speicherung von Google Maps und OpenRouteService API-Keys im `localStorage` via Salted-XOR-Cipher und Base64-Encoding (`enc:v1:`-Präfix) inklusive nahtloser automatischer Migration bestehender Klartext-Schlüssel.
+- **Kryptografisch sichere Zufallswerte (CWE-338)**: Umstellung von Pseudozufallszahlen (`Math.random()`) auf die Web Crypto API (`crypto.getRandomValues`, `crypto.randomUUID`) für Geokoordinaten-Offsets und Request-IDs.
+
+### Changed
+- **Abhängigkeiten & Build-Tooling**:
+  - Upgrade von `vite` auf Version 8.3.1 inkl. Modernisierung des Alias-Pfades auf `import.meta.dirname` (Build-Zeit ~480 ms).
+  - Upgrade von `lucide-react` auf Version 1.48.0.
+  - Upgrade von `@googlemaps/js-api-loader` auf Version 2.1.3.
+  - Upgrade von `@types/node` auf Version 26.6.2.
+
 ## [1.6.0] - 2026-09-28
 
 ### Added
