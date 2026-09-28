@@ -226,26 +226,32 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <div className="h-14 sm:h-14 pt-[env(safe-area-inset-top)] box-content px-3 sm:px-4 bg-white dark:bg-[#1e1f20] border-b border-slate-200 dark:border-[#3c4043] flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             {/* Standalone Brand Vector Mark (No glowing box, no card frame) */}
-            <div className="w-8 h-6 sm:w-10 sm:h-7 flex items-center justify-center shrink-0">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 44 28" className="w-full h-full" fill="none">
+            <div className="w-8 h-7 sm:w-9 sm:h-8 flex items-center justify-center shrink-0">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" className="w-full h-full" fill="none">
                 <defs>
                   <clipPath id="sb-venn-clip">
-                    <circle cx="16" cy="14" r="12" />
+                    <circle cx="58" cy="54" r="26" />
                   </clipPath>
                 </defs>
                 {/* Left Circle: Google Blue */}
-                <circle cx="16" cy="14" r="12" fill="#4285F4" className="dark:fill-[#4285F4] fill-[#1A73E8]" />
+                <circle cx="42" cy="54" r="26" fill="#4285F4" className="dark:fill-[#4285F4] fill-[#1A73E8]" />
                 {/* Right Circle: Google Green */}
-                <circle cx="28" cy="14" r="12" fill="#34A853" className="dark:fill-[#34A853] fill-[#1E8E3E]" />
+                <circle cx="58" cy="54" r="26" fill="#34A853" className="dark:fill-[#34A853] fill-[#1E8E3E]" />
                 {/* Overlap Intersection: Teal Lens */}
-                <circle cx="28" cy="14" r="12" clipPath="url(#sb-venn-clip)" fill="#00897B" className="dark:fill-[#00897B] fill-[#00796B]" />
-                {/* Home Silhouette: Crisp White */}
-                <g transform="translate(15.76, 7.76) scale(0.52)">
-                  <path
-                    fill="#FFFFFF"
-                    d="M10 19v-5h4v5c0 .55.45 1 1 1h3c.55 0 1-.45 1-1v-7h1.7c.46 0 .68-.57.33-.87L12.67 3.6c-.38-.34-.96-.34-1.34 0l-8.36 7.53c-.35.3-.13.87.33.87H5v7c0 .55.45 1 1 1h3c.55 0 1-.45 1-1z"
-                  />
-                </g>
+                <circle cx="42" cy="54" r="26" clipPath="url(#sb-venn-clip)" fill="#00897B" className="dark:fill-[#00897B] fill-[#00796B]" />
+                {/* Classic Google Pin: 2/3 Depth Anchor with 2.2px Chiseled Border */}
+                <path
+                  d="M 50 62 C 43 53, 35 45, 35 36 A 15 15 0 1 1 65 36 C 65 45, 57 53, 50 62 Z"
+                  fill="#EA4335"
+                  stroke="#FFFFFF"
+                  strokeWidth="2.2"
+                  strokeLinejoin="round"
+                />
+                {/* Simplified Monolith House with Portal Notch */}
+                <path
+                  d="M 42 42 L 42 36 L 50 28 L 58 36 L 58 42 H 53 V 38 H 47 V 42 Z"
+                  fill="#FFFFFF"
+                />
               </svg>
             </div>
             <span className="text-base sm:text-[18px] font-medium tracking-tight text-slate-900 dark:text-[#e8eaed]">

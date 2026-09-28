@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+<html lang="de" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Venn — Chiseled 2.2px • Vereinfachtes Haus & Light/Dark Kontraste</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0c0d0e;
+      --card-bg: rgba(22, 24, 27, 0.75);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --card-hover-border: rgba(66, 133, 244, 0.5);
+      --text-main: #f1f3f5;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --brand-color: #4285F4;
+      --brand-subtle: rgba(66, 133, 244, 0.15);
+      --appbar-bg: #1e1f20;
+      --appbar-border: #3c4043;
+      --pill-bg: rgba(255, 255, 255, 0.05);
+      --pill-border: rgba(255, 255, 255, 0.1);
+      --canvas-surface: #121316;
+    }
+
+    html.light {
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --card-border: rgba(0, 0, 0, 0.08);
+      --card-hover-border: rgba(66, 133, 244, 0.6);
+      --text-main: #0f172a;
+      --text-muted: #475569;
+      --text-dim: #94a3b8;
+      --brand-color: #1a73e8;
+      --brand-subtle: rgba(26, 115, 232, 0.1);
+      --appbar-bg: #ffffff;
+      --appbar-border: #e2e8f0;
+      --pill-bg: #f1f5f9;
+      --pill-border: #cbd5e1;
+      --canvas-surface: #f1f5f9;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text-main);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      transition: background-color 0.3s ease, color 0.3s ease;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    .font-mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.025'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 9999;
+    }
+
+    .container {
+      max-width: 1360px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--card-border);
+      background-color: rgba(12, 13, 14, 0.85);
+      transition: all 0.3s ease;
+    }
+    html.light header {
+      background-color: rgba(255, 255, 255, 0.88);
+    }
+
+    .header-inner {
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .badge-pill {
+      font-size: 11px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--pill-border);
+      background: var(--pill-bg);
+      color: var(--text-muted);
+      font-family: 'JetBrains Mono', monospace;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 14px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      border: 1px solid var(--card-border);
+      background: var(--card-bg);
+      color: var(--text-main);
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+    .btn:hover {
+      border-color: var(--card-hover-border);
+      transform: translateY(-1px);
+    }
+    .btn-active {
+      background: var(--brand-subtle);
+      border-color: var(--brand-color);
+      color: var(--brand-color);
+      font-weight: 600;
+    }
+
+    /* Prominent Segmented Theme Switcher */
+    .theme-segmented {
+      display: flex;
+      align-items: center;
+      background: var(--pill-bg);
+      border: 1px solid var(--pill-border);
+      border-radius: 999px;
+      padding: 3px;
+      gap: 2px;
+    }
+    .theme-segmented-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 500;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .theme-segmented-btn.active {
+      background: var(--card-bg);
+      color: var(--text-main);
+      font-weight: 600;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      border: 1px solid var(--card-border);
+    }
+
+    .filter-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 4px 0 16px;
+      scrollbar-width: none;
+    }
+    .filter-bar::-webkit-scrollbar {
+      display: none;
+    }
+
+    .logo-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+      gap: 28px;
+      margin-top: 24px;
+    }
+
+    .logo-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 26px;
+      padding: 28px 24px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .logo-card:hover {
+      border-color: var(--card-hover-border);
+      transform: translateY(-4px);
+      box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.35);
+    }
+    .logo-card.selected {
+      border-color: var(--brand-color);
+      box-shadow: 0 0 0 2px var(--brand-subtle), 0 20px 40px -15px rgba(66, 133, 244, 0.3);
+    }
+
+    .canvas-stage {
+      height: 190px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      margin-bottom: 18px;
+      background: var(--canvas-surface);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      transition: background 0.3s ease;
+    }
+
+    .svg-wrapper {
+      width: 145px;
+      height: 145px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Split Surface Preview (Light & Dark simultaneous) */
+    .split-surface {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid var(--pill-border);
+      margin: 14px 0;
+    }
+    .split-left {
+      background: #ffffff;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+    .split-right {
+      background: #0f172a;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .simulator-box {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 28px;
+      padding: 36px;
+      margin-top: 24px;
+    }
+
+    .appbar-mock {
+      height: 56px;
+      padding: 0 16px;
+      border-radius: 16px;
+      background: var(--appbar-bg);
+      border: 1px solid var(--appbar-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+    }
+
+    .scale-matrix {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 14px;
+      margin-top: 24px;
+    }
+    .scale-slot {
+      background: var(--pill-bg);
+      border: 1px solid var(--pill-border);
+      border-radius: 16px;
+      padding: 18px 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .showcase-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+      gap: 28px;
+      margin-top: 28px;
+    }
+    .showcase-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 24px;
+      overflow: hidden;
+    }
+    .showcase-media {
+      aspect-ratio: 16 / 9;
+      background: #000;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .showcase-media img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.6s ease;
+    }
+    .showcase-card:hover .showcase-media img {
+      transform: scale(1.03);
+    }
+
+    .pill-tag {
+      position: absolute;
+      bottom: 14px;
+      left: 14px;
+      background: rgba(0, 0, 0, 0.75);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(8px);
+      color: #38bdf8;
+      font-size: 10px;
+      padding: 4px 10px;
+      border-radius: 8px;
+      font-family: 'JetBrains Mono', monospace;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    #toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #10b981;
+      color: #ffffff;
+      padding: 12px 20px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 500;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+      display: none;
+      align-items: center;
+      gap: 8px;
+      z-index: 10000;
+      animation: fadeIn 0.2s ease;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Toast -->
+  <div id="toast">
+    <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+    </svg>
+    <span id="toast-text">SVG-Code kopiert!</span>
+  </div>
+
+  <!-- Header Nav -->
+  <header>
+    <div class="container header-inner">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <div style="width: 32px; height: 32px;" id="header-brand-mark"></div>
+        <div>
+          <span style="font-weight: 600; font-size: 18px; letter-spacing: -0.02em;">Venn</span>
+          <span class="badge-pill" style="margin-left: 8px; color: #EA4335; border-color: rgba(234, 67, 53, 0.3);">Chiseled 2.2px • Vereinfachtes Haus</span>
+        </div>
+      </div>
+
+      <!-- Controls: Prominent Theme Toggle -->
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <div class="theme-segmented">
+          <button class="theme-segmented-btn" onclick="setGlobalTheme('light')" id="btn-theme-light">
+            <span>☀️</span> Light Mode
+          </button>
+          <button class="theme-segmented-btn active" onclick="setGlobalTheme('dark')" id="btn-theme-dark">
+            <span>🌙</span> Dark Mode
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Hero -->
+  <main class="container" style="padding-top: 52px; padding-bottom: 80px;">
+    <div style="text-align: center; max-width: 920px; margin: 0 auto 48px;">
+      <div class="badge-pill" style="display: inline-block; margin-bottom: 16px; color: #4285F4; border-color: rgba(66, 133, 244, 0.3);">
+        Chiseled Standard (2.2px Kante) • Radikal vereinfachtes Haus • Light/Dark Toggle
+      </div>
+      <h1 style="font-size: clamp(34px, 5vw, 54px); font-weight: 300; letter-spacing: -0.03em; line-height: 1.15; margin-bottom: 18px;">
+        Vereinfachtes Haus & <strong style="font-weight: 700; color: #EA4335;">Light/Dark Kontraste</strong>
+      </h1>
+      <p style="font-size: 16px; line-height: 1.6; color: var(--text-muted); font-weight: 300; margin-bottom: 32px;">
+        Die feste Basis: <strong>Chiseled Standard (2.2px feine weiße Trennkante)</strong> mit Nadelspitze bei <strong>2/3 Tiefe (y=62)</strong>. Das Haus wurde <strong>radikal vereinfacht</strong> (reines 5-Eck-Monument, reiner Dach-Chevron, Null visueller Ballast). Nutze den <strong>Light/Dark-Toggle</strong> oben oder unten, um alle Kontraste und Paletten live auf Weiß und Schwarz zu prüfen.
+      </p>
+
+      <!-- Before vs Selected Comparison Pill -->
+      <div style="display: inline-flex; align-items: center; gap: 24px; padding: 14px 24px; background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.06);">
+        <div style="display: flex; align-items: center; gap: 12px; padding-right: 20px; border-right: 1px solid var(--card-border);">
+          <div style="width: 40px; height: 26px; opacity: 0.7;">
+            <svg viewBox="0 0 44 28" width="100%" height="100%" fill="none">
+              <defs><clipPath id="curr-clip"><circle cx="16" cy="14" r="12"/></clipPath></defs>
+              <circle cx="16" cy="14" r="12" fill="#4285F4"/>
+              <circle cx="28" cy="14" r="12" fill="#34A853"/>
+              <circle cx="28" cy="14" r="12" clip-path="url(#curr-clip)" fill="#00897B"/>
+              <g transform="translate(15.76, 7.76) scale(0.52)"><path fill="#FFFFFF" d="M10 19v-5h4v5c0 .55.45 1 1 1h3c.55 0 1-.45 1-1v-7h1.7c.46 0 .68-.57.33-.87L12.67 3.6c-.38-.34-.96-.34-1.34 0l-8.36 7.53c-.35.3-.13.87.33.87H5v7c0 .55.45 1 1 1h3c.55 0 1-.45 1-1z"/></g>
+            </svg>
+          </div>
+          <div style="text-align: left;">
+            <div style="font-size: 10px; font-family: 'JetBrains Mono'; text-transform: uppercase; color: #f43f5e;">Status Quo (Alt)</div>
+            <div style="font-size: 12px; color: var(--text-dim);">Google-Kreise + Clipart-Haus</div>
+          </div>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div style="width: 38px; height: 38px;" id="hero-after-mark"></div>
+          <div style="text-align: left;">
+            <div style="font-size: 10px; font-family: 'JetBrains Mono'; text-transform: uppercase; color: #EA4335;">Aktueller Spitzenreiter</div>
+            <div style="font-size: 12px; font-weight: 600; color: var(--text-main);" id="hero-after-title">Reines 5-Eck Haus (Pure Monolith)</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filter Bar & Mode Toggle Bar -->
+    <div style="display: flex; flex-direction: column; gap: 16px; margin-bottom: 24px;">
+      <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--card-border); padding-bottom: 12px; flex-wrap: gap: 12px;">
+        <h2 style="font-size: 12px; font-family: 'JetBrains Mono'; text-transform: uppercase; letter-spacing: 0.2em; color: var(--text-dim);">
+          Entwurfs-Kategorien (Chiseled 2.2px Basis)
+        </h2>
+        <!-- Center Toggle for Easy Testing -->
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 11px; font-family: 'JetBrains Mono'; color: var(--text-dim);">Vorschau-Modus:</span>
+          <div class="theme-segmented">
+            <button class="theme-segmented-btn" onclick="setGlobalTheme('light')" id="btn-theme-light-inline">
+              ☀️ Hell
+            </button>
+            <button class="theme-segmented-btn active" onclick="setGlobalTheme('dark')" id="btn-theme-dark-inline">
+              🌙 Dunkel
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="filter-bar">
+        <button class="btn btn-active" onclick="filterCategory('simplified', this)">🏠 Radikal vereinfachte Haus-Formen (5)</button>
+        <button class="btn" onclick="filterCategory('palettes', this)">🎨 Farbpaletten & Kontraste (6)</button>
+        <button class="btn" onclick="filterCategory('all', this)">⭐ Alle 11 Ausarbeitungen</button>
+      </div>
+    </div>
+
+    <!-- 01 / Cards Grid -->
+    <div class="logo-grid" id="cards-container">
+      <!-- Generated by JS -->
+    </div>
+
+    <!-- 02 / Live In-Situ Simulation -->
+    <div style="margin-top: 72px;">
+      <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--card-border); padding-bottom: 16px;">
+        <h2 style="font-size: 12px; font-family: 'JetBrains Mono'; text-transform: uppercase; letter-spacing: 0.2em; color: var(--text-dim);">
+          02 / Live-Härtetest: <span id="test-title" style="color: #EA4335;">Reines 5-Eck Haus (Pure Monolith)</span>
+        </h2>
+        <span class="badge-pill" style="color: #10B981; border-color: rgba(16, 185, 129, 0.3);">
+          Light & Dark Simulation
+        </span>
+      </div>
+
+      <div class="simulator-box">
+        <!-- App Bar Mock -->
+        <div>
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+            <div style="font-size: 11px; font-family: 'JetBrains Mono'; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-dim);">
+              A. In der originalen Venn-Sidebar (App Header)
+            </div>
+          </div>
+          <div class="appbar-mock">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <div style="width: 34px; height: 34px;" id="sim-appbar-mark"></div>
+              <span style="font-size: 18px; font-weight: 600; letter-spacing: -0.02em;">Venn</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span class="badge-pill" style="background: rgba(66, 133, 244, 0.15); color: #4285F4; border: none;">2 Profile Aktiv</span>
+              <div style="width: 28px; height: 28px; border-radius: 50%; background: var(--pill-bg); border: 1px solid var(--pill-border);"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Scale Matrix: Side-by-Side Light & Dark -->
+        <div style="margin-top: 36px;">
+          <div style="font-size: 11px; font-family: 'JetBrains Mono'; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-dim); margin-bottom: 12px;">
+            B. Skalierungsmatrix: Simultane Light- & Dark-Prüfung (16px bis 128px)
+          </div>
+
+          <div class="scale-matrix">
+            <!-- 16px Dark -->
+            <div class="scale-slot" style="background: #0f172a; border-color: rgba(255,255,255,0.15);">
+              <div style="width: 16px; height: 16px;" id="sim-scale-16-dark"></div>
+              <div style="font-size: 10px; font-family: 'JetBrains Mono'; color: #94a3b8; text-align: center;">16px Dunkel</div>
+            </div>
+
+            <!-- 16px Light -->
+            <div class="scale-slot" style="background: #ffffff; border-color: rgba(0,0,0,0.12);">
+              <div style="width: 16px; height: 16px;" id="sim-scale-16-light"></div>
+              <div style="font-size: 10px; font-family: 'JetBrains Mono'; color: #475569; text-align: center;">16px Hell</div>
+            </div>
+
+            <!-- 24px Dark -->
+            <div class="scale-slot" style="background: #0f172a; border-color: rgba(255,255,255,0.15);">
+              <div style="width: 24px; height: 24px;" id="sim-scale-24-dark"></div>
+              <div style="font-size: 10px; font-family: 'JetBrains Mono'; color: #94a3b8; text-align: center;">24px Dunkel</div>
+            </div>
+
+            <!-- 24px Light -->
+            <div class="scale-slot" style="background: #ffffff; border-color: rgba(0,0,0,0.12);">
+              <div style="width: 24px; height: 24px;" id="sim-scale-24-light"></div>
+              <div style="font-size: 10px; font-family: 'JetBrains Mono'; color: #475569; text-align: center;">24px Hell</div>
+            </div>
+
+            <!-- 32px Bar Icon -->
+            <div class="scale-slot">
+              <div style="width: 32px; height: 32px;" id="sim-scale-32"></div>
+              <div style="font-size: 10px; font-family: 'JetBrains Mono'; color: var(--text-dim); text-align: center;">32x32 Bar Icon</div>
+            </div>
+
+            <!-- 48px Quick Look -->
+            <div class="scale-slot">
+              <div style="width: 48px; height: 48px;" id="sim-scale-48"></div>
+              <div style="font-size: 10px; font-family: 'JetBrains Mono'; color: var(--text-dim); text-align: center;">48x48 Quick Look</div>
+            </div>
+
+            <!-- 64px App Icon -->
+            <div class="scale-slot">
+              <div style="width: 64px; height: 64px;" id="sim-scale-64"></div>
+              <div style="font-size: 10px; font-family: 'JetBrains Mono'; color: var(--text-dim); text-align: center;">64x64 App Icon</div>
+            </div>
+
+            <!-- 110px Retina -->
+            <div class="scale-slot">
+              <div style="width: 110px; height: 110px;" id="sim-scale-128"></div>
+              <div style="font-size: 10px; font-family: 'JetBrains Mono'; color: var(--text-dim); text-align: center;">128x128 Retina</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 03 / High-End Agency Showcase Gallery -->
+    <div style="margin-top: 72px;">
+      <div style="border-bottom: 1px solid var(--card-border); padding-bottom: 16px;">
+        <h2 style="font-size: 12px; font-family: 'JetBrains Mono'; text-transform: uppercase; letter-spacing: 0.2em; color: var(--text-dim);">
+          03 / High-End Agency Showcase Renderings (Nano Banana)
+        </h2>
+      </div>
+
+      <div class="showcase-grid">
+        <!-- Showcase Card 1: Split-screen light/dark -->
+        <div class="showcase-card">
+          <div class="showcase-media">
+            <img src="./venn_light_dark_showcase.jpg" alt="Light and Dark Mode Split Screen Showcase" onerror="this.src='./venn_light_dark_showcase.jpg'" />
+            <span class="pill-tag" style="color: #EA4335;">SPLIT SCREEN: LIGHT & DARK MODE</span>
+          </div>
+          <div style="padding: 24px;">
+            <h3 style="font-size: 17px; font-weight: 600; margin-bottom: 6px;">Light Mode & Dark Mode im Direktvergleich</h3>
+            <p style="font-size: 13px; color: var(--text-muted); line-height: 1.5; font-weight: 300;">
+              Die 2.2px weiße Chiseled-Kante und das reine Fünfeck-Haus auf strahlendem Galerie-Weiß (#FFFFFF) vs. tiefem Obsidian-Schwarz (#0F172A).
+            </p>
+          </div>
+        </div>
+
+        <!-- Showcase Card 2: Optical sizing matrix -->
+        <div class="showcase-card">
+          <div class="showcase-media">
+            <img src="./venn_showcase_optical_icons.jpg" alt="Optical Sizing Matrix" onerror="this.src='./venn_showcase_optical_icons.jpg'" />
+            <span class="pill-tag" style="color: #4285F4;">OPTICAL SIZING MATRIX</span>
+          </div>
+          <div style="padding: 24px;">
+            <h3 style="font-size: 17px; font-weight: 600; margin-bottom: 6px;">Pixel-Grid-Schärfe bei 16px bis 128px</h3>
+            <p style="font-size: 13px; color: var(--text-muted); line-height: 1.5; font-weight: 300;">
+              Analyse der Kleinstdarstellung: Das vereinfachte Haus eliminiert Mikrolinien und garantiert gestochen scharfe Lesbarkeit.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer style="border-top: 1px solid var(--card-border); padding: 40px 0; text-align: center;">
+    <p style="font-family: 'JetBrains Mono'; font-size: 11px; text-transform: uppercase; letter-spacing: 0.2em; color: var(--text-dim);">
+      Venn Identity Suite • Chiseled 2.2px • Light & Dark Mode Edition • 2026
+    </p>
+  </footer>
+
+  <!-- MASTER LOGO VARIANTS DATA -->
+  <script>
+    const LOGOS = [
+      // ==========================================
+      // KATEGORIE: RADIKAL VEREINFACHTE HAUS-FORMEN (SIMPLIFIED HOUSES)
+      // Basis: Chiseled 2.2px Outline, Max Overlap (cx=42, 58), Spitze bei 2/3 (y=62)
+      // ==========================================
+      {
+        id: "sim-house-monolith",
+        category: "simplified",
+        title: "Reines 5-Eck Haus (Pure Monolith)",
+        subtitle: "VEREINFACHTES HAUS — KEINE PUNKTE, KEIN BALLAST (EMPFEHLUNG)",
+        desc: "Radikale Reduktion auf die Urform: Ein monolithisches weißes Fünfeck ohne Kamin, ohne Fenster und ohne gelben Punkt! Besteht aus einem einzigen, glasklaren mathematischen Pfad. Durch den Verzicht auf Mikro-Details bleibt die Hausform selbst bei 16x16 Pixeln ein massiver, sofort erkennbarer Shape.",
+        style: "Pure 5-Point Geometric Archetype",
+        space: "45% Freiraum",
+        score: "10/10 (Schärfe-Champion)",
+        svg: `<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs><clipPath id="s1-clip"><circle cx="58" cy="54" r="26" /></clipPath></defs>
+  <circle cx="42" cy="54" r="26" fill="#4285F4" />
+  <circle cx="58" cy="54" r="26" fill="#34A853" />
+  <circle cx="42" cy="54" r="26" clip-path="url(#s1-clip)" fill="#00897B" />
+  <path d="M 50 62 C 43 53, 35 45, 35 36 A 15 15 0 1 1 65 36 C 65 45, 57 53, 50 62 Z" fill="#EA4335" stroke="#FFFFFF" stroke-width="2.2" stroke-linejoin="round" />
+  <!-- Reines 5-Eck ohne Punkt -->
+  <path d="M 42 42 L 42 36 L 50 28 L 58 36 L 58 42 Z" fill="#FFFFFF" />
+</svg>`
+      },
+
+      {
+        id: "sim-roof-chevron",
+        category: "simplified",
+        title: "Pure Roof Chevron (Reines Dach-Symbol)",
+        subtitle: "VEREINFACHTES HAUS — MINIMALISTISCHER GIEBELWINKEL",
+        desc: "Noch einfacher als ein komplettes Haus: Nur das schützende Dach als kräftiger, geometrischer Winkel (Chevron). Das pure Symbol für 'Wohnen und Schutz'. Modern, grafisch stark und unübersehbar bei kleinsten Größen.",
+        style: "Geometric Roof Chevron (3.2px Stroke)",
+        space: "48% Freiraum",
+        score: "9.9/10",
+        svg: `<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs><clipPath id="s2-clip"><circle cx="58" cy="54" r="26" /></clipPath></defs>
+  <circle cx="42" cy="54" r="26" fill="#4285F4" />
+  <circle cx="58" cy="54" r="26" fill="#34A853" />
+  <circle cx="42" cy="54" r="26" clip-path="url(#s2-clip)" fill="#00897B" />
+  <path d="M 50 62 C 43 53, 35 45, 35 36 A 15 15 0 1 1 65 36 C 65 45, 57 53, 50 62 Z" fill="#EA4335" stroke="#FFFFFF" stroke-width="2.2" stroke-linejoin="round" />
+  <!-- Kräftiger weißer Dach-Chevron -->
+  <path d="M 41.5 37 L 50 28.5 L 58.5 37" stroke="#FFFFFF" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round" />
+  <!-- Minimalistischer Bodensteg -->
+  <line x1="44" y1="42" x2="56" y2="42" stroke="#FFFFFF" stroke-width="2.6" stroke-linecap="round" />
+</svg>`
+      },
+
+      {
+        id: "sim-house-cutout",
+        category: "simplified",
+        title: "Monolith-Cutout (Gestanztes Fünfeck)",
+        subtitle: "VEREINFACHTES HAUS — NEGATIVRAUM-DURCHSTICH",
+        desc: "Das Haus ist als reines Fünfeck direkt aus dem roten Pin ausgestanzt. Die türkis-grüne Schnittmenge der beiden Kreise scheint durch die Hausöffnung hindurch. Völlig planeben, keine aufgesetzten Elemente, maximale Eleganz.",
+        style: "Negative Space Monolith Cutout",
+        space: "47% Freiraum",
+        score: "9.9/10",
+        svg: `<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <clipPath id="s3-clip"><circle cx="58" cy="54" r="26" /></clipPath>
+    <mask id="s3-mask">
+      <rect x="0" y="0" width="100" height="100" fill="#FFFFFF" />
+      <path d="M 42 42 L 42 36 L 50 28 L 58 36 L 58 42 Z" fill="#000000" />
+    </mask>
+  </defs>
+  <circle cx="42" cy="54" r="26" fill="#4285F4" />
+  <circle cx="58" cy="54" r="26" fill="#34A853" />
+  <circle cx="42" cy="54" r="26" clip-path="url(#s3-clip)" fill="#00897B" />
+  <path d="M 50 62 C 43 53, 35 45, 35 36 A 15 15 0 1 1 65 36 C 65 45, 57 53, 50 62 Z" fill="#EA4335" stroke="#FFFFFF" stroke-width="2.2" stroke-linejoin="round" mask="url(#s3-mask)" />
+</svg>`
+      },
+
+      {
+        id: "sim-house-micro-door",
+        category: "simplified",
+        title: "5-Eck mit Mikro-Türöffnung",
+        subtitle: "VEREINFACHTES HAUS — 1 DISKRETE GEOMETRISCHE TÜR",
+        desc: "Ein weißes Fünfeck-Haus, bei dem unten eine diskrete rechteckige Türöffnung in Pin-Farbe ausgestanzt ist. Keine Fenster, kein Punkt. Sehr aufgeräumt und architektonisch.",
+        style: "Pure Pentagram with Portal Notch",
+        space: "45% Freiraum",
+        score: "9.8/10",
+        svg: `<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs><clipPath id="s4-clip"><circle cx="58" cy="54" r="26" /></clipPath></defs>
+  <circle cx="42" cy="54" r="26" fill="#4285F4" />
+  <circle cx="58" cy="54" r="26" fill="#34A853" />
+  <circle cx="42" cy="54" r="26" clip-path="url(#s4-clip)" fill="#00897B" />
+  <path d="M 50 62 C 43 53, 35 45, 35 36 A 15 15 0 1 1 65 36 C 65 45, 57 53, 50 62 Z" fill="#EA4335" stroke="#FFFFFF" stroke-width="2.2" stroke-linejoin="round" />
+  <path d="M 42 42 L 42 36 L 50 28 L 58 36 L 58 42 H 53 V 38 H 47 V 42 Z" fill="#FFFFFF" />
+</svg>`
+      },
+
+      {
+        id: "sim-house-flat-pitch",
+        category: "simplified",
+        title: "Flachgiebel-Kubus (Neubau-Archetyp)",
+        subtitle: "VEREINFACHTES HAUS — FLACERES MODERNES GIEBELDAT",
+        desc: "Sanftere 30°-Dachneigung für einen modernen Neubau-Look. Kompakter weißer Monolith, der sich perfekt in die Kreisrundung des Pin-Kopfes einbettet.",
+        style: "Modern Low-Pitch Geometric Silhouette",
+        space: "46% Freiraum",
+        score: "9.7/10",
+        svg: `<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs><clipPath id="s5-clip"><circle cx="58" cy="54" r="26" /></clipPath></defs>
+  <circle cx="42" cy="54" r="26" fill="#4285F4" />
+  <circle cx="58" cy="54" r="26" fill="#34A853" />
+  <circle cx="42" cy="54" r="26" clip-path="url(#s5-clip)" fill="#00897B" />
+  <path d="M 50 62 C 43 53, 35 45, 35 36 A 15 15 0 1 1 65 36 C 65 45, 57 53, 50 62 Z" fill="#EA4335" stroke="#FFFFFF" stroke-width="2.2" stroke-linejoin="round" />
+  <path d="M 42 42 L 42 36.5 L 50 31 L 58 36.5 L 58 42 Z" fill="#FFFFFF" />
+</svg>`
+      },
+
+      // ==========================================
+      // KATEGORIE: FARBPALETTEN & KONTRASTE
+      // ==========================================
+      {
+        id: "pal-deep-forest-teal",
+        category: "palettes",
+        title: "Deep Forest Teal Lens (Kontrast-Maximierer)",
+        subtitle: "FARBPALETTE — DUNKLE SCHNITTMENGE FÜR MAXIMALEN PIN-KONTRAST",
+        desc: "Die Schnittmenge ist in sattem Deep Forest Teal (#00695C) gefärbt. Dadurch hebt sich der rote Pin (#EA4335) sowohl auf hellem Hintergrund als auch im Dark Mode mit spektakulärem Kontrast ab. Haus als reines weißes 5-Eck.",
+        style: "Deep Teal High Contrast",
+        space: "45% Freiraum",
+        score: "10/10 (Kontrast-Sieger)",
+        svg: `<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs><clipPath id="p1-clip"><circle cx="58" cy="54" r="26" /></clipPath></defs>
+  <circle cx="42" cy="54" r="26" fill="#4285F4" />
+  <circle cx="58" cy="54" r="26" fill="#34A853" />
+  <circle cx="42" cy="54" r="26" clip-path="url(#p1-clip)" fill="#00695C" />
+  <path d="M 50 62 C 43 53, 35 45, 35 36 A 15 15 0 1 1 65 36 C 65 45, 57 53, 50 62 Z" fill="#EA4335" stroke="#FFFFFF" stroke-width="2.2" stroke-linejoin="round" />
+  <path d="M 42 42 L 42 36 L 50 28 L 58 36 L 58 42 Z" fill="#FFFFFF" />
+</svg>`
+      },
+
+      {
+        id: "pal-google-classic",
+        category: "palettes",
+        title: "Google Classic Primary (Das Original)",
+        subtitle: "FARBPALETTE — DIE ORIGINAL GOOGLE 4-FARBEN",
+        desc: "Klassisches Google Blue (#4285F4), Google Green (#34A853), Standard Teal Lens (#00897B) und Google Red (#EA4335) mit 2.2px weißer Trennkante und vereinfachtem 5-Eck-Haus.",
+        style: "Authentic Google Workspace Primaries",
+        space: "45% Freiraum",
+        score: "9.9/10",
+        svg: `<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs><clipPath id="p2-clip"><circle cx="58" cy="54" r="26" /></clipPath></defs>
+  <circle cx="42" cy="54" r="26" fill="#4285F4" />
+  <circle cx="58" cy="54" r="26" fill="#34A853" />
+  <circle cx="42" cy="54" r="26" clip-path="url(#p2-clip)" fill="#00897B" />
+  <path d="M 50 62 C 43 53, 35 45, 35 36 A 15 15 0 1 1 65 36 C 65 45, 57 53, 50 62 Z" fill="#EA4335" stroke="#FFFFFF" stroke-width="2.2" stroke-linejoin="round" />
+  <path d="M 42 42 L 42 36 L 50 28 L 58 36 L 58 42 Z" fill="#FFFFFF" />
+</svg>`
+      },
+
+      {
+        id: "pal-display-p3",
+        category: "palettes",
+        title: "Digital Display P3 Vivid",
+        subtitle: "FARBPALETTE — SATTE MODERN-DIGITALE LEUCHTKRAFT",
+        desc: "Für hochauflösende Apple Retina & OLED Screens getunt: Satteres Google Blue (#1A73E8), reines Smaragd (#1E8E3E), tiefes Meeres-Teal (#0E8388) und Signal-Rot (#D93025). Leuchtet im Light Mode wie im Dark Mode brillant.",
+        style: "Display P3 High Chroma",
+        space: "45% Freiraum",
+        score: "9.9/10",
+        svg: `<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs><clipPath id="p3-clip"><circle cx="58" cy="54" r="26" /></clipPath></defs>
+  <circle cx="42" cy="54" r="26" fill="#1A73E8" />
+  <circle cx="58" cy="54" r="26" fill="#1E8E3E" />
+  <circle cx="42" cy="54" r="26" clip-path="url(#p3-clip)" fill="#00796B" />
+  <path d="M 50 62 C 43 53, 35 45, 35 36 A 15 15 0 1 1 65 36 C 65 45, 57 53, 50 62 Z" fill="#D93025" stroke="#FFFFFF" stroke-width="2.2" stroke-linejoin="round" />
+  <path d="M 42 42 L 42 36 L 50 28 L 58 36 L 58 42 Z" fill="#FFFFFF" />
+</svg>`
+      },
+
+      {
+        id: "pal-material-you",
+        category: "palettes",
+        title: "Material You Contemporary Soft",
+        subtitle: "FARBPALETTE — ANDROID 15 DEZENT & HARMONISCH",
+        desc: "Die moderne sanftere Tonalität: Kornblumenblau (#4E86E4), Minz-Smaragd (#36B37E), Wald-Teal (#0E8388) und warmer Korallen-Pin (#FF5252). Sehr edel auf weißen Webseiten.",
+        style: "Modern Muted Pigments",
+        space: "45% Freiraum",
+        score: "9.7/10",
+        svg: `<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs><clipPath id="p4-clip"><circle cx="58" cy="54" r="26" /></clipPath></defs>
+  <circle cx="42" cy="54" r="26" fill="#4E86E4" />
+  <circle cx="58" cy="54" r="26" fill="#36B37E" />
+  <circle cx="42" cy="54" r="26" clip-path="url(#p4-clip)" fill="#0E8388" />
+  <path d="M 50 62 C 43 53, 35 45, 35 36 A 15 15 0 1 1 65 36 C 65 45, 57 53, 50 62 Z" fill="#FF5252" stroke="#FFFFFF" stroke-width="2.2" stroke-linejoin="round" />
+  <path d="M 42 42 L 42 36 L 50 28 L 58 36 L 58 42 Z" fill="#FFFFFF" />
+</svg>`
+      },
+
+      {
+        id: "pal-oled-neon",
+        category: "palettes",
+        title: "OLED Native Dark Contrast",
+        subtitle: "FARBPALETTE — SPEZIELL FÜR DEEP DARK THEMES",
+        desc: "Angehobene Luminanz für perfekte Ablesbarkeit auf reinem Schwarz: Electric Blue (#3B82F6), leuchtendes Minzgrün (#10B981), klares Cyan-Teal (#06B6D4) und strahlendes Rose-Red (#F43F5E).",
+        style: "OLED High Luminance",
+        space: "45% Freiraum",
+        score: "9.8/10",
+        svg: `<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs><clipPath id="p5-clip"><circle cx="58" cy="54" r="26" /></clipPath></defs>
+  <circle cx="42" cy="54" r="26" fill="#3B82F6" />
+  <circle cx="58" cy="54" r="26" fill="#10B981" />
+  <circle cx="42" cy="54" r="26" clip-path="url(#p5-clip)" fill="#06B6D4" />
+  <path d="M 50 62 C 43 53, 35 45, 35 36 A 15 15 0 1 1 65 36 C 65 45, 57 53, 50 62 Z" fill="#F43F5E" stroke="#FFFFFF" stroke-width="2.2" stroke-linejoin="round" />
+  <path d="M 42 42 L 42 36 L 50 28 L 58 36 L 58 42 Z" fill="#FFFFFF" />
+</svg>`
+      },
+
+      {
+        id: "pal-transit-emerald",
+        category: "palettes",
+        title: "Emerald & Cobalt Transit",
+        subtitle: "FARBPALETTE — ÖPNV-FOKUS IN BLAU, GRÜN & ORANGE",
+        desc: "Transit Blue (#0284C7), Smaragdgrün (#10B981), dunkles Petrol (#0D9488) und ein leuchtender Signal-Orange Pin (#FF5722).",
+        style: "Transit & Urban Mobility",
+        space: "45% Freiraum",
+        score: "9.6/10",
+        svg: `<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs><clipPath id="p6-clip"><circle cx="58" cy="54" r="26" /></clipPath></defs>
+  <circle cx="42" cy="54" r="26" fill="#0284C7" />
+  <circle cx="58" cy="54" r="26" fill="#10B981" />
+  <circle cx="42" cy="54" r="26" clip-path="url(#p6-clip)" fill="#0D9488" />
+  <path d="M 50 62 C 43 53, 35 45, 35 36 A 15 15 0 1 1 65 36 C 65 45, 57 53, 50 62 Z" fill="#FF5722" stroke="#FFFFFF" stroke-width="2.2" stroke-linejoin="round" />
+  <path d="M 42 42 L 42 36 L 50 28 L 58 36 L 58 42 Z" fill="#FFFFFF" />
+</svg>`
+      }
+    ];
+
+    let currentFilter = 'simplified';
+    let selectedVariant = LOGOS[0];
+
+    function renderCards() {
+      const container = document.getElementById('cards-container');
+      const filtered = currentFilter === 'all' ? LOGOS : LOGOS.filter(l => l.category === currentFilter);
+
+      container.innerHTML = filtered.map(logo => `
+        <div class="logo-card ${logo.id === selectedVariant.id ? 'selected' : ''}" id="card-${logo.id}" onclick="selectLogo('${logo.id}')">
+          <div class="canvas-stage">
+            <div class="svg-wrapper">
+              ${logo.svg}
+            </div>
+          </div>
+
+          <!-- Split-Surface Preview: Always shows Light & Dark together -->
+          <div class="split-surface">
+            <div class="split-left" title="Darstellung auf Weiß (Light Mode)">
+              <span style="font-size: 9px; font-family: 'JetBrains Mono'; font-weight: 600; color: #475569;">HELL</span>
+              <div style="width: 28px; height: 28px;">${logo.svg}</div>
+            </div>
+            <div class="split-right" title="Darstellung auf Obsidian (Dark Mode)">
+              <span style="font-size: 9px; font-family: 'JetBrains Mono'; font-weight: 600; color: #94a3b8;">DUNKEL</span>
+              <div style="width: 28px; height: 28px;">${logo.svg}</div>
+            </div>
+          </div>
+
+          <div>
+            <div style="font-size: 10px; font-family: 'JetBrains Mono'; text-transform: uppercase; color: var(--text-dim); margin-bottom: 6px;">
+              ${logo.subtitle}
+            </div>
+            <h3 style="font-size: 19px; font-weight: 600; margin-bottom: 8px; letter-spacing: -0.02em;">
+              ${logo.title}
+            </h3>
+            <p style="font-size: 13px; color: var(--text-muted); line-height: 1.5; font-weight: 300; margin-bottom: 16px;">
+              ${logo.desc}
+            </p>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding-top: 14px; border-top: 1px solid var(--card-border); font-family: 'JetBrains Mono'; font-size: 11px; margin-bottom: 16px;">
+              <div>
+                <span style="display: block; font-size: 9px; color: var(--text-dim);">STIL:</span>
+                ${logo.style}
+              </div>
+              <div>
+                <span style="display: block; font-size: 9px; color: var(--text-dim);">KANTE:</span>
+                2.2px Chiseled
+              </div>
+              <div style="grid-column: span 2;">
+                <span style="display: block; font-size: 9px; color: var(--text-dim);">BEWERTUNG:</span>
+                <strong style="color: #10b981;">${logo.score}</strong>
+              </div>
+            </div>
+
+            <div style="display: flex; gap: 8px;">
+              <button class="btn" style="flex: 1; justify-content: center;" onclick="event.stopPropagation(); copySvg('${logo.id}')">
+                SVG Kopieren
+              </button>
+              <button class="btn" onclick="event.stopPropagation(); downloadSvgFile('${logo.id}')" title="Als SVG Datei speichern">
+                ↓
+              </button>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function filterCategory(cat, btn) {
+      currentFilter = cat;
+      document.querySelectorAll('.filter-bar .btn').forEach(b => b.classList.remove('btn-active'));
+      btn.classList.add('btn-active');
+      renderCards();
+    }
+
+    function updateSimulation() {
+      document.getElementById('header-brand-mark').innerHTML = selectedVariant.svg;
+      document.getElementById('hero-after-mark').innerHTML = selectedVariant.svg;
+      document.getElementById('hero-after-title').innerText = selectedVariant.title;
+      document.getElementById('sim-appbar-mark').innerHTML = selectedVariant.svg;
+      document.getElementById('sim-scale-16-dark').innerHTML = selectedVariant.svg;
+      document.getElementById('sim-scale-16-light').innerHTML = selectedVariant.svg;
+      document.getElementById('sim-scale-24-dark').innerHTML = selectedVariant.svg;
+      document.getElementById('sim-scale-24-light').innerHTML = selectedVariant.svg;
+      document.getElementById('sim-scale-32').innerHTML = selectedVariant.svg;
+      document.getElementById('sim-scale-48').innerHTML = selectedVariant.svg;
+      document.getElementById('sim-scale-64').innerHTML = selectedVariant.svg;
+      document.getElementById('sim-scale-128').innerHTML = selectedVariant.svg;
+      document.getElementById('test-title').innerText = selectedVariant.title;
+    }
+
+    function selectLogo(id) {
+      selectedVariant = LOGOS.find(l => l.id === id);
+      document.querySelectorAll('.logo-card').forEach(c => c.classList.remove('selected'));
+      const activeCard = document.getElementById('card-' + id);
+      if (activeCard) activeCard.classList.add('selected');
+      updateSimulation();
+    }
+
+    function copySvg(id) {
+      const item = LOGOS.find(l => l.id === id);
+      navigator.clipboard.writeText(item.svg).then(() => {
+        showToast('SVG-Code für ' + item.title + ' kopiert!');
+      });
+    }
+
+    function downloadSvgFile(id) {
+      const item = LOGOS.find(l => l.id === id);
+      const blob = new Blob([item.svg], { type: 'image/svg+xml' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `venn-${id}.svg`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast(item.title + ' als SVG heruntergeladen!');
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      document.getElementById('toast-text').innerText = msg;
+      toast.style.display = 'flex';
+      setTimeout(() => { toast.style.display = 'none'; }, 2400);
+    }
+
+    function setGlobalTheme(theme) {
+      const root = document.documentElement;
+      const isDark = theme === 'dark';
+      root.classList.toggle('dark', isDark);
+      root.classList.toggle('light', !isDark);
+
+      // Header buttons
+      document.getElementById('btn-theme-light').classList.toggle('active', !isDark);
+      document.getElementById('btn-theme-dark').classList.toggle('active', isDark);
+      // Inline buttons
+      const inLight = document.getElementById('btn-theme-light-inline');
+      const inDark = document.getElementById('btn-theme-dark-inline');
+      if (inLight && inDark) {
+        inLight.classList.toggle('active', !isDark);
+        inDark.classList.toggle('active', isDark);
+      }
+    }
+
+    // Init
+    renderCards();
+    updateSimulation();
+  </script>
+</body>
+</html>
