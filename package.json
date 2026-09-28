@@ -12,7 +12,7 @@
     "update:highways": "node scripts/updateHighways.mjs"
   },
   "dependencies": {
-    "@googlemaps/js-api-loader": "^2.1.1",
+    "@googlemaps/js-api-loader": "^2.1.3",
     "@turf/turf": "^7.4.0",
     "leaflet": "^1.9.4",
     "leaflet.gridlayer.googlemutant": "^0.16.0",
