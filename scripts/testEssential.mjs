@@ -38,6 +38,12 @@ import {
   getTransitRegion,
 } from '../src/services/mvvMatrixService.ts';
 import { validateTransitRegion } from '../src/services/transitStorage.ts';
+import {
+  getSecureRandom,
+  generateSecureId,
+  encryptSensitiveValue,
+  decryptSensitiveValue,
+} from '../src/utils/crypto.ts';
 
 let passCount = 0;
 let totalCount = 0;
@@ -811,6 +817,51 @@ test('Benchmark: Dijkstra / A* graph traversal completes well within SLO (< 30ms
 
   console.log(`    ℹ Dijkstra/A* traversal average: ${avgMs.toFixed(2)} ms/run (SLO threshold: < 30ms)`);
   assert.ok(avgMs < 30, `Transit graph traversal average latency (${avgMs.toFixed(2)}ms) exceeded 30ms SLO`);
+});
+
+// Group 11: Cryptographic Security & Secure Storage (CWE-312 / CWE-338)
+console.log('\n11. Cryptographic Security & Secure Storage (CWE-312 / CWE-338):');
+
+test('getSecureRandom returns numbers uniformly distributed in [0, 1)', () => {
+  for (let i = 0; i < 50; i++) {
+    const val = getSecureRandom();
+    assert.ok(val >= 0 && val < 1, `getSecureRandom value ${val} must be in [0, 1)`);
+  }
+});
+
+test('generateSecureId generates non-empty distinct secure IDs', () => {
+  const ids = new Set();
+  for (let i = 0; i < 50; i++) {
+    const id = generateSecureId('test');
+    assert.ok(id.startsWith('test-'));
+    assert.ok(id.length > 10);
+    ids.add(id);
+  }
+  assert.equal(ids.size, 50, 'All generated IDs must be unique');
+});
+
+test('encryptSensitiveValue and decryptSensitiveValue round-trip correctly', () => {
+  const secrets = [
+    'AIzaSyB_SampleGoogleApiKey12345',
+    '5b3ce3597851110001cf6248abcdef0123456789',
+    'Special-Characters-!@#$%^&*()_+{}[]:;<>,.?~`|/\\',
+    'Umlaut-Tést-München-Straße-123',
+  ];
+
+  for (const secret of secrets) {
+    const encrypted = encryptSensitiveValue(secret);
+    assert.ok(encrypted.startsWith('enc:v1:'), 'Encrypted string must have version prefix');
+    assert.notEqual(encrypted, secret, 'Encrypted string must not match clear text');
+    const decrypted = decryptSensitiveValue(encrypted);
+    assert.equal(decrypted, secret, 'Decrypted value must match original secret');
+  }
+});
+
+test('decryptSensitiveValue handles legacy cleartext gracefully (backward compatibility)', () => {
+  const legacyClearText = 'AIzaSyLegacyKey998877';
+  const result = decryptSensitiveValue(legacyClearText);
+  assert.equal(result, legacyClearText, 'Legacy cleartext must be returned without modification');
+  assert.equal(decryptSensitiveValue(''), '');
 });
 
 console.log(`\n========================================`);

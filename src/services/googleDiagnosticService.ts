@@ -6,6 +6,8 @@
  * 3. Transit capability explanation
  */
 
+import { getSecureRandom } from '../utils/crypto.ts';
+
 export interface GoogleServiceStatus {
   id: 'maps_js' | 'isochrones';
   name: string;
@@ -41,7 +43,8 @@ async function checkMapsJsApi(key: string): Promise<GoogleServiceStatus> {
 
   // Otherwise test dynamic script load via JSONP/script tag
   return new Promise<GoogleServiceStatus>((resolve) => {
-    const callbackName = `__gmaps_diag_cb_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+    const randomSuffix = Math.floor(getSecureRandom() * 1000000);
+    const callbackName = `__gmaps_diag_cb_${Date.now()}_${randomSuffix}`;
     const script = document.createElement('script');
     let resolved = false;
 

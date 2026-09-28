@@ -37,6 +37,7 @@ import {
   getOrsApiKey,
   getSelectedProvider,
 } from '../services/isochroneEngine';
+import { getSecureRandom, generateSecureId } from '../utils/crypto';
 import {
   CommuteWorkerRequest,
   CommuteWorkerResponse,
@@ -518,7 +519,7 @@ export function useCommuteFinder() {
         return;
       }
 
-      const requestId = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+      const requestId = generateSecureId('req');
       activeRequestIdRef.current = requestId;
 
       // Primary: Execute all matrix searches, Turf buffering, and geometric intersections in Web Worker
@@ -609,8 +610,8 @@ export function useCommuteFinder() {
         id: `profile-${Date.now()}`,
         name: `Referenzort ${nextIndex + 1}`,
         address: 'Neuer Zielort',
-        lat: baseLat + (Math.random() - 0.5) * 0.06,
-        lng: baseLng + (Math.random() - 0.5) * 0.08,
+        lat: baseLat + (getSecureRandom() - 0.5) * 0.06,
+        lng: baseLng + (getSecureRandom() - 0.5) * 0.08,
         travelTimeMinutes: 35,
         mode: 'transit',
         color,
@@ -777,7 +778,7 @@ export function useCommuteFinder() {
 
       // If Web Worker is available, offload Dijkstra/matrix estimations, point-in-polygon & subarea extractions
       if (workerRef.current) {
-        const inspectRequestId = `${Date.now()}_inspect_${Math.random().toString(36).substring(2, 9)}`;
+        const inspectRequestId = generateSecureId('inspect');
         activeInspectionRequestIdRef.current = inspectRequestId;
         pendingInspectContextRef.current = { lat, lng, matchedApartment };
 

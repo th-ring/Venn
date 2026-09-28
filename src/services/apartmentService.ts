@@ -14,6 +14,7 @@ import type {
 import { DEFAULT_APARTMENT_FILTER } from '../types.ts';
 import { DEFAULT_APARTMENT_LISTINGS } from '../data/apartments/defaultApartments.ts';
 import { resolveAssetUrl } from '../utils/assetUrl.ts';
+import { generateSecureId } from '../utils/crypto.ts';
 
 const STORAGE_KEY_CUSTOM_APARTMENTS = 'venn_custom_apartments';
 const STORAGE_KEY_FILTER_SETTINGS = 'venn_apartment_filters';
@@ -38,7 +39,7 @@ function notifyListeners() {
 export function validateApartmentListing(raw: any): ApartmentListing | null {
   if (!raw || typeof raw !== 'object') return null;
 
-  const id = typeof raw.id === 'string' && raw.id.trim() ? raw.id.trim() : `apt-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+  const id = typeof raw.id === 'string' && raw.id.trim() ? raw.id.trim() : generateSecureId('apt');
   const title = typeof raw.title === 'string' ? raw.title.trim() : '';
   if (!title) return null;
 

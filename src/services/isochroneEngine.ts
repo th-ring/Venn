@@ -13,6 +13,7 @@ import {
 } from '../types';
 import { generateMvvTransitIsochrone, calculateReachableStations, findShortestTransitTrip, getTransitRegion } from './mvvMatrixService';
 import { fillPolygonHoles } from './geometry';
+import { encryptSensitiveValue, decryptSensitiveValue } from '../utils/crypto';
 
 interface IsochroneCacheKey {
   lat: number;
@@ -185,7 +186,7 @@ export function setRailwayOverlayEnabled(enabled: boolean): void {
 export function getGoogleMapsApiKey(): string {
   if (typeof localStorage === 'undefined') return '';
   const stored = localStorage.getItem('google_maps_api_key');
-  if (stored) return stored;
+  if (stored) return decryptSensitiveValue(stored);
   // In development mode only, allow .env fallback for local debugging without leaking into production builds
   if ((import.meta as any).env?.DEV) {
     return ((import.meta as any).env?.VITE_GOOGLE_MAPS_API_KEY as string) || '';
@@ -195,8 +196,9 @@ export function getGoogleMapsApiKey(): string {
 
 export function setGoogleMapsApiKey(key: string): void {
   if (typeof localStorage === 'undefined') return;
-  if (key) {
-    localStorage.setItem('google_maps_api_key', key.trim());
+  const trimmed = key ? key.trim() : '';
+  if (trimmed) {
+    localStorage.setItem('google_maps_api_key', encryptSensitiveValue(trimmed));
   } else {
     localStorage.removeItem('google_maps_api_key');
   }
@@ -208,7 +210,7 @@ export function setGoogleMapsApiKey(key: string): void {
 export function getOrsApiKey(): string {
   if (typeof localStorage === 'undefined') return '';
   const stored = localStorage.getItem('ors_api_key');
-  if (stored) return stored;
+  if (stored) return decryptSensitiveValue(stored);
   // In development mode only, allow .env fallback for local debugging without leaking into production builds
   if ((import.meta as any).env?.DEV) {
     return ((import.meta as any).env?.VITE_ORS_API_KEY as string) || '';
@@ -218,8 +220,9 @@ export function getOrsApiKey(): string {
 
 export function setOrsApiKey(key: string): void {
   if (typeof localStorage === 'undefined') return;
-  if (key) {
-    localStorage.setItem('ors_api_key', key.trim());
+  const trimmed = key ? key.trim() : '';
+  if (trimmed) {
+    localStorage.setItem('ors_api_key', encryptSensitiveValue(trimmed));
   } else {
     localStorage.removeItem('ors_api_key');
   }
@@ -278,8 +281,8 @@ async function fetchGoogleIsochrone(
 
   const payload = {
     location: {
-      latitude: profile.lat,
-      longitude: profile.lng,
+      latitude: Number(profile.lat),
+      longitude: Number(profile.lng),
     },
     travelDuration: `${durationSeconds}s`,
     travelMode: googleMode,
