@@ -7,8 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-09-28
+
 ### Added
-- **Kontextreicher Agenten-Prompt für die Browser-Suche**: Der erzeugte Prompt für `/browser` und Antigravity/Codex enthält nun die vollständigen Geodaten (Zentrum, Radius, exakte BBOX `[minLng, minLat, maxLng, maxLat]`), aktive Venn-Suchfilter (Warmmiete, Zimmer, Fläche) sowie das exakte JSON-Zielformat von `public/data/apartments.json` inkl. strenger Geo-Validierungsregeln.
+- **Kontextreicher Agenten-Prompt für die Wohnungs-Suche**: Der erzeugte Prompt für `/browser` und Antigravity/Codex enthält nun die vollständigen Geodaten (Zentrum, Radius, exakte BBOX `[minLng, minLat, maxLng, maxLat]`), aktive Venn-Suchfilter (Warmmiete, Zimmer, Fläche) sowie das exakte JSON-Zielformat von `public/data/apartments.json` inkl. strenger Geo-Validierungsregeln.
+- **Mobile Touch-Gesten im Onboarding**: Touch-Swipe-Unterstützung (Wischen nach links/rechts) für die intuitive Navigation durch den Walkthrough auf Smartphones.
+
+### Changed
+- **Adaptive Walkthrough-Positionierung auf Mobilgeräten**: Die Walkthrough-Karte platziert sich auf Smartphones dynamisch oberhalb oder unterhalb des fokussierten Elements, um Überdeckungen von Formularfeldern oder Kontrollen vollständig zu vermeiden.
+- **Karten-zentrierte Schritte auf Smartphones**: Schritte zur Schnittmenge und zu Wohnungsangeboten fokussieren auf Mobilgeräten nun direkt die sichtbaren Karten-Toolbar-Elemente und schließen die Seitenleiste automatisch.
+
+### Fixed
+- **Mobile Target-Clamping & Ränder**: Behebt fehlerhafte Spotlight-Koordinaten bei geschlossener Seitenleiste sowie ungewollte Bildschirmrand-Markierungen auf Vollbild-Stufen.
 
 ## [1.4.4] - 2026-09-27
 
