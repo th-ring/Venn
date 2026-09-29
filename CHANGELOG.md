@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.8.0] - 2026-09-29
+
+### Added
+- **Quick-Access-Schnellzugriff für alle Ebenen**: Die schwebende Randleiste auf der Karte bildet nun alle 9 Ebenen des Ebenenbrowsers (Prüfpunkt, Referenzorte, Wohnungsangebote, ÖPNV/Autobahn-Knoten, Treffbereich, Prioritäts-Heatmap, Einzel-Isochronen, Mietspiegel und Hintergrundkarte) inklusive Z-Index-Reihenfolge und Aktivitätsstatus ab.
+- **Zentraler Quick-Access Toggle im Ebenenbrowser**: Neuer Schalter im Kopfbereich des Ebenenbrowsers zum Ein- und Ausblenden der Schnellzugriffs-Icons auf der Karte mit automatischer Speicherung im `localStorage`.
+
 ## [1.7.0] - 2026-09-29
 
 ### Added
