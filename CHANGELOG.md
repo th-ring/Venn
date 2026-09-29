@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.7.0] - 2026-09-29
+
+### Added
+- **Icon-First Apple Segment Control**: Replaced verbose button walls with pure icon segments (`🚆 🚗 🚲 🚶`) for commute transport modes with full accessibility tooltips and ARIA support.
+- **Integrated Travel Time Selector**: Added direct minute presets dropdown (`15m`, `20m`, `30m`, `45m`, `60m`, `75m`, `90m`) alongside the fluid slider in each reference card.
+- **Airbnb-Style Scenario Capsule**: Transformed the preset scenario switch into a unified, elevated search capsule pill.
+- **Consolidated Transit Preferences**: Tucked deep ÖPNV filters and transfer settings into a progressive-disclosure popover with single-click dropdowns.
+
+### Changed
+- **Unified Status & Filter Bar**: Consolidated intersection area metrics, active profile counts, and filter chips into a single compact Apple-style status capsule.
+- **Streamlined Global Search Controls**: Replaced multi-tiered accordions with a 2-segment direction switch, combined schedule time dropdown, and priority heatmap mode selector.
+
+### Performance
+- **Reduced Bundle & DOM Overhead**: Removed 308 lines of redundant markup and labels, decreasing initial JS bundle weight by over 11 kB and shrinking card height by 58%.
+
 ## [1.6.1] - 2026-09-28
 
 ### Fixed
