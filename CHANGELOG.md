@@ -7,7 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [1.8.0] - 2026-09-29
+## [1.8.1] - 2026-09-29
+
+### Fixed
+- **Multi-Label Pareto Routing**: Ersetzt die bisherige Single-Label-Suche durch einen Multi-Label Pareto Dijkstra; verhindert das vorzeitige Pruning alternativer Linienankünfte und garantiert 100 % Erreichbarkeit optimaler Stationen.
+- **S-Bahn-Stammstreckenkorridor**: Durchbindung der Linien S1–S8 ohne Pseudo-Umstiege; eliminiert den 10,5-Minuten-Phantomumstieg für Pendler aus den Außenästen.
+- **Konsistenz zwischen Isochrone und Einzelroute**: Fahrtrichtungsabhängige Zuordnung der Einstiegstakte und Beseitigung aller künstlichen Begrenzungen (Capping) im Inspektionspanel.
+- **Sentinel-Kollision bei Regionalzügen**: Behebung eines Fehlers in der Wartezeitberechnung, der Regionalzügen 4 statt der korrekten 15 Minuten Wartezeit zuordnete.
+- **Machbarkeitsprüfung bei Umsteigewartezeiten**: Die maximale Umsteigewartezeit fungiert nun als echter Ausschlussfilter statt als Rabatt-Deckel auf seltene Linien.
+- **Monotone Zugangszeiten**: Haltestellenzugang und ÖPNV-Fallback erfolgen streng physikalisch und schließen Sprünge auf Kurzdistanzen aus.
+- **ÖPNV-Fallback-Kennzeichnung**: Sichtbares Warn-Badge im Inspektionspanel, wenn Koordinaten außerhalb des fußläufigen Einzugsbereichs liegen.
+
+### Changed
+- **Taktprofil-Transparenz**: Das Zeitsteuerungs-Widget weist das aktive Soll-Taktprofil (HVZ, NVZ, SVZ, Nachttakt) transparent aus.
 
 ### Added
 - **Quick-Access-Schnellzugriff für alle Ebenen**: Die schwebende Randleiste auf der Karte bildet nun alle 9 Ebenen des Ebenenbrowsers (Prüfpunkt, Referenzorte, Wohnungsangebote, ÖPNV/Autobahn-Knoten, Treffbereich, Prioritäts-Heatmap, Einzel-Isochronen, Mietspiegel und Hintergrundkarte) inklusive Z-Index-Reihenfolge und Aktivitätsstatus ab.
