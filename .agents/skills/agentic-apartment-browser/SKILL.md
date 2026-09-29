@@ -4,7 +4,8 @@ description: >-
   Performs an agentic apartment search via the integrated browser (Antigravity, Codex, Cloud Code)
   to navigate commercial real estate portals (ImmoScout24, Immowelt, WG-Gesucht, Kleinanzeigen)
   when raw HTTP scrapers are blocked by WAF/bot protection. Extracts live listings strictly within the Venn
-  commute intersection area and writes them directly to public/data/apartments.json.
+  commute intersection area, enforces strict real ID extraction, filters swap offers, performs pre-flight
+  availability checks, and writes valid listings directly to public/data/apartments.json.
 ---
 
 # Agentic Apartment Browser Skill for Venn
@@ -24,6 +25,50 @@ Instead of raw HTTP requests, the agent operates directly through an **integrate
    - **Center Coordinates (`lat, lng`) & Radius (`km`)**
    - **Active Venn Search Filters (Max rent, min rooms, min sqm)**
    - **Target File Path (`public/data/apartments.json`) & Strict Schema**
+
+---
+
+## Core Extraction & Verification Rules
+
+Damit in `public/data/apartments.json` ausschließlich valide, direkt aufrufbare Angebote verbleiben, gelten zwingend folgende drei Kernregeln:
+
+### 1. Strikte ID- und URL-Extraktion (Keine künstlichen IDs)
+- Die echte Exposé-ID muss **direkt** aus dem DOM extrahiert werden:
+  - **Primär**: Aus dem Attribut `data-obid` des Listen-Containers (`article.result-list-entry`):
+    ```javascript
+    const obid = article.getAttribute('data-obid');
+    ```
+  - **Sekundär**: Per Regex `r"/expose/(\d+)"` aus dem eigentlichen Hyperlink (`a.result-list-entry__brand-title-container` bzw. `a[href*="/expose/"]`):
+    ```javascript
+    const href = article.querySelector('a.result-list-entry__brand-title-container')?.getAttribute('href') || '';
+    const match = href.match(/\/expose\/(\d+)/);
+    const exposeId = obid || (match ? match[1] : null);
+    ```
+- **Streng verboten**: Niemals IDs künstlich zusammensetzen (z. B. keine Zufallsfolgen wie `apt-mujl0weo-01` oder spekulative Suffixe). Kann keine valide numerische Exposé-ID ermittelt werden, wird der Eintrag verworfen.
+- Die eindeutige ID wird im Format `${sourcePrefix}-${exposeId}` (z. B. `is24-152849201`) und die URL als kanonischer Direktlink gespeichert:
+  `https://www.immobilienscout24.de/expose/${exposeId}`
+
+### 2. Ausschluss von Tauschangeboten (Im Parser verwerfen)
+- Tauschangebote verlangen eine bestehende Wohnung im Gegenzug und sind für reguläre Mietwohnungssuchen ungeeignet.
+- Der Parser prüft Titel und Beschreibung auf einschlägige Signalwörter:
+  - **Signalwörter**: `Tauschwohnung`, `Wohnungstausch`, `nur zum Tausch`, `Tauschangebot`
+  - **Regex**: `/(?:tauschwohnung|wohnungstausch|nur\s+zum\s+tausch|tauschangebot)/i`
+- Wird ein Signalwort in `title` oder `description` gefunden, wird das Angebot **sofort im Parser verworfen** und nicht in die Kandidatenliste aufgenommen.
+
+### 3. Pre-Flight-Verfügbarkeitsprüfung (Vor dem Schreiben in JSON)
+Vor dem finalen Schreiben eines Datensatzes in `public/data/apartments.json` muss das Skript bzw. der Browser-Agent jedes Angebot auf aktive Verfügbarkeit prüfen:
+1. **HTTP-Statuscode**: Der Aufruf des Exposés (`url`) muss HTTP **200** zurückgeben (kein 404, kein 410, keine Umleitung auf Fehlerseiten).
+2. **Keine Deaktivierungs-Banner / Offline-Meldungen**:
+   - Die Zielseite darf keine Deaktivierungs-Selektoren enthalten, insbesondere:
+     - `.is24-deactivated-banner`
+     - `.is24-banner-deactivated`
+     - `[data-qa="deactivated-banner"]`
+   - Die Seite darf keine Signaltexte enthalten wie:
+     - `"Angebot wurde deaktiviert"`
+     - `"vorübergehend offline"`
+     - `"Das Inserat ist leider nicht mehr online"`
+     - `"Dieses Angebot ist leider nicht mehr verfügbar"`
+3. Ergibt der Pre-Flight-Check einen Status $\ne 200$ oder wird ein Deaktivierungs-Hinweis detektiert, wird das Inserat aussortiert.
 
 ---
 
@@ -47,6 +92,9 @@ Every prompt produced by Venn includes full context:
 - Suchkriterien aus Venn:
   - Maximale Warmmiete: bis zu 1800 €
   - Mindestzimmeranzahl: ab 2 Zimmer
+- STRIKTE ID- UND URL-EXTRAKTION: data-obid oder /expose/(\d+)
+- AUSSCHLUSS VON TAUSCHANGEBOTEN: Keine Tauschwohnungen
+- PRE-FLIGHT-PRÜFUNG: HTTP 200 und keine Deaktivierungs-Banner
 - WICHTIGE GEO-FILTERUNG: Akzeptiere NUR Inserate innerhalb der Bounding Box bzw. des Radius!
 
 === 3. ZIELDATEI & ZIELDATENFORMAT ===
@@ -59,45 +107,60 @@ Zieldatei: public/data/apartments.json
 3. If search filters on the portal allow adjusting price or room count to match the criteria in Section 2, apply them.
 4. Wait for the listing result elements to render in the DOM.
 
-### 3. Extract & Geo-Filter Candidates
-For each listing visible on the page:
-1. Extract coordinates (`lat`, `lng`):
-   - From map pin attributes, inline JSON state (`application/ld+json`, `window.__INITIAL_STATE__`), or street/district center.
-2. **Strict Geo-Filtering (Crucial Step)**:
-   - Verify that:
-     $$\text{minLng} \le \text{lng} \le \text{maxLng} \quad \text{and} \quad \text{minLat} \le \text{lat} \le \text{maxLat}$$
-     or distance to center $\le \text{radiusKm}$.
-   - **Discard listings from other parts of the city** that appear as sponsored or broader portal recommendations.
-3. Extract listing data points:
-   - **`id`**: Unique string (e.g. `'is24-152849201'`, `'iw-2948194'`, `'ka-91823719'`).
-   - **`title`**: Descriptive headline.
-   - **`address`**: Street and house number (or `"Adresse auf Anfrage"`).
-   - **`district`**: City district / neighborhood.
-   - **`city`**: City name (e.g. `"München"`).
-   - **`lat`, `lng`**: Numbers (floats).
-   - **`priceCold`**: Positive number in EUR.
-   - **`priceWarm`**: Warm rent in EUR (optional, number).
-   - **`sizeSqm`**: Living area in m² (positive number).
-   - **`rooms`**: Number of rooms (positive number, e.g. `2` or `2.5`).
-   - **`features`**: Array of string tags (e.g. `['Balkon', 'Einbauküche']`).
-   - **`thumbnailUrl`**: Image URL (HTTP/HTTPS).
-   - **`url`**: Direct link to exposé.
-   - **`source`**: `'immoscout24' | 'immowelt' | 'wg-gesucht' | 'kleinanzeigen'`.
-   - **`scrapedAt`**: Current ISO-8601 timestamp.
+### 3. Extract & Filter Candidates (Console Snippet)
+Execute or evaluate the extraction script in the browser session:
 
-### 4. Merge into `public/data/apartments.json`
-Read existing listings from [public/data/apartments.json](file:///c:/Users/haeri/OneDrive/Coding/Coding/Venn/public/data/apartments.json) (if present), deduplicate by `id` or `url`, append the new listings, and write the file in the exact envelope format:
+```javascript
+// Browser-Konsole / Evaluate Snippet
+const articles = Array.from(document.querySelectorAll('article.result-list-entry'));
+const candidates = [];
+
+for (const art of articles) {
+  // 1. Strikte ID- & URL-Extraktion
+  const obid = art.getAttribute('data-obid');
+  const titleLink = art.querySelector('a.result-list-entry__brand-title-container, a[href*="/expose/"]');
+  const href = titleLink?.getAttribute('href') || '';
+  const match = href.match(/\/expose\/(\d+)/);
+  const exposeId = obid || (match ? match[1] : null);
+  if (!exposeId) continue; // Künstliche IDs strikt vermeiden!
+
+  // 2. Tauschangebot-Ausschluss
+  const title = (art.querySelector('.result-list-entry__brand-title, .result-list-entry__title')?.textContent || '').trim();
+  const desc = (art.querySelector('.result-list-entry__description, .result-list-entry__data')?.textContent || '').trim();
+  if (/(?:tauschwohnung|wohnungstausch|nur\s+zum\s+tausch|tauschangebot)/i.test(`${title} ${desc}`)) {
+    console.log(`[Filter] Tauschangebot übersprungen: ${title}`);
+    continue;
+  }
+
+  // 3. Attribute extrahieren
+  const fullUrl = `https://www.immobilienscout24.de/expose/${exposeId}`;
+  // ... (Geodaten, Miete, Zimmer, Fläche extrahieren)
+}
+```
+
+### 4. Run Pre-Flight Availability Check
+Before writing entries to `public/data/apartments.json`, execute pre-flight checks:
+```bash
+node .agents/skills/agentic-apartment-browser/scripts/verify_apartments.mjs public/data/apartments.json
+```
+The script:
+1. Verifies HTTP status 200 for every listing.
+2. Checks HTML bodies for `.is24-deactivated-banner` or text `"Angebot wurde deaktiviert"`, `"vorübergehend offline"`.
+3. Purges any swap listings or entries with invalid/artificial IDs.
+
+### 5. Merge into `public/data/apartments.json`
+Read existing listings from [public/data/apartments.json](file:///c:/Users/haeri/OneDrive/Coding/Coding/Venn/public/data/apartments.json), deduplicate by real `id` or `url`, append verified listings, and save the envelope:
 
 ```json
 {
   "version": "1.1.0",
-  "lastUpdated": "2026-09-27T19:00:00.000Z",
+  "lastUpdated": "2026-09-29T21:50:00.000Z",
   "source": "Agentic Browser Extraction (ImmoScout24)",
   "city": "München",
   "bbox": [11.535, 48.14, 11.595, 48.175],
   "status": "ready",
-  "message": "Erfolgreich 12 Inserate im Treffbereich extrahiert.",
-  "count": 12,
+  "message": "Erfolgreich 8 verifizierte Inserate im Treffbereich extrahiert.",
+  "count": 8,
   "listings": [
     {
       "id": "is24-152849201",
@@ -116,13 +179,13 @@ Read existing listings from [public/data/apartments.json](file:///c:/Users/haeri
       "thumbnailUrl": "https://...",
       "url": "https://www.immobilienscout24.de/expose/152849201",
       "source": "immoscout24",
-      "scrapedAt": "2026-09-27T19:00:00.000Z"
+      "scrapedAt": "2026-09-29T21:50:00.000Z"
     }
   ]
 }
 ```
 
-### 5. Validate & Venn Refresh
+### 6. Validate & Venn Refresh
 1. Ensure all listings pass Venn's `validateApartmentListing` requirements (valid positive coordinates, price, rooms, size).
 2. Save the formatted JSON to `public/data/apartments.json`.
 3. Venn immediately integrates the listings into its commute computation, isochrone intersection filtering, and fairness scoring.

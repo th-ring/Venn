@@ -33,6 +33,41 @@ function notifyListeners() {
 }
 
 /**
+ * Signal words for swap offers (Tauschangebote / Wohnungstausch).
+ * Swap offers require an existing exchange apartment and cannot be rented directly.
+ */
+export const SWAP_OFFER_REGEX = /(?:tauschwohnung|wohnungstausch|nur\s+zum\s+tausch|tauschangebot)/i;
+
+/**
+ * Checks whether an apartment title or description signals a swap-only offer.
+ */
+export function isSwapOffer(title?: string, description?: string): boolean {
+  if (typeof title === 'string' && SWAP_OFFER_REGEX.test(title)) return true;
+  if (typeof description === 'string' && SWAP_OFFER_REGEX.test(description)) return true;
+  return false;
+}
+
+/**
+ * Extracts a portal expose ID directly from a DOM attribute (data-obid)
+ * or via regex from the expose URL (/expose/(\d+)), strictly avoiding artificial IDs.
+ */
+export function extractPortalExposeId(options: {
+  dataObid?: string | null;
+  href?: string | null;
+}): string | null {
+  if (options.dataObid && /^\d+$/.test(options.dataObid.trim())) {
+    return options.dataObid.trim();
+  }
+  if (options.href) {
+    const match = options.href.match(/\/expose\/(\d+)/i);
+    if (match && match[1]) {
+      return match[1];
+    }
+  }
+  return null;
+}
+
+/**
  * Validates a single apartment listing object against the required schema.
  * Returns the cleaned/sanitized ApartmentListing or null if invalid.
  */
@@ -42,6 +77,11 @@ export function validateApartmentListing(raw: any): ApartmentListing | null {
   const id = typeof raw.id === 'string' && raw.id.trim() ? raw.id.trim() : generateSecureId('apt');
   const title = typeof raw.title === 'string' ? raw.title.trim() : '';
   if (!title) return null;
+
+  const description = typeof raw.description === 'string' ? raw.description.trim() : undefined;
+  if (isSwapOffer(title, description)) {
+    return null;
+  }
 
   const lat = typeof raw.lat === 'number' ? raw.lat : parseFloat(raw.lat);
   const lng = typeof raw.lng === 'number' ? raw.lng : parseFloat(raw.lng);
@@ -86,7 +126,6 @@ export function validateApartmentListing(raw: any): ApartmentListing | null {
 
   const url = typeof raw.url === 'string' && raw.url.trim() ? raw.url.trim() : undefined;
   const source: HousingSource = typeof raw.source === 'string' && raw.source.trim() ? raw.source.trim() : 'custom';
-  const description = typeof raw.description === 'string' ? raw.description.trim() : undefined;
   const contactName = typeof raw.contactName === 'string' ? raw.contactName.trim() : undefined;
   const availableFrom = typeof raw.availableFrom === 'string' ? raw.availableFrom.trim() : undefined;
   const constructionYear = typeof raw.constructionYear === 'number' ? raw.constructionYear : undefined;
@@ -886,6 +925,12 @@ export function buildAgenticBrowserSearchPrompt(options: GenerateAgenticPromptOp
 === 2. FILTER- & EXTRAKTIONSKRITERIEN ===
 - Maximalanzahl: Bis zu ${maxListings} Inserate
 - Mietart: Wohnung zur Miete (Wohnungen / Apartments)${filterBlock}
+- STRIKTE ID- UND URL-EXTRAKTION (KEINE KÜNSTLICHEN IDS!):
+  Die Exposé-ID muss direkt aus dem Attribut data-obid des Listen-Containers (article.result-list-entry) oder per Regex r"/expose/(\\d+)" aus dem eigentlichen Hyperlink (a.result-list-entry__brand-title-container) extrahiert werden, anstatt IDs künstlich zusammenzusetzen.
+- AUSSCHLUSS VON TAUSCHANGEBOTEN:
+  Titel und Beschreibungen mit Signalwörtern wie Tauschwohnung, Wohnungstausch oder nur zum Tausch direkt im Parser verwerfen!
+- PRE-FLIGHT-VERFÜGBARKEITSPRÜFUNG:
+  Vor dem Schreiben eines Datensatzes muss geprüft werden, ob der HTTP-Statuscode des Exposés 200 ist und die Seite keine Deaktivierungs-Banner (z. B. .is24-deactivated-banner oder Strings wie „Angebot wurde deaktiviert“ / „vorübergehend offline“) enthält.
 - WICHTIGE GEO-FILTERUNG: Akzeptiere NUR Inserate, deren Koordinaten (lat, lng) tatsächlich innerhalb der Bounding Box [${minLng}, ${minLat}, ${maxLng}, ${maxLat}] bzw. im Umkreis von ${safeRadius} km um das Zentrum liegen. Verwerfe Angebote außerhalb dieses Bereichs!
 
 === 3. ZIELDATEI & ZIELDATENFORMAT ===
@@ -893,9 +938,11 @@ Zieldatei: public/data/apartments.json
 
 Vorgehen:
 1. Lies bestehende Inserate aus public/data/apartments.json (falls vorhanden).
-2. Dedupliziere Einträge anhand von 'id' oder 'url'.
-3. Hänge die neuen Inserate an und aktualisiere Metadaten (count, lastUpdated).
-4. Speichere das Gesamtergebnis im exakten JSON-Schema:
+2. Tauschangebote im Parser verwerfen (Signalwörter Tauschwohnung, Wohnungstausch, nur zum Tausch).
+3. Pre-Flight-Prüfung ausführen (nur Angebote mit HTTP-Status 200 und ohne Deaktivierungs-Banner übernehmen).
+4. Dedupliziere Einträge anhand von 'id' oder 'url'.
+5. Hänge die neuen verifizierten Inserate an und aktualisiere Metadaten (count, lastUpdated).
+6. Speichere das Gesamtergebnis im exakten JSON-Schema:
 
 {
   "version": "1.1.0",

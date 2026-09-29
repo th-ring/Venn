@@ -14,6 +14,12 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import {
+  isSwapOffer,
+  extractExposeId,
+  checkExposeAvailability,
+  verifyAndFilterDataset,
+} from '../.agents/skills/agentic-apartment-browser/scripts/verify_apartments.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -31,6 +37,7 @@ function parseArgs() {
     output: path.resolve(__dirname, '../public/data/apartments.json'),
     portal: 'all',
     syntheticOnly: false,
+    verifyOnly: false,
   };
 
   for (let i = 0; i < args.length; i++) {
@@ -52,6 +59,8 @@ function parseArgs() {
       options.portal = args[++i];
     } else if (arg === '--synthetic') {
       options.syntheticOnly = true;
+    } else if (arg === '--verify') {
+      options.verifyOnly = true;
     } else if (arg === '--help' || arg === '-h') {
       console.log(`
 Venn Apartment Scraper & Ingestion Tool
@@ -63,6 +72,7 @@ Options:
   --limit <number>                     Max listings to fetch/generate (default: 15)
   --output <path>                      Target JSON path (default: public/data/apartments.json)
   --portal <name>                      Target portal: kleinanzeigen, wg-gesucht, immowelt, all
+  --verify                             Run pre-flight check & purge dead/swap listings
   --synthetic                          Generate verified market listings directly
       `);
       process.exit(0);
@@ -360,7 +370,12 @@ async function main() {
     } catch {}
   }
 
-  if (options.syntheticOnly) {
+  if (options.verifyOnly) {
+    console.log(`[Scraper] --verify Flag aktiv: Prüfe Verfügbarkeit und filtere Tauschangebote...`);
+    const { verifiedListings, rejected } = await verifyAndFilterDataset(listings);
+    console.log(`[Scraper] Valide verbleibend: ${verifiedListings.length}, Aussortiert: ${rejected.length}`);
+    listings = verifiedListings;
+  } else if (options.syntheticOnly) {
     console.log(`[Scraper] --synthetic Flag aktiv: Generiere ${options.limit} Benchmark-Musterangebote...`);
     listings = generateGeoTargetedListings(options.bbox, options.city, options.limit);
   } else {
@@ -375,6 +390,10 @@ async function main() {
         console.log(`  • ${link.name.padEnd(16)}: ${link.url}`);
       });
       console.log('\n');
+
+      // Purge invalid/fake entries from in-memory listings
+      const { verifiedListings } = await verifyAndFilterDataset(listings, { performHttpCheck: false });
+      listings = verifiedListings;
     }
   }
 

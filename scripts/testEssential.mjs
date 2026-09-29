@@ -30,6 +30,8 @@ import {
   extractIntersectionSubAreas,
   getPortalSearchLinks,
   buildAgenticBrowserSearchPrompt,
+  isSwapOffer,
+  extractPortalExposeId,
 } from '../src/services/apartmentService.ts';
 import { PriorityQueue } from '../src/services/priorityQueue.ts';
 import {
@@ -531,6 +533,84 @@ test('buildAgenticBrowserSearchPrompt handles different portal keys and sources 
   });
   assert.ok(wgPrompt.includes('wg-12345678'));
   assert.ok(wgPrompt.includes('"source": "wg-gesucht"'));
+});
+
+test('isSwapOffer identifies swap signals in title and description', () => {
+  assert.equal(isSwapOffer('Schöne 3-Zimmer Tauschwohnung in Schwabing', undefined), true);
+  assert.equal(isSwapOffer('Helle Wohnung', 'Suche Wohnungstausch gegen 2 Zimmer'), true);
+  assert.equal(isSwapOffer('Moderne Wohnung (nur zum Tausch!)', ''), true);
+  assert.equal(isSwapOffer('Attraktives Tauschangebot im Zentrum', ''), true);
+  assert.equal(isSwapOffer('Helle Altbauwohnung mit Südbalkon', 'Erstbezug nach Sanierung'), false);
+  assert.equal(isSwapOffer(undefined, undefined), false);
+});
+
+test('validateApartmentListing rejects swap offers in title or description', () => {
+  const swapListing = {
+    id: 'is24-12345678',
+    title: '3-Zimmer Tauschwohnung am Park',
+    lat: 48.15,
+    lng: 11.56,
+    priceCold: 1200,
+    sizeSqm: 65,
+    rooms: 3,
+  };
+  assert.equal(validateApartmentListing(swapListing), null);
+
+  const swapInDesc = {
+    id: 'is24-12345679',
+    title: 'Schöne Altbauwohnung',
+    description: 'Wir suchen einen Wohnungstausch nach Berlin.',
+    lat: 48.15,
+    lng: 11.56,
+    priceCold: 1200,
+    sizeSqm: 65,
+    rooms: 3,
+  };
+  assert.equal(validateApartmentListing(swapInDesc), null);
+
+  const validListing = {
+    id: 'is24-12345680',
+    title: 'Normale Mietwohnung am Park',
+    description: 'Bezugsfrei ab sofort.',
+    lat: 48.15,
+    lng: 11.56,
+    priceCold: 1200,
+    sizeSqm: 65,
+    rooms: 3,
+  };
+  assert.notEqual(validateApartmentListing(validListing), null);
+});
+
+test('extractPortalExposeId extracts valid IDs from data-obid or URL regex and rejects artificial IDs', () => {
+  assert.equal(extractPortalExposeId({ dataObid: '152849201' }), '152849201');
+  assert.equal(
+    extractPortalExposeId({ href: 'https://www.immobilienscout24.de/expose/152849201?referrer=RESULT_LIST_LISTING' }),
+    '152849201'
+  );
+  assert.equal(extractPortalExposeId({ href: '/expose/98765432' }), '98765432');
+  // Rejects artificial non-numeric IDs
+  assert.equal(extractPortalExposeId({ href: 'https://www.immobilienscout24.de/expose/apt-mujl0weo-01' }), null);
+  assert.equal(extractPortalExposeId({ dataObid: 'fake-id' }), null);
+  assert.equal(extractPortalExposeId({}), null);
+});
+
+test('buildAgenticBrowserSearchPrompt embeds strict ID extraction, swap exclusion, and preflight check', () => {
+  const prompt = buildAgenticBrowserSearchPrompt({
+    portalName: 'ImmoScout24',
+    portalUrl: 'https://www.immobilienscout24.de',
+    areaLabel: 'Bereich 1',
+    center: { lat: 48.155, lng: 11.565 },
+    bbox: [11.535, 48.14, 11.595, 48.175],
+    radiusKm: 1.5,
+  });
+
+  assert.ok(prompt.includes('STRIKTE ID- UND URL-EXTRAKTION'));
+  assert.ok(prompt.includes('data-obid'));
+  assert.ok(prompt.includes('r"/expose/(\\d+)"'));
+  assert.ok(prompt.includes('AUSSCHLUSS VON TAUSCHANGEBOTEN'));
+  assert.ok(prompt.includes('PRE-FLIGHT-VERFÜGBARKEITSPRÜFUNG'));
+  assert.ok(prompt.includes('HTTP-Statuscode des Exposés 200'));
+  assert.ok(prompt.includes('.is24-deactivated-banner'));
 });
 
 // Group 8: PriorityQueue (Min-Heap invariant, order, duplicates, empty state, churn)
