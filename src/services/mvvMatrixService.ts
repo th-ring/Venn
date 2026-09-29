@@ -24,6 +24,7 @@ import type {
   TransitConnection,
   TransitRegionMetadata,
   IsochroneOptions,
+  CommuteSchedule,
 } from '../types.ts';
 import {
   ALL_TRANSIT_SUBMODES,
@@ -351,35 +352,89 @@ export async function syncMvvDatasetFromEndpoint(): Promise<{
 }
 
 /**
- * Estimated headway (Taktzeit in minutes) based on transit type and lines.
- * Models real scheduled frequencies across German metropolitan transit networks.
+ * Context for time of day, day of week, and commute direction
  */
-export function estimateHeadwayMinutes(type: string, lines: string[] = []): number {
+export interface ScheduleContext {
+  time?: string;
+  dayOfWeek?: 'workday' | 'weekend';
+  direction?: 'to_work' | 'from_work';
+}
+
+/**
+ * Estimated headway (Taktzeit in minutes) based on transit type, lines, and schedule context.
+ * Models real scheduled frequencies across German metropolitan transit networks
+ * during Peak (HVZ), Normal (NVZ), Off-peak/Sunday (SVZ), and Night.
+ */
+export function estimateHeadwayMinutes(
+  type: string,
+  lines: string[] = [],
+  schedule?: ScheduleContext | CommuteSchedule
+): number {
+  const time = schedule?.time || '08:00';
+  const isWeekend = schedule?.dayOfWeek === 'weekend';
+  const isPeak = !isWeekend && ((time >= '06:30' && time <= '09:00') || (time >= '15:30' && time <= '19:00'));
+  const isNight = time >= '00:30' && time < '05:30';
+  const isLateOrSunday = isWeekend || time >= '20:00' || isNight;
+
   switch (type) {
     case 'ubahn':
-      return 5;
+      if (isNight) return 20;
+      if (isPeak) return 5;
+      if (isLateOrSunday) return 10;
+      return 7;
     case 'sbahn': {
-      // Stammstrecke with bundled lines has 2-3 min, outer branches typically 10-20 min
       const isCoreTrunk = lines.length >= 3;
-      return isCoreTrunk ? 4 : 10;
+      if (isCoreTrunk) {
+        if (isNight) return 15;
+        if (isPeak) return 2.5;
+        if (isLateOrSunday) return 5;
+        return 3.5;
+      }
+      if (isNight) return 30;
+      if (isPeak) return 10;
+      if (isLateOrSunday) return 20;
+      return 15;
     }
     case 'tram':
+      if (isNight) return 30;
+      if (isPeak) return 10;
+      if (isLateOrSunday) return 15;
       return 10;
     case 'expressbus':
-      return 10;
+      if (isNight) return 30;
+      if (isPeak) return 10;
+      if (isLateOrSunday) return 20;
+      return 15;
     case 'bus': {
       const isExpress = lines.some((l) => l.trim().toUpperCase().startsWith('X'));
-      if (isExpress) return 10;
+      if (isExpress) {
+        if (isNight) return 30;
+        if (isPeak) return 10;
+        if (isLateOrSunday) return 20;
+        return 15;
+      }
       const isMetro = lines.some((l) => {
         const num = parseInt(l.trim(), 10);
         return !isNaN(num) && num >= 50 && num <= 68;
       });
-      return isMetro ? 10 : 15;
+      if (isMetro) {
+        if (isNight) return 30;
+        if (isPeak) return 10;
+        if (isLateOrSunday) return 20;
+        return 15;
+      }
+      if (isNight) return 40;
+      if (isPeak) return 15;
+      if (isLateOrSunday) return 20;
+      return 20;
     }
     case 'train':
+      if (isNight) return 60;
+      if (isPeak) return 20;
+      if (isLateOrSunday) return 30;
       return 30;
     default:
-      return 12;
+      return 15;
   }
 }
 
@@ -390,22 +445,21 @@ export function estimateHeadwayMinutes(type: string, lines: string[] = []): numb
 export function getInitialDepartureWaitMinutes(
   station: TransitStation,
   allowedModes: Set<TransitSubMode>,
-  enableHeadwayPenalty: boolean = DEFAULT_ROUTING_PARAMETERS.enableHeadwayPenalty
+  enableHeadwayPenalty: boolean = DEFAULT_ROUTING_PARAMETERS.enableHeadwayPenalty,
+  schedule?: ScheduleContext | CommuteSchedule
 ): number {
   if (!enableHeadwayPenalty) {
     return 1.0;
   }
   let minWait = 15;
   for (const t of station.types) {
-    if (t === 'ubahn' && allowedModes.has('ubahn')) minWait = Math.min(minWait, 2.5);
-    else if (t === 'sbahn' && allowedModes.has('sbahn')) {
-      const isTrunk = station.lines.filter((l) => l.startsWith('S')).length >= 3;
-      minWait = Math.min(minWait, isTrunk ? 2.0 : 5.0);
-    } else if (t === 'tram' && allowedModes.has('tram')) minWait = Math.min(minWait, 5.0);
-    else if (t === 'bus' && (allowedModes.has('bus') || allowedModes.has('expressbus'))) {
-      const hasExpress = station.lines.some((l) => l.trim().toUpperCase().startsWith('X'));
-      minWait = Math.min(minWait, hasExpress ? 5.0 : 7.5);
-    } else if (t === 'train' && allowedModes.has('train')) minWait = Math.min(minWait, 15.0);
+    const headway = estimateHeadwayMinutes(t, station.lines, schedule);
+    const halfHeadway = headway / 2;
+    if (t === 'ubahn' && allowedModes.has('ubahn')) minWait = Math.min(minWait, halfHeadway);
+    else if (t === 'sbahn' && allowedModes.has('sbahn')) minWait = Math.min(minWait, halfHeadway);
+    else if (t === 'tram' && allowedModes.has('tram')) minWait = Math.min(minWait, halfHeadway);
+    else if (t === 'bus' && (allowedModes.has('bus') || allowedModes.has('expressbus'))) minWait = Math.min(minWait, halfHeadway);
+    else if (t === 'train' && allowedModes.has('train')) minWait = Math.min(minWait, halfHeadway);
   }
   return minWait === 15 ? 4.0 : minWait;
 }
@@ -423,9 +477,10 @@ export function calculateTransferPenalty(
   maxTransferWaitMin: number = 5,
   minTransferBufferMin: number = DEFAULT_ROUTING_PARAMETERS.minTransferBufferMin,
   transferRiskBufferMin: number = DEFAULT_ROUTING_PARAMETERS.transferRiskBufferMin,
-  enableHeadwayPenalty: boolean = DEFAULT_ROUTING_PARAMETERS.enableHeadwayPenalty
+  enableHeadwayPenalty: boolean = DEFAULT_ROUTING_PARAMETERS.enableHeadwayPenalty,
+  schedule?: ScheduleContext | CommuteSchedule
 ): number {
-  const headway = estimateHeadwayMinutes(targetType, targetLines);
+  const headway = estimateHeadwayMinutes(targetType, targetLines, schedule);
   const averageWait = enableHeadwayPenalty ? headway / 2 : 1.0;
   const effectiveWait = Math.min(averageWait, Math.max(1.0, maxTransferWaitMin));
   const baseWalkBuffer = targetType === 'ubahn' || targetType === 'sbahn' ? minTransferBufferMin - 0.5 : minTransferBufferMin + 0.5;
@@ -445,12 +500,14 @@ export interface ReachableStation {
 }
 
 /**
- * Calculates all reachable stations within travel budget using Bounded Dijkstra search
+ * Calculates all reachable stations within travel budget using Multi-Label Pareto Dijkstra search.
+ * Ensures optimal subpaths by tracking Pareto-efficient states per incoming line at each station.
  */
 export function calculateReachableStations(
   profile: PersonProfile,
   transitModes?: TransitSubMode[],
-  options?: IsochroneOptions
+  options?: IsochroneOptions,
+  schedule?: ScheduleContext | CommuteSchedule
 ): ReachableStation[] {
   const {
     lat,
@@ -478,10 +535,8 @@ export function calculateReachableStations(
 
   const dataset = getTransitRegion();
 
-  // 1. Find entry stations accessible from workplace/destination (Last Mile in reverse)
-  // Configurable urban pedestrian parameters (default: 4.0 km/h with 1.35 detour factor)
+  // 1. Find entry stations accessible from workplace/destination anchor (lat, lng)
   const effectiveMaxWalkMin = Math.max(maxWalkFromStationMin, 1);
-
   const entryStations: { station: TransitStation; walkTimeMin: number }[] = [];
 
   for (const st of dataset.stations) {
@@ -490,23 +545,15 @@ export function calculateReachableStations(
     }
 
     const distKm = fastDistanceKm(lat, lng, st.lat, st.lng);
+    const walkTime = (distKm / walkSpeedKmPerMin) * detourFactor;
 
-    if (distKm <= 0.6) {
-      const walkTime = Math.max(1.0, (distKm / walkSpeedKmPerMin) * detourFactor);
-      if (walkTime <= effectiveMaxWalkMin && walkTime < travelTimeMinutes) {
-        entryStations.push({ station: st, walkTimeMin: walkTime });
-      }
-    } else if (distKm <= 3.2) {
-      // Suburban feeder connection (local feeder bus, bike, P+R, scooter to S-Bahn/U-Bahn station)
-      const feederAccessTime = 3.0 + distKm * 2.0;
-      if (feederAccessTime <= effectiveMaxWalkMin && feederAccessTime < travelTimeMinutes) {
-        entryStations.push({ station: st, walkTimeMin: feederAccessTime });
-      }
+    if (walkTime <= effectiveMaxWalkMin && walkTime < travelTimeMinutes) {
+      entryStations.push({ station: st, walkTimeMin: walkTime });
     }
   }
 
   // Location-independence guarantee:
-  // If no station is within effectiveMaxWalkMin, pick up to 4 closest stations within total travelTimeMinutes
+  // If no station is within effectiveMaxWalkMin, pick up to 3 closest stations within total travelTimeMinutes
   if (entryStations.length === 0) {
     const sortedByDist = dataset.stations
       .filter((st) => stationHasAllowedMode(st, allowedModes))
@@ -517,7 +564,7 @@ export function calculateReachableStations(
       })
       .sort((a, b) => a.dist - b.dist);
 
-    for (let i = 0; i < Math.min(4, sortedByDist.length); i++) {
+    for (let i = 0; i < Math.min(3, sortedByDist.length); i++) {
       const candidate = sortedByDist[i];
       if (candidate.walkTime < travelTimeMinutes) {
         entryStations.push({ station: candidate.station, walkTimeMin: candidate.walkTime });
@@ -528,7 +575,7 @@ export function calculateReachableStations(
   // 2. Resolve Adjacency Graph (cached to avoid object reallocations)
   const graph = getOrCreateTransitGraph(dataset, allowedModes);
 
-  // 3. Dijkstra Search with line-overlap transfer tracking
+  // 3. Multi-Label Pareto Dijkstra Search
   interface State {
     stationId: string;
     totalTime: number;
@@ -536,11 +583,25 @@ export function calculateReachableStations(
     activeLines: string[] | null;
   }
 
-  const bestTimes = new Map<string, { time: number; transfers: number }>();
+  function getLineKey(lines: string[] | null): string {
+    if (!lines || lines.length === 0) return '*';
+    return lines.slice().sort().join(',');
+  }
+
   const pq = new PriorityQueue<State>((a, b) => a.totalTime - b.totalTime);
 
+  // stationId -> Map<lineKey, Array<{ time: number; transfers: number }>>
+  const bestByLine = new Map<string, Map<string, Array<{ time: number; transfers: number }>>>();
+  const bestStationTimes = new Map<string, { time: number; transfers: number }>();
+
+  const isFromLocation =
+    (schedule?.direction as string) === 'from_location' ||
+    schedule?.direction === 'from_work';
+
   for (const entry of entryStations) {
-    const departureWait = getInitialDepartureWaitMinutes(entry.station, allowedModes, enableHeadway);
+    const departureWait = isFromLocation
+      ? getInitialDepartureWaitMinutes(entry.station, allowedModes, enableHeadway, schedule)
+      : 0;
     const startTime = entry.walkTimeMin + departureWait;
     if (startTime <= travelTimeMinutes) {
       pq.push({
@@ -549,16 +610,62 @@ export function calculateReachableStations(
         transfers: 0,
         activeLines: null,
       });
-      bestTimes.set(entry.station.id, { time: startTime, transfers: 0 });
+      bestStationTimes.set(entry.station.id, { time: startTime, transfers: 0 });
     }
   }
 
   while (!pq.isEmpty()) {
     const curr = pq.pop()!;
 
-    const best = bestTimes.get(curr.stationId);
-    if (best && curr.totalTime > best.time && curr.transfers >= best.transfers) {
-      continue;
+    if (curr.totalTime > travelTimeMinutes) continue;
+
+    const lineKey = getLineKey(curr.activeLines);
+    let stMap = bestByLine.get(curr.stationId);
+    if (!stMap) {
+      stMap = new Map();
+      bestByLine.set(curr.stationId, stMap);
+    }
+
+    let existingList = stMap.get(lineKey);
+    if (!existingList) {
+      existingList = [];
+      stMap.set(lineKey, existingList);
+    }
+
+    // Dominance check within lineKey
+    let isDominated = false;
+    for (const prev of existingList) {
+      if (prev.time <= curr.totalTime && prev.transfers <= curr.transfers) {
+        isDominated = true;
+        break;
+      }
+    }
+
+    // Cross-line dominance check:
+    // If another line arrived early enough that transferring to this line is still faster or equal
+    if (!isDominated) {
+      for (const [otherKey, list] of stMap.entries()) {
+        if (otherKey === lineKey) continue;
+        for (const prev of list) {
+          if (prev.time + minTransferBuffer <= curr.totalTime && prev.transfers < curr.transfers) {
+            isDominated = true;
+            break;
+          }
+        }
+        if (isDominated) break;
+      }
+    }
+
+    if (isDominated) continue;
+
+    // Prune existing states strictly dominated by curr
+    const kept = existingList.filter(prev => !(curr.totalTime <= prev.time && curr.transfers <= prev.transfers));
+    kept.push({ time: curr.totalTime, transfers: curr.transfers });
+    stMap.set(lineKey, kept);
+
+    const prevBest = bestStationTimes.get(curr.stationId);
+    if (!prevBest || curr.totalTime < prevBest.time || (curr.totalTime === prevBest.time && curr.transfers < prevBest.transfers)) {
+      bestStationTimes.set(curr.stationId, { time: curr.totalTime, transfers: curr.transfers });
     }
 
     const neighbors = graph.get(curr.stationId) || [];
@@ -590,15 +697,29 @@ export function calculateReachableStations(
             maxTransferWaitMin,
             minTransferBuffer,
             transferRiskBuffer,
-            enableHeadway
+            enableHeadway,
+            schedule
           )
         : 0;
       const nextTime = curr.totalTime + edge.minutes + transferPenalty;
 
       if (nextTime <= travelTimeMinutes) {
-        const existing = bestTimes.get(edge.to);
-        if (!existing || nextTime < existing.time || nextTransfers < existing.transfers) {
-          bestTimes.set(edge.to, { time: nextTime, transfers: nextTransfers });
+        let nextStMap = bestByLine.get(edge.to);
+        const nextLineKey = getLineKey(nextActiveLines);
+        let nextDominated = false;
+        if (nextStMap) {
+          const nextList = nextStMap.get(nextLineKey);
+          if (nextList) {
+            for (const prev of nextList) {
+              if (prev.time <= nextTime && prev.transfers <= nextTransfers) {
+                nextDominated = true;
+                break;
+              }
+            }
+          }
+        }
+
+        if (!nextDominated) {
           pq.push({
             stationId: edge.to,
             totalTime: nextTime,
@@ -614,13 +735,20 @@ export function calculateReachableStations(
   const stationsMap = new Map(dataset.stations.map((s) => [s.id, s]));
   const reachable: ReachableStation[] = [];
 
-  for (const [stId, info] of bestTimes.entries()) {
+  for (const [stId, info] of bestStationTimes.entries()) {
     const station = stationsMap.get(stId);
-    if (station && info.time <= travelTimeMinutes) {
+    if (!station) continue;
+
+    const departureWait = !isFromLocation
+      ? getInitialDepartureWaitMinutes(station, allowedModes, enableHeadway, schedule)
+      : 0;
+    const totalTime = info.time + departureWait;
+
+    if (totalTime <= travelTimeMinutes) {
       reachable.push({
         station,
-        totalTimeMin: info.time,
-        remainingTimeMin: Math.max(0, travelTimeMinutes - info.time),
+        totalTimeMin: Math.round(totalTime * 10) / 10,
+        remainingTimeMin: Math.max(0, travelTimeMinutes - totalTime),
         transfersUsed: info.transfers,
       });
     }
@@ -642,10 +770,12 @@ export interface TransitTripResult {
   lastMileStationName: string;
   lastMileWalkLimitMin?: number;
   steps: string[];
+  isFallback?: boolean;
+  fallbackReason?: string;
 }
 
 /**
- * Targeted Point-to-Point A* Search for Inspection Points.
+ * Targeted Point-to-Point Multi-Label A* Search for Inspection Points.
  * Directs the search towards the destination station with Euclidean heuristic and early-exit.
  */
 export function findShortestTransitTrip(
@@ -653,7 +783,8 @@ export function findShortestTransitTrip(
   destination: { lat: number; lng: number },
   profile: PersonProfile,
   transitModes?: TransitSubMode[],
-  options?: IsochroneOptions
+  options?: IsochroneOptions,
+  schedule?: ScheduleContext | CommuteSchedule
 ): TransitTripResult | null {
   const allowedModes = new Set<TransitSubMode>(
     transitModes && transitModes.length > 0
@@ -712,30 +843,32 @@ export function findShortestTransitTrip(
     const walkFromOrigin = (distFromOrigin / walkSpeedKmPerMin) * detourFactor;
     if (walkFromOrigin <= maxWalkToStation) {
       entryStations.push({ station: st, walkTime: walkFromOrigin });
-    } else if (distFromOrigin <= 3.5) {
-      allOriginCandidates.push({ station: st, walkTime: walkFromOrigin });
     }
+    allOriginCandidates.push({ station: st, walkTime: walkFromOrigin });
 
     const walkToDest = (distToDest / walkSpeedKmPerMin) * detourFactor;
     if (walkToDest <= maxWalkFromStation) {
       exitStations.set(st.id, { station: st, walkToDestTime: walkToDest });
-    } else if (distToDest <= 3.5) {
-      allDestCandidates.push({ station: st, walkToDestTime: walkToDest });
     }
+    allDestCandidates.push({ station: st, walkToDestTime: walkToDest });
   }
 
-  // Fallback: If no station within configured walk limit, take closest candidates so user sees the route & excess walk
+  // Fallback: If no station within configured walk limit, take closest candidates within budget
   if (entryStations.length === 0) {
     allOriginCandidates.sort((a, b) => a.walkTime - b.walkTime);
     for (const c of allOriginCandidates.slice(0, 3)) {
-      entryStations.push(c);
+      if (c.walkTime < (profile.travelTimeMinutes ?? 90)) {
+        entryStations.push(c);
+      }
     }
   }
 
   if (exitStations.size === 0) {
     allDestCandidates.sort((a, b) => a.walkToDestTime - b.walkToDestTime);
     for (const c of allDestCandidates.slice(0, 3)) {
-      exitStations.set(c.station.id, c);
+      if (c.walkToDestTime < (profile.travelTimeMinutes ?? 90)) {
+        exitStations.set(c.station.id, c);
+      }
     }
   }
 
@@ -745,9 +878,6 @@ export function findShortestTransitTrip(
 
   // Resolve Adjacency Graph (cached)
   const graph = getOrCreateTransitGraph(dataset, allowedModes);
-
-  // A* Priority Queue: f = g + h
-  const maxSpeedKmPerMin = 1.2;
 
   interface AStarState {
     stationId: string;
@@ -761,20 +891,23 @@ export function findShortestTransitTrip(
     entryWaitTime: number;
   }
 
+  function getLineKey(lines: string[] | null): string {
+    if (!lines || lines.length === 0) return '*';
+    return lines.slice().sort().join(',');
+  }
+
   const pq = new PriorityQueue<AStarState>((a, b) => a.fScore - b.fScore);
-  const bestGTime = new Map<string, number>();
+  const bestGByLine = new Map<string, Map<string, Array<{ gTime: number; transfers: number }>>>();
   const stationsMap = new Map(dataset.stations.map((s) => [s.id, s]));
 
   for (const entry of entryStations) {
-    const initialWait = getInitialDepartureWaitMinutes(entry.station, allowedModes, enableHeadway);
+    const initialWait = getInitialDepartureWaitMinutes(entry.station, allowedModes, enableHeadway, schedule);
     const gTime = entry.walkTime + initialWait;
-    const distToTargetKm = fastDistanceKm(entry.station.lat, entry.station.lng, destination.lat, destination.lng);
-    const hTime = distToTargetKm / maxSpeedKmPerMin;
 
     pq.push({
       stationId: entry.station.id,
       gTime,
-      fScore: gTime + hTime,
+      fScore: gTime,
       transfers: 0,
       activeLines: null,
       allLinesUsed: [],
@@ -782,7 +915,6 @@ export function findShortestTransitTrip(
       entryWalkTime: entry.walkTime,
       entryWaitTime: initialWait,
     });
-    bestGTime.set(entry.station.id, gTime);
   }
 
   let bestResult: TransitTripResult | null = null;
@@ -790,6 +922,10 @@ export function findShortestTransitTrip(
 
   while (!pq.isEmpty()) {
     const curr = pq.pop()!;
+
+    if (bestResult !== null && curr.fScore >= bestResult.travelTimeMinutes) {
+      break;
+    }
 
     // Early exit check: If current station is an exit station near destination
     const exitMatch = exitStations.get(curr.stationId);
@@ -823,17 +959,49 @@ export function findShortestTransitTrip(
           steps,
         };
       }
-      if (bestResult !== null && curr.fScore >= bestResult.travelTimeMinutes) {
-        break;
-      }
     }
 
-    if (curr.gTime > (bestGTime.get(curr.stationId) ?? Infinity)) {
-      continue;
-    }
     if (curr.gTime >= maxSearchBudget) {
       continue;
     }
+
+    const lineKey = getLineKey(curr.activeLines);
+    let stMap = bestGByLine.get(curr.stationId);
+    if (!stMap) {
+      stMap = new Map();
+      bestGByLine.set(curr.stationId, stMap);
+    }
+    let existingList = stMap.get(lineKey);
+    if (!existingList) {
+      existingList = [];
+      stMap.set(lineKey, existingList);
+    }
+
+    // Dominance check within lineKey
+    let isDominated = false;
+    for (const prev of existingList) {
+      if (prev.gTime <= curr.gTime && prev.transfers <= curr.transfers) {
+        isDominated = true;
+        break;
+      }
+    }
+    if (!isDominated) {
+      for (const [otherKey, list] of stMap.entries()) {
+        if (otherKey === lineKey) continue;
+        for (const prev of list) {
+          if (prev.gTime + minTransferBuffer <= curr.gTime && prev.transfers < curr.transfers) {
+            isDominated = true;
+            break;
+          }
+        }
+        if (isDominated) break;
+      }
+    }
+    if (isDominated) continue;
+
+    const kept = existingList.filter(prev => !(curr.gTime <= prev.gTime && curr.transfers <= prev.transfers));
+    kept.push({ gTime: curr.gTime, transfers: curr.transfers });
+    stMap.set(lineKey, kept);
 
     const neighbors = graph.get(curr.stationId) || [];
     for (const edge of neighbors) {
@@ -863,21 +1031,30 @@ export function findShortestTransitTrip(
             profile.maxTransferWaitMin ?? 5,
             minTransferBuffer,
             transferRiskBuffer,
-            enableHeadway
+            enableHeadway,
+            schedule
           )
         : 0;
       const nextGTime = curr.gTime + edge.minutes + transferPenalty;
 
-      const destStation = stationsMap.get(edge.to);
-      const hTime = destStation
-        ? fastDistanceKm(destStation.lat, destStation.lng, destination.lat, destination.lng) /
-          maxSpeedKmPerMin
-        : 0;
+      const nextFScore = nextGTime;
 
-      const nextFScore = nextGTime + hTime;
+      let nextStMap = bestGByLine.get(edge.to);
+      const nextLineKey = getLineKey(nextActiveLines);
+      let nextDominated = false;
+      if (nextStMap) {
+        const nextList = nextStMap.get(nextLineKey);
+        if (nextList) {
+          for (const prev of nextList) {
+            if (prev.gTime <= nextGTime && prev.transfers <= nextTransfers) {
+              nextDominated = true;
+              break;
+            }
+          }
+        }
+      }
 
-      if (nextGTime < (bestGTime.get(edge.to) ?? Infinity)) {
-        bestGTime.set(edge.to, nextGTime);
+      if (!nextDominated) {
         const updatedLines = [...curr.allLinesUsed];
         for (const l of edge.lines) {
           if (!updatedLines.includes(l)) updatedLines.push(l);
@@ -907,7 +1084,8 @@ export function findShortestTransitTrip(
 export function generateMvvTransitIsochrone(
   profile: PersonProfile,
   transitModes?: TransitSubMode[],
-  options?: IsochroneOptions
+  options?: IsochroneOptions,
+  schedule?: CommuteSchedule
 ): GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon> {
   const {
     lat,
@@ -933,22 +1111,24 @@ export function generateMvvTransitIsochrone(
   const polygonsToUnion: GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon>[] = [];
 
   // 1. Direct Walking Polygon from origin (workplace) without transit
-  const directWalkTime = Math.min(travelTimeMinutes, maxWalkFromStationMin);
-  const directWalkRadiusKm = Math.max(0.20, (directWalkTime * walkSpeedKmPerMin) / detourFactor);
+  const maxDirectWalkMin = Math.min(travelTimeMinutes, Math.max(maxWalkToStationMin, maxWalkFromStationMin) * 2);
+  const directWalkRadiusKm = Math.max(0.20, (maxDirectWalkMin * walkSpeedKmPerMin) / detourFactor);
   const originWalkCircle = turf.circle(origin, directWalkRadiusKm, {
     steps: 24,
     units: 'kilometers',
   });
   polygonsToUnion.push(originWalkCircle);
 
-  // 2. Solve Reachable Stations via Transit matrix
-  const reachableStations = calculateReachableStations(profile, transitModes, options);
+  // 2. Solve Reachable Stations via Multi-Label Transit matrix
+  const reachableStations = calculateReachableStations(profile, transitModes, options, schedule);
+
+  const effectiveMaxDispersalMin = Math.max(maxWalkToStationMin, 1);
 
   for (const item of reachableStations) {
     const stPoint = turf.point([item.station.lng, item.station.lat]);
 
-    // Walking dispersal around reached station into residential area (Wohnort ➔ Station)
-    const dispersalMinutes = Math.min(Math.max(0, item.remainingTimeMin), maxWalkToStationMin);
+    // Walking dispersal around reached station into residential area (Station ➔ Wohnort)
+    const dispersalMinutes = Math.min(Math.max(0, item.remainingTimeMin), effectiveMaxDispersalMin);
     if (dispersalMinutes <= 0.1) continue;
 
     // Strictly limit radius to what can be walked in the remaining time and walk budget
@@ -1035,6 +1215,9 @@ export function generateMvvTransitIsochrone(
     travelTimeMinutes,
     mode: 'transit',
     reachedStationsCount: reachableStations.length,
+    scheduleTime: schedule?.time || '08:00',
+    scheduleDay: schedule?.dayOfWeek || 'workday',
+    scheduleDirection: schedule?.direction || 'to_work',
   };
 
   return merged;

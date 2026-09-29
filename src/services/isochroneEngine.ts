@@ -540,7 +540,7 @@ export async function generateIsochrone(
   // 1. For Transit: Use official MVV/MVG Haltestellen- & Fahrzeitmatrix
   if (profile.mode === 'transit') {
     try {
-      const mvvPolygon = generateMvvTransitIsochrone(profile, effectiveTransitModes, opts);
+      const mvvPolygon = generateMvvTransitIsochrone(profile, effectiveTransitModes, opts, schedule);
       if (mvvPolygon && mvvPolygon.geometry) {
         mvvPolygon.properties = {
           ...mvvPolygon.properties,
@@ -927,12 +927,13 @@ export function estimateCommuteTime(
             maxWalkFromStationMin,
             transitModes,
           },
-          transitModes && transitModes.length > 0
+            transitModes && transitModes.length > 0
             ? transitModes
             : schedule.options?.transitModes && schedule.options.transitModes.length > 0
             ? schedule.options.transitModes
             : DEFAULT_TRANSIT_SUBMODES,
-          schedule.options
+          schedule.options,
+          schedule
         );
 
         if (directTrip && directTrip.routeFound) {
@@ -949,6 +950,7 @@ export function estimateCommuteTime(
             lastMileStationName: directTrip.lastMileStationName,
             lastMileWalkLimitMin: directTrip.lastMileWalkLimitMin ?? maxWalkFromStationMin,
             steps: directTrip.steps,
+            isFallback: false,
           };
           break;
         }
@@ -957,6 +959,7 @@ export function estimateCommuteTime(
       }
 
       // Walking to/from transit stop (e.g. 5-10 min)
+      // Clearly marked as unserviced distance-based approximation when no station in network
       const walkAccessTime = Math.min(maxWalkToStationMin, 7);
       const walkDestTime = Math.min(maxWalkFromStationMin, 6);
       const speedKmh = roadDistanceKm > 4 ? 44 : 24;
@@ -966,7 +969,9 @@ export function estimateCommuteTime(
       travelTimeMin = walkAccessTime + inVehicleTime + transferDelay + walkDestTime;
 
       details = {
-        summary: `ÖPNV (${Math.round(travelTimeMin)} Min)`,
+        summary: `ÖPNV-Näherung (keine Haltestelle)`,
+        isFallback: true,
+        fallbackReason: 'Keine Haltestelle im fußläufigen Einzugsbereich gefunden – Berechnung basiert auf Distanz-Näherung',
         firstMileWalkMin: walkAccessTime,
         firstMileWalkLimitMin: maxWalkToStationMin,
         inVehicleMin: Math.round(inVehicleTime),
@@ -974,8 +979,9 @@ export function estimateCommuteTime(
         lastMileWalkMin: walkDestTime,
         lastMileWalkLimitMin: maxWalkFromStationMin,
         steps: [
-          `ca. ${walkAccessTime} Min Fußweg zur Einstiegshaltestelle (max. ${maxWalkToStationMin} Min)`,
-          `ca. ${Math.round(inVehicleTime)} Min Fahrt (${transfers} ${transfers === 1 ? 'Umstieg' : 'Umstiege'})`,
+          `Hinweis: Keine Haltestelle im Fußweg-Radius gefunden (Netz-Fallback).`,
+          `ca. ${walkAccessTime} Min Fußweg zur fiktiven Einstiegshaltestelle (max. ${maxWalkToStationMin} Min)`,
+          `ca. ${Math.round(inVehicleTime)} Min Fahrt über Straßennetz (${transfers} ${transfers === 1 ? 'Umstieg' : 'Umstiege'})`,
           `ca. ${walkDestTime} Min Fußweg zum Zielort (max. ${maxWalkFromStationMin} Min)`,
         ],
       };

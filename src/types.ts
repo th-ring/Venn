@@ -362,6 +362,8 @@ export interface CommuteRouteDetails {
   lastMileStationName?: string;
   lastMileWalkLimitMin?: number;
   steps?: string[];
+  isFallback?: boolean;
+  fallbackReason?: string;
 }
 
 export interface CommuteEstimate {

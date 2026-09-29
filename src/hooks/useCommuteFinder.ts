@@ -834,32 +834,7 @@ export function useCommuteFinder() {
           p.transitModes
         );
 
-        let isWithinLimit = travelTimeMinutes <= p.travelTimeMinutes;
-
-        // If the location is geometrically inside the shared intersection or this person's isochrone,
-        // it is mathematically proven to be reachable within their budget. Reconcile any small heuristic overshoot.
-        if (isInIntersection || isInIsochrone) {
-          isWithinLimit = true;
-          if (travelTimeMinutes > p.travelTimeMinutes) {
-            travelTimeMinutes = p.travelTimeMinutes;
-          }
-          if (details) {
-            if (
-              details.firstMileWalkLimitMin !== undefined &&
-              details.firstMileWalkMin !== undefined &&
-              details.firstMileWalkMin > details.firstMileWalkLimitMin
-            ) {
-              details.firstMileWalkMin = details.firstMileWalkLimitMin;
-            }
-            if (
-              details.lastMileWalkLimitMin !== undefined &&
-              details.lastMileWalkMin !== undefined &&
-              details.lastMileWalkMin > details.lastMileWalkLimitMin
-            ) {
-              details.lastMileWalkMin = details.lastMileWalkLimitMin;
-            }
-          }
-        }
+        const isWithinLimit = travelTimeMinutes <= p.travelTimeMinutes;
 
         // Calculate area-based metrics when evaluating the shared intersection
         let minMinutes: number | undefined;
@@ -880,7 +855,7 @@ export function useCommuteFinder() {
             p.transitModes
           );
 
-          centerMinutes = Math.min(p.travelTimeMinutes, centerEst.travelTimeMinutes);
+          centerMinutes = centerEst.travelTimeMinutes;
           centerDistanceKm = centerEst.distanceKm;
 
           // Compute spread over sample coords
@@ -896,11 +871,11 @@ export function useCommuteFinder() {
               p.maxWalkFromStationMin,
               p.transitModes
             );
-            sampleTimes.push(Math.min(p.travelTimeMinutes, sampleEst.travelTimeMinutes));
+            sampleTimes.push(sampleEst.travelTimeMinutes);
           });
 
           minMinutes = Math.min(...sampleTimes);
-          maxMinutes = Math.min(p.travelTimeMinutes, Math.max(...sampleTimes));
+          maxMinutes = Math.max(...sampleTimes);
           spanPlusMinus = Math.max(1, Math.round(Math.max(centerMinutes - minMinutes, maxMinutes - centerMinutes)));
 
           // Prefer center route details if available for the area overview
@@ -927,10 +902,8 @@ export function useCommuteFinder() {
         };
       });
 
-      const withinLimitCount = isInIntersection
-        ? active.length
-        : estimates.filter((e) => e.isWithinLimit).length;
-      const allWithinLimit = isInIntersection || withinLimitCount === active.length;
+      const withinLimitCount = estimates.filter((e) => e.isWithinLimit).length;
+      const allWithinLimit = withinLimitCount === active.length;
 
       let avgCommuteMinutes: number | undefined;
       let commuteSpreadMinutes: number | undefined;

@@ -35,6 +35,42 @@ const SCHEDULE_PRESETS: Array<{
   { id: 'we_1400', dayOfWeek: 'weekend', time: '14:00', label: 'Sa/So, 14:00 Uhr' },
 ];
 
+function getHeadwayProfile(dayOfWeek?: string, time?: string): { name: string; badgeClass: string; desc: string } {
+  const t = time || '07:00';
+  const isWeekend = dayOfWeek === 'weekend';
+  const [h] = t.split(':').map(Number);
+  const isNight = h >= 1 && h < 5;
+  const isPeak = !isWeekend && ((t >= '06:30' && t <= '09:00') || (t >= '15:30' && t <= '19:00'));
+  const isLateOrSunday = isWeekend || t >= '20:00' || t < '06:00';
+
+  if (isNight) {
+    return {
+      name: 'Nachttakt',
+      badgeClass: 'bg-purple-100 text-purple-700 dark:bg-purple-950/50 dark:text-purple-300 border-purple-200 dark:border-purple-800',
+      desc: 'Nachtnetz & ausgedünnte Takte (30–60 Min)',
+    };
+  }
+  if (isPeak) {
+    return {
+      name: 'HVZ',
+      badgeClass: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800',
+      desc: 'Berufsverkehr-Takt (U-Bahn 5m, S-Bahn 2.5–10m)',
+    };
+  }
+  if (isLateOrSunday) {
+    return {
+      name: 'SVZ',
+      badgeClass: 'bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300 border-amber-200 dark:border-amber-800',
+      desc: 'Wochenende / Spätverkehr (U-Bahn 10m, S-Bahn 5–20m)',
+    };
+  }
+  return {
+    name: 'NVZ',
+    badgeClass: 'bg-blue-100 text-blue-800 dark:bg-blue-950/50 dark:text-blue-300 border-blue-200 dark:border-blue-800',
+    desc: 'Normaler Tagestakt (U-Bahn 5–7m, S-Bahn 3.5–15m)',
+  };
+}
+
 export const ScheduleControls: React.FC<ScheduleControlsProps> = ({
   schedule,
   onChangeSchedule,
@@ -45,6 +81,8 @@ export const ScheduleControls: React.FC<ScheduleControlsProps> = ({
 }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isCustomMode, setIsCustomMode] = useState(false);
+
+  const headwayProfile = getHeadwayProfile(schedule.dayOfWeek, schedule.time);
 
   const activePreset = SCHEDULE_PRESETS.find(
     (p) => p.dayOfWeek === schedule.dayOfWeek && p.time === schedule.time
@@ -80,17 +118,22 @@ export const ScheduleControls: React.FC<ScheduleControlsProps> = ({
             <Clock className="w-3.5 h-3.5" />
           </div>
           <span className="font-bold text-slate-800 dark:text-[#e8eaed] truncate">
-            Fahrplan & Richtung
+            Taktprofil & Zeitfenster
           </span>
         </div>
 
         <div className="flex items-center gap-1.5 shrink-0" onClick={(e) => e.stopPropagation()}>
           {/* Summary badge when collapsed */}
           {isCollapsed && (
-            <span className="text-[11px] font-medium bg-slate-100 dark:bg-[#25262a] text-slate-600 dark:text-[#9aa0a6] px-2 py-0.5 rounded-md truncate max-w-[170px]">
-              {schedule.direction === 'to_work' ? '➔ Ziel' : '➔ Zurück'} •{' '}
-              {schedule.dayOfWeek === 'workday' ? 'Mo–Fr' : 'Sa/So'} {schedule.time || '07:00'}
-            </span>
+            <div className="flex items-center gap-1">
+              <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${headwayProfile.badgeClass}`}>
+                {headwayProfile.name}
+              </span>
+              <span className="text-[11px] font-medium bg-slate-100 dark:bg-[#25262a] text-slate-600 dark:text-[#9aa0a6] px-2 py-0.5 rounded-md truncate max-w-[140px]">
+                {schedule.direction === 'to_work' ? '➔ Ziel' : '➔ Zurück'} •{' '}
+                {schedule.dayOfWeek === 'workday' ? 'Mo–Fr' : 'Sa/So'} {schedule.time || '07:00'}
+              </span>
+            </div>
           )}
 
           {/* Action Button: Manual Refresh */}
@@ -245,6 +288,21 @@ export const ScheduleControls: React.FC<ScheduleControlsProps> = ({
               </div>
             </div>
           )}
+
+          {/* Active Headway Profile Indicator */}
+          <div className="flex items-center justify-between gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-50 dark:bg-[#121315] border border-slate-200/60 dark:border-[#2f3336]">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border shrink-0 ${headwayProfile.badgeClass}`}>
+                {headwayProfile.name}
+              </span>
+              <span className="text-[11px] text-slate-500 dark:text-[#9aa0a6] truncate">
+                {headwayProfile.desc}
+              </span>
+            </div>
+            <span className="text-[10px] text-slate-400 dark:text-[#5f6368] shrink-0 font-medium">
+              Soll-Taktung
+            </span>
+          </div>
         </div>
       )}
     </div>

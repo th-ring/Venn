@@ -463,9 +463,24 @@ export const InspectionPanel: React.FC<InspectionPanelProps> = ({
                       </div>
                     </div>
 
+                    {/* Unserviced Fallback Warning Badge */}
+                    {est.details?.isFallback && (
+                      <div className="mx-2.5 mb-2 px-2 py-1 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 flex items-center gap-1.5 text-[11px] text-amber-800 dark:text-amber-300">
+                        <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                        <span>Näherungsberechnung (keine Haltestelle im Einzugsbereich)</span>
+                      </div>
+                    )}
+
                     {/* Step by step stages */}
                     {isExpanded && (
                       <div className="px-3 pb-3 pt-1 border-t border-slate-100 dark:border-[#3c4043] bg-slate-50/80 dark:bg-[#131314] text-xs space-y-2 animate-in fade-in duration-150">
+                        {est.details?.isFallback && est.details.fallbackReason && (
+                          <div className="p-2 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 text-amber-800 dark:text-amber-300 text-[11px] flex items-start gap-1.5">
+                            <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                            <span>{est.details.fallbackReason}</span>
+                          </div>
+                        )}
+
                         <div className="text-[11px] font-medium text-slate-600 dark:text-[#9aa0a6] flex items-center gap-1">
                           <Navigation className="w-3 h-3 text-blue-600 dark:text-[#8ab4f8]" />
                           <span>

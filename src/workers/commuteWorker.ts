@@ -335,30 +335,7 @@ async function handleInspectPoint(data: CommuteWorkerInspectionRequest) {
         p.transitModes
       );
 
-      let isWithinLimit = travelTimeMinutes <= p.travelTimeMinutes;
-
-      if (isInIntersection || isInIsochrone) {
-        isWithinLimit = true;
-        if (travelTimeMinutes > p.travelTimeMinutes) {
-          travelTimeMinutes = p.travelTimeMinutes;
-        }
-        if (details) {
-          if (
-            details.firstMileWalkLimitMin !== undefined &&
-            details.firstMileWalkMin !== undefined &&
-            details.firstMileWalkMin > details.firstMileWalkLimitMin
-          ) {
-            details.firstMileWalkMin = details.firstMileWalkLimitMin;
-          }
-          if (
-            details.lastMileWalkLimitMin !== undefined &&
-            details.lastMileWalkMin !== undefined &&
-            details.lastMileWalkMin > details.lastMileWalkLimitMin
-          ) {
-            details.lastMileWalkMin = details.lastMileWalkLimitMin;
-          }
-        }
-      }
+      const isWithinLimit = travelTimeMinutes <= p.travelTimeMinutes;
 
       let minMinutes: number | undefined;
       let maxMinutes: number | undefined;
@@ -378,7 +355,7 @@ async function handleInspectPoint(data: CommuteWorkerInspectionRequest) {
           p.transitModes
         );
 
-        centerMinutes = Math.min(p.travelTimeMinutes, centerEst.travelTimeMinutes);
+        centerMinutes = centerEst.travelTimeMinutes;
         centerDistanceKm = centerEst.distanceKm;
 
         const sampleTimes: number[] = [centerMinutes];
@@ -393,11 +370,11 @@ async function handleInspectPoint(data: CommuteWorkerInspectionRequest) {
             p.maxWalkFromStationMin,
             p.transitModes
           );
-          sampleTimes.push(Math.min(p.travelTimeMinutes, sampleEst.travelTimeMinutes));
+          sampleTimes.push(sampleEst.travelTimeMinutes);
         });
 
         minMinutes = Math.min(...sampleTimes);
-        maxMinutes = Math.min(p.travelTimeMinutes, Math.max(...sampleTimes));
+        maxMinutes = Math.max(...sampleTimes);
         spanPlusMinus = Math.max(1, Math.round(Math.max(centerMinutes - minMinutes, maxMinutes - centerMinutes)));
 
         if (centerEst.details) {
@@ -423,10 +400,8 @@ async function handleInspectPoint(data: CommuteWorkerInspectionRequest) {
       };
     });
 
-    const withinLimitCount = isInIntersection
-      ? active.length
-      : estimates.filter((e) => e.isWithinLimit).length;
-    const allWithinLimit = isInIntersection || withinLimitCount === active.length;
+    const withinLimitCount = estimates.filter((e) => e.isWithinLimit).length;
+    const allWithinLimit = withinLimitCount === active.length;
 
     let avgCommuteMinutes: number | undefined;
     let commuteSpreadMinutes: number | undefined;

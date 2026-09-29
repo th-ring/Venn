@@ -4,7 +4,7 @@
  *
  * Covers:
  * - 100% Complete U-Bahn Network (U1–U6, all 96 stations, zero omissions)
- * - All S-Bahn Lines (S1–S8, S20, Stammstrecke & all outer branches)
+ * - All S-Bahn Lines (S1–S8, S20) with through-running Stammstrecke corridors (zero phantom transfers!)
  * - Regional Trains (BRB, RE1, RE Freising)
  * - Major Tram Corridors (Tram 16, 17, 18, 19, 20, 21, 23, 25, 27)
  * - Key Expressbusses (X30, X80) & Metrobus Corridors (50, 51, 53, 54, 58/68, 62)
@@ -26,7 +26,7 @@ if (!fs.existsSync(OUTPUT_DIR)) {
 
 export function buildCompleteMunichPackage() {
   const stationsMap = new Map();
-  const connections = [];
+  const connectionsMap = new Map();
 
   function addStation(st) {
     if (!stationsMap.has(st.id)) {
@@ -49,6 +49,19 @@ export function buildCompleteMunichPackage() {
     }
   }
 
+  function addConnection(from, to, minutes, lineName, type) {
+    const key = `${from}__${to}__${type}`;
+    if (connectionsMap.has(key)) {
+      const conn = connectionsMap.get(key);
+      if (!conn.lines.includes(lineName)) {
+        conn.lines.push(lineName);
+      }
+      conn.minutes = Math.min(conn.minutes, minutes);
+    } else {
+      connectionsMap.set(key, { from, to, minutes, lines: [lineName], type });
+    }
+  }
+
   function addLineCorridor(stations, lineName, type, runtimes) {
     for (const st of stations) {
       addStation({
@@ -66,31 +79,27 @@ export function buildCompleteMunichPackage() {
       const to = stations[i + 1].id;
       const minutes = runtimes && runtimes[i] !== undefined ? runtimes[i] : 2;
 
-      connections.push({ from, to, minutes, lines: [lineName], type });
-      connections.push({ from: to, to: from, minutes, lines: [lineName], type });
+      addConnection(from, to, minutes, lineName, type);
+      addConnection(to, from, minutes, lineName, type);
     }
   }
 
-  // ========================================================
-  // 1. S-BAHN STAMMSTRECKE (Core Munich Trunk)
-  // ========================================================
-  addLineCorridor([
-    { id: 'pasing', name: 'Pasing Bf.', lat: 48.1500, lng: 11.4617 },
-    { id: 'laim_s', name: 'Laim (S-Bahn)', lat: 48.1444, lng: 11.5037 },
-    { id: 'hirschgarten', name: 'Hirschgarten', lat: 48.1436, lng: 11.5186 },
-    { id: 'donnersbergerbruecke', name: 'Donnersbergerbrücke', lat: 48.1425, lng: 11.5352 },
-    { id: 'hackerbruecke', name: 'Hackerbrücke', lat: 48.1414, lng: 11.5489 },
-    { id: 'hauptbahnhof', name: 'Hauptbahnhof', lat: 48.1402, lng: 11.5583 },
-    { id: 'karlsplatz', name: 'Karlsplatz (Stachus)', lat: 48.1392, lng: 11.5658 },
-    { id: 'marienplatz', name: 'Marienplatz', lat: 48.1371, lng: 11.5754 },
-    { id: 'isartor', name: 'Isartor', lat: 48.1342, lng: 11.5836 },
-    { id: 'rosenheimer_platz', name: 'Rosenheimer Platz', lat: 48.1287, lng: 11.5941 },
-    { id: 'ostbahnhof', name: 'Ostbahnhof', lat: 48.1283, lng: 11.6045 },
-    { id: 'leuchtenbergring', name: 'Leuchtenbergring', lat: 48.1342, lng: 11.6162 },
-  ], 'S-Bahn Stammstrecke', 'sbahn', [3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]);
+  // Common Stammstrecke station definitions
+  const ST_PASING = { id: 'pasing', name: 'Pasing Bf.', lat: 48.1500, lng: 11.4617 };
+  const ST_LAIM = { id: 'laim_s', name: 'Laim (S-Bahn)', lat: 48.1444, lng: 11.5037 };
+  const ST_HIRSCHGARTEN = { id: 'hirschgarten', name: 'Hirschgarten', lat: 48.1436, lng: 11.5186 };
+  const ST_DONNERSBERGER = { id: 'donnersbergerbruecke', name: 'Donnersbergerbrücke', lat: 48.1425, lng: 11.5352 };
+  const ST_HACKER = { id: 'hackerbruecke', name: 'Hackerbrücke', lat: 48.1414, lng: 11.5489 };
+  const ST_HBF = { id: 'hauptbahnhof', name: 'Hauptbahnhof', lat: 48.1402, lng: 11.5583 };
+  const ST_KARLSPLATZ = { id: 'karlsplatz', name: 'Karlsplatz (Stachus)', lat: 48.1392, lng: 11.5658 };
+  const ST_MARIENPLATZ = { id: 'marienplatz', name: 'Marienplatz', lat: 48.1371, lng: 11.5754 };
+  const ST_ISARTOR = { id: 'isartor', name: 'Isartor', lat: 48.1342, lng: 11.5836 };
+  const ST_ROSENHEIMER = { id: 'rosenheimer_platz', name: 'Rosenheimer Platz', lat: 48.1287, lng: 11.5941 };
+  const ST_OSTBAHNHOF = { id: 'ostbahnhof', name: 'Ostbahnhof', lat: 48.1283, lng: 11.6045 };
+  const ST_LEUCHTENBERGRING = { id: 'leuchtenbergring', name: 'Leuchtenbergring', lat: 48.1342, lng: 11.6162 };
 
   // ========================================================
-  // 2. COMPLETE MUNICH U-BAHN NETWORK (ALL 96 STATIONS)
+  // 1. COMPLETE MUNICH U-BAHN NETWORK (ALL 96 STATIONS)
   // ========================================================
 
   // U1 (Olympia-Einkaufszentrum -> Mangfallplatz)
@@ -102,7 +111,7 @@ export function buildCompleteMunichPackage() {
     { id: 'rotkreuzplatz', name: 'Rotkreuzplatz', lat: 48.1528, lng: 11.5332 },
     { id: 'maillingerstr', name: 'Maillingerstraße', lat: 48.1498, lng: 11.5458 },
     { id: 'stiglmaierplatz', name: 'Stiglmaierplatz', lat: 48.1478, lng: 11.5589 },
-    { id: 'hauptbahnhof', name: 'Hauptbahnhof', lat: 48.1402, lng: 11.5583 },
+    ST_HBF,
     { id: 'sendlinger_tor', name: 'Sendlinger Tor', lat: 48.1332, lng: 11.5671 },
     { id: 'fraunhoferstr', name: 'Fraunhoferstraße', lat: 48.1289, lng: 11.5734 },
     { id: 'kolumbusplatz', name: 'Kolumbusplatz', lat: 48.1212, lng: 11.5778 },
@@ -126,7 +135,7 @@ export function buildCompleteMunichPackage() {
     { id: 'josephsplatz', name: 'Josephsplatz', lat: 48.1556, lng: 11.5689 },
     { id: 'theresienstr', name: 'Theresienstraße', lat: 48.1512, lng: 11.5667 },
     { id: 'koenigsplatz', name: 'Königsplatz', lat: 48.1456, lng: 11.5634 },
-    { id: 'hauptbahnhof', name: 'Hauptbahnhof', lat: 48.1402, lng: 11.5583 },
+    ST_HBF,
     { id: 'sendlinger_tor', name: 'Sendlinger Tor', lat: 48.1332, lng: 11.5671 },
     { id: 'fraunhoferstr', name: 'Fraunhoferstraße', lat: 48.1289, lng: 11.5734 },
     { id: 'kolumbusplatz', name: 'Kolumbusplatz', lat: 48.1212, lng: 11.5778 },
@@ -144,7 +153,6 @@ export function buildCompleteMunichPackage() {
   ], 'U2', 'ubahn', [1, 1, 1, 1, 2, 2, 2, 2, 1, 1, 1, 2, 2, 1, 2, 2, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2]);
 
   // U3 (Moosach -> Fürstenried West)
-  // 100% complete including Moosacher St.-Martins-Platz & Oberwiesenfeld
   addLineCorridor([
     { id: 'moosach', name: 'Moosach Bf.', lat: 48.1802, lng: 11.5065 },
     { id: 'moosacher_st_martins_platz', name: 'Moosacher St.-Martins-Platz', lat: 48.1819, lng: 11.5186 },
@@ -158,7 +166,7 @@ export function buildCompleteMunichPackage() {
     { id: 'giselastr', name: 'Giselastraße', lat: 48.1557, lng: 11.5843 },
     { id: 'universitaet', name: 'Universität', lat: 48.1501, lng: 11.5815 },
     { id: 'odeonsplatz', name: 'Odeonsplatz', lat: 48.1423, lng: 11.5776 },
-    { id: 'marienplatz', name: 'Marienplatz', lat: 48.1371, lng: 11.5754 },
+    ST_MARIENPLATZ,
     { id: 'sendlinger_tor', name: 'Sendlinger Tor', lat: 48.1332, lng: 11.5671 },
     { id: 'goetheplatz', name: 'Goetheplatz', lat: 48.1292, lng: 11.5582 },
     { id: 'poccistr', name: 'Poccistraße', lat: 48.1245, lng: 11.5492 },
@@ -179,8 +187,8 @@ export function buildCompleteMunichPackage() {
     { id: 'heimeranplatz', name: 'Heimeranplatz', lat: 48.1334, lng: 11.5334 },
     { id: 'schwanthalerhoehe', name: 'Schwanthalerhöhe', lat: 48.1345, lng: 11.5412 },
     { id: 'theresienwiese', name: 'Theresienwiese', lat: 48.1367, lng: 11.5523 },
-    { id: 'hauptbahnhof', name: 'Hauptbahnhof', lat: 48.1402, lng: 11.5583 },
-    { id: 'karlsplatz', name: 'Karlsplatz (Stachus)', lat: 48.1392, lng: 11.5658 },
+    ST_HBF,
+    ST_KARLSPLATZ,
     { id: 'odeonsplatz', name: 'Odeonsplatz', lat: 48.1423, lng: 11.5776 },
     { id: 'lehel', name: 'Lehel', lat: 48.1401, lng: 11.5878 },
     { id: 'max_weber_platz', name: 'Max-Weber-Platz', lat: 48.1356, lng: 11.5989 },
@@ -198,12 +206,12 @@ export function buildCompleteMunichPackage() {
     { id: 'heimeranplatz', name: 'Heimeranplatz', lat: 48.1334, lng: 11.5334 },
     { id: 'schwanthalerhoehe', name: 'Schwanthalerhöhe', lat: 48.1345, lng: 11.5412 },
     { id: 'theresienwiese', name: 'Theresienwiese', lat: 48.1367, lng: 11.5523 },
-    { id: 'hauptbahnhof', name: 'Hauptbahnhof', lat: 48.1402, lng: 11.5583 },
-    { id: 'karlsplatz', name: 'Karlsplatz (Stachus)', lat: 48.1392, lng: 11.5658 },
+    ST_HBF,
+    ST_KARLSPLATZ,
     { id: 'odeonsplatz', name: 'Odeonsplatz', lat: 48.1423, lng: 11.5776 },
     { id: 'lehel', name: 'Lehel', lat: 48.1401, lng: 11.5878 },
     { id: 'max_weber_platz', name: 'Max-Weber-Platz', lat: 48.1356, lng: 11.5989 },
-    { id: 'ostbahnhof', name: 'Ostbahnhof', lat: 48.1283, lng: 11.6045 },
+    ST_OSTBAHNHOF,
     { id: 'innsbrucker_ring', name: 'Innsbrucker Ring', lat: 48.1212, lng: 11.6189 },
     { id: 'michaelibad', name: 'Michaelibad', lat: 48.1156, lng: 11.6321 },
     { id: 'quiddestr', name: 'Quiddestraße', lat: 48.1089, lng: 11.6421 },
@@ -228,7 +236,7 @@ export function buildCompleteMunichPackage() {
     { id: 'giselastr', name: 'Giselastraße', lat: 48.1557, lng: 11.5843 },
     { id: 'universitaet', name: 'Universität', lat: 48.1501, lng: 11.5815 },
     { id: 'odeonsplatz', name: 'Odeonsplatz', lat: 48.1423, lng: 11.5776 },
-    { id: 'marienplatz', name: 'Marienplatz', lat: 48.1371, lng: 11.5754 },
+    ST_MARIENPLATZ,
     { id: 'sendlinger_tor', name: 'Sendlinger Tor', lat: 48.1332, lng: 11.5671 },
     { id: 'goetheplatz', name: 'Goetheplatz', lat: 48.1292, lng: 11.5582 },
     { id: 'poccistr', name: 'Poccistraße', lat: 48.1245, lng: 11.5492 },
@@ -243,10 +251,10 @@ export function buildCompleteMunichPackage() {
   ], 'U6', 'ubahn', [3, 2, 4, 2, 2, 2, 1, 1, 1, 2, 1, 1, 2, 1, 2, 1, 1, 2, 1, 2, 2, 2, 1, 2, 1]);
 
   // ========================================================
-  // 3. S-BAHN EXPANSION: ALL OUTER BRANCHES
+  // 2. COMPLETE S-BAHN NETWORK WITH THROUGH-RUNNING STAMMSTRECKE
   // ========================================================
 
-  // S1 North: Freising & Flughafen -> Neufahrn -> Feldmoching -> Moosach -> Laim
+  // S1 North + Stammstrecke (Freising & Flughafen -> Laim -> Hbf -> Ostbahnhof -> Leuchtenbergring)
   addLineCorridor([
     { id: 'freising', name: 'Freising Bf.', lat: 48.3965, lng: 11.7438 },
     { id: 'pulling', name: 'Pulling', lat: 48.3712, lng: 11.7165 },
@@ -258,17 +266,27 @@ export function buildCompleteMunichPackage() {
     { id: 'feldmoching', name: 'Feldmoching Bf.', lat: 48.2144, lng: 11.5408 },
     { id: 'fasanerie', name: 'Fasanerie', lat: 48.1952, lng: 11.5298 },
     { id: 'moosach', name: 'Moosach Bf.', lat: 48.1802, lng: 11.5065 },
-    { id: 'laim_s', name: 'Laim (S-Bahn)', lat: 48.1444, lng: 11.5037 },
-  ], 'S1', 'sbahn', [4, 4, 3, 3, 2, 3, 4, 3, 3, 4]);
+    ST_LAIM,
+    ST_HIRSCHGARTEN,
+    ST_DONNERSBERGER,
+    ST_HACKER,
+    ST_HBF,
+    ST_KARLSPLATZ,
+    ST_MARIENPLATZ,
+    ST_ISARTOR,
+    ST_ROSENHEIMER,
+    ST_OSTBAHNHOF,
+    ST_LEUCHTENBERGRING,
+  ], 'S1', 'sbahn', [4, 4, 3, 3, 2, 3, 4, 3, 3, 4, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]);
 
-  // S1 Airport Branch
+  // S1 Airport Branch (joining at Neufahrn)
   addLineCorridor([
     { id: 'muc_flughafen', name: 'Flughafen München', lat: 48.3537, lng: 11.7861 },
     { id: 'flughafen_besucherpark', name: 'Flughafen Besucherpark', lat: 48.3562, lng: 11.7583 },
     { id: 'neufahrn', name: 'Neufahrn (b. Freising)', lat: 48.3182, lng: 11.6631 },
   ], 'S1', 'sbahn', [2, 7]);
 
-  // S2 West: Petershausen -> Dachau -> Allach -> Laim
+  // S2 (Petershausen -> Dachau -> Laim -> Stammstrecke -> Ostbahnhof -> Erding)
   addLineCorridor([
     { id: 'petershausen', name: 'Petershausen Bf.', lat: 48.4082, lng: 11.4721 },
     { id: 'vierkirchen', name: 'Vierkirchen-Esterhofen', lat: 48.3621, lng: 11.4589 },
@@ -279,12 +297,17 @@ export function buildCompleteMunichPackage() {
     { id: 'allach', name: 'Allach Bf.', lat: 48.1912, lng: 11.4682 },
     { id: 'untermenzing', name: 'Untermenzing', lat: 48.1765, lng: 11.4789 },
     { id: 'obermenzing', name: 'Obermenzing', lat: 48.1632, lng: 11.4889 },
-    { id: 'laim_s', name: 'Laim (S-Bahn)', lat: 48.1444, lng: 11.5037 },
-  ], 'S2', 'sbahn', [5, 4, 4, 4, 4, 3, 2, 2, 3]);
-
-  // S2 East: Leuchtenbergring -> Berg am Laim -> Riem -> Markt Schwaben -> Erding
-  addLineCorridor([
-    { id: 'leuchtenbergring', name: 'Leuchtenbergring', lat: 48.1342, lng: 11.6162 },
+    ST_LAIM,
+    ST_HIRSCHGARTEN,
+    ST_DONNERSBERGER,
+    ST_HACKER,
+    ST_HBF,
+    ST_KARLSPLATZ,
+    ST_MARIENPLATZ,
+    ST_ISARTOR,
+    ST_ROSENHEIMER,
+    ST_OSTBAHNHOF,
+    ST_LEUCHTENBERGRING,
     { id: 'berg_am_laim', name: 'Berg am Laim', lat: 48.1321, lng: 11.6321 },
     { id: 'riem', name: 'Riem Bf.', lat: 48.1442, lng: 11.6821 },
     { id: 'feldkirchen', name: 'Feldkirchen (b. München)', lat: 48.1502, lng: 11.7312 },
@@ -297,9 +320,9 @@ export function buildCompleteMunichPackage() {
     { id: 'aufhausen', name: 'Aufhausen (b. Erding)', lat: 48.2712, lng: 11.9021 },
     { id: 'altenerding', name: 'Altenerding', lat: 48.2912, lng: 11.9102 },
     { id: 'erding', name: 'Erding Bf.', lat: 48.3072, lng: 11.9082 },
-  ], 'S2', 'sbahn', [2, 4, 3, 3, 2, 3, 4, 3, 3, 3, 2, 3]);
+  ], 'S2', 'sbahn', [5, 4, 4, 4, 4, 3, 2, 2, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 4, 3, 3, 2, 3, 4, 3, 3, 3, 2, 3]);
 
-  // S3 West: Mammendorf -> Maisach -> Olching -> Lochhausen -> Pasing
+  // S3 (Mammendorf -> Pasing -> Stammstrecke -> Ostbahnhof -> Giesing -> Holzkirchen)
   addLineCorridor([
     { id: 'mammendorf', name: 'Mammendorf Bf.', lat: 48.2082, lng: 11.1621 },
     { id: 'malching', name: 'Malching', lat: 48.2102, lng: 11.1982 },
@@ -310,12 +333,17 @@ export function buildCompleteMunichPackage() {
     { id: 'groebenzell', name: 'Gröbenzell', lat: 48.1952, lng: 11.3821 },
     { id: 'lochhausen', name: 'Lochhausen', lat: 48.1821, lng: 11.4102 },
     { id: 'langwied', name: 'Langwied', lat: 48.1652, lng: 11.4321 },
-    { id: 'pasing', name: 'Pasing Bf.', lat: 48.1500, lng: 11.4617 },
-  ], 'S3', 'sbahn', [3, 4, 3, 2, 2, 3, 3, 3, 4]);
-
-  // S3 East: Giesing -> Deisenhofen -> Holzkirchen
-  addLineCorridor([
-    { id: 'ostbahnhof', name: 'Ostbahnhof', lat: 48.1283, lng: 11.6045 },
+    ST_PASING,
+    ST_LAIM,
+    ST_HIRSCHGARTEN,
+    ST_DONNERSBERGER,
+    ST_HACKER,
+    ST_HBF,
+    ST_KARLSPLATZ,
+    ST_MARIENPLATZ,
+    ST_ISARTOR,
+    ST_ROSENHEIMER,
+    ST_OSTBAHNHOF,
     { id: 'st_martin_str', name: 'St.-Martin-Straße', lat: 48.1189, lng: 11.5982 },
     { id: 'giesing_bf', name: 'Giesing Bf.', lat: 48.1107, lng: 11.5956 },
     { id: 'fasangarten', name: 'Fasangarten', lat: 48.0921, lng: 11.6021 },
@@ -327,9 +355,9 @@ export function buildCompleteMunichPackage() {
     { id: 'sauerlach', name: 'Sauerlach', lat: 47.9652, lng: 11.6502 },
     { id: 'otterfing', name: 'Otterfing', lat: 47.9121, lng: 11.6789 },
     { id: 'holzkirchen', name: 'Holzkirchen Bf.', lat: 47.8821, lng: 11.7012 },
-  ], 'S3', 'sbahn', [2, 2, 3, 2, 2, 3, 2, 3, 6, 6, 5]);
+  ], 'S3', 'sbahn', [3, 4, 3, 2, 2, 3, 3, 3, 4, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 2, 2, 3, 2, 3, 6, 6, 5]);
 
-  // S4 West: Geltendorf -> Fürstenfeldbruck -> Puchheim -> Aubing -> Pasing
+  // S4 (Geltendorf -> Pasing -> Stammstrecke -> Ostbahnhof -> Trudering -> Ebersberg)
   addLineCorridor([
     { id: 'geltendorf', name: 'Geltendorf Bf.', lat: 48.1252, lng: 11.0282 },
     { id: 'tuerkenfeld', name: 'Türkenfeld', lat: 48.1121, lng: 11.0821 },
@@ -341,12 +369,18 @@ export function buildCompleteMunichPackage() {
     { id: 'puchheim', name: 'Puchheim Bf.', lat: 48.1682, lng: 11.3552 },
     { id: 'aubing', name: 'Aubing', lat: 48.1582, lng: 11.4152 },
     { id: 'leienfelsstr', name: 'Leienfelsstraße', lat: 48.1521, lng: 11.4398 },
-    { id: 'pasing', name: 'Pasing Bf.', lat: 48.1500, lng: 11.4617 },
-  ], 'S4', 'sbahn', [4, 5, 4, 3, 2, 5, 4, 4, 2, 3]);
-
-  // S4 / S6 East: Trudering -> Haar -> Vaterstetten -> Zorneding -> Grafing -> Ebersberg
-  addLineCorridor([
-    { id: 'leuchtenbergring', name: 'Leuchtenbergring', lat: 48.1342, lng: 11.6162 },
+    ST_PASING,
+    ST_LAIM,
+    ST_HIRSCHGARTEN,
+    ST_DONNERSBERGER,
+    ST_HACKER,
+    ST_HBF,
+    ST_KARLSPLATZ,
+    ST_MARIENPLATZ,
+    ST_ISARTOR,
+    ST_ROSENHEIMER,
+    ST_OSTBAHNHOF,
+    ST_LEUCHTENBERGRING,
     { id: 'berg_am_laim', name: 'Berg am Laim', lat: 48.1321, lng: 11.6321 },
     { id: 'trudering', name: 'Trudering Bf.', lat: 48.1256, lng: 11.6628 },
     { id: 'gronsdorf', name: 'Gronsdorf', lat: 48.1202, lng: 11.6982 },
@@ -359,9 +393,9 @@ export function buildCompleteMunichPackage() {
     { id: 'grafing_bf', name: 'Grafing Bf.', lat: 48.0502, lng: 11.9582 },
     { id: 'grafing_stadt', name: 'Grafing Stadt', lat: 48.0452, lng: 11.9682 },
     { id: 'ebersberg', name: 'Ebersberg (Oberbay)', lat: 48.0782, lng: 12.0202 },
-  ], 'S4', 'sbahn', [2, 3, 3, 2, 3, 2, 3, 3, 3, 4, 2, 4]);
+  ], 'S4', 'sbahn', [4, 5, 4, 3, 2, 5, 4, 4, 2, 3, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 2, 3, 2, 3, 3, 3, 4, 2, 4]);
 
-  // S6 West: Tutzing -> Starnberg -> Gauting -> Planegg -> Pasing
+  // S6 (Tutzing -> Starnberg -> Pasing -> Stammstrecke -> Ostbahnhof -> Ebersberg)
   addLineCorridor([
     { id: 'tutzing', name: 'Tutzing Bf.', lat: 47.9082, lng: 11.2782 },
     { id: 'feldafing', name: 'Feldafing', lat: 47.9421, lng: 11.2952 },
@@ -374,10 +408,32 @@ export function buildCompleteMunichPackage() {
     { id: 'graefelfing', name: 'Gräfelfing', lat: 48.1202, lng: 11.4352 },
     { id: 'lochham', name: 'Lochham', lat: 48.1321, lng: 11.4482 },
     { id: 'westkreuz', name: 'Westkreuz', lat: 48.1452, lng: 11.4552 },
-    { id: 'pasing', name: 'Pasing Bf.', lat: 48.1500, lng: 11.4617 },
-  ], 'S6', 'sbahn', [4, 3, 3, 2, 5, 3, 3, 2, 2, 2, 2]);
+    ST_PASING,
+    ST_LAIM,
+    ST_HIRSCHGARTEN,
+    ST_DONNERSBERGER,
+    ST_HACKER,
+    ST_HBF,
+    ST_KARLSPLATZ,
+    ST_MARIENPLATZ,
+    ST_ISARTOR,
+    ST_ROSENHEIMER,
+    ST_OSTBAHNHOF,
+    ST_LEUCHTENBERGRING,
+    { id: 'berg_am_laim', name: 'Berg am Laim', lat: 48.1321, lng: 11.6321 },
+    { id: 'trudering', name: 'Trudering Bf.', lat: 48.1256, lng: 11.6628 },
+    { id: 'gronsdorf', name: 'Gronsdorf', lat: 48.1202, lng: 11.6982 },
+    { id: 'haar', name: 'Haar Bf.', lat: 48.1102, lng: 11.7302 },
+    { id: 'vaterstetten', name: 'Vaterstetten', lat: 48.1021, lng: 11.7702 },
+    { id: 'baldham', name: 'Baldham', lat: 48.0952, lng: 11.7982 },
+    { id: 'zorneding', name: 'Zorneding', lat: 48.0852, lng: 11.8302 },
+    { id: 'eglharting', name: 'Eglharting', lat: 48.0752, lng: 11.8682 },
+    { id: 'kirchseeon', name: 'Kirchseeon', lat: 48.0682, lng: 11.8902 },
+    { id: 'grafing_bf', name: 'Grafing Bf.', lat: 48.0502, lng: 11.9582 },
+    { id: 'ebersberg', name: 'Ebersberg (Oberbay)', lat: 48.0782, lng: 12.0202 },
+  ], 'S6', 'sbahn', [4, 3, 3, 2, 5, 3, 3, 2, 2, 2, 2, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 2, 3, 2, 3, 3, 3, 4, 6]);
 
-  // S7 South: Wolfratshausen -> Schäftlarn -> Solln -> Harras -> Stammstrecke
+  // S7 (Wolfratshausen -> Solln -> Donnersbergerbrücke -> Stammstrecke -> Ostbahnhof -> Giesing -> Kreuzstraße)
   addLineCorridor([
     { id: 'wolfratshausen', name: 'Wolfratshausen Bf.', lat: 47.9121, lng: 11.4252 },
     { id: 'icking', name: 'Icking', lat: 47.9502, lng: 11.4402 },
@@ -393,11 +449,15 @@ export function buildCompleteMunichPackage() {
     { id: 'mittersendling', name: 'Mittersendling', lat: 48.1082, lng: 11.5382 },
     { id: 'harras', name: 'Harras', lat: 48.1165, lng: 11.5389 },
     { id: 'heimeranplatz', name: 'Heimeranplatz', lat: 48.1334, lng: 11.5334 },
-    { id: 'donnersbergerbruecke', name: 'Donnersbergerbrücke', lat: 48.1425, lng: 11.5352 },
-  ], 'S7', 'sbahn', [5, 4, 3, 3, 2, 3, 2, 2, 2, 2, 2, 2, 3, 3]);
-
-  // S7 Southeast: Giesing -> Perlach -> Neuperlach Süd -> Ottobrunn -> Kreuzstraße
-  addLineCorridor([
+    ST_DONNERSBERGER,
+    ST_HACKER,
+    ST_HBF,
+    ST_KARLSPLATZ,
+    ST_MARIENPLATZ,
+    ST_ISARTOR,
+    ST_ROSENHEIMER,
+    ST_OSTBAHNHOF,
+    { id: 'st_martin_str', name: 'St.-Martin-Straße', lat: 48.1189, lng: 11.5982 },
     { id: 'giesing_bf', name: 'Giesing Bf.', lat: 48.1107, lng: 11.5956 },
     { id: 'perlach', name: 'Perlach Bf.', lat: 48.0982, lng: 11.6321 },
     { id: 'neuperlach_sued', name: 'Neuperlach Süd', lat: 48.0898, lng: 11.6452 },
@@ -411,9 +471,9 @@ export function buildCompleteMunichPackage() {
     { id: 'peiss', name: 'Peiß', lat: 47.9552, lng: 11.8002 },
     { id: 'grosshelfendorf', name: 'Großhelfendorf', lat: 47.9402, lng: 11.8082 },
     { id: 'kreuzstrasse', name: 'Kreuzstraße', lat: 47.9252, lng: 11.8202 },
-  ], 'S7', 'sbahn', [3, 2, 2, 3, 3, 2, 2, 3, 3, 3, 2, 3]);
+  ], 'S7', 'sbahn', [5, 4, 3, 3, 2, 3, 2, 2, 2, 2, 2, 2, 3, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 2, 2, 3, 3, 2, 2, 3, 3, 3, 2, 3]);
 
-  // S8 West: Herrsching -> Weßling -> Gilching -> Germering -> Pasing
+  // S8 (Herrsching -> Westkreuz -> Pasing -> Stammstrecke -> Ostbahnhof -> Flughafen)
   addLineCorridor([
     { id: 'herrsching', name: 'Herrsching Bf.', lat: 47.9982, lng: 11.1752 },
     { id: 'seefeld_hechendorf', name: 'Seefeld-Hechendorf', lat: 48.0302, lng: 11.2052 },
@@ -427,12 +487,18 @@ export function buildCompleteMunichPackage() {
     { id: 'freiham', name: 'Freiham Bf.', lat: 48.1421, lng: 11.4102 },
     { id: 'neuaubing', name: 'Neuaubing', lat: 48.1442, lng: 11.4252 },
     { id: 'westkreuz', name: 'Westkreuz', lat: 48.1452, lng: 11.4552 },
-    { id: 'pasing', name: 'Pasing Bf.', lat: 48.1500, lng: 11.4617 },
-  ], 'S8', 'sbahn', [4, 4, 3, 4, 2, 3, 3, 2, 3, 2, 2, 2]);
-
-  // S8 East: Leuchtenbergring -> Johanneskirchen -> Ismaning -> Flughafen
-  addLineCorridor([
-    { id: 'leuchtenbergring', name: 'Leuchtenbergring', lat: 48.1342, lng: 11.6162 },
+    ST_PASING,
+    ST_LAIM,
+    ST_HIRSCHGARTEN,
+    ST_DONNERSBERGER,
+    ST_HACKER,
+    ST_HBF,
+    ST_KARLSPLATZ,
+    ST_MARIENPLATZ,
+    ST_ISARTOR,
+    ST_ROSENHEIMER,
+    ST_OSTBAHNHOF,
+    ST_LEUCHTENBERGRING,
     { id: 'daglfing', name: 'Daglfing', lat: 48.1482, lng: 11.6452 },
     { id: 'englschalking', name: 'Englschalking', lat: 48.1582, lng: 11.6421 },
     { id: 'johanneskirchen', name: 'Johanneskirchen', lat: 48.1702, lng: 11.6452 },
@@ -441,11 +507,11 @@ export function buildCompleteMunichPackage() {
     { id: 'hallbergmoos', name: 'Hallbergmoos Bf.', lat: 48.3102, lng: 11.7302 },
     { id: 'flughafen_besucherpark', name: 'Flughafen Besucherpark', lat: 48.3562, lng: 11.7583 },
     { id: 'muc_flughafen', name: 'Flughafen München', lat: 48.3537, lng: 11.7861 },
-  ], 'S8', 'sbahn', [3, 2, 2, 3, 4, 8, 6, 2]);
+  ], 'S8', 'sbahn', [4, 4, 3, 4, 2, 3, 3, 2, 3, 2, 2, 2, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 2, 2, 3, 4, 8, 6, 2]);
 
   // S20 Tangente: Pasing <-> Heimeranplatz <-> Mittersendling <-> Siemenswerke <-> Solln <-> Höllriegelskreuth
   addLineCorridor([
-    { id: 'pasing', name: 'Pasing Bf.', lat: 48.1500, lng: 11.4617 },
+    ST_PASING,
     { id: 'heimeranplatz', name: 'Heimeranplatz', lat: 48.1334, lng: 11.5334 },
     { id: 'mittersendling', name: 'Mittersendling', lat: 48.1082, lng: 11.5382 },
     { id: 'siemenswerke', name: 'Siemenswerke', lat: 48.0952, lng: 11.5352 },
@@ -456,36 +522,36 @@ export function buildCompleteMunichPackage() {
   ], 'S20', 'sbahn', [6, 4, 2, 2, 2, 2, 2]);
 
   // ========================================================
-  // 4. REGIONALBAHN (RE / BRB) TRUNK CORRIDORS
+  // 3. REGIONALBAHN (RE / BRB) TRUNK CORRIDORS
   // ========================================================
 
   // BRB Oberland: Hauptbahnhof -> Donnersbergerbrücke -> Harras -> Siemenswerke -> Holzkirchen
   addLineCorridor([
-    { id: 'hauptbahnhof', name: 'Hauptbahnhof', lat: 48.1402, lng: 11.5583 },
-    { id: 'donnersbergerbruecke', name: 'Donnersbergerbrücke', lat: 48.1425, lng: 11.5352 },
+    ST_HBF,
+    ST_DONNERSBERGER,
     { id: 'harras', name: 'Harras', lat: 48.1165, lng: 11.5389 },
     { id: 'siemenswerke', name: 'Siemenswerke', lat: 48.0952, lng: 11.5352 },
     { id: 'solln', name: 'Solln Bf.', lat: 48.0805, lng: 11.5256 },
     { id: 'holzkirchen', name: 'Holzkirchen Bf.', lat: 47.8821, lng: 11.7012 },
   ], 'BRB', 'train', [3, 4, 3, 2, 14]);
 
-  // RE1 / RB: Hauptbahnhof -> Dachau -> Petershausen
+  // RE1 / RB: Hauptbahnhof -> Pasing -> Dachau -> Petershausen
   addLineCorridor([
-    { id: 'hauptbahnhof', name: 'Hauptbahnhof', lat: 48.1402, lng: 11.5583 },
-    { id: 'pasing', name: 'Pasing Bf.', lat: 48.1500, lng: 11.4617 },
+    ST_HBF,
+    ST_PASING,
     { id: 'dachau_bf', name: 'Dachau Bf.', lat: 48.2589, lng: 11.4428 },
     { id: 'petershausen', name: 'Petershausen Bf.', lat: 48.4082, lng: 11.4721 },
   ], 'RE1', 'train', [6, 9, 11]);
 
-  // RE Freising / Landshut: Hauptbahnhof -> Freising
+  // RE Freising / Landshut: Hauptbahnhof -> Moosach -> Freising
   addLineCorridor([
-    { id: 'hauptbahnhof', name: 'Hauptbahnhof', lat: 48.1402, lng: 11.5583 },
+    ST_HBF,
     { id: 'moosach', name: 'Moosach Bf.', lat: 48.1802, lng: 11.5065 },
     { id: 'freising', name: 'Freising Bf.', lat: 48.3965, lng: 11.7438 },
   ], 'RE', 'train', [8, 18]);
 
   // ========================================================
-  // 5. TRAM & METROBUS FEEDER CORRIDORS
+  // 4. TRAM & METROBUS FEEDER CORRIDORS
   // ========================================================
 
   // Tram 23: Münchner Freiheit -> Domagkstraße -> Schwabing Nord
@@ -501,7 +567,7 @@ export function buildCompleteMunichPackage() {
   // Tram 25 Süd: Max-Weber-Platz -> Rosenheimer Platz -> Silberhornstr -> Wettersteinplatz -> Grünwald
   addLineCorridor([
     { id: 'max_weber_platz', name: 'Max-Weber-Platz', lat: 48.1356, lng: 11.5989 },
-    { id: 'rosenheimer_platz', name: 'Rosenheimer Platz', lat: 48.1287, lng: 11.5941 },
+    ST_ROSENHEIMER,
     { id: 'ostfriedhof', name: 'Ostfriedhof', lat: 48.1202, lng: 11.5872 },
     { id: 'silberhornstr', name: 'Silberhornstraße', lat: 48.1152, lng: 11.5812 },
     { id: 'tegernseer_landstr', name: 'Tegernseer Landstraße', lat: 48.1112, lng: 11.5782 },
@@ -512,20 +578,20 @@ export function buildCompleteMunichPackage() {
 
   // Tram 19: Pasing Bf. -> Laimer Platz -> Hauptbahnhof -> Ostbahnhof -> Berg am Laim
   addLineCorridor([
-    { id: 'pasing', name: 'Pasing Bf.', lat: 48.1500, lng: 11.4617 },
+    ST_PASING,
     { id: 'laimer_platz', name: 'Laimer Platz', lat: 48.1345, lng: 11.5034 },
     { id: 'trappentreustr', name: 'Trappentreustraße', lat: 48.1402, lng: 11.5356 },
-    { id: 'hauptbahnhof', name: 'Hauptbahnhof', lat: 48.1402, lng: 11.5583 },
-    { id: 'karlsplatz', name: 'Karlsplatz (Stachus)', lat: 48.1392, lng: 11.5658 },
+    ST_HBF,
+    ST_KARLSPLATZ,
     { id: 'max_weber_platz', name: 'Max-Weber-Platz', lat: 48.1356, lng: 11.5989 },
-    { id: 'ostbahnhof', name: 'Ostbahnhof', lat: 48.1283, lng: 11.6045 },
+    ST_OSTBAHNHOF,
     { id: 'berg_am_laim', name: 'Berg am Laim', lat: 48.1321, lng: 11.6321 },
   ], 'Tram 19', 'tram', [6, 7, 5, 2, 7, 3, 6]);
 
   // Expressbus X30: Max-Weber-Platz <-> Ostbahnhof <-> Kolumbusplatz <-> Harras
   addLineCorridor([
     { id: 'max_weber_platz', name: 'Max-Weber-Platz', lat: 48.1356, lng: 11.5989 },
-    { id: 'ostbahnhof', name: 'Ostbahnhof', lat: 48.1283, lng: 11.6045 },
+    ST_OSTBAHNHOF,
     { id: 'kolumbusplatz', name: 'Kolumbusplatz', lat: 48.1212, lng: 11.5778 },
     { id: 'tegernseer_landstr', name: 'Tegernseer Landstraße', lat: 48.1112, lng: 11.5782 },
     { id: 'brudermuehlstr', name: 'Brudermühlstraße', lat: 48.1118, lng: 11.5392 },
@@ -556,7 +622,7 @@ export function buildCompleteMunichPackage() {
   // Metrobus 51: Moosach <-> Laim S-Bahn <-> Laimer Platz <-> Holzapfelkreuth <-> Machtlfinger Str.
   addLineCorridor([
     { id: 'moosach', name: 'Moosach Bf.', lat: 48.1802, lng: 11.5065 },
-    { id: 'laim_s', name: 'Laim (S-Bahn)', lat: 48.1444, lng: 11.5037 },
+    ST_LAIM,
     { id: 'laimer_platz', name: 'Laimer Platz', lat: 48.1345, lng: 11.5034 },
     { id: 'holzapfelkreuth', name: 'Holzapfelkreuth', lat: 48.1189, lng: 11.5034 },
     { id: 'machtlfinger_str', name: 'Machtlfinger Straße', lat: 48.0989, lng: 11.5067 },
@@ -567,7 +633,7 @@ export function buildCompleteMunichPackage() {
     { id: 'm_freiheit', name: 'Münchner Freiheit', lat: 48.1619, lng: 11.5864 },
     { id: 'herkomerplatz', name: 'Herkomerplatz', lat: 48.1502, lng: 11.6052 },
     { id: 'prinzregentenplatz', name: 'Prinzregentenplatz', lat: 48.1412, lng: 11.6067 },
-    { id: 'ostbahnhof', name: 'Ostbahnhof', lat: 48.1283, lng: 11.6045 },
+    ST_OSTBAHNHOF,
     { id: 'giesing_bf', name: 'Giesing Bf.', lat: 48.1107, lng: 11.5956 },
     { id: 'brudermuehlstr', name: 'Brudermühlstraße', lat: 48.1118, lng: 11.5392 },
     { id: 'harras', name: 'Harras', lat: 48.1165, lng: 11.5389 },
@@ -575,6 +641,7 @@ export function buildCompleteMunichPackage() {
 
   // Compile final dataset
   const allStations = Array.from(stationsMap.values());
+  const allConnections = Array.from(connectionsMap.values());
 
   // Calculate actual bounding box
   let minLng = 180, minLat = 90, maxLng = -180, maxLat = -90;
@@ -588,7 +655,7 @@ export function buildCompleteMunichPackage() {
   const packageData = {
     id: 'munich-mvv',
     name: 'München & Metropolregion (MVV Gesamt)',
-    version: '2026.5-DELFI-Vollnetz',
+    version: '2026.6-DELFI-Vollnetz',
     lastUpdated: new Date().toISOString().split('T')[0],
     source: 'DELFI Bundesfeed & MVV/MVG Open Data Soll-Fahrplan',
     bbox: [
@@ -598,11 +665,11 @@ export function buildCompleteMunichPackage() {
       Math.round(maxLat * 100) / 100,
     ],
     stationCount: allStations.length,
-    connectionCount: connections.length,
-    downloadSizeApprox: `${Math.round(JSON.stringify({ stations: allStations, connections }).length / 1024)} KB`,
+    connectionCount: allConnections.length,
+    downloadSizeApprox: `${Math.round(JSON.stringify({ stations: allStations, connections: allConnections }).length / 1024)} KB`,
     isBuiltIn: true,
     stations: allStations,
-    connections,
+    connections: allConnections,
   };
 
   return packageData;
@@ -629,7 +696,7 @@ const datasetCode = `/**
  * Regional rail (BRB, RE), key Trams and Expressbusses.
  */
 
-import { TransitRegion, TransitStation, TransitConnection } from '../types';
+import type { TransitRegion, TransitStation, TransitConnection } from '../types.ts';
 
 export type MvvStation = TransitStation;
 export type MvvConnection = TransitConnection;

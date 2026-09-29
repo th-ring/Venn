@@ -16,8 +16,8 @@ export type MvvDataset = TransitRegion;
 export const DEFAULT_MVV_DATASET: TransitRegion = {
   "id": "munich-mvv",
   "name": "München & Metropolregion (MVV Gesamt)",
-  "version": "2026.5-DELFI-Vollnetz",
-  "lastUpdated": "2026-09-13",
+  "version": "2026.6-DELFI-Vollnetz",
+  "lastUpdated": "2026-09-29",
   "source": "DELFI Bundesfeed & MVV/MVG Open Data Soll-Fahrplan",
   "bbox": [
     11.03,
@@ -26,202 +26,10 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
     48.41
   ],
   "stationCount": 237,
-  "connectionCount": 646,
-  "downloadSizeApprox": "80 KB",
+  "connectionCount": 592,
+  "downloadSizeApprox": "76 KB",
   "isBuiltIn": true,
   "stations": [
-    {
-      "id": "pasing",
-      "name": "Pasing Bf.",
-      "lat": 48.15,
-      "lng": 11.4617,
-      "lines": [
-        "S-Bahn Stammstrecke",
-        "S3",
-        "S4",
-        "S6",
-        "S8",
-        "S20",
-        "RE1",
-        "Tram 19"
-      ],
-      "types": [
-        "sbahn",
-        "train",
-        "tram"
-      ]
-    },
-    {
-      "id": "laim_s",
-      "name": "Laim (S-Bahn)",
-      "lat": 48.1444,
-      "lng": 11.5037,
-      "lines": [
-        "S-Bahn Stammstrecke",
-        "S1",
-        "S2",
-        "Bus 51"
-      ],
-      "types": [
-        "sbahn",
-        "bus"
-      ]
-    },
-    {
-      "id": "hirschgarten",
-      "name": "Hirschgarten",
-      "lat": 48.1436,
-      "lng": 11.5186,
-      "lines": [
-        "S-Bahn Stammstrecke"
-      ],
-      "types": [
-        "sbahn"
-      ]
-    },
-    {
-      "id": "donnersbergerbruecke",
-      "name": "Donnersbergerbrücke",
-      "lat": 48.1425,
-      "lng": 11.5352,
-      "lines": [
-        "S-Bahn Stammstrecke",
-        "S7",
-        "BRB"
-      ],
-      "types": [
-        "sbahn",
-        "train"
-      ]
-    },
-    {
-      "id": "hackerbruecke",
-      "name": "Hackerbrücke",
-      "lat": 48.1414,
-      "lng": 11.5489,
-      "lines": [
-        "S-Bahn Stammstrecke"
-      ],
-      "types": [
-        "sbahn"
-      ]
-    },
-    {
-      "id": "hauptbahnhof",
-      "name": "Hauptbahnhof",
-      "lat": 48.1402,
-      "lng": 11.5583,
-      "lines": [
-        "S-Bahn Stammstrecke",
-        "U1",
-        "U2",
-        "U4",
-        "U5",
-        "BRB",
-        "RE1",
-        "RE",
-        "Tram 19"
-      ],
-      "types": [
-        "sbahn",
-        "ubahn",
-        "train",
-        "tram"
-      ]
-    },
-    {
-      "id": "karlsplatz",
-      "name": "Karlsplatz (Stachus)",
-      "lat": 48.1392,
-      "lng": 11.5658,
-      "lines": [
-        "S-Bahn Stammstrecke",
-        "U4",
-        "U5",
-        "Tram 19"
-      ],
-      "types": [
-        "sbahn",
-        "ubahn",
-        "tram"
-      ]
-    },
-    {
-      "id": "marienplatz",
-      "name": "Marienplatz",
-      "lat": 48.1371,
-      "lng": 11.5754,
-      "lines": [
-        "S-Bahn Stammstrecke",
-        "U3",
-        "U6"
-      ],
-      "types": [
-        "sbahn",
-        "ubahn"
-      ]
-    },
-    {
-      "id": "isartor",
-      "name": "Isartor",
-      "lat": 48.1342,
-      "lng": 11.5836,
-      "lines": [
-        "S-Bahn Stammstrecke"
-      ],
-      "types": [
-        "sbahn"
-      ]
-    },
-    {
-      "id": "rosenheimer_platz",
-      "name": "Rosenheimer Platz",
-      "lat": 48.1287,
-      "lng": 11.5941,
-      "lines": [
-        "S-Bahn Stammstrecke",
-        "Tram 25"
-      ],
-      "types": [
-        "sbahn",
-        "tram"
-      ]
-    },
-    {
-      "id": "ostbahnhof",
-      "name": "Ostbahnhof",
-      "lat": 48.1283,
-      "lng": 11.6045,
-      "lines": [
-        "S-Bahn Stammstrecke",
-        "U5",
-        "S3",
-        "Tram 19",
-        "X30",
-        "Bus 54"
-      ],
-      "types": [
-        "sbahn",
-        "ubahn",
-        "tram",
-        "bus"
-      ]
-    },
-    {
-      "id": "leuchtenbergring",
-      "name": "Leuchtenbergring",
-      "lat": 48.1342,
-      "lng": 11.6162,
-      "lines": [
-        "S-Bahn Stammstrecke",
-        "S2",
-        "S4",
-        "S8"
-      ],
-      "types": [
-        "sbahn"
-      ]
-    },
     {
       "id": "olympia_einkaufszentrum",
       "name": "Olympia-Einkaufszentrum",
@@ -307,6 +115,35 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       ],
       "types": [
         "ubahn"
+      ]
+    },
+    {
+      "id": "hauptbahnhof",
+      "name": "Hauptbahnhof",
+      "lat": 48.1402,
+      "lng": 11.5583,
+      "lines": [
+        "U1",
+        "U2",
+        "U4",
+        "U5",
+        "S1",
+        "S2",
+        "S3",
+        "S4",
+        "S6",
+        "S7",
+        "S8",
+        "BRB",
+        "RE1",
+        "RE",
+        "Tram 19"
+      ],
+      "types": [
+        "ubahn",
+        "sbahn",
+        "train",
+        "tram"
       ]
     },
     {
@@ -650,7 +487,8 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "lng": 11.6628,
       "lines": [
         "U2",
-        "S4"
+        "S4",
+        "S6"
       ],
       "types": [
         "ubahn",
@@ -831,6 +669,27 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       ],
       "types": [
         "ubahn"
+      ]
+    },
+    {
+      "id": "marienplatz",
+      "name": "Marienplatz",
+      "lat": 48.1371,
+      "lng": 11.5754,
+      "lines": [
+        "U3",
+        "U6",
+        "S1",
+        "S2",
+        "S3",
+        "S4",
+        "S6",
+        "S7",
+        "S8"
+      ],
+      "types": [
+        "ubahn",
+        "sbahn"
       ]
     },
     {
@@ -1029,6 +888,29 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       ]
     },
     {
+      "id": "karlsplatz",
+      "name": "Karlsplatz (Stachus)",
+      "lat": 48.1392,
+      "lng": 11.5658,
+      "lines": [
+        "U4",
+        "U5",
+        "S1",
+        "S2",
+        "S3",
+        "S4",
+        "S6",
+        "S7",
+        "S8",
+        "Tram 19"
+      ],
+      "types": [
+        "ubahn",
+        "sbahn",
+        "tram"
+      ]
+    },
+    {
       "id": "lehel",
       "name": "Lehel",
       "lat": 48.1401,
@@ -1135,6 +1017,31 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       ],
       "types": [
         "ubahn"
+      ]
+    },
+    {
+      "id": "ostbahnhof",
+      "name": "Ostbahnhof",
+      "lat": 48.1283,
+      "lng": 11.6045,
+      "lines": [
+        "U5",
+        "S1",
+        "S2",
+        "S3",
+        "S4",
+        "S6",
+        "S7",
+        "S8",
+        "Tram 19",
+        "X30",
+        "Bus 54"
+      ],
+      "types": [
+        "ubahn",
+        "sbahn",
+        "tram",
+        "bus"
       ]
     },
     {
@@ -1515,6 +1422,134 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       ]
     },
     {
+      "id": "laim_s",
+      "name": "Laim (S-Bahn)",
+      "lat": 48.1444,
+      "lng": 11.5037,
+      "lines": [
+        "S1",
+        "S2",
+        "S3",
+        "S4",
+        "S6",
+        "S8",
+        "Bus 51"
+      ],
+      "types": [
+        "sbahn",
+        "bus"
+      ]
+    },
+    {
+      "id": "hirschgarten",
+      "name": "Hirschgarten",
+      "lat": 48.1436,
+      "lng": 11.5186,
+      "lines": [
+        "S1",
+        "S2",
+        "S3",
+        "S4",
+        "S6",
+        "S8"
+      ],
+      "types": [
+        "sbahn"
+      ]
+    },
+    {
+      "id": "donnersbergerbruecke",
+      "name": "Donnersbergerbrücke",
+      "lat": 48.1425,
+      "lng": 11.5352,
+      "lines": [
+        "S1",
+        "S2",
+        "S3",
+        "S4",
+        "S6",
+        "S7",
+        "S8",
+        "BRB"
+      ],
+      "types": [
+        "sbahn",
+        "train"
+      ]
+    },
+    {
+      "id": "hackerbruecke",
+      "name": "Hackerbrücke",
+      "lat": 48.1414,
+      "lng": 11.5489,
+      "lines": [
+        "S1",
+        "S2",
+        "S3",
+        "S4",
+        "S6",
+        "S7",
+        "S8"
+      ],
+      "types": [
+        "sbahn"
+      ]
+    },
+    {
+      "id": "isartor",
+      "name": "Isartor",
+      "lat": 48.1342,
+      "lng": 11.5836,
+      "lines": [
+        "S1",
+        "S2",
+        "S3",
+        "S4",
+        "S6",
+        "S7",
+        "S8"
+      ],
+      "types": [
+        "sbahn"
+      ]
+    },
+    {
+      "id": "rosenheimer_platz",
+      "name": "Rosenheimer Platz",
+      "lat": 48.1287,
+      "lng": 11.5941,
+      "lines": [
+        "S1",
+        "S2",
+        "S3",
+        "S4",
+        "S6",
+        "S7",
+        "S8",
+        "Tram 25"
+      ],
+      "types": [
+        "sbahn",
+        "tram"
+      ]
+    },
+    {
+      "id": "leuchtenbergring",
+      "name": "Leuchtenbergring",
+      "lat": 48.1342,
+      "lng": 11.6162,
+      "lines": [
+        "S1",
+        "S2",
+        "S4",
+        "S6",
+        "S8"
+      ],
+      "types": [
+        "sbahn"
+      ]
+    },
+    {
       "id": "muc_flughafen",
       "name": "Flughafen München",
       "lat": 48.3537,
@@ -1662,6 +1697,7 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "lines": [
         "S2",
         "S4",
+        "S6",
         "Tram 19"
       ],
       "types": [
@@ -1914,12 +1950,33 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       ]
     },
     {
+      "id": "pasing",
+      "name": "Pasing Bf.",
+      "lat": 48.15,
+      "lng": 11.4617,
+      "lines": [
+        "S3",
+        "S4",
+        "S6",
+        "S8",
+        "S20",
+        "RE1",
+        "Tram 19"
+      ],
+      "types": [
+        "sbahn",
+        "train",
+        "tram"
+      ]
+    },
+    {
       "id": "st_martin_str",
       "name": "St.-Martin-Straße",
       "lat": 48.1189,
       "lng": 11.5982,
       "lines": [
-        "S3"
+        "S3",
+        "S7"
       ],
       "types": [
         "sbahn"
@@ -2163,7 +2220,8 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "lat": 48.1202,
       "lng": 11.6982,
       "lines": [
-        "S4"
+        "S4",
+        "S6"
       ],
       "types": [
         "sbahn"
@@ -2175,7 +2233,8 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "lat": 48.1102,
       "lng": 11.7302,
       "lines": [
-        "S4"
+        "S4",
+        "S6"
       ],
       "types": [
         "sbahn"
@@ -2187,7 +2246,8 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "lat": 48.1021,
       "lng": 11.7702,
       "lines": [
-        "S4"
+        "S4",
+        "S6"
       ],
       "types": [
         "sbahn"
@@ -2199,7 +2259,8 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "lat": 48.0952,
       "lng": 11.7982,
       "lines": [
-        "S4"
+        "S4",
+        "S6"
       ],
       "types": [
         "sbahn"
@@ -2211,7 +2272,8 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "lat": 48.0852,
       "lng": 11.8302,
       "lines": [
-        "S4"
+        "S4",
+        "S6"
       ],
       "types": [
         "sbahn"
@@ -2223,7 +2285,8 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "lat": 48.0752,
       "lng": 11.8682,
       "lines": [
-        "S4"
+        "S4",
+        "S6"
       ],
       "types": [
         "sbahn"
@@ -2235,7 +2298,8 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "lat": 48.0682,
       "lng": 11.8902,
       "lines": [
-        "S4"
+        "S4",
+        "S6"
       ],
       "types": [
         "sbahn"
@@ -2247,7 +2311,8 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "lat": 48.0502,
       "lng": 11.9582,
       "lines": [
-        "S4"
+        "S4",
+        "S6"
       ],
       "types": [
         "sbahn"
@@ -2271,7 +2336,8 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "lat": 48.0782,
       "lng": 12.0202,
       "lines": [
-        "S4"
+        "S4",
+        "S6"
       ],
       "types": [
         "sbahn"
@@ -3051,204 +3117,6 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
   ],
   "connections": [
     {
-      "from": "pasing",
-      "to": "laim_s",
-      "minutes": 3,
-      "lines": [
-        "S-Bahn Stammstrecke"
-      ],
-      "type": "sbahn"
-    },
-    {
-      "from": "laim_s",
-      "to": "pasing",
-      "minutes": 3,
-      "lines": [
-        "S-Bahn Stammstrecke"
-      ],
-      "type": "sbahn"
-    },
-    {
-      "from": "laim_s",
-      "to": "hirschgarten",
-      "minutes": 2,
-      "lines": [
-        "S-Bahn Stammstrecke"
-      ],
-      "type": "sbahn"
-    },
-    {
-      "from": "hirschgarten",
-      "to": "laim_s",
-      "minutes": 2,
-      "lines": [
-        "S-Bahn Stammstrecke"
-      ],
-      "type": "sbahn"
-    },
-    {
-      "from": "hirschgarten",
-      "to": "donnersbergerbruecke",
-      "minutes": 2,
-      "lines": [
-        "S-Bahn Stammstrecke"
-      ],
-      "type": "sbahn"
-    },
-    {
-      "from": "donnersbergerbruecke",
-      "to": "hirschgarten",
-      "minutes": 2,
-      "lines": [
-        "S-Bahn Stammstrecke"
-      ],
-      "type": "sbahn"
-    },
-    {
-      "from": "donnersbergerbruecke",
-      "to": "hackerbruecke",
-      "minutes": 2,
-      "lines": [
-        "S-Bahn Stammstrecke"
-      ],
-      "type": "sbahn"
-    },
-    {
-      "from": "hackerbruecke",
-      "to": "donnersbergerbruecke",
-      "minutes": 2,
-      "lines": [
-        "S-Bahn Stammstrecke"
-      ],
-      "type": "sbahn"
-    },
-    {
-      "from": "hackerbruecke",
-      "to": "hauptbahnhof",
-      "minutes": 2,
-      "lines": [
-        "S-Bahn Stammstrecke"
-      ],
-      "type": "sbahn"
-    },
-    {
-      "from": "hauptbahnhof",
-      "to": "hackerbruecke",
-      "minutes": 2,
-      "lines": [
-        "S-Bahn Stammstrecke"
-      ],
-      "type": "sbahn"
-    },
-    {
-      "from": "hauptbahnhof",
-      "to": "karlsplatz",
-      "minutes": 2,
-      "lines": [
-        "S-Bahn Stammstrecke"
-      ],
-      "type": "sbahn"
-    },
-    {
-      "from": "karlsplatz",
-      "to": "hauptbahnhof",
-      "minutes": 2,
-      "lines": [
-        "S-Bahn Stammstrecke"
-      ],
-      "type": "sbahn"
-    },
-    {
-      "from": "karlsplatz",
-      "to": "marienplatz",
-      "minutes": 2,
-      "lines": [
-        "S-Bahn Stammstrecke"
-      ],
-      "type": "sbahn"
-    },
-    {
-      "from": "marienplatz",
-      "to": "karlsplatz",
-      "minutes": 2,
-      "lines": [
-        "S-Bahn Stammstrecke"
-      ],
-      "type": "sbahn"
-    },
-    {
-      "from": "marienplatz",
-      "to": "isartor",
-      "minutes": 2,
-      "lines": [
-        "S-Bahn Stammstrecke"
-      ],
-      "type": "sbahn"
-    },
-    {
-      "from": "isartor",
-      "to": "marienplatz",
-      "minutes": 2,
-      "lines": [
-        "S-Bahn Stammstrecke"
-      ],
-      "type": "sbahn"
-    },
-    {
-      "from": "isartor",
-      "to": "rosenheimer_platz",
-      "minutes": 2,
-      "lines": [
-        "S-Bahn Stammstrecke"
-      ],
-      "type": "sbahn"
-    },
-    {
-      "from": "rosenheimer_platz",
-      "to": "isartor",
-      "minutes": 2,
-      "lines": [
-        "S-Bahn Stammstrecke"
-      ],
-      "type": "sbahn"
-    },
-    {
-      "from": "rosenheimer_platz",
-      "to": "ostbahnhof",
-      "minutes": 2,
-      "lines": [
-        "S-Bahn Stammstrecke"
-      ],
-      "type": "sbahn"
-    },
-    {
-      "from": "ostbahnhof",
-      "to": "rosenheimer_platz",
-      "minutes": 2,
-      "lines": [
-        "S-Bahn Stammstrecke"
-      ],
-      "type": "sbahn"
-    },
-    {
-      "from": "ostbahnhof",
-      "to": "leuchtenbergring",
-      "minutes": 2,
-      "lines": [
-        "S-Bahn Stammstrecke"
-      ],
-      "type": "sbahn"
-    },
-    {
-      "from": "leuchtenbergring",
-      "to": "ostbahnhof",
-      "minutes": 2,
-      "lines": [
-        "S-Bahn Stammstrecke"
-      ],
-      "type": "sbahn"
-    },
-    {
       "from": "olympia_einkaufszentrum",
       "to": "georg_brauchle_ring",
       "minutes": 2,
@@ -3379,7 +3247,8 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "to": "sendlinger_tor",
       "minutes": 2,
       "lines": [
-        "U1"
+        "U1",
+        "U2"
       ],
       "type": "ubahn"
     },
@@ -3388,7 +3257,8 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "to": "hauptbahnhof",
       "minutes": 2,
       "lines": [
-        "U1"
+        "U1",
+        "U2"
       ],
       "type": "ubahn"
     },
@@ -3397,7 +3267,8 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "to": "fraunhoferstr",
       "minutes": 1,
       "lines": [
-        "U1"
+        "U1",
+        "U2"
       ],
       "type": "ubahn"
     },
@@ -3406,7 +3277,8 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "to": "sendlinger_tor",
       "minutes": 1,
       "lines": [
-        "U1"
+        "U1",
+        "U2"
       ],
       "type": "ubahn"
     },
@@ -3415,7 +3287,8 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "to": "kolumbusplatz",
       "minutes": 2,
       "lines": [
-        "U1"
+        "U1",
+        "U2"
       ],
       "type": "ubahn"
     },
@@ -3424,7 +3297,8 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "to": "fraunhoferstr",
       "minutes": 2,
       "lines": [
-        "U1"
+        "U1",
+        "U2"
       ],
       "type": "ubahn"
     },
@@ -3710,60 +3584,6 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
     {
       "from": "hauptbahnhof",
       "to": "koenigsplatz",
-      "minutes": 2,
-      "lines": [
-        "U2"
-      ],
-      "type": "ubahn"
-    },
-    {
-      "from": "hauptbahnhof",
-      "to": "sendlinger_tor",
-      "minutes": 2,
-      "lines": [
-        "U2"
-      ],
-      "type": "ubahn"
-    },
-    {
-      "from": "sendlinger_tor",
-      "to": "hauptbahnhof",
-      "minutes": 2,
-      "lines": [
-        "U2"
-      ],
-      "type": "ubahn"
-    },
-    {
-      "from": "sendlinger_tor",
-      "to": "fraunhoferstr",
-      "minutes": 1,
-      "lines": [
-        "U2"
-      ],
-      "type": "ubahn"
-    },
-    {
-      "from": "fraunhoferstr",
-      "to": "sendlinger_tor",
-      "minutes": 1,
-      "lines": [
-        "U2"
-      ],
-      "type": "ubahn"
-    },
-    {
-      "from": "fraunhoferstr",
-      "to": "kolumbusplatz",
-      "minutes": 2,
-      "lines": [
-        "U2"
-      ],
-      "type": "ubahn"
-    },
-    {
-      "from": "kolumbusplatz",
-      "to": "fraunhoferstr",
       "minutes": 2,
       "lines": [
         "U2"
@@ -4117,7 +3937,8 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "to": "giselastr",
       "minutes": 1,
       "lines": [
-        "U3"
+        "U3",
+        "U6"
       ],
       "type": "ubahn"
     },
@@ -4126,7 +3947,8 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "to": "m_freiheit",
       "minutes": 1,
       "lines": [
-        "U3"
+        "U3",
+        "U6"
       ],
       "type": "ubahn"
     },
@@ -4135,7 +3957,8 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "to": "universitaet",
       "minutes": 1,
       "lines": [
-        "U3"
+        "U3",
+        "U6"
       ],
       "type": "ubahn"
     },
@@ -4144,7 +3967,8 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "to": "giselastr",
       "minutes": 1,
       "lines": [
-        "U3"
+        "U3",
+        "U6"
       ],
       "type": "ubahn"
     },
@@ -4153,7 +3977,8 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "to": "odeonsplatz",
       "minutes": 2,
       "lines": [
-        "U3"
+        "U3",
+        "U6"
       ],
       "type": "ubahn"
     },
@@ -4162,7 +3987,8 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "to": "universitaet",
       "minutes": 2,
       "lines": [
-        "U3"
+        "U3",
+        "U6"
       ],
       "type": "ubahn"
     },
@@ -4171,7 +3997,8 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "to": "marienplatz",
       "minutes": 1,
       "lines": [
-        "U3"
+        "U3",
+        "U6"
       ],
       "type": "ubahn"
     },
@@ -4180,7 +4007,8 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "to": "odeonsplatz",
       "minutes": 1,
       "lines": [
-        "U3"
+        "U3",
+        "U6"
       ],
       "type": "ubahn"
     },
@@ -4189,7 +4017,8 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "to": "sendlinger_tor",
       "minutes": 2,
       "lines": [
-        "U3"
+        "U3",
+        "U6"
       ],
       "type": "ubahn"
     },
@@ -4198,7 +4027,8 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "to": "marienplatz",
       "minutes": 2,
       "lines": [
-        "U3"
+        "U3",
+        "U6"
       ],
       "type": "ubahn"
     },
@@ -4207,7 +4037,8 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "to": "goetheplatz",
       "minutes": 1,
       "lines": [
-        "U3"
+        "U3",
+        "U6"
       ],
       "type": "ubahn"
     },
@@ -4216,7 +4047,8 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "to": "sendlinger_tor",
       "minutes": 1,
       "lines": [
-        "U3"
+        "U3",
+        "U6"
       ],
       "type": "ubahn"
     },
@@ -4225,7 +4057,8 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "to": "poccistr",
       "minutes": 1,
       "lines": [
-        "U3"
+        "U3",
+        "U6"
       ],
       "type": "ubahn"
     },
@@ -4234,7 +4067,8 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "to": "goetheplatz",
       "minutes": 1,
       "lines": [
-        "U3"
+        "U3",
+        "U6"
       ],
       "type": "ubahn"
     },
@@ -4243,7 +4077,8 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "to": "implerstr",
       "minutes": 2,
       "lines": [
-        "U3"
+        "U3",
+        "U6"
       ],
       "type": "ubahn"
     },
@@ -4252,7 +4087,8 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "to": "poccistr",
       "minutes": 2,
       "lines": [
-        "U3"
+        "U3",
+        "U6"
       ],
       "type": "ubahn"
     },
@@ -4405,7 +4241,8 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "to": "heimeranplatz",
       "minutes": 2,
       "lines": [
-        "U4"
+        "U4",
+        "U5"
       ],
       "type": "ubahn"
     },
@@ -4414,7 +4251,8 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "to": "westendstr",
       "minutes": 2,
       "lines": [
-        "U4"
+        "U4",
+        "U5"
       ],
       "type": "ubahn"
     },
@@ -4423,7 +4261,8 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "to": "schwanthalerhoehe",
       "minutes": 1,
       "lines": [
-        "U4"
+        "U4",
+        "U5"
       ],
       "type": "ubahn"
     },
@@ -4432,7 +4271,8 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "to": "heimeranplatz",
       "minutes": 1,
       "lines": [
-        "U4"
+        "U4",
+        "U5"
       ],
       "type": "ubahn"
     },
@@ -4441,7 +4281,8 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "to": "theresienwiese",
       "minutes": 2,
       "lines": [
-        "U4"
+        "U4",
+        "U5"
       ],
       "type": "ubahn"
     },
@@ -4450,7 +4291,8 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "to": "schwanthalerhoehe",
       "minutes": 2,
       "lines": [
-        "U4"
+        "U4",
+        "U5"
       ],
       "type": "ubahn"
     },
@@ -4459,7 +4301,8 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "to": "hauptbahnhof",
       "minutes": 1,
       "lines": [
-        "U4"
+        "U4",
+        "U5"
       ],
       "type": "ubahn"
     },
@@ -4468,7 +4311,8 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "to": "theresienwiese",
       "minutes": 1,
       "lines": [
-        "U4"
+        "U4",
+        "U5"
       ],
       "type": "ubahn"
     },
@@ -4477,7 +4321,8 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "to": "karlsplatz",
       "minutes": 2,
       "lines": [
-        "U4"
+        "U4",
+        "U5"
       ],
       "type": "ubahn"
     },
@@ -4486,7 +4331,8 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "to": "hauptbahnhof",
       "minutes": 2,
       "lines": [
-        "U4"
+        "U4",
+        "U5"
       ],
       "type": "ubahn"
     },
@@ -4495,7 +4341,8 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "to": "odeonsplatz",
       "minutes": 2,
       "lines": [
-        "U4"
+        "U4",
+        "U5"
       ],
       "type": "ubahn"
     },
@@ -4504,7 +4351,8 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "to": "karlsplatz",
       "minutes": 2,
       "lines": [
-        "U4"
+        "U4",
+        "U5"
       ],
       "type": "ubahn"
     },
@@ -4513,7 +4361,8 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "to": "lehel",
       "minutes": 2,
       "lines": [
-        "U4"
+        "U4",
+        "U5"
       ],
       "type": "ubahn"
     },
@@ -4522,7 +4371,8 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "to": "odeonsplatz",
       "minutes": 2,
       "lines": [
-        "U4"
+        "U4",
+        "U5"
       ],
       "type": "ubahn"
     },
@@ -4531,7 +4381,8 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "to": "max_weber_platz",
       "minutes": 2,
       "lines": [
-        "U4"
+        "U4",
+        "U5"
       ],
       "type": "ubahn"
     },
@@ -4540,7 +4391,8 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "to": "lehel",
       "minutes": 2,
       "lines": [
-        "U4"
+        "U4",
+        "U5"
       ],
       "type": "ubahn"
     },
@@ -4646,150 +4498,6 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
     {
       "from": "westendstr",
       "to": "friedenheimer_str",
-      "minutes": 2,
-      "lines": [
-        "U5"
-      ],
-      "type": "ubahn"
-    },
-    {
-      "from": "westendstr",
-      "to": "heimeranplatz",
-      "minutes": 2,
-      "lines": [
-        "U5"
-      ],
-      "type": "ubahn"
-    },
-    {
-      "from": "heimeranplatz",
-      "to": "westendstr",
-      "minutes": 2,
-      "lines": [
-        "U5"
-      ],
-      "type": "ubahn"
-    },
-    {
-      "from": "heimeranplatz",
-      "to": "schwanthalerhoehe",
-      "minutes": 1,
-      "lines": [
-        "U5"
-      ],
-      "type": "ubahn"
-    },
-    {
-      "from": "schwanthalerhoehe",
-      "to": "heimeranplatz",
-      "minutes": 1,
-      "lines": [
-        "U5"
-      ],
-      "type": "ubahn"
-    },
-    {
-      "from": "schwanthalerhoehe",
-      "to": "theresienwiese",
-      "minutes": 2,
-      "lines": [
-        "U5"
-      ],
-      "type": "ubahn"
-    },
-    {
-      "from": "theresienwiese",
-      "to": "schwanthalerhoehe",
-      "minutes": 2,
-      "lines": [
-        "U5"
-      ],
-      "type": "ubahn"
-    },
-    {
-      "from": "theresienwiese",
-      "to": "hauptbahnhof",
-      "minutes": 1,
-      "lines": [
-        "U5"
-      ],
-      "type": "ubahn"
-    },
-    {
-      "from": "hauptbahnhof",
-      "to": "theresienwiese",
-      "minutes": 1,
-      "lines": [
-        "U5"
-      ],
-      "type": "ubahn"
-    },
-    {
-      "from": "hauptbahnhof",
-      "to": "karlsplatz",
-      "minutes": 2,
-      "lines": [
-        "U5"
-      ],
-      "type": "ubahn"
-    },
-    {
-      "from": "karlsplatz",
-      "to": "hauptbahnhof",
-      "minutes": 2,
-      "lines": [
-        "U5"
-      ],
-      "type": "ubahn"
-    },
-    {
-      "from": "karlsplatz",
-      "to": "odeonsplatz",
-      "minutes": 2,
-      "lines": [
-        "U5"
-      ],
-      "type": "ubahn"
-    },
-    {
-      "from": "odeonsplatz",
-      "to": "karlsplatz",
-      "minutes": 2,
-      "lines": [
-        "U5"
-      ],
-      "type": "ubahn"
-    },
-    {
-      "from": "odeonsplatz",
-      "to": "lehel",
-      "minutes": 2,
-      "lines": [
-        "U5"
-      ],
-      "type": "ubahn"
-    },
-    {
-      "from": "lehel",
-      "to": "odeonsplatz",
-      "minutes": 2,
-      "lines": [
-        "U5"
-      ],
-      "type": "ubahn"
-    },
-    {
-      "from": "lehel",
-      "to": "max_weber_platz",
-      "minutes": 2,
-      "lines": [
-        "U5"
-      ],
-      "type": "ubahn"
-    },
-    {
-      "from": "max_weber_platz",
-      "to": "lehel",
       "minutes": 2,
       "lines": [
         "U5"
@@ -5103,150 +4811,6 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "type": "ubahn"
     },
     {
-      "from": "m_freiheit",
-      "to": "giselastr",
-      "minutes": 1,
-      "lines": [
-        "U6"
-      ],
-      "type": "ubahn"
-    },
-    {
-      "from": "giselastr",
-      "to": "m_freiheit",
-      "minutes": 1,
-      "lines": [
-        "U6"
-      ],
-      "type": "ubahn"
-    },
-    {
-      "from": "giselastr",
-      "to": "universitaet",
-      "minutes": 1,
-      "lines": [
-        "U6"
-      ],
-      "type": "ubahn"
-    },
-    {
-      "from": "universitaet",
-      "to": "giselastr",
-      "minutes": 1,
-      "lines": [
-        "U6"
-      ],
-      "type": "ubahn"
-    },
-    {
-      "from": "universitaet",
-      "to": "odeonsplatz",
-      "minutes": 2,
-      "lines": [
-        "U6"
-      ],
-      "type": "ubahn"
-    },
-    {
-      "from": "odeonsplatz",
-      "to": "universitaet",
-      "minutes": 2,
-      "lines": [
-        "U6"
-      ],
-      "type": "ubahn"
-    },
-    {
-      "from": "odeonsplatz",
-      "to": "marienplatz",
-      "minutes": 1,
-      "lines": [
-        "U6"
-      ],
-      "type": "ubahn"
-    },
-    {
-      "from": "marienplatz",
-      "to": "odeonsplatz",
-      "minutes": 1,
-      "lines": [
-        "U6"
-      ],
-      "type": "ubahn"
-    },
-    {
-      "from": "marienplatz",
-      "to": "sendlinger_tor",
-      "minutes": 2,
-      "lines": [
-        "U6"
-      ],
-      "type": "ubahn"
-    },
-    {
-      "from": "sendlinger_tor",
-      "to": "marienplatz",
-      "minutes": 2,
-      "lines": [
-        "U6"
-      ],
-      "type": "ubahn"
-    },
-    {
-      "from": "sendlinger_tor",
-      "to": "goetheplatz",
-      "minutes": 1,
-      "lines": [
-        "U6"
-      ],
-      "type": "ubahn"
-    },
-    {
-      "from": "goetheplatz",
-      "to": "sendlinger_tor",
-      "minutes": 1,
-      "lines": [
-        "U6"
-      ],
-      "type": "ubahn"
-    },
-    {
-      "from": "goetheplatz",
-      "to": "poccistr",
-      "minutes": 1,
-      "lines": [
-        "U6"
-      ],
-      "type": "ubahn"
-    },
-    {
-      "from": "poccistr",
-      "to": "goetheplatz",
-      "minutes": 1,
-      "lines": [
-        "U6"
-      ],
-      "type": "ubahn"
-    },
-    {
-      "from": "poccistr",
-      "to": "implerstr",
-      "minutes": 2,
-      "lines": [
-        "U6"
-      ],
-      "type": "ubahn"
-    },
-    {
-      "from": "implerstr",
-      "to": "poccistr",
-      "minutes": 2,
-      "lines": [
-        "U6"
-      ],
-      "type": "ubahn"
-    },
-    {
       "from": "implerstr",
       "to": "harras",
       "minutes": 1,
@@ -5553,11 +5117,304 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "type": "sbahn"
     },
     {
+      "from": "laim_s",
+      "to": "hirschgarten",
+      "minutes": 2,
+      "lines": [
+        "S1",
+        "S2",
+        "S3",
+        "S4",
+        "S6",
+        "S8"
+      ],
+      "type": "sbahn"
+    },
+    {
+      "from": "hirschgarten",
+      "to": "laim_s",
+      "minutes": 2,
+      "lines": [
+        "S1",
+        "S2",
+        "S3",
+        "S4",
+        "S6",
+        "S8"
+      ],
+      "type": "sbahn"
+    },
+    {
+      "from": "hirschgarten",
+      "to": "donnersbergerbruecke",
+      "minutes": 2,
+      "lines": [
+        "S1",
+        "S2",
+        "S3",
+        "S4",
+        "S6",
+        "S8"
+      ],
+      "type": "sbahn"
+    },
+    {
+      "from": "donnersbergerbruecke",
+      "to": "hirschgarten",
+      "minutes": 2,
+      "lines": [
+        "S1",
+        "S2",
+        "S3",
+        "S4",
+        "S6",
+        "S8"
+      ],
+      "type": "sbahn"
+    },
+    {
+      "from": "donnersbergerbruecke",
+      "to": "hackerbruecke",
+      "minutes": 2,
+      "lines": [
+        "S1",
+        "S2",
+        "S3",
+        "S4",
+        "S6",
+        "S7",
+        "S8"
+      ],
+      "type": "sbahn"
+    },
+    {
+      "from": "hackerbruecke",
+      "to": "donnersbergerbruecke",
+      "minutes": 2,
+      "lines": [
+        "S1",
+        "S2",
+        "S3",
+        "S4",
+        "S6",
+        "S7",
+        "S8"
+      ],
+      "type": "sbahn"
+    },
+    {
+      "from": "hackerbruecke",
+      "to": "hauptbahnhof",
+      "minutes": 2,
+      "lines": [
+        "S1",
+        "S2",
+        "S3",
+        "S4",
+        "S6",
+        "S7",
+        "S8"
+      ],
+      "type": "sbahn"
+    },
+    {
+      "from": "hauptbahnhof",
+      "to": "hackerbruecke",
+      "minutes": 2,
+      "lines": [
+        "S1",
+        "S2",
+        "S3",
+        "S4",
+        "S6",
+        "S7",
+        "S8"
+      ],
+      "type": "sbahn"
+    },
+    {
+      "from": "hauptbahnhof",
+      "to": "karlsplatz",
+      "minutes": 2,
+      "lines": [
+        "S1",
+        "S2",
+        "S3",
+        "S4",
+        "S6",
+        "S7",
+        "S8"
+      ],
+      "type": "sbahn"
+    },
+    {
+      "from": "karlsplatz",
+      "to": "hauptbahnhof",
+      "minutes": 2,
+      "lines": [
+        "S1",
+        "S2",
+        "S3",
+        "S4",
+        "S6",
+        "S7",
+        "S8"
+      ],
+      "type": "sbahn"
+    },
+    {
+      "from": "karlsplatz",
+      "to": "marienplatz",
+      "minutes": 2,
+      "lines": [
+        "S1",
+        "S2",
+        "S3",
+        "S4",
+        "S6",
+        "S7",
+        "S8"
+      ],
+      "type": "sbahn"
+    },
+    {
+      "from": "marienplatz",
+      "to": "karlsplatz",
+      "minutes": 2,
+      "lines": [
+        "S1",
+        "S2",
+        "S3",
+        "S4",
+        "S6",
+        "S7",
+        "S8"
+      ],
+      "type": "sbahn"
+    },
+    {
+      "from": "marienplatz",
+      "to": "isartor",
+      "minutes": 2,
+      "lines": [
+        "S1",
+        "S2",
+        "S3",
+        "S4",
+        "S6",
+        "S7",
+        "S8"
+      ],
+      "type": "sbahn"
+    },
+    {
+      "from": "isartor",
+      "to": "marienplatz",
+      "minutes": 2,
+      "lines": [
+        "S1",
+        "S2",
+        "S3",
+        "S4",
+        "S6",
+        "S7",
+        "S8"
+      ],
+      "type": "sbahn"
+    },
+    {
+      "from": "isartor",
+      "to": "rosenheimer_platz",
+      "minutes": 2,
+      "lines": [
+        "S1",
+        "S2",
+        "S3",
+        "S4",
+        "S6",
+        "S7",
+        "S8"
+      ],
+      "type": "sbahn"
+    },
+    {
+      "from": "rosenheimer_platz",
+      "to": "isartor",
+      "minutes": 2,
+      "lines": [
+        "S1",
+        "S2",
+        "S3",
+        "S4",
+        "S6",
+        "S7",
+        "S8"
+      ],
+      "type": "sbahn"
+    },
+    {
+      "from": "rosenheimer_platz",
+      "to": "ostbahnhof",
+      "minutes": 2,
+      "lines": [
+        "S1",
+        "S2",
+        "S3",
+        "S4",
+        "S6",
+        "S7",
+        "S8"
+      ],
+      "type": "sbahn"
+    },
+    {
+      "from": "ostbahnhof",
+      "to": "rosenheimer_platz",
+      "minutes": 2,
+      "lines": [
+        "S1",
+        "S2",
+        "S3",
+        "S4",
+        "S6",
+        "S7",
+        "S8"
+      ],
+      "type": "sbahn"
+    },
+    {
+      "from": "ostbahnhof",
+      "to": "leuchtenbergring",
+      "minutes": 2,
+      "lines": [
+        "S1",
+        "S2",
+        "S4",
+        "S6",
+        "S8"
+      ],
+      "type": "sbahn"
+    },
+    {
+      "from": "leuchtenbergring",
+      "to": "ostbahnhof",
+      "minutes": 2,
+      "lines": [
+        "S1",
+        "S2",
+        "S4",
+        "S6",
+        "S8"
+      ],
+      "type": "sbahn"
+    },
+    {
       "from": "muc_flughafen",
       "to": "flughafen_besucherpark",
       "minutes": 2,
       "lines": [
-        "S1"
+        "S1",
+        "S8"
       ],
       "type": "sbahn"
     },
@@ -5566,7 +5423,8 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "to": "muc_flughafen",
       "minutes": 2,
       "lines": [
-        "S1"
+        "S1",
+        "S8"
       ],
       "type": "sbahn"
     },
@@ -5755,7 +5613,9 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "to": "berg_am_laim",
       "minutes": 2,
       "lines": [
-        "S2"
+        "S2",
+        "S4",
+        "S6"
       ],
       "type": "sbahn"
     },
@@ -5764,7 +5624,9 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "to": "leuchtenbergring",
       "minutes": 2,
       "lines": [
-        "S2"
+        "S2",
+        "S4",
+        "S6"
       ],
       "type": "sbahn"
     },
@@ -6129,11 +5991,36 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "type": "sbahn"
     },
     {
+      "from": "pasing",
+      "to": "laim_s",
+      "minutes": 3,
+      "lines": [
+        "S3",
+        "S4",
+        "S6",
+        "S8"
+      ],
+      "type": "sbahn"
+    },
+    {
+      "from": "laim_s",
+      "to": "pasing",
+      "minutes": 3,
+      "lines": [
+        "S3",
+        "S4",
+        "S6",
+        "S8"
+      ],
+      "type": "sbahn"
+    },
+    {
       "from": "ostbahnhof",
       "to": "st_martin_str",
       "minutes": 2,
       "lines": [
-        "S3"
+        "S3",
+        "S7"
       ],
       "type": "sbahn"
     },
@@ -6142,7 +6029,8 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "to": "ostbahnhof",
       "minutes": 2,
       "lines": [
-        "S3"
+        "S3",
+        "S7"
       ],
       "type": "sbahn"
     },
@@ -6151,7 +6039,8 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "to": "giesing_bf",
       "minutes": 2,
       "lines": [
-        "S3"
+        "S3",
+        "S7"
       ],
       "type": "sbahn"
     },
@@ -6160,7 +6049,8 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "to": "st_martin_str",
       "minutes": 2,
       "lines": [
-        "S3"
+        "S3",
+        "S7"
       ],
       "type": "sbahn"
     },
@@ -6507,29 +6397,12 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "type": "sbahn"
     },
     {
-      "from": "leuchtenbergring",
-      "to": "berg_am_laim",
-      "minutes": 2,
-      "lines": [
-        "S4"
-      ],
-      "type": "sbahn"
-    },
-    {
-      "from": "berg_am_laim",
-      "to": "leuchtenbergring",
-      "minutes": 2,
-      "lines": [
-        "S4"
-      ],
-      "type": "sbahn"
-    },
-    {
       "from": "berg_am_laim",
       "to": "trudering",
       "minutes": 3,
       "lines": [
-        "S4"
+        "S4",
+        "S6"
       ],
       "type": "sbahn"
     },
@@ -6538,7 +6411,8 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "to": "berg_am_laim",
       "minutes": 3,
       "lines": [
-        "S4"
+        "S4",
+        "S6"
       ],
       "type": "sbahn"
     },
@@ -6547,7 +6421,8 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "to": "gronsdorf",
       "minutes": 3,
       "lines": [
-        "S4"
+        "S4",
+        "S6"
       ],
       "type": "sbahn"
     },
@@ -6556,7 +6431,8 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "to": "trudering",
       "minutes": 3,
       "lines": [
-        "S4"
+        "S4",
+        "S6"
       ],
       "type": "sbahn"
     },
@@ -6565,7 +6441,8 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "to": "haar",
       "minutes": 2,
       "lines": [
-        "S4"
+        "S4",
+        "S6"
       ],
       "type": "sbahn"
     },
@@ -6574,7 +6451,8 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "to": "gronsdorf",
       "minutes": 2,
       "lines": [
-        "S4"
+        "S4",
+        "S6"
       ],
       "type": "sbahn"
     },
@@ -6583,7 +6461,8 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "to": "vaterstetten",
       "minutes": 3,
       "lines": [
-        "S4"
+        "S4",
+        "S6"
       ],
       "type": "sbahn"
     },
@@ -6592,7 +6471,8 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "to": "haar",
       "minutes": 3,
       "lines": [
-        "S4"
+        "S4",
+        "S6"
       ],
       "type": "sbahn"
     },
@@ -6601,7 +6481,8 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "to": "baldham",
       "minutes": 2,
       "lines": [
-        "S4"
+        "S4",
+        "S6"
       ],
       "type": "sbahn"
     },
@@ -6610,7 +6491,8 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "to": "vaterstetten",
       "minutes": 2,
       "lines": [
-        "S4"
+        "S4",
+        "S6"
       ],
       "type": "sbahn"
     },
@@ -6619,7 +6501,8 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "to": "zorneding",
       "minutes": 3,
       "lines": [
-        "S4"
+        "S4",
+        "S6"
       ],
       "type": "sbahn"
     },
@@ -6628,7 +6511,8 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "to": "baldham",
       "minutes": 3,
       "lines": [
-        "S4"
+        "S4",
+        "S6"
       ],
       "type": "sbahn"
     },
@@ -6637,7 +6521,8 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "to": "eglharting",
       "minutes": 3,
       "lines": [
-        "S4"
+        "S4",
+        "S6"
       ],
       "type": "sbahn"
     },
@@ -6646,7 +6531,8 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "to": "zorneding",
       "minutes": 3,
       "lines": [
-        "S4"
+        "S4",
+        "S6"
       ],
       "type": "sbahn"
     },
@@ -6655,7 +6541,8 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "to": "kirchseeon",
       "minutes": 3,
       "lines": [
-        "S4"
+        "S4",
+        "S6"
       ],
       "type": "sbahn"
     },
@@ -6664,7 +6551,8 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "to": "eglharting",
       "minutes": 3,
       "lines": [
-        "S4"
+        "S4",
+        "S6"
       ],
       "type": "sbahn"
     },
@@ -6673,7 +6561,8 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "to": "grafing_bf",
       "minutes": 4,
       "lines": [
-        "S4"
+        "S4",
+        "S6"
       ],
       "type": "sbahn"
     },
@@ -6682,7 +6571,8 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "to": "kirchseeon",
       "minutes": 4,
       "lines": [
-        "S4"
+        "S4",
+        "S6"
       ],
       "type": "sbahn"
     },
@@ -6907,7 +6797,8 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "to": "pasing",
       "minutes": 2,
       "lines": [
-        "S6"
+        "S6",
+        "S8"
       ],
       "type": "sbahn"
     },
@@ -6915,6 +6806,25 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "from": "pasing",
       "to": "westkreuz",
       "minutes": 2,
+      "lines": [
+        "S6",
+        "S8"
+      ],
+      "type": "sbahn"
+    },
+    {
+      "from": "grafing_bf",
+      "to": "ebersberg",
+      "minutes": 6,
+      "lines": [
+        "S6"
+      ],
+      "type": "sbahn"
+    },
+    {
+      "from": "ebersberg",
+      "to": "grafing_bf",
+      "minutes": 6,
       "lines": [
         "S6"
       ],
@@ -7033,7 +6943,8 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "to": "pullach",
       "minutes": 2,
       "lines": [
-        "S7"
+        "S7",
+        "S20"
       ],
       "type": "sbahn"
     },
@@ -7042,7 +6953,8 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "to": "hoellriegelskreuth",
       "minutes": 2,
       "lines": [
-        "S7"
+        "S7",
+        "S20"
       ],
       "type": "sbahn"
     },
@@ -7051,7 +6963,8 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "to": "grosshesselohe",
       "minutes": 2,
       "lines": [
-        "S7"
+        "S7",
+        "S20"
       ],
       "type": "sbahn"
     },
@@ -7060,7 +6973,8 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "to": "pullach",
       "minutes": 2,
       "lines": [
-        "S7"
+        "S7",
+        "S20"
       ],
       "type": "sbahn"
     },
@@ -7069,7 +6983,8 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "to": "solln",
       "minutes": 2,
       "lines": [
-        "S7"
+        "S7",
+        "S20"
       ],
       "type": "sbahn"
     },
@@ -7078,7 +6993,8 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "to": "grosshesselohe",
       "minutes": 2,
       "lines": [
-        "S7"
+        "S7",
+        "S20"
       ],
       "type": "sbahn"
     },
@@ -7087,7 +7003,8 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "to": "siemenswerke",
       "minutes": 2,
       "lines": [
-        "S7"
+        "S7",
+        "S20"
       ],
       "type": "sbahn"
     },
@@ -7096,7 +7013,8 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "to": "solln",
       "minutes": 2,
       "lines": [
-        "S7"
+        "S7",
+        "S20"
       ],
       "type": "sbahn"
     },
@@ -7105,7 +7023,8 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "to": "mittersendling",
       "minutes": 2,
       "lines": [
-        "S7"
+        "S7",
+        "S20"
       ],
       "type": "sbahn"
     },
@@ -7114,7 +7033,8 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "to": "siemenswerke",
       "minutes": 2,
       "lines": [
-        "S7"
+        "S7",
+        "S20"
       ],
       "type": "sbahn"
     },
@@ -7587,24 +7507,6 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "type": "sbahn"
     },
     {
-      "from": "westkreuz",
-      "to": "pasing",
-      "minutes": 2,
-      "lines": [
-        "S8"
-      ],
-      "type": "sbahn"
-    },
-    {
-      "from": "pasing",
-      "to": "westkreuz",
-      "minutes": 2,
-      "lines": [
-        "S8"
-      ],
-      "type": "sbahn"
-    },
-    {
       "from": "leuchtenbergring",
       "to": "daglfing",
       "minutes": 3,
@@ -7731,24 +7633,6 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "type": "sbahn"
     },
     {
-      "from": "flughafen_besucherpark",
-      "to": "muc_flughafen",
-      "minutes": 2,
-      "lines": [
-        "S8"
-      ],
-      "type": "sbahn"
-    },
-    {
-      "from": "muc_flughafen",
-      "to": "flughafen_besucherpark",
-      "minutes": 2,
-      "lines": [
-        "S8"
-      ],
-      "type": "sbahn"
-    },
-    {
       "from": "pasing",
       "to": "heimeranplatz",
       "minutes": 6,
@@ -7779,96 +7663,6 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "from": "mittersendling",
       "to": "heimeranplatz",
       "minutes": 4,
-      "lines": [
-        "S20"
-      ],
-      "type": "sbahn"
-    },
-    {
-      "from": "mittersendling",
-      "to": "siemenswerke",
-      "minutes": 2,
-      "lines": [
-        "S20"
-      ],
-      "type": "sbahn"
-    },
-    {
-      "from": "siemenswerke",
-      "to": "mittersendling",
-      "minutes": 2,
-      "lines": [
-        "S20"
-      ],
-      "type": "sbahn"
-    },
-    {
-      "from": "siemenswerke",
-      "to": "solln",
-      "minutes": 2,
-      "lines": [
-        "S20"
-      ],
-      "type": "sbahn"
-    },
-    {
-      "from": "solln",
-      "to": "siemenswerke",
-      "minutes": 2,
-      "lines": [
-        "S20"
-      ],
-      "type": "sbahn"
-    },
-    {
-      "from": "solln",
-      "to": "grosshesselohe",
-      "minutes": 2,
-      "lines": [
-        "S20"
-      ],
-      "type": "sbahn"
-    },
-    {
-      "from": "grosshesselohe",
-      "to": "solln",
-      "minutes": 2,
-      "lines": [
-        "S20"
-      ],
-      "type": "sbahn"
-    },
-    {
-      "from": "grosshesselohe",
-      "to": "pullach",
-      "minutes": 2,
-      "lines": [
-        "S20"
-      ],
-      "type": "sbahn"
-    },
-    {
-      "from": "pullach",
-      "to": "grosshesselohe",
-      "minutes": 2,
-      "lines": [
-        "S20"
-      ],
-      "type": "sbahn"
-    },
-    {
-      "from": "pullach",
-      "to": "hoellriegelskreuth",
-      "minutes": 2,
-      "lines": [
-        "S20"
-      ],
-      "type": "sbahn"
-    },
-    {
-      "from": "hoellriegelskreuth",
-      "to": "pullach",
-      "minutes": 2,
       "lines": [
         "S20"
       ],
@@ -8473,7 +8267,8 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "to": "harras",
       "minutes": 3,
       "lines": [
-        "X30"
+        "X30",
+        "Bus 54"
       ],
       "type": "bus"
     },
@@ -8482,7 +8277,8 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "to": "brudermuehlstr",
       "minutes": 3,
       "lines": [
-        "X30"
+        "X30",
+        "Bus 54"
       ],
       "type": "bus"
     },
@@ -8841,24 +8637,6 @@ export const DEFAULT_MVV_DATASET: TransitRegion = {
       "from": "brudermuehlstr",
       "to": "giesing_bf",
       "minutes": 7,
-      "lines": [
-        "Bus 54"
-      ],
-      "type": "bus"
-    },
-    {
-      "from": "brudermuehlstr",
-      "to": "harras",
-      "minutes": 3,
-      "lines": [
-        "Bus 54"
-      ],
-      "type": "bus"
-    },
-    {
-      "from": "harras",
-      "to": "brudermuehlstr",
-      "minutes": 3,
       "lines": [
         "Bus 54"
       ],
