@@ -898,8 +898,9 @@ export function estimateCommuteTime(
       const walkSpeedKmh = schedule.options?.walkingSpeedKmh ?? DEFAULT_ROUTING_PARAMETERS.walkingSpeedKmh;
       const detour = schedule.options?.urbanDetourFactor ?? DEFAULT_ROUTING_PARAMETERS.urbanDetourFactor;
       // Direct walking if very close (< 800m)
+      const directWalkMin = ((straightDistKm * detour) / walkSpeedKmh) * 60;
       if (straightDistKm <= 0.8) {
-        travelTimeMin = ((straightDistKm * detour) / walkSpeedKmh) * 60;
+        travelTimeMin = directWalkMin;
         details = {
           summary: `Fußweg (< 800m)`,
           steps: [`Direkter Fußweg (${Math.round(straightDistKm * 1000)} m, ca. ${Math.round(travelTimeMin)} Min bei ~${walkSpeedKmh.toFixed(1)} km/h)`],
@@ -966,7 +967,9 @@ export function estimateCommuteTime(
       const inVehicleTime = (roadDistanceKm / speedKmh) * 60;
       const transfers = Math.min(maxTransfers, Math.floor(roadDistanceKm / 7));
       const transferDelay = transfers * 4;
-      travelTimeMin = walkAccessTime + inVehicleTime + transferDelay + walkDestTime;
+      const rawTransitTime = walkAccessTime + inVehicleTime + transferDelay + walkDestTime;
+      // Monotonicity guarantee: transit fallback with access/egress cannot be faster than pure walking on short paths
+      travelTimeMin = Math.max(directWalkMin, rawTransitTime);
 
       details = {
         summary: `ÖPNV-Näherung (keine Haltestelle)`,

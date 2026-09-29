@@ -451,7 +451,7 @@ export function getInitialDepartureWaitMinutes(
   if (!enableHeadwayPenalty) {
     return 1.0;
   }
-  let minWait = 15;
+  let minWait = Infinity;
   for (const t of station.types) {
     const headway = estimateHeadwayMinutes(t, station.lines, schedule);
     const halfHeadway = headway / 2;
@@ -461,20 +461,21 @@ export function getInitialDepartureWaitMinutes(
     else if (t === 'bus' && (allowedModes.has('bus') || allowedModes.has('expressbus'))) minWait = Math.min(minWait, halfHeadway);
     else if (t === 'train' && allowedModes.has('train')) minWait = Math.min(minWait, halfHeadway);
   }
-  return minWait === 15 ? 4.0 : minWait;
+  return Number.isFinite(minWait) ? minWait : 4.0;
 }
 
 /**
  * Calculates realistic transfer penalty when changing lines.
  * Accounts for:
  * 1. Physical walking buffer between platforms / stairs (configurable, minTransferBufferMin)
- * 2. Average waiting time for connecting service (Headway / 2, capped by user's maxTransferWaitMin)
- * 3. Schedule fragility risk buffer (configurable, transferRiskBufferMin) to penalize brittle connections.
+ * 2. Average waiting time for connecting service (Headway / 2)
+ * 3. User tolerance constraint: If expected wait exceeds maxTransferWaitMin, the connection is rejected (Infinity)
+ * 4. Schedule fragility risk buffer (configurable, transferRiskBufferMin) to penalize brittle connections.
  */
 export function calculateTransferPenalty(
   targetType: string,
   targetLines: string[],
-  maxTransferWaitMin: number = 5,
+  maxTransferWaitMin?: number,
   minTransferBufferMin: number = DEFAULT_ROUTING_PARAMETERS.minTransferBufferMin,
   transferRiskBufferMin: number = DEFAULT_ROUTING_PARAMETERS.transferRiskBufferMin,
   enableHeadwayPenalty: boolean = DEFAULT_ROUTING_PARAMETERS.enableHeadwayPenalty,
@@ -482,7 +483,15 @@ export function calculateTransferPenalty(
 ): number {
   const headway = estimateHeadwayMinutes(targetType, targetLines, schedule);
   const averageWait = enableHeadwayPenalty ? headway / 2 : 1.0;
-  const effectiveWait = Math.min(averageWait, Math.max(1.0, maxTransferWaitMin));
+
+  // Feasibility check: If user specified a maximum acceptable transfer wait,
+  // connections whose scheduled wait exceeds this threshold are disallowed.
+  // A strict preference must NEVER make an infrequent connection cheaper.
+  if (enableHeadwayPenalty && maxTransferWaitMin !== undefined && averageWait > maxTransferWaitMin) {
+    return Infinity;
+  }
+
+  const effectiveWait = averageWait;
   const baseWalkBuffer = targetType === 'ubahn' || targetType === 'sbahn' ? minTransferBufferMin - 0.5 : minTransferBufferMin + 0.5;
   const walkBuffer = Math.max(1.0, baseWalkBuffer);
   const riskBuffer = transferRiskBufferMin; // Deliberate risk penalty against fragile connections
@@ -701,6 +710,11 @@ export function calculateReachableStations(
             schedule
           )
         : 0;
+
+      if (!Number.isFinite(transferPenalty)) {
+        continue;
+      }
+
       const nextTime = curr.totalTime + edge.minutes + transferPenalty;
 
       if (nextTime <= travelTimeMinutes) {
@@ -1028,13 +1042,18 @@ export function findShortestTransitTrip(
         ? calculateTransferPenalty(
             edge.type,
             edge.lines,
-            profile.maxTransferWaitMin ?? 5,
+            profile.maxTransferWaitMin,
             minTransferBuffer,
             transferRiskBuffer,
             enableHeadway,
             schedule
           )
         : 0;
+
+      if (!Number.isFinite(transferPenalty)) {
+        continue;
+      }
+
       const nextGTime = curr.gTime + edge.minutes + transferPenalty;
 
       const nextFScore = nextGTime;
