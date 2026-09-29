@@ -639,7 +639,7 @@ export const MapLayerControls: React.FC<MapLayerControlsProps> = ({
       {/* Active "Nur überlagerter Treffbereich" Floating Banner */}
       {isOnlyIntersectionActive && hasIntersection && onToggleOnlyIntersection && (
         <div
-          className={`absolute bottom-[max(3.5rem,calc(env(safe-area-inset-bottom)+3rem))] left-[max(0.75rem,env(safe-area-inset-left))] z-20 bg-white/95 dark:bg-[#1e1f20]/95 backdrop-blur-md px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-xl shadow-md border border-emerald-300 dark:border-emerald-700 items-center gap-2 text-xs text-emerald-950 dark:text-emerald-300 animate-in fade-in duration-150 ${
+          className={`absolute bottom-[max(3.5rem,calc(env(safe-area-inset-bottom)+3rem))] left-[max(0.75rem,env(safe-area-inset-left))] z-20 bg-white/95 dark:bg-[#1e1f20]/95 backdrop-blur-md px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-full shadow-md border border-emerald-300 dark:border-emerald-700 items-center gap-2 text-xs text-emerald-950 dark:text-emerald-300 animate-in fade-in duration-150 ${
             isInspectionActive ? 'hidden sm:flex' : 'flex'
           }`}
         >

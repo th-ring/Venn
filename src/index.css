@@ -142,7 +142,7 @@ html.dark :focus-visible {
   background-color: #131314;
 }
 
-/* Leaflet Controls - Google Material 3 Theming */
+/* Leaflet Controls - Clean Unified Theming */
 .leaflet-bar {
   border: 1px solid #e0e2e6 !important;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
@@ -198,7 +198,7 @@ html.dark :focus-visible {
   color: #8ab4f8 !important;
 }
 
-/* Leaflet Popups - Google Material Card Style */
+/* Leaflet Popups - Card Style */
 .leaflet-popup-content-wrapper {
   border-radius: 16px !important;
   padding: 0 !important;
@@ -270,7 +270,7 @@ html.dark :focus-visible {
   scrollbar-width: none;
 }
 
-/* Slim Google Material Scrollbar */
+/* Slim Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;

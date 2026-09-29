@@ -105,11 +105,11 @@ export const PriorityHeatmapWidget: React.FC<PriorityHeatmapWidgetProps> = ({
         <div className="flex items-center gap-1.5 shrink-0">
           {/* Active status indicator badge */}
           {isHeatmapActive ? (
-            <span className="text-[11px] font-semibold bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 px-2 py-0.5 rounded-md border border-amber-200 dark:border-amber-800">
+            <span className="text-[11px] font-semibold bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 px-2.5 py-0.5 rounded-full border border-amber-200 dark:border-amber-800">
               {currentRadius.toFixed(1)} km
             </span>
           ) : (
-            <span className="text-[11px] font-medium text-slate-400 px-2 py-0.5 rounded-md bg-slate-100 dark:bg-[#25262a]">
+            <span className="text-[11px] font-medium text-slate-400 px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-[#25262a]">
               Aus
             </span>
           )}
@@ -161,7 +161,7 @@ export const PriorityHeatmapWidget: React.FC<PriorityHeatmapWidgetProps> = ({
                 className="w-full accent-amber-600 dark:accent-amber-400 h-1.5 bg-slate-200 dark:bg-[#2f3336] rounded-lg cursor-pointer"
                 title={`Radius: ${currentRadius.toFixed(2)} km`}
               />
-              <span className="text-[10px] font-bold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 px-1.5 py-0.5 rounded border border-amber-200 dark:border-amber-800 shrink-0">
+              <span className="text-[10px] font-bold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded-full border border-amber-200 dark:border-amber-800 shrink-0">
                 {currentRadius.toFixed(1)}km
               </span>
             </div>

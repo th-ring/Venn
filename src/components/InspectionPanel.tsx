@@ -206,7 +206,7 @@ export const InspectionPanel: React.FC<InspectionPanelProps> = ({
                   <Home className="w-6 h-6" />
                 </div>
               )}
-              <div className="absolute bottom-1 left-1 bg-black/80 backdrop-blur-md text-white text-[10px] font-bold px-1.5 py-0.5 rounded">
+              <div className="absolute bottom-1 left-1 bg-black/80 backdrop-blur-md text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
                 {selectedApt.priceWarm || selectedApt.priceCold} €
               </div>
             </div>

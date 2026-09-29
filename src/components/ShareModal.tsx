@@ -142,11 +142,11 @@ export const ShareModal: React.FC<ShareModalProps> = ({
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex rounded-full bg-slate-100 dark:bg-[#131314] p-1 mb-4">
+        <div className="flex rounded-xl bg-slate-100 dark:bg-[#131314] p-1 mb-4 gap-1">
           <button
             type="button"
             onClick={() => setActiveTab('export')}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 text-xs font-medium rounded-full transition-all cursor-pointer ${
+            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 text-xs font-medium rounded-lg transition-all cursor-pointer ${
               activeTab === 'export'
                 ? 'bg-white dark:bg-[#282a2c] text-slate-900 dark:text-[#e3e3e3] shadow-xs'
                 : 'text-slate-600 dark:text-[#9aa0a6] hover:text-slate-900 dark:hover:text-[#e3e3e3]'
@@ -158,7 +158,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
           <button
             type="button"
             onClick={() => setActiveTab('import')}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 text-xs font-medium rounded-full transition-all cursor-pointer ${
+            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 text-xs font-medium rounded-lg transition-all cursor-pointer ${
               activeTab === 'import'
                 ? 'bg-white dark:bg-[#282a2c] text-slate-900 dark:text-[#e3e3e3] shadow-xs'
                 : 'text-slate-600 dark:text-[#9aa0a6] hover:text-slate-900 dark:hover:text-[#e3e3e3]'

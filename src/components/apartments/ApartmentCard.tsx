@@ -101,7 +101,7 @@ export const ApartmentCard: React.FC<ApartmentCardProps> = ({
           )}
 
           {/* Price Tag Overlay on image */}
-          <div className="absolute bottom-1.5 left-1.5 bg-black/75 backdrop-blur-md text-white text-[11px] font-bold px-2 py-0.5 rounded-lg shadow-sm">
+          <div className="absolute bottom-1.5 left-1.5 bg-black/75 backdrop-blur-md text-white text-[11px] font-bold px-2.5 py-0.5 rounded-full shadow-sm">
             {rentWarm} € <span className="font-normal text-[9px] text-slate-300">warm</span>
           </div>
         </div>
@@ -112,7 +112,7 @@ export const ApartmentCard: React.FC<ApartmentCardProps> = ({
             {/* Top row: Source badge & Room/Sqm quick specs */}
             <div className="flex items-center justify-between gap-1.5 mb-1 flex-wrap">
               <span
-                className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md border ${portalMeta.badgeClass}`}
+                className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${portalMeta.badgeClass}`}
               >
                 {portalMeta.label}
               </span>
@@ -156,7 +156,7 @@ export const ApartmentCard: React.FC<ApartmentCardProps> = ({
               {listing.features.slice(0, 3).map((f) => (
                 <span
                   key={f}
-                  className="text-[10px] px-1.5 py-0.2 bg-slate-100 dark:bg-[#282a2c] text-slate-600 dark:text-[#c4c7c5] rounded font-medium truncate"
+                  className="text-[10px] px-2 py-0.5 bg-slate-100 dark:bg-[#282a2c] text-slate-600 dark:text-[#c4c7c5] rounded-full font-medium truncate"
                 >
                   {f}
                 </span>
@@ -196,7 +196,7 @@ export const ApartmentCard: React.FC<ApartmentCardProps> = ({
               </div>
 
               {/* Commute Average badge */}
-              <div className="shrink-0 font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/50 px-1.5 py-0.5 rounded border border-emerald-200/80 dark:border-emerald-800/80 flex items-center gap-0.5">
+              <div className="shrink-0 font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded-full border border-emerald-200/80 dark:border-emerald-800/80 flex items-center gap-0.5">
                 <Clock className="w-2.5 h-2.5" />
                 <span>Ø {commuteScore.avgCommuteMinutes}m</span>
               </div>

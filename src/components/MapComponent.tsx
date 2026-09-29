@@ -1222,7 +1222,7 @@ export const MapComponent: React.FC<MapComponentProps> = React.memo<MapComponent
 
       {/* Calculating overlay spinner */}
       {(isCalculating || isPending) && (
-        <div className="absolute top-[max(3.75rem,calc(env(safe-area-inset-top)+3.25rem))] sm:top-[max(4.5rem,calc(env(safe-area-inset-top)+3.5rem))] left-[max(0.75rem,env(safe-area-inset-left))] z-20 bg-white/95 dark:bg-[#1e1f20]/95 backdrop-blur-md px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-xl sm:rounded-2xl shadow-lg border border-slate-200/90 dark:border-[#3c4043] flex items-center gap-2 text-xs font-semibold text-slate-800 dark:text-[#e3e3e3] animate-in fade-in duration-200">
+        <div className="absolute top-[max(3.75rem,calc(env(safe-area-inset-top)+3.25rem))] sm:top-[max(4.5rem,calc(env(safe-area-inset-top)+3.5rem))] left-[max(0.75rem,env(safe-area-inset-left))] z-20 bg-white/95 dark:bg-[#1e1f20]/95 backdrop-blur-md px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-full shadow-lg border border-slate-200/90 dark:border-[#3c4043] flex items-center gap-2 text-xs font-semibold text-slate-800 dark:text-[#e3e3e3] animate-in fade-in duration-200">
           <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin text-blue-600 dark:text-blue-400" />
           <span>{isCalculating ? 'Berechne Isochronen...' : 'Aktualisierung...'}</span>
         </div>
@@ -1230,14 +1230,14 @@ export const MapComponent: React.FC<MapComponentProps> = React.memo<MapComponent
 
       {/* Floating Basemap Warning / Error Banner if Key is Missing */}
       {basemapError && (
-        <div className="absolute top-16 left-1/2 -translate-x-1/2 z-30 flex items-center gap-3 bg-amber-950/90 text-white px-4 py-2 rounded-xl shadow-xl border border-amber-600/50 backdrop-blur-md text-xs max-w-md w-full animate-in fade-in duration-200">
+        <div className="absolute top-16 left-1/2 -translate-x-1/2 z-30 flex items-center gap-3 bg-amber-950/90 text-white px-4 py-2 rounded-2xl shadow-xl border border-amber-600/50 backdrop-blur-md text-xs max-w-md w-full animate-in fade-in duration-200">
           <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
           <div className="flex-1 leading-snug">{basemapError}</div>
           {onOpenApiKeySettings && (
             <button
               type="button"
               onClick={onOpenApiKeySettings}
-              className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-2.5 py-1 rounded-lg text-[11px] shrink-0 transition-colors flex items-center gap-1 shadow-xs cursor-pointer"
+              className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-3 py-1 rounded-full text-[11px] shrink-0 transition-colors flex items-center gap-1 shadow-xs cursor-pointer"
             >
               <Key className="w-3 h-3" />
               <span>Key eingeben</span>

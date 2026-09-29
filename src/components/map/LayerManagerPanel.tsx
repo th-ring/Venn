@@ -681,7 +681,7 @@ export const LayerManagerPanel: React.FC<LayerManagerPanelProps> = ({
                                       minRooms: item.id === 0 ? undefined : item.id,
                                     })
                                   }
-                                  className={`py-1 px-1 text-[10.5px] font-medium rounded-md border text-center transition-colors cursor-pointer ${
+                                  className={`py-1 px-1 text-[10.5px] font-medium rounded-lg border text-center transition-colors cursor-pointer ${
                                     isSelected
                                       ? 'bg-rose-50 dark:bg-rose-950/60 border-rose-300 dark:border-rose-700 text-rose-700 dark:text-rose-300 font-bold'
                                       : 'bg-white dark:bg-[#1e1f20] border-slate-200 dark:border-[#3c4043] text-slate-600 dark:text-[#9aa0a6] hover:bg-slate-50 dark:hover:bg-[#282a2c]'
@@ -1009,11 +1009,11 @@ export const LayerManagerPanel: React.FC<LayerManagerPanelProps> = ({
                       </div>
 
                       {/* 4-way Provider Tabs */}
-                      <div className="grid grid-cols-4 gap-1 bg-slate-200/70 dark:bg-[#131314] p-1 rounded-lg">
+                      <div className="grid grid-cols-4 gap-1 bg-slate-200/70 dark:bg-[#131314] p-1 rounded-xl">
                         <button
                           type="button"
                           onClick={() => onSelectPlatform('osm')}
-                          className={`py-1.5 px-1 rounded-md text-[10px] font-bold text-center transition-all cursor-pointer flex items-center justify-center gap-1 ${
+                          className={`py-1.5 px-1 rounded-lg text-[10px] font-bold text-center transition-all cursor-pointer flex items-center justify-center gap-1 ${
                             activePlatform === 'osm'
                               ? 'bg-white dark:bg-[#282a2c] text-blue-900 dark:text-blue-300 shadow-2xs'
                               : 'text-slate-600 dark:text-[#9aa0a6] hover:text-slate-900 dark:hover:text-[#e3e3e3]'
@@ -1026,7 +1026,7 @@ export const LayerManagerPanel: React.FC<LayerManagerPanelProps> = ({
                         <button
                           type="button"
                           onClick={() => onSelectPlatform('memomaps')}
-                          className={`py-1.5 px-1 rounded-md text-[10px] font-bold text-center transition-all cursor-pointer flex items-center justify-center gap-1 ${
+                          className={`py-1.5 px-1 rounded-lg text-[10px] font-bold text-center transition-all cursor-pointer flex items-center justify-center gap-1 ${
                             activePlatform === 'memomaps' || activePlatform === 'opnv'
                               ? 'bg-white dark:bg-[#282a2c] text-emerald-900 dark:text-emerald-300 shadow-2xs'
                               : 'text-slate-600 dark:text-[#9aa0a6] hover:text-slate-900 dark:hover:text-[#e3e3e3]'
@@ -1039,7 +1039,7 @@ export const LayerManagerPanel: React.FC<LayerManagerPanelProps> = ({
                         <button
                           type="button"
                           onClick={() => onSelectPlatform('carto')}
-                          className={`py-1.5 px-1 rounded-md text-[10px] font-bold text-center transition-all cursor-pointer flex items-center justify-center gap-1 ${
+                          className={`py-1.5 px-1 rounded-lg text-[10px] font-bold text-center transition-all cursor-pointer flex items-center justify-center gap-1 ${
                             activePlatform === 'carto'
                               ? 'bg-white dark:bg-[#282a2c] text-purple-900 dark:text-purple-300 shadow-2xs'
                               : 'text-slate-600 dark:text-[#9aa0a6] hover:text-slate-900 dark:hover:text-[#e3e3e3]'
@@ -1052,7 +1052,7 @@ export const LayerManagerPanel: React.FC<LayerManagerPanelProps> = ({
                         <button
                           type="button"
                           onClick={() => onSelectPlatform('google')}
-                          className={`py-1.5 px-1 rounded-md text-[10px] font-bold text-center transition-all cursor-pointer flex items-center justify-center gap-1 ${
+                          className={`py-1.5 px-1 rounded-lg text-[10px] font-bold text-center transition-all cursor-pointer flex items-center justify-center gap-1 ${
                             activePlatform === 'google'
                               ? 'bg-white dark:bg-[#282a2c] text-blue-900 dark:text-blue-300 shadow-2xs'
                               : 'text-slate-600 dark:text-[#9aa0a6] hover:text-slate-900 dark:hover:text-[#e3e3e3]'

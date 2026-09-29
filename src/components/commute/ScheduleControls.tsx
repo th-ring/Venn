@@ -126,10 +126,10 @@ export const ScheduleControls: React.FC<ScheduleControlsProps> = ({
           {/* Summary badge when collapsed */}
           {isCollapsed && (
             <div className="flex items-center gap-1">
-              <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${headwayProfile.badgeClass}`}>
+              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${headwayProfile.badgeClass}`}>
                 {headwayProfile.name}
               </span>
-              <span className="text-[11px] font-medium bg-slate-100 dark:bg-[#25262a] text-slate-600 dark:text-[#9aa0a6] px-2 py-0.5 rounded-md truncate max-w-[140px]">
+              <span className="text-[11px] font-medium bg-slate-100 dark:bg-[#25262a] text-slate-600 dark:text-[#9aa0a6] px-2.5 py-0.5 rounded-full truncate max-w-[140px]">
                 {schedule.direction === 'to_work' ? '➔ Ziel' : '➔ Zurück'} •{' '}
                 {schedule.dayOfWeek === 'workday' ? 'Mo–Fr' : 'Sa/So'} {schedule.time || '07:00'}
               </span>
@@ -292,7 +292,7 @@ export const ScheduleControls: React.FC<ScheduleControlsProps> = ({
           {/* Active Headway Profile Indicator */}
           <div className="flex items-center justify-between gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-50 dark:bg-[#121315] border border-slate-200/60 dark:border-[#2f3336]">
             <div className="flex items-center gap-1.5 min-w-0">
-              <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border shrink-0 ${headwayProfile.badgeClass}`}>
+              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border shrink-0 ${headwayProfile.badgeClass}`}>
                 {headwayProfile.name}
               </span>
               <span className="text-[11px] text-slate-500 dark:text-[#9aa0a6] truncate">

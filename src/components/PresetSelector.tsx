@@ -35,7 +35,7 @@ export const PresetSelector: React.FC<PresetSelectorProps> = ({
         id="btn-preset-selector"
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
-        className="w-full flex items-center justify-between px-3 py-1.5 bg-slate-50 dark:bg-[#121315] hover:bg-slate-100/90 dark:hover:bg-[#25262a] border border-slate-200/80 dark:border-[#2f3336] rounded-full text-xs font-medium text-slate-700 dark:text-[#c4c7c5] shadow-2xs transition-all cursor-pointer group"
+        className="w-full flex items-center justify-between px-3 py-1.5 bg-slate-50 dark:bg-[#121315] hover:bg-slate-100/90 dark:hover:bg-[#25262a] border border-slate-200/80 dark:border-[#2f3336] rounded-xl text-xs font-medium text-slate-700 dark:text-[#c4c7c5] shadow-2xs transition-all cursor-pointer group"
         title="Region wechseln"
       >
         <div className="flex items-center gap-1.5 min-w-0">

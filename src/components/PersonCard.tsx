@@ -283,7 +283,7 @@ export const PersonCard: React.FC<PersonCardProps> = React.memo<PersonCardProps>
           {/* Collapsed state mini-summary */}
           {isCardCollapsed && (
             <div className="flex items-center gap-1.5 flex-shrink-0 text-[11px] text-slate-500 dark:text-[#9aa0a6] font-medium">
-              <span className="bg-slate-100 dark:bg-[#25262a] px-2 py-0.5 rounded-md font-semibold text-slate-700 dark:text-[#c4c7c5]">
+              <span className="bg-slate-100 dark:bg-[#25262a] px-2.5 py-0.5 rounded-full font-semibold text-slate-700 dark:text-[#c4c7c5]">
                 {profile.travelTimeMinutes}m
               </span>
               <span>•</span>
@@ -507,7 +507,7 @@ export const PersonCard: React.FC<PersonCardProps> = React.memo<PersonCardProps>
 
           {/* Engine Source Badge (if available, subtle & non-intrusive) */}
           {isochroneInfo?.isFallback && (
-            <div className="flex items-center gap-1 text-[10px] text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 px-2 py-0.5 rounded-md border border-rose-200 dark:border-rose-900/60">
+            <div className="flex items-center gap-1 text-[10px] text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 px-2.5 py-0.5 rounded-full border border-rose-200 dark:border-rose-900/60">
               <AlertTriangle className="w-3 h-3 shrink-0" />
               <span>Offline-Fallback aktiv</span>
             </div>

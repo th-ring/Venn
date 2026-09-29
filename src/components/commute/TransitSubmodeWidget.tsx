@@ -115,12 +115,12 @@ export const TransitSubmodeWidget: React.FC<TransitSubmodeWidgetProps> = ({
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
-          <span className="text-[11px] font-medium bg-slate-100 dark:bg-[#282a2c] text-slate-600 dark:text-[#9aa0a6] px-2 py-0.5 rounded-md">
+          <span className="text-[11px] font-medium bg-slate-100 dark:bg-[#282a2c] text-slate-600 dark:text-[#9aa0a6] px-2.5 py-0.5 rounded-full">
             {activeTransitModes.length} von {ALL_TRANSIT_SUBMODES.length} aktiv
           </span>
           <button
             type="button"
-            className="text-slate-400 dark:text-[#9aa0a6] hover:text-slate-600 dark:hover:text-[#e3e3e3] p-0.5 rounded transition-colors"
+            className="text-slate-400 dark:text-[#9aa0a6] hover:text-slate-600 dark:hover:text-[#e3e3e3] p-1 rounded-lg transition-colors cursor-pointer"
             title={isCollapsed ? 'Aufklappen' : 'Einklappen'}
           >
             {isCollapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
