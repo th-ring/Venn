@@ -30,7 +30,7 @@ export const PresetSelector: React.FC<PresetSelectorProps> = ({
 
   return (
     <div className="relative" ref={dropdownRef}>
-      {/* Airbnb-style search capsule */}
+      {/* Streamlined search capsule */}
       <button
         id="btn-preset-selector"
         type="button"

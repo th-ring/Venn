@@ -10,13 +10,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.7.0] - 2026-09-29
 
 ### Added
-- **Icon-First Apple Segment Control**: Replaced verbose button walls with pure icon segments (`🚆 🚗 🚲 🚶`) for commute transport modes with full accessibility tooltips and ARIA support.
+- **Icon-First Segment Control**: Replaced verbose button walls with pure icon segments (`🚆 🚗 🚲 🚶`) for commute transport modes with full accessibility tooltips and ARIA support.
 - **Integrated Travel Time Selector**: Added direct minute presets dropdown (`15m`, `20m`, `30m`, `45m`, `60m`, `75m`, `90m`) alongside the fluid slider in each reference card.
-- **Airbnb-Style Scenario Capsule**: Transformed the preset scenario switch into a unified, elevated search capsule pill.
+- **Unified Scenario Capsule**: Transformed the preset scenario switch into a unified, elevated search capsule pill.
 - **Consolidated Transit Preferences**: Tucked deep ÖPNV filters and transfer settings into a progressive-disclosure popover with single-click dropdowns.
 
 ### Changed
-- **Unified Status & Filter Bar**: Consolidated intersection area metrics, active profile counts, and filter chips into a single compact Apple-style status capsule.
+- **Unified Status & Filter Bar**: Consolidated intersection area metrics, active profile counts, and filter chips into a single compact status capsule.
 - **Streamlined Global Search Controls**: Replaced multi-tiered accordions with a 2-segment direction switch, combined schedule time dropdown, and priority heatmap mode selector.
 
 ### Performance
@@ -38,7 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.6.0] - 2026-09-28
 
 ### Added
-- **Neues Brand Identity Logo**: Vollständige Neugestaltung des Venn-Markenzeichens nach professionellen Agency-Standards: Ein markanter Google-4-Farben Hero-Pin, verankert bei 2/3 Tiefe der Maximum-Overlap-Schnittlinse, mit einem monolithischen 5-Eck-Wohnsymbol.
+- **Neues Brand Identity Logo**: Vollständige Neugestaltung des Venn-Markenzeichens nach professionellen Agency-Standards: Ein markanter 4-Farben Hero-Pin, verankert bei 2/3 Tiefe der Maximum-Overlap-Schnittlinse, mit einem monolithischen 5-Eck-Wohnsymbol.
 - **Interaktive Brand Identity Suite (`public/logo-showcase.html`)**: Dedizierte Design-Testbench mit simultanem `Light Mode` / `Dark Mode` Toggle, Skalierungsmatrix von 16px Favicon bis 128px Retina und SVG-Export.
 
 ### Changed

@@ -222,10 +222,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
             width: !isMobileScreen ? `${effectiveWidth}px` : '100%',
           }}
         >
-          {/* App Header (Google M3 App Bar with iOS Safe-Area support) */}
+          {/* App Header */}
           <div className="h-14 sm:h-14 pt-[env(safe-area-inset-top)] box-content px-3 sm:px-4 bg-white dark:bg-[#1e1f20] border-b border-slate-200 dark:border-[#3c4043] flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-            {/* Standalone Brand Vector Mark (No glowing box, no card frame) */}
+            {/* Standalone Brand Vector Mark */}
             <div className="w-8 h-7 sm:w-9 sm:h-8 flex items-center justify-center shrink-0">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" className="w-full h-full" fill="none">
                 <defs>
@@ -233,13 +233,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     <circle cx="58" cy="54" r="26" />
                   </clipPath>
                 </defs>
-                {/* Left Circle: Google Blue */}
+                {/* Left Circle: Primary Blue */}
                 <circle cx="42" cy="54" r="26" fill="#4285F4" className="dark:fill-[#4285F4] fill-[#1A73E8]" />
-                {/* Right Circle: Google Green */}
+                {/* Right Circle: Accent Green */}
                 <circle cx="58" cy="54" r="26" fill="#34A853" className="dark:fill-[#34A853] fill-[#1E8E3E]" />
                 {/* Overlap Intersection: Teal Lens */}
                 <circle cx="42" cy="54" r="26" clipPath="url(#sb-venn-clip)" fill="#00897B" className="dark:fill-[#00897B] fill-[#00796B]" />
-                {/* Classic Google Pin: 2/3 Depth Anchor with 2.2px Chiseled Border */}
+                {/* Classic Pin: 2/3 Depth Anchor with 2.2px Chiseled Border */}
                 <path
                   d="M 50 62 C 43 53, 35 45, 35 36 A 15 15 0 1 1 65 36 C 65 45, 57 53, 50 62 Z"
                   fill="#EA4335"
@@ -367,7 +367,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           id="sidebar-scrollable-body"
           className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3.5 touch-scroll-y"
         >
-          {/* Status & Filter Kapsel (Unified Apple/Airbnb Bar) */}
+          {/* Status & Filter Kapsel (Unified Bar) */}
           <div className="bg-white dark:bg-[#1a1b1e] p-2 sm:p-2.5 rounded-2xl border border-slate-200/90 dark:border-[#2f3336] shadow-2xs flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 min-w-0">
               {hasIntersection ? (

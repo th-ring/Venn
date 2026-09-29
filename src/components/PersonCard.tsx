@@ -358,7 +358,7 @@ export const PersonCard: React.FC<PersonCardProps> = React.memo<PersonCardProps>
 
       {!isCardCollapsed && (
         <>
-          {/* 2. Address Search Input (Airbnb style) */}
+          {/* 2. Address Search Input */}
           <div ref={searchContainerRef} className="relative">
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
@@ -427,7 +427,7 @@ export const PersonCard: React.FC<PersonCardProps> = React.memo<PersonCardProps>
             )}
           </div>
 
-          {/* 3. Controls Row: Apple-Style Icon-Only Segment + Travel Time Dropdown & Slider */}
+          {/* 3. Controls Row: Icon-Only Segment + Travel Time Dropdown & Slider */}
           <div className="flex items-center gap-2 pt-0.5">
             {/* Icon-Only Mode Segment (No text, pure icon affordances with tooltips) */}
             <div

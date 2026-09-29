@@ -241,7 +241,7 @@ export const MapLayerControls: React.FC<MapLayerControlsProps> = ({
     <>
       {/* Floating Map Controls Top-Right */}
       <div className="absolute top-[max(0.75rem,env(safe-area-inset-top))] right-[max(0.75rem,env(safe-area-inset-right))] z-20 flex flex-col items-end gap-2">
-        {/* Main Layer Panel Trigger Button (Google M3 Pill) */}
+        {/* Main Layer Panel Trigger Button */}
         <div className="relative">
           <button
             id="btn-layer-manager-toggle"
@@ -268,7 +268,7 @@ export const MapLayerControls: React.FC<MapLayerControlsProps> = ({
           </button>
         </div>
 
-        {/* Action Controls Column (Google Maps Unified Floating Dock) */}
+        {/* Action Controls Column (Floating Dock) */}
         {!isLayerPanelOpen && (
           <div className="bg-white/95 dark:bg-[#1e1f20]/95 rounded-2xl shadow-md border border-slate-200/80 dark:border-[#3c4043] flex flex-col divide-y divide-slate-100 dark:divide-[#3c4043] overflow-hidden backdrop-blur-md animate-in fade-in duration-150">
             {/* Quick-Toggle: Wohnbereich-Filter */}

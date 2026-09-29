@@ -400,7 +400,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         className="bg-white dark:bg-[#1e1f20] sm:rounded-[28px] w-full max-w-5xl h-full max-h-dvh sm:max-h-[92vh] sm:h-[740px] shadow-2xl border-0 sm:border border-slate-200/90 dark:border-[#3c4043] flex flex-col overflow-hidden pt-[env(safe-area-inset-top)] sm:pt-0"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Top App Bar (Google M3 Style) */}
+        {/* Top App Bar */}
         <div className="px-4 sm:px-6 py-3 border-b border-slate-200/80 dark:border-[#3c4043] bg-white dark:bg-[#1e1f20] flex items-center justify-between gap-3 shrink-0">
           <div className="flex items-center gap-2.5 shrink-0">
             <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-[#8ab4f8] flex items-center justify-center shrink-0">
@@ -451,7 +451,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
         {/* Modal Body: Navigation Drawer + Content Pane */}
         <div className="flex flex-col md:flex-row flex-1 min-h-0 overflow-hidden">
-          {/* M3 Navigation Rail / Sidebar */}
+          {/* Navigation Rail / Sidebar */}
           <nav className="w-full md:w-64 bg-[#f8fafd] dark:bg-[#131314] border-b md:border-b-0 md:border-r border-slate-200/80 dark:border-[#2d2f31] p-2 sm:p-3 flex md:flex-col justify-start md:justify-between shrink-0 overflow-x-auto md:overflow-y-auto select-none gap-2 sm:gap-4 no-scrollbar touch-scroll-x md:touch-scroll-y">
             <div className="flex flex-row md:flex-col gap-1.5 md:gap-4 min-w-max md:min-w-0 w-auto md:w-full items-center md:items-stretch">
               {SETTINGS_SECTIONS.map((sec) => (
@@ -587,7 +587,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               )}
             </div>
 
-            {/* M3 Bottom Bar */}
+            {/* Bottom Bar */}
             <div className="px-4 sm:px-6 py-3 border-t border-slate-200/80 dark:border-[#3c4043] bg-[#f8fafd] dark:bg-[#18191a] flex items-center justify-between shrink-0 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:pb-3">
               <div className="text-xs text-slate-500 dark:text-[#9aa0a6] flex items-center gap-1.5">
                 <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
