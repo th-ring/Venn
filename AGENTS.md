@@ -107,3 +107,21 @@ Once the user confirms the agent's release proposal, the agent executes the rele
 - **Subagents do not commit autonomously** to the same branch; instead they report their modified files back to the lead agent.
 - When subagents work in parallel, an isolated workspace (`Workspace: 'branch'`) must be used.
 - The lead agent acts as integrator: it reviews the combined result, runs the quality gate, and creates the lean commit.
+
+---
+
+## 5. Design References & Brand Neutrality Standard
+
+### Conceptual Design Intent (Design Over Brand)
+- When benchmark brand names (e.g. Apple, Airbnb, Google) are mentioned in prompts or requirements, they serve strictly as shorthand for **underlying UX and design principles**, never for the brands themselves:
+  - Radical simplicity, uncluttered layouts, and reduced cognitive load.
+  - Progressive disclosure (essential controls visible immediately; deeper options revealed contextually).
+  - Compact floating capsules, icon-first affordances, and touch-ergonomic targets.
+  - Calm visual surfaces, subtle borders, and clean typography.
+
+### Strict Brand Neutrality in Files, Commits & Releases
+- **NEVER** include benchmark brand names in:
+  - Source code, comments, CSS class names, or JSX labels (use generic terms like "floating capsule", "segmented icon control", "dock bar").
+  - Commit titles or impact descriptions.
+  - `CHANGELOG.md`, GitHub release notes, or public documentation/showcases.
+- **Technical Exception**: Legitimate functional integrations (e.g. Google Maps JavaScript API loader/types) and web platform standards (e.g. `-apple-system`, `apple-mobile-web-app-capable`) remain permitted where technically required.
