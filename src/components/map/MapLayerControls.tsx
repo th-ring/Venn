@@ -27,6 +27,9 @@ import {
   Moon,
   Palette,
   Building2,
+  MapPin,
+  Users,
+  Focus,
 } from 'lucide-react';
 import { LayerManagerPanel } from './LayerManagerPanel';
 
@@ -174,6 +177,8 @@ interface MapLayerControlsProps {
   onUpdateApartmentFilter?: (settings: Partial<ApartmentFilterSettings>) => void;
   intersectionFeature?: GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon | GeoJSON.GeometryCollection> | null;
   isInspectionActive?: boolean;
+  showQuickAccess?: boolean;
+  onToggleShowQuickAccess?: () => void;
 }
 
 export const MapLayerControls: React.FC<MapLayerControlsProps> = ({
@@ -215,9 +220,36 @@ export const MapLayerControls: React.FC<MapLayerControlsProps> = ({
   onUpdateApartmentFilter,
   intersectionFeature = null,
   isInspectionActive = false,
+  showQuickAccess: propShowQuickAccess,
+  onToggleShowQuickAccess: propOnToggleShowQuickAccess,
 }) => {
   const [isLayerPanelOpen, setIsLayerPanelOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
+
+  const [internalShowQuickAccess, setInternalShowQuickAccess] = useState<boolean>(() => {
+    if (typeof localStorage !== 'undefined') {
+      const stored = localStorage.getItem('venn_show_quick_access');
+      if (stored !== null) return stored === 'true';
+    }
+    return true;
+  });
+
+  const isQuickAccessVisible =
+    propShowQuickAccess !== undefined ? propShowQuickAccess : internalShowQuickAccess;
+
+  const handleToggleQuickAccess = () => {
+    if (propOnToggleShowQuickAccess) {
+      propOnToggleShowQuickAccess();
+    } else {
+      setInternalShowQuickAccess((prev) => {
+        const next = !prev;
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem('venn_show_quick_access', next ? 'true' : 'false');
+        }
+        return next;
+      });
+    }
+  };
 
   const isOnlyIntersectionActive =
     showOnlyIntersection !== undefined
@@ -236,6 +268,256 @@ export const MapLayerControls: React.FC<MapLayerControlsProps> = ({
     rentalSettings?.enabled && !hiddenLayers.has('rental'),
     !hiddenLayers.has('basemap'),
   ].filter(Boolean).length;
+
+  const renderQuickAccessButton = (layerId: LayerId) => {
+    switch (layerId) {
+      case 'inspection': {
+        const isActive = !hiddenLayers.has('inspection');
+        return (
+          <button
+            key="inspection"
+            id="btn-toggle-inspection-layer"
+            type="button"
+            onClick={() => onToggleLayerVisibility('inspection')}
+            title={
+              isActive
+                ? 'Standort-Inspektor aktiv (Klick zum Ausblenden)'
+                : 'Standort-Inspektor einblenden'
+            }
+            className={`w-9.5 h-9.5 sm:w-10 sm:h-10 flex items-center justify-center transition-colors cursor-pointer ${
+              isActive
+                ? 'bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400'
+                : 'text-slate-400 dark:text-[#5f6368] hover:bg-slate-100 dark:hover:bg-[#282a2c] hover:text-slate-700 dark:hover:text-[#e8eaed]'
+            }`}
+          >
+            <MapPin className="w-4 h-4" />
+          </button>
+        );
+      }
+      case 'persons': {
+        const isActive = !hiddenLayers.has('persons');
+        return (
+          <button
+            key="persons"
+            id="btn-toggle-persons-layer"
+            type="button"
+            onClick={() => onToggleLayerVisibility('persons')}
+            title={
+              isActive
+                ? 'Referenzorte (Personen-Pins) ausblenden'
+                : 'Referenzorte (Personen-Pins) einblenden'
+            }
+            className={`w-9.5 h-9.5 sm:w-10 sm:h-10 flex items-center justify-center transition-colors cursor-pointer ${
+              isActive
+                ? 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400'
+                : 'text-slate-400 dark:text-[#5f6368] hover:bg-slate-100 dark:hover:bg-[#282a2c] hover:text-slate-700 dark:hover:text-[#e8eaed]'
+            }`}
+          >
+            <Users className="w-4 h-4" />
+          </button>
+        );
+      }
+      case 'apartments': {
+        const isActive = apartmentListings.length > 0 && !hiddenLayers.has('apartments');
+        return (
+          <button
+            key="apartments"
+            id="btn-toggle-apartments-layer"
+            type="button"
+            onClick={() => onToggleLayerVisibility('apartments')}
+            title={
+              !hiddenLayers.has('apartments')
+                ? `Wohnungs-Pins ausblenden (${apartmentListings.length} Angebote aktiv)`
+                : `Wohnungs-Pins einblenden (${apartmentListings.length} Angebote verfügbar)`
+            }
+            className={`w-9.5 h-9.5 sm:w-10 sm:h-10 flex items-center justify-center transition-colors cursor-pointer relative ${
+              isActive
+                ? 'bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400'
+                : 'text-slate-400 dark:text-[#5f6368] hover:bg-slate-100 dark:hover:bg-[#282a2c] hover:text-slate-700 dark:hover:text-[#e8eaed]'
+            }`}
+          >
+            <Building2 className="w-4 h-4" />
+            {apartmentListings.length > 0 && (
+              <span className="absolute top-1 right-1 w-3.5 h-3.5 bg-rose-600 text-white rounded-full text-[9px] font-bold flex items-center justify-center leading-none">
+                {apartmentListings.length > 9 ? '9+' : apartmentListings.length}
+              </span>
+            )}
+          </button>
+        );
+      }
+      case 'poi_icons': {
+        const isActive = poiIconSettings.visible && !hiddenLayers.has('poi_icons');
+        return (
+          <button
+            key="poi_icons"
+            id="btn-toggle-poi-icons-layer"
+            type="button"
+            onClick={() => onUpdatePoiIcons({ visible: !poiIconSettings.visible })}
+            title={
+              isActive
+                ? 'Haltestellen & Knoten (Icons) ausblenden'
+                : 'Haltestellen & Knoten (Icons) einblenden'
+            }
+            className={`w-9.5 h-9.5 sm:w-10 sm:h-10 flex items-center justify-center transition-colors cursor-pointer ${
+              isActive
+                ? 'bg-sky-50 dark:bg-sky-950/60 text-sky-600 dark:text-sky-400'
+                : 'text-slate-400 dark:text-[#5f6368] hover:bg-slate-100 dark:hover:bg-[#282a2c] hover:text-slate-700 dark:hover:text-[#e8eaed]'
+            }`}
+          >
+            <Train className="w-4 h-4" />
+          </button>
+        );
+      }
+      case 'intersection': {
+        const isActive = showIntersectionLayer && !hiddenLayers.has('intersection');
+        return (
+          <button
+            key="intersection"
+            id="btn-toggle-intersection-layer"
+            type="button"
+            disabled={!hasIntersection}
+            onClick={onToggleIntersectionLayer}
+            title={
+              !hasIntersection
+                ? 'Keine Schnittmenge vorhanden'
+                : isActive
+                ? 'Gemeinsamen Treffbereich ausblenden'
+                : 'Gemeinsamen Treffbereich einblenden'
+            }
+            className={`w-9.5 h-9.5 sm:w-10 sm:h-10 flex items-center justify-center transition-colors ${
+              !hasIntersection
+                ? 'text-slate-300 dark:text-[#3c4043] cursor-not-allowed opacity-50'
+                : isActive
+                ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 cursor-pointer'
+                : 'text-slate-400 dark:text-[#5f6368] hover:bg-slate-100 dark:hover:bg-[#282a2c] hover:text-slate-700 dark:hover:text-[#e8eaed] cursor-pointer'
+            }`}
+          >
+            <Focus className="w-4 h-4" />
+          </button>
+        );
+      }
+      case 'heatmap': {
+        const isActive =
+          heatmapSettings && heatmapSettings.mode !== 'none' && !hiddenLayers.has('heatmap');
+        return (
+          <button
+            key="heatmap"
+            id="btn-toggle-heatmap"
+            type="button"
+            disabled={!hasIntersection && !onUpdateHeatmap}
+            onClick={() => {
+              if (!onUpdateHeatmap) return;
+              const current = heatmapSettings?.mode || 'none';
+              const nextMode =
+                current === 'none'
+                  ? 'ubahn'
+                  : current === 'ubahn'
+                  ? 'sbahn'
+                  : current === 'sbahn'
+                  ? 'highway'
+                  : 'none';
+              onUpdateHeatmap({ mode: nextMode });
+            }}
+            title={
+              isActive
+                ? `Treff-Heatmap: ${
+                    heatmapSettings?.mode === 'ubahn'
+                      ? 'U-Bahn'
+                      : heatmapSettings?.mode === 'sbahn'
+                      ? 'S-Bahn'
+                      : 'Autobahn'
+                  } aktiv (Klicken zum Durchschalten)`
+                : 'Prioritäts-Heatmap aktivieren (U-Bahn / S-Bahn / Autobahn)'
+            }
+            className={`w-9.5 h-9.5 sm:w-10 sm:h-10 flex items-center justify-center transition-colors ${
+              !hasIntersection && !onUpdateHeatmap
+                ? 'text-slate-300 dark:text-[#3c4043] cursor-not-allowed opacity-50'
+                : isActive
+                ? 'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 cursor-pointer'
+                : 'text-slate-400 dark:text-[#5f6368] hover:bg-slate-100 dark:hover:bg-[#282a2c] hover:text-slate-700 dark:hover:text-[#e8eaed] cursor-pointer'
+            }`}
+          >
+            <Flame className="w-4 h-4" />
+          </button>
+        );
+      }
+      case 'isochrones': {
+        const isActive = showIndividualIsochrones && !hiddenLayers.has('isochrones');
+        return (
+          <button
+            key="isochrones"
+            id="btn-toggle-isochrones-layer"
+            type="button"
+            onClick={onToggleIndividualIsochrones}
+            title={
+              isActive
+                ? 'Einzel-Isochronen ausblenden'
+                : 'Einzel-Isochronen einblenden'
+            }
+            className={`w-9.5 h-9.5 sm:w-10 sm:h-10 flex items-center justify-center transition-colors cursor-pointer ${
+              isActive
+                ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-[#8ab4f8]'
+                : 'text-slate-400 dark:text-[#5f6368] hover:bg-slate-100 dark:hover:bg-[#282a2c] hover:text-slate-700 dark:hover:text-[#e8eaed]'
+            }`}
+          >
+            <Layers className="w-4 h-4" />
+          </button>
+        );
+      }
+      case 'rental': {
+        const isActive = rentalSettings?.enabled && !hiddenLayers.has('rental');
+        return (
+          <button
+            key="rental"
+            id="btn-toggle-rental-overlay"
+            type="button"
+            onClick={() =>
+              onUpdateRentalOverlay?.({
+                enabled: !rentalSettings?.enabled,
+              })
+            }
+            title={
+              rentalSettings?.enabled
+                ? 'Mietspiegel-Choropleth ausblenden (München)'
+                : 'Mietspiegel & Kaltmiete (€/m²) einblenden (München Open Data)'
+            }
+            className={`w-9.5 h-9.5 sm:w-10 sm:h-10 flex items-center justify-center transition-colors cursor-pointer ${
+              isActive
+                ? 'bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-400'
+                : 'text-slate-400 dark:text-[#5f6368] hover:bg-slate-100 dark:hover:bg-[#282a2c] hover:text-slate-700 dark:hover:text-[#e8eaed]'
+            }`}
+          >
+            <Euro className="w-4 h-4" />
+          </button>
+        );
+      }
+      case 'basemap': {
+        const isActive = !hiddenLayers.has('basemap');
+        return (
+          <button
+            key="basemap"
+            id="btn-toggle-basemap-layer"
+            type="button"
+            onClick={() => onToggleLayerVisibility('basemap')}
+            title={
+              isActive
+                ? 'Hintergrundkarte ausblenden'
+                : 'Hintergrundkarte einblenden'
+            }
+            className={`w-9.5 h-9.5 sm:w-10 sm:h-10 flex items-center justify-center transition-colors cursor-pointer ${
+              isActive
+                ? 'bg-slate-100 dark:bg-[#3c4043] text-slate-800 dark:text-[#e8eaed]'
+                : 'text-slate-400 dark:text-[#5f6368] hover:bg-slate-100 dark:hover:bg-[#282a2c] hover:text-slate-700 dark:hover:text-[#e8eaed]'
+            }`}
+          >
+            <MapIcon className="w-4 h-4" />
+          </button>
+        );
+      }
+      default:
+        return null;
+    }
+  };
 
   return (
     <>
@@ -269,8 +551,11 @@ export const MapLayerControls: React.FC<MapLayerControlsProps> = ({
         </div>
 
         {/* Action Controls Column (Floating Dock) */}
-        {!isLayerPanelOpen && (
-          <div className="bg-white/95 dark:bg-[#1e1f20]/95 rounded-2xl shadow-md border border-slate-200/80 dark:border-[#3c4043] flex flex-col divide-y divide-slate-100 dark:divide-[#3c4043] overflow-hidden backdrop-blur-md animate-in fade-in duration-150">
+        {!isLayerPanelOpen && isQuickAccessVisible && (
+          <div className="bg-white/95 dark:bg-[#1e1f20]/95 rounded-2xl shadow-md border border-slate-200/80 dark:border-[#3c4043] flex flex-col divide-y divide-slate-100 dark:divide-[#3c4043] overflow-hidden backdrop-blur-md animate-in fade-in duration-150 max-h-[calc(100vh-6.5rem)] overflow-y-auto scrollbar-none">
+            {/* Quick-Access Icon for each layer in layerOrder */}
+            {layerOrder.map((layerId) => renderQuickAccessButton(layerId))}
+
             {/* Quick-Toggle: Wohnbereich-Filter */}
             {onToggleOnlyResidential && hasIntersection && (
               <button
@@ -282,100 +567,13 @@ export const MapLayerControls: React.FC<MapLayerControlsProps> = ({
                     ? 'Wohngebiets-Filter aktiv (Klicken für gesamte Fläche)'
                     : 'Auf Wohnbereich reduzieren (Forste, Seen & Industrie ausfiltern)'
                 }
-                className={`w-10 h-10 flex items-center justify-center transition-colors cursor-pointer ${
+                className={`w-9.5 h-9.5 sm:w-10 sm:h-10 flex items-center justify-center transition-colors cursor-pointer ${
                   onlyResidential
                     ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400'
-                    : 'text-slate-600 dark:text-[#9aa0a6] hover:bg-slate-100 dark:hover:bg-[#282a2c] hover:text-slate-900 dark:hover:text-[#e8eaed]'
+                    : 'text-slate-400 dark:text-[#5f6368] hover:bg-slate-100 dark:hover:bg-[#282a2c] hover:text-slate-700 dark:hover:text-[#e8eaed]'
                 }`}
               >
                 <Home className="w-4 h-4" />
-              </button>
-            )}
-
-            {/* Quick-Toggle: Wohnungsangebote Layer */}
-            {apartmentListings.length > 0 && (
-              <button
-                id="btn-toggle-apartments-layer"
-                type="button"
-                onClick={() => onToggleLayerVisibility('apartments')}
-                title={
-                  !hiddenLayers.has('apartments')
-                    ? `Wohnungs-Pins ausblenden (${apartmentListings.length} Angebote aktiv)`
-                    : `Wohnungs-Pins einblenden (${apartmentListings.length} Angebote verfügbar)`
-                }
-                className={`w-10 h-10 flex items-center justify-center transition-colors cursor-pointer relative ${
-                  !hiddenLayers.has('apartments')
-                    ? 'bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400'
-                    : 'text-slate-600 dark:text-[#9aa0a6] hover:bg-slate-100 dark:hover:bg-[#282a2c] hover:text-slate-900 dark:hover:text-[#e8eaed]'
-                }`}
-              >
-                <Building2 className="w-4 h-4" />
-                <span className="absolute top-1 right-1 w-3.5 h-3.5 bg-rose-600 text-white rounded-full text-[9px] font-bold flex items-center justify-center leading-none">
-                  {apartmentListings.length > 9 ? '9+' : apartmentListings.length}
-                </span>
-              </button>
-            )}
-
-            {/* Quick-Toggle: Prioritäts-Heatmap Zyklus */}
-            {onUpdateHeatmap && hasIntersection && (
-              <button
-                id="btn-toggle-heatmap"
-                type="button"
-                onClick={() => {
-                  const current = heatmapSettings?.mode || 'none';
-                  const nextMode =
-                    current === 'none'
-                      ? 'ubahn'
-                      : current === 'ubahn'
-                      ? 'sbahn'
-                      : current === 'sbahn'
-                      ? 'highway'
-                      : 'none';
-                  onUpdateHeatmap({ mode: nextMode });
-                }}
-                title={
-                  heatmapSettings && heatmapSettings.mode !== 'none'
-                    ? `Treff-Heatmap: ${
-                        heatmapSettings.mode === 'ubahn'
-                          ? 'U-Bahn'
-                          : heatmapSettings.mode === 'sbahn'
-                          ? 'S-Bahn'
-                          : 'Autobahn'
-                      } aktiv (Klicken zum Durchschalten)`
-                    : 'Prioritäts-Heatmap aktivieren (U-Bahn / S-Bahn / Autobahn)'
-                }
-                className={`w-10 h-10 flex items-center justify-center transition-colors cursor-pointer ${
-                  heatmapSettings && heatmapSettings.mode !== 'none'
-                    ? 'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400'
-                    : 'text-slate-600 dark:text-[#9aa0a6] hover:bg-slate-100 dark:hover:bg-[#282a2c] hover:text-slate-900 dark:hover:text-[#e8eaed]'
-                }`}
-              >
-                <Flame className="w-4 h-4" />
-              </button>
-            )}
-
-            {/* Quick-Toggle: Mietspiegel Overlay */}
-            {onUpdateRentalOverlay && (
-              <button
-                id="btn-toggle-rental-overlay"
-                type="button"
-                onClick={() =>
-                  onUpdateRentalOverlay({
-                    enabled: !rentalSettings?.enabled,
-                  })
-                }
-                title={
-                  rentalSettings?.enabled
-                    ? 'Mietspiegel-Choropleth ausblenden (München)'
-                    : 'Mietspiegel & Kaltmiete (€/m²) einblenden (München Open Data)'
-                }
-                className={`w-10 h-10 flex items-center justify-center transition-colors cursor-pointer ${
-                  rentalSettings?.enabled
-                    ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-[#8ab4f8]'
-                    : 'text-slate-600 dark:text-[#9aa0a6] hover:bg-slate-100 dark:hover:bg-[#282a2c] hover:text-slate-900 dark:hover:text-[#e8eaed]'
-                }`}
-              >
-                <Euro className="w-4 h-4" />
               </button>
             )}
 
@@ -385,7 +583,7 @@ export const MapLayerControls: React.FC<MapLayerControlsProps> = ({
               type="button"
               onClick={onFitBounds}
               title="Gesamten Suchbereich zentrieren"
-              className="w-10 h-10 flex items-center justify-center text-slate-600 dark:text-[#9aa0a6] hover:bg-slate-100 dark:hover:bg-[#282a2c] hover:text-slate-900 dark:hover:text-[#e8eaed] transition-colors cursor-pointer"
+              className="w-9.5 h-9.5 sm:w-10 sm:h-10 flex items-center justify-center text-slate-600 dark:text-[#9aa0a6] hover:bg-slate-100 dark:hover:bg-[#282a2c] hover:text-slate-900 dark:hover:text-[#e8eaed] transition-colors cursor-pointer"
             >
               <Crosshair className="w-4 h-4" />
             </button>
@@ -397,6 +595,8 @@ export const MapLayerControls: React.FC<MapLayerControlsProps> = ({
       <LayerManagerPanel
         isOpen={isLayerPanelOpen}
         onClose={() => setIsLayerPanelOpen(false)}
+        showQuickAccess={isQuickAccessVisible}
+        onToggleShowQuickAccess={handleToggleQuickAccess}
         layerOrder={layerOrder}
         onReorderLayer={onReorderLayer}
         onResetLayerOrder={onResetLayerOrder}

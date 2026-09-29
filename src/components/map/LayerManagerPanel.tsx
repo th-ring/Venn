@@ -37,11 +37,14 @@ import {
   Home,
   Building2,
   Palette,
+  Zap,
 } from 'lucide-react';
 
 interface LayerManagerPanelProps {
   isOpen: boolean;
   onClose: () => void;
+  showQuickAccess?: boolean;
+  onToggleShowQuickAccess?: () => void;
   layerOrder: LayerId[];
   onReorderLayer: (fromIndex: number, toIndex: number) => void;
   onResetLayerOrder: () => void;
@@ -120,6 +123,8 @@ export const LayerManagerPanel: React.FC<LayerManagerPanelProps> = ({
   apartmentFilterSettings,
   onUpdateApartmentFilter,
   intersectionFeature = null,
+  showQuickAccess = true,
+  onToggleShowQuickAccess,
 }) => {
   const [expandedLayer, setExpandedLayer] = useState<LayerId | null>('heatmap');
 
@@ -333,6 +338,58 @@ export const LayerManagerPanel: React.FC<LayerManagerPanelProps> = ({
         </div>
       </div>
 
+      {/* Quick-Access Dock Toggle Bar */}
+      {onToggleShowQuickAccess && (
+        <div className="px-3.5 py-2.5 bg-slate-50/90 dark:bg-[#18191a] border-b border-slate-200/80 dark:border-[#3c4043] flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="p-1 rounded-lg bg-blue-100 dark:bg-blue-950/80 text-blue-600 dark:text-[#8ab4f8]">
+              <Zap className="w-3.5 h-3.5" />
+            </div>
+            <div>
+              <div className="text-[11px] font-bold text-slate-800 dark:text-[#e3e3e3] leading-tight flex items-center gap-1.5">
+                <span>Quick-Access Schnellzugriff</span>
+                <span
+                  className={`text-[9px] px-1.5 py-0.2 rounded-full font-bold ${
+                    showQuickAccess
+                      ? 'bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-[#8ab4f8]'
+                      : 'bg-slate-200 dark:bg-[#3c4043] text-slate-600 dark:text-[#9aa0a6]'
+                  }`}
+                >
+                  {showQuickAccess ? 'Aktiv' : 'Aus'}
+                </span>
+              </div>
+              <div className="text-[9px] text-slate-500 dark:text-[#9aa0a6]">
+                Schnellzugriffs-Icons am rechten Kartenrand anzeigen
+              </div>
+            </div>
+          </div>
+
+          <button
+            id="btn-toggle-quick-access-dock"
+            type="button"
+            role="switch"
+            aria-checked={showQuickAccess}
+            onClick={onToggleShowQuickAccess}
+            title={
+              showQuickAccess
+                ? 'Quick-Access Icons auf der Karte ausblenden'
+                : 'Quick-Access Icons auf der Karte einblenden'
+            }
+            className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+              showQuickAccess
+                ? 'bg-blue-600 dark:bg-[#8ab4f8]'
+                : 'bg-slate-300 dark:bg-slate-600'
+            }`}
+          >
+            <span
+              className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white dark:bg-[#131314] shadow ring-0 transition duration-200 ease-in-out ${
+                showQuickAccess ? 'translate-x-4' : 'translate-x-0'
+              }`}
+            />
+          </button>
+        </div>
+      )}
+
       {/* Info Notice about Z-Order */}
       <div className="px-3.5 py-1.5 bg-blue-50/70 dark:bg-blue-950/40 border-b border-blue-100 dark:border-blue-900/60 text-[10px] text-blue-900 dark:text-[#8ab4f8] flex items-center justify-between">
         <span className="font-medium">Obere Ebenen liegen im Vordergrund</span>
@@ -403,6 +460,7 @@ export const LayerManagerPanel: React.FC<LayerManagerPanelProps> = ({
                 >
                   <div
                     className={`p-1.5 rounded-lg border shrink-0 ${meta.color}`}
+                    title={`Icon für ${meta.title} im Quick-Access`}
                   >
                     <Icon className="w-3.5 h-3.5" />
                   </div>
