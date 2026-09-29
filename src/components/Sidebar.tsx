@@ -37,6 +37,7 @@ import {
   X,
   SlidersHorizontal,
   Clock,
+  ChevronDown,
 } from 'lucide-react';
 
 const PALETTE = ['#3B82F6', '#F97316', '#10B981', '#A855F7', '#EC4899', '#06B6D4', '#EAB308'];
@@ -116,6 +117,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const [isMobileScreen, setIsMobileScreen] = useState(() =>
     typeof window !== 'undefined' ? window.innerWidth < 768 : false
   );
+  const [isSearchSettingsOpen, setIsSearchSettingsOpen] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return true;
+    const saved = localStorage.getItem('venn_search_settings_open');
+    return saved !== null ? saved === 'true' : true;
+  });
+
+  const handleToggleSearchSettings = React.useCallback(() => {
+    setIsSearchSettingsOpen((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem('venn_search_settings_open', String(next));
+      } catch {}
+      return next;
+    });
+  }, []);
 
   useEffect(() => {
     const handleResize = () => {
@@ -352,7 +368,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </div>
         </div>
 
-        {/* Preset Scenario Quick-Switch Bar */}
+        {/* Region Quick-Switch Bar */}
         {onSelectScenario && (
           <div className="px-3 sm:px-4 py-2 bg-white dark:bg-[#1e1f20] border-b border-slate-200 dark:border-[#3c4043]">
             <PresetSelector
@@ -520,22 +536,52 @@ export const Sidebar: React.FC<SidebarProps> = ({
             )}
           </div>
 
-          {/* Commute Direction & Time Settings (Secondary / Global Controls) */}
-          <div className="pt-2 border-t border-slate-200/80 dark:border-[#2f3336] space-y-2">
-            <div className="flex items-center gap-1.5 px-0.5 text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-[#9aa0a6]">
-              <SlidersHorizontal className="w-3.5 h-3.5" />
-              <span>Sucheinstellungen</span>
-            </div>
+          {/* Commute Direction & Time Settings (Collapsible Search Settings) */}
+          <div id="commute-schedule-controls" className="pt-2 border-t border-slate-200/80 dark:border-[#2f3336] space-y-2">
+            <button
+              id="btn-toggle-search-settings"
+              type="button"
+              onClick={handleToggleSearchSettings}
+              className="w-full flex items-center justify-between px-1 py-1 text-xs font-bold uppercase tracking-wider text-slate-500 hover:text-slate-800 dark:text-[#9aa0a6] dark:hover:text-[#e3e3e3] cursor-pointer transition-colors group select-none rounded-xl hover:bg-slate-100/60 dark:hover:bg-[#25262a]/60"
+              title={isSearchSettingsOpen ? 'Sucheinstellungen einklappen' : 'Sucheinstellungen ausklappen'}
+              aria-expanded={isSearchSettingsOpen}
+            >
+              <div className="flex items-center gap-1.5 min-w-0">
+                <SlidersHorizontal className="w-3.5 h-3.5 text-blue-600 dark:text-[#8ab4f8] shrink-0" />
+                <span>Sucheinstellungen</span>
+                {!isSearchSettingsOpen && (
+                  <span className="normal-case font-normal text-[11px] text-slate-400 dark:text-[#9aa0a6] truncate ml-1">
+                    ({schedule.direction === 'to_work' ? '➔ Ziel' : '➔ Zurück'}, {schedule.dayOfWeek === 'weekend' ? 'Sa/So' : 'Mo–Fr'} {schedule.time || '07:00'})
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-1 shrink-0">
+                {!isSearchSettingsOpen && schedule.options?.heatmap?.mode && schedule.options.heatmap.mode !== 'none' && (
+                  <span className="text-[10px] text-amber-600 dark:text-amber-400 font-bold bg-amber-50 dark:bg-amber-950/40 px-1.5 py-0.5 rounded border border-amber-200 dark:border-amber-800">
+                    🔥 {schedule.options.heatmap.mode === 'ubahn' ? 'U-Bahn' : schedule.options.heatmap.mode === 'sbahn' ? 'S-Bahn' : 'Autobahn'}
+                  </span>
+                )}
+                <ChevronDown
+                  className={`w-3.5 h-3.5 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-[#e3e3e3] transition-transform duration-200 shrink-0 ${
+                    isSearchSettingsOpen ? 'rotate-180' : ''
+                  }`}
+                />
+              </div>
+            </button>
 
-            <CommuteSettings
-              schedule={schedule}
-              profiles={profiles}
-              onChangeSchedule={onChangeSchedule}
-              onRefreshIsochrones={onRefreshIsochrones}
-              isCalculating={isCalculating || isPending}
-              autoUpdate={autoUpdate}
-              onToggleAutoUpdate={onToggleAutoUpdate}
-            />
+            {isSearchSettingsOpen && (
+              <div className="animate-in fade-in duration-150">
+                <CommuteSettings
+                  schedule={schedule}
+                  profiles={profiles}
+                  onChangeSchedule={onChangeSchedule}
+                  onRefreshIsochrones={onRefreshIsochrones}
+                  isCalculating={isCalculating || isPending}
+                  autoUpdate={autoUpdate}
+                  onToggleAutoUpdate={onToggleAutoUpdate}
+                />
+              </div>
+            )}
           </div>
 
           {/* Status & Calculation Transparency */}

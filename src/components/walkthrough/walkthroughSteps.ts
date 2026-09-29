@@ -90,7 +90,7 @@ export const WALKTHROUGH_STEPS: WalkthroughStep[] = [
     title: 'Bereit für eure Suche!',
     badge: 'Los geht\'s',
     description:
-      'Teste vorbereitete Szenarien für München, Berlin, Frankfurt oder Hamburg – oder trage direkt eure eigenen Adressen ein. Viel Erfolg bei der Suche nach eurem perfekten Treffpunkt!',
+      'Wähle eine vorbereitete Region wie München, Berlin, Frankfurt oder Köln/Bonn – oder trage direkt eure eigenen Adressen ein. Viel Erfolg bei der Suche nach eurem perfekten Treffpunkt!',
     tip: 'Diese Einführung kannst du jederzeit über das Fragezeichen-Symbol (?) im oberen Menü erneut aufrufen.',
     position: 'center',
     targetView: 'any',

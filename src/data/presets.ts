@@ -1,4 +1,4 @@
-import { PresetScenario, PersonProfile } from '../types';
+import { PresetRegion, PresetScenario, PersonProfile } from '../types';
 
 export const DEFAULT_MUNICH_PROFILES: PersonProfile[] = [
   {
@@ -29,10 +29,10 @@ export const DEFAULT_MUNICH_PROFILES: PersonProfile[] = [
   },
 ];
 
-export const PRESET_SCENARIOS: PresetScenario[] = [
+export const PRESET_REGIONS: PresetRegion[] = [
   {
     id: 'munich-standard',
-    name: 'München: BMW & Marienplatz (Standard)',
+    name: 'München',
     city: 'München',
     description: 'BMW Vierzylinder (Petuelring, Auto) und Marienplatz (Zentrum, ÖPNV).',
     center: [48.155, 11.567],
@@ -41,7 +41,7 @@ export const PRESET_SCENARIOS: PresetScenario[] = [
   },
   {
     id: 'berlin-couple',
-    name: 'Berlin: Tech & Forschung',
+    name: 'Berlin',
     city: 'Berlin',
     description: 'Person 1 arbeitet in Berlin-Mitte (ÖPNV), Person 2 am Wissenschaftscampus Adlershof (Pkw).',
     center: [52.485, 13.44],
@@ -77,7 +77,7 @@ export const PRESET_SCENARIOS: PresetScenario[] = [
   },
   {
     id: 'frankfurt-couple',
-    name: 'Frankfurt / Rhein-Main',
+    name: 'Frankfurt',
     city: 'Frankfurt',
     description: 'Bankenviertel Frankfurt (ÖPNV) und Kaiserlei / Offenbach (Fahrrad/Pkw).',
     center: [50.11, 8.71],
@@ -110,7 +110,7 @@ export const PRESET_SCENARIOS: PresetScenario[] = [
   },
   {
     id: 'cologne-bonn',
-    name: 'Köln & Bonn Pendel-Achse',
+    name: 'Köln / Bonn',
     city: 'Köln / Bonn',
     description: 'Arbeit in Köln Neumarkt vs. Bundesviertel Bonn mit RE/Bahn und Auto.',
     center: [50.84, 7.02],
@@ -141,3 +141,5 @@ export const PRESET_SCENARIOS: PresetScenario[] = [
     ],
   },
 ];
+
+export const PRESET_SCENARIOS: PresetScenario[] = PRESET_REGIONS;

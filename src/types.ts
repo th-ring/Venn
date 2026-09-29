@@ -452,7 +452,7 @@ export interface InspectionPoint {
   portalLinks?: PortalSearchLink[];
 }
 
-export interface PresetScenario {
+export interface PresetRegion {
   id: string;
   name: string;
   city: string;
@@ -461,6 +461,8 @@ export interface PresetScenario {
   zoom: number;
   profiles: PersonProfile[];
 }
+
+export type PresetScenario = PresetRegion;
 
 // --------------------------------------------------------
 // Highway / Autobahn & OpenStreetMap Data Models
