@@ -21,7 +21,7 @@ class AttributedGoogleMutant extends (GoogleMutant as any) {
         window.google.maps.Map = function (container: any, opts: any) {
           const mapOpts = {
             ...opts,
-            internalUsageAttributionIds: ['gmp_mcp_codeassist_v1_aistudio'],
+            internalUsageAttributionIds: ['gmp_git_agentskills_v1'],
           };
           return new origMap(container, mapOpts);
         } as any;

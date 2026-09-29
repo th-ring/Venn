@@ -62,6 +62,28 @@ export const ApiKeyGuideSection: React.FC<ApiKeyGuideSectionProps> = ({
           {isGoogle ? (
             /* GOOGLE MAPS GUIDE */
             <div className="space-y-3 text-[11px]">
+              {/* Prototyping Option: Maps Demo Key */}
+              <div className="p-2.5 rounded-lg bg-amber-50/80 dark:bg-amber-950/40 border border-amber-200/70 dark:border-amber-800/60 flex items-start gap-2">
+                <Info className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                <div className="text-[11px] leading-relaxed">
+                  <span className="font-semibold text-amber-950 dark:text-amber-200">
+                    Schnellstart ohne GCP-Konto (Prototyping):
+                  </span>{' '}
+                  <span className="text-amber-900 dark:text-amber-300">
+                    Für schnelles Testen ohne Google Cloud-Abrechnungskonto kannst du dir direkt einen{' '}
+                    <a
+                      href="https://mapsplatform.google.com/maps-demo-key?utm_campaign=gmp_git_agentskills_v1"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-semibold underline hover:text-amber-700 dark:hover:text-amber-200 inline-flex items-center gap-0.5"
+                    >
+                      Google Maps Demo Key erstellen <ExternalLink className="w-2.5 h-2.5" />
+                    </a>
+                    . (Hinweis: Gilt für Prototyping & Entwicklung mit täglichem Kontingentreset, nicht für den Produktiveinsatz).
+                  </span>
+                </div>
+              </div>
+
               {/* Step 1: Project & Billing */}
               <div className="flex items-start gap-2.5">
                 <div className="w-5 h-5 rounded-full bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-[#8ab4f8] font-bold text-[10px] flex items-center justify-center shrink-0 mt-0.5">
@@ -143,7 +165,20 @@ export const ApiKeyGuideSection: React.FC<ApiKeyGuideSectionProps> = ({
                   </p>
                   <div className="mt-1.5 space-y-1.5">
                     <div className="bg-slate-50 dark:bg-[#282a2c] p-2 rounded-lg border border-slate-200/80 dark:border-[#3c4043]">
-                      <span className="font-semibold text-slate-800 dark:text-[#e3e3e3]">API-Einschränkungen (API Restrictions):</span>
+                      <div className="flex items-center justify-between">
+                        <span className="font-semibold text-slate-800 dark:text-[#e3e3e3]">
+                          API-Einschränkungen (API Restrictions):
+                        </span>
+                        <a
+                          href="https://docs.cloud.google.com/api-keys/docs/add-restrictions-api-keys"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[10px] text-blue-600 dark:text-[#8ab4f8] hover:underline flex items-center gap-0.5"
+                        >
+                          <span>Doku</span>
+                          <ExternalLink className="w-2.5 h-2.5" />
+                        </a>
+                      </div>
                       <p className="text-slate-600 dark:text-[#9aa0a6] mt-0.5">
                         Wähle <em>„Schlüssel einschränken“</em> und hake ausschließlich{' '}
                         <strong>Maps JavaScript API</strong> und{' '}
@@ -160,6 +195,34 @@ export const ApiKeyGuideSection: React.FC<ApiKeyGuideSectionProps> = ({
                     </div>
                   </div>
                 </div>
+              </div>
+
+              {/* Compliance & Verification Appendix */}
+              <div className="p-2.5 rounded-lg bg-slate-50 dark:bg-[#202124] border border-slate-200/80 dark:border-[#3c4043] space-y-1.5 text-[10px] text-slate-600 dark:text-[#9aa0a6]">
+                <div className="font-semibold text-slate-800 dark:text-[#e3e3e3] flex items-center justify-between">
+                  <span>Google Maps Platform Compliance &amp; Lizenzhinweise</span>
+                  <a
+                    href="https://cloud.google.com/maps-platform/terms"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 dark:text-[#8ab4f8] hover:underline font-normal flex items-center gap-0.5"
+                  >
+                    <span>Maps Terms (ToS)</span>
+                    <ExternalLink className="w-2.5 h-2.5" />
+                  </a>
+                </div>
+                <p>
+                  <strong>Kostenhinweis:</strong> Die Nutzung von Google Maps Platform-Diensten kann Kosten über das verknüpfte Google Cloud-Rechnungskonto verursachen (Google gewährt monatlich 200&nbsp;$ Guthaben).
+                </p>
+                <p>
+                  <strong>Eingesetzte Schnittstellen:</strong> Maps JavaScript API (Kartenanzeige via <code>@googlemaps/js-api-loader</code>) und Google Maps Isochrones API (Pre-GA / Public Preview).
+                </p>
+                <p>
+                  <strong>Schutz &amp; EWR-Bedingungen:</strong> Produktive API-Schlüssel müssen über HTTP-Referrer und API-Restriktionen abgesichert werden. Gemäß den EWR-Dienstbedingungen (FCO4-Verpflichtung) ist die Kombination mit Leaflet und Open-Source-Geodaten im europäischen Wirtschaftsraum zulässig.
+                </p>
+                <p className="text-[9.5px] opacity-80 pt-0.5 border-t border-slate-200/60 dark:border-[#3c4043]">
+                  Google-Codefragmente unterliegen der Apache 2.0 Lizenz. Nutzung gemäß Google Maps Platform Terms of Service.
+                </p>
               </div>
 
               {/* Security Hint */}

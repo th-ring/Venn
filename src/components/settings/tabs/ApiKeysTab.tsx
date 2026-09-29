@@ -57,16 +57,28 @@ export const ApiKeysTab: React.FC<ApiKeysTabProps> = ({
         title="Google Maps Platform API-Key"
         subtitle="Aktiviert die Google Maps Hintergrundkarte und die Google Maps Isochronen API"
         headerAction={
-          <a
-            href="https://console.cloud.google.com/google/maps-apis/credentials"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-xs text-blue-600 dark:text-[#8ab4f8] hover:underline flex items-center gap-1"
-            title="Google Cloud Console"
-          >
-            <span>GCP Console</span>
-            <ExternalLink className="w-3 h-3" />
-          </a>
+          <div className="flex items-center gap-2">
+            <a
+              href="https://mapsplatform.google.com/maps-demo-key?utm_campaign=gmp_git_agentskills_v1"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[11px] text-amber-700 dark:text-amber-300 bg-amber-50 hover:bg-amber-100/80 dark:bg-amber-950/40 dark:hover:bg-amber-900/40 px-2 py-0.5 rounded-md border border-amber-200/60 dark:border-amber-800/60 flex items-center gap-1 font-medium transition-colors"
+              title="Kostenloser Google Maps Demo Key für schnelles Prototyping ohne GCP-Abrechnungskonto"
+            >
+              <span>Demo Key</span>
+              <ExternalLink className="w-2.5 h-2.5" />
+            </a>
+            <a
+              href="https://console.cloud.google.com/google/maps-apis/credentials"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-blue-600 dark:text-[#8ab4f8] hover:underline flex items-center gap-1"
+              title="Google Cloud Console"
+            >
+              <span>GCP Console</span>
+              <ExternalLink className="w-3 h-3" />
+            </a>
+          </div>
         }
       >
         <div className="p-4 space-y-3.5">
