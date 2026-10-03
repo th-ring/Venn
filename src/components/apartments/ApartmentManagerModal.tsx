@@ -113,42 +113,64 @@ export const ApartmentManagerModal: React.FC<ApartmentManagerModalProps> = ({
     } catch {}
   };
 
+  const [jsonText, setJsonText] = useState('');
+  const [jsonInputMode, setJsonInputMode] = useState<'upload' | 'text'>('upload');
+
+  const processJsonString = (rawJson: string, sourceLabel: string = 'Eingabe') => {
+    try {
+      const parsed = JSON.parse(rawJson);
+      const result = validateApartmentDataset(parsed);
+
+      if (result.valid) {
+        saveCustomApartments(result.listings);
+        setImportStatus({
+          success: true,
+          message: `${result.listings.length} Wohnungen erfolgreich geladen und validiert! (${sourceLabel})`,
+          errors: result.errors.length > 0 ? result.errors.slice(0, 3) : undefined,
+        });
+        if (onRefreshListings) {
+          onRefreshListings();
+        }
+      } else {
+        setImportStatus({
+          success: false,
+          message: 'Import fehlgeschlagen: Die Daten enthalten keine gültigen Wohnungsangebote.',
+          errors: result.errors,
+        });
+      }
+    } catch (err: any) {
+      setImportStatus({
+        success: false,
+        message: `JSON-Syntaxfehler: ${err.message || 'Ungültiges Dateiformat'}`,
+      });
+    }
+  };
+
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     const reader = new FileReader();
     reader.onload = (event) => {
-      try {
-        const text = event.target?.result as string;
-        const parsed = JSON.parse(text);
-        const result = validateApartmentDataset(parsed);
-
-        if (result.valid) {
-          saveCustomApartments(result.listings);
-          setImportStatus({
-            success: true,
-            message: `${result.listings.length} Wohnungen erfolgreich geladen und validiert!`,
-            errors: result.errors.length > 0 ? result.errors.slice(0, 3) : undefined,
-          });
-          if (onRefreshListings) {
-            onRefreshListings();
-          }
-        } else {
-          setImportStatus({
-            success: false,
-            message: 'Import fehlgeschlagen: Die Datei enthält keine gültigen Wohnungsdaten.',
-            errors: result.errors,
-          });
-        }
-      } catch (err: any) {
-        setImportStatus({
-          success: false,
-          message: `JSON-Syntaxfehler: ${err.message || 'Ungültiges Dateiformat'}`,
-        });
-      }
+      const text = event.target?.result as string;
+      processJsonString(text, file.name);
     };
     reader.readAsText(file);
+    // Reset file input value so re-uploading the same file works
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleApplyJsonText = () => {
+    if (!jsonText.trim()) {
+      setImportStatus({
+        success: false,
+        message: 'Bitte füge zuerst JSON-Daten in das Textfeld ein.',
+      });
+      return;
+    }
+    processJsonString(jsonText, 'Textfeld');
   };
 
   const handleDownloadJson = () => {
@@ -355,30 +377,100 @@ export const ApartmentManagerModal: React.FC<ApartmentManagerModalProps> = ({
             </div>
           </div>
 
-          {/* Section 4: JSON Datei importieren */}
-          <div className="space-y-2">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-[#9aa0a6]">
-              Weg 1: Eigene JSON-Datei importieren
-            </h4>
-            <div
-              onClick={() => fileInputRef.current?.click()}
-              className="border-2 border-dashed border-slate-300 dark:border-[#3c4043] hover:border-blue-500 dark:hover:border-[#8ab4f8] rounded-2xl p-5 text-center cursor-pointer transition-colors bg-white dark:bg-[#1e1f20] group"
-            >
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".json,application/json"
-                onChange={handleFileUpload}
-                className="hidden"
-              />
-              <Upload className="w-6 h-6 mx-auto text-slate-400 group-hover:text-blue-600 dark:group-hover:text-[#8ab4f8] transition-colors" />
-              <div className="text-xs font-bold text-slate-800 dark:text-[#e3e3e3] mt-2">
-                Klicken zum Auswählen oder JSON hier ablegen
+          {/* Section 4: JSON Datei oder Text eingeben */}
+          <div className="space-y-2.5">
+            <div className="flex items-center justify-between">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-[#9aa0a6]">
+                Weg 1: Eigene JSON-Daten importieren
+              </h4>
+              <div className="flex items-center p-0.5 rounded-lg bg-slate-100 dark:bg-[#131314] border border-slate-200/80 dark:border-[#3c4043]">
+                <button
+                  type="button"
+                  onClick={() => setJsonInputMode('upload')}
+                  className={`px-2.5 py-1 text-[11px] font-semibold rounded-md transition-colors cursor-pointer ${
+                    jsonInputMode === 'upload'
+                      ? 'bg-white dark:bg-[#282a2c] text-slate-900 dark:text-white shadow-xs'
+                      : 'text-slate-500 hover:text-slate-900 dark:text-[#9aa0a6] dark:hover:text-white'
+                  }`}
+                >
+                  Datei-Upload
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setJsonInputMode('text')}
+                  className={`px-2.5 py-1 text-[11px] font-semibold rounded-md transition-colors cursor-pointer ${
+                    jsonInputMode === 'text'
+                      ? 'bg-white dark:bg-[#282a2c] text-slate-900 dark:text-white shadow-xs'
+                      : 'text-slate-500 hover:text-slate-900 dark:text-[#9aa0a6] dark:hover:text-white'
+                  }`}
+                >
+                  Texteingabe (JSON)
+                </button>
               </div>
-              <p className="text-[11px] text-slate-500 dark:text-[#9aa0a6] mt-0.5">
-                Strenge Schema-Validierung: id, title, lat, lng, priceCold, sizeSqm, rooms
-              </p>
             </div>
+
+            {jsonInputMode === 'upload' ? (
+              <div
+                onClick={() => fileInputRef.current?.click()}
+                className="border-2 border-dashed border-slate-300 dark:border-[#3c4043] hover:border-blue-500 dark:hover:border-[#8ab4f8] rounded-2xl p-5 text-center cursor-pointer transition-colors bg-white dark:bg-[#1e1f20] group"
+              >
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".json,application/json"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                />
+                <Upload className="w-6 h-6 mx-auto text-slate-400 group-hover:text-blue-600 dark:group-hover:text-[#8ab4f8] transition-colors" />
+                <div className="text-xs font-bold text-slate-800 dark:text-[#e3e3e3] mt-2">
+                  Klicken zum Auswählen oder JSON hier ablegen
+                </div>
+                <p className="text-[11px] text-slate-500 dark:text-[#9aa0a6] mt-0.5">
+                  Strenge Schema-Validierung: id, title, lat, lng, priceCold, sizeSqm, rooms
+                </p>
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-slate-200 dark:border-[#3c4043] bg-white dark:bg-[#1e1f20] p-3 space-y-2.5 shadow-xs">
+                <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-[#9aa0a6]">
+                  <span>Füge hier ein JSON-Array oder ein Objekt mit <code>"listings": [...]</code> ein:</span>
+                  {jsonText && (
+                    <button
+                      type="button"
+                      onClick={() => setJsonText('')}
+                      className="text-slate-400 hover:text-rose-500 text-[10px] cursor-pointer"
+                    >
+                      Leeren
+                    </button>
+                  )}
+                </div>
+                <textarea
+                  value={jsonText}
+                  onChange={(e) => setJsonText(e.target.value)}
+                  placeholder={`[\n  {\n    "id": "apt-101",\n    "title": "2-Zimmer Wohnung Maxvorstadt",\n    "lat": 48.151,\n    "lng": 11.569,\n    "priceCold": 1250,\n    "sizeSqm": 62,\n    "rooms": 2\n  }\n]`}
+                  rows={6}
+                  className="w-full rounded-xl border border-slate-200 dark:border-[#3c4043] bg-slate-50 dark:bg-[#131314] text-slate-900 dark:text-[#e3e3e3] font-mono text-xs p-3 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 resize-y"
+                  spellCheck={false}
+                />
+                <div className="flex items-center justify-between gap-2 pt-0.5">
+                  <span className="text-[10px] text-slate-400 dark:text-[#9aa0a6]">
+                    Unterstützt rohe Arrays oder Exporte mit Metadaten
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleApplyJsonText}
+                    disabled={!jsonText.trim()}
+                    className={`px-3.5 py-1.5 rounded-xl font-semibold text-xs flex items-center gap-1.5 transition-colors cursor-pointer ${
+                      jsonText.trim()
+                        ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-xs'
+                        : 'bg-slate-100 dark:bg-[#282a2c] text-slate-400 dark:text-slate-500 cursor-not-allowed'
+                    }`}
+                  >
+                    <Check className="w-3.5 h-3.5" />
+                    <span>JSON übernehmen</span>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Section 5: Web-Scraper im Treffbereich */}
