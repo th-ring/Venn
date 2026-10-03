@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.11.0] - 2026-10-03
+
+### Added
+- **Amtliche GTFS-Fahrplan-Pipeline**: Vollständige Integration des offiziellen MVV-Soll-Fahrplans mit 4.195 verkehrlichen Haltestellen-Knoten, 11.142 gerichteten Kanten und 7.412 Fußwegen.
+- **Fahrzeit- und richtungsabhängige Takte**: Echte Fahrtenhäufigkeiten (TPH) pro Kante nach 5 Zeitbändern (HVZ, NVZ, Spät, Nacht, Wochenende).
+- **Umsteigefußwege**: Reale Verbindungen zwischen Bahnsteigen und Haltestellen ohne fehlerhafte Phantom-Wartezeiten.
+- **Transparente Datenlizenz**: Prominente Lizenz- und Quellenangabe (CC BY 4.0 MVV GmbH) im Einstellungsdialog und im Inspektionspanel.
+
+### Changed
+- **Gerichtete Pendelzeit-Berechnung**: Arbeitsweg-Isochronen laufen auf dem invertierten Netz; Isochronen und Einzelroutenabfragen sind mathematisch konsistent.
+- **Schlankeres Bundle**: Bündelgröße um 143 KB reduziert durch Auslagerung des Datenpakets in on-demand abrufbaren und in IndexedDB zwischengespeicherten Speicher.
+
+### Performance
+- **Optimierte Isochronen-Geometrie**: Disjunkte Haltestellen-Komponenten reduzieren die Rechenzeit auf unter 800 ms.
+- **High-Speed-Matrixsuche**: Multi-Label-Dijkstra über mehr als 4.000 Stationen in unter 30 ms.
+
 ## [1.10.0] - 2026-10-03
 
 ### Added
