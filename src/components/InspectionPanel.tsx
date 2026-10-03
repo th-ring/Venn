@@ -46,6 +46,7 @@ import {
   hasGoogleMapsApiKey,
   hasOrsApiKey,
 } from '../services/isochroneEngine';
+import { getTransitRegion } from '../services/mvvMatrixService';
 
 interface InspectionPanelProps {
   inspection: InspectionPoint | null;
@@ -741,6 +742,11 @@ export const InspectionPanel: React.FC<InspectionPanelProps> = ({
           </div>
 
         </>
+      )}
+      {getTransitRegion().attribution && (
+        <div className="pt-2 text-[10.5px] text-slate-400 dark:text-[#9aa0a6] text-center border-t border-slate-100 dark:border-[#2d2f31]">
+          {getTransitRegion().attribution}
+        </div>
       )}
       </div>
     </div>

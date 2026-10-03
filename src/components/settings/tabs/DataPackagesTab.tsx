@@ -196,7 +196,7 @@ export const DataPackagesTab: React.FC<DataPackagesTabProps> = ({
           iconColor="text-blue-600 dark:text-[#8ab4f8]"
           iconBg="bg-blue-50 dark:bg-blue-950/40"
           title="ÖPNV-Fahrplandaten & Haltestellenmatrix"
-          description={`${mvvMeta.stationCount} Haltestellen • ${mvvMeta.connectionCount} Streckenkanten • Quelle: ${mvvMeta.source} (${mvvMeta.version})`}
+          description={`${mvvMeta.stationCount.toLocaleString('de-DE')} Haltestellen • ${mvvMeta.connectionCount.toLocaleString('de-DE')} Streckenkanten • Quelle: ${mvvMeta.source} (${mvvMeta.version})${currentRegion.attribution ? ` • ${currentRegion.attribution}` : ''}`}
           control={
             <button
               type="button"

@@ -75,6 +75,8 @@ export const ALL_TRANSIT_SUBMODES: TransitSubMode[] = ['tram', 'ubahn', 'bus', '
 
 export const DEFAULT_TRANSIT_SUBMODES: TransitSubMode[] = ['tram', 'ubahn', 'bus', 'expressbus', 'sbahn', 'train'];
 
+export type TimeBand = 'peak' | 'day' | 'evening' | 'night' | 'weekend';
+
 export interface TransitStation {
   id: string;
   name: string;
@@ -90,25 +92,40 @@ export interface TransitConnection {
   minutes: number;
   lines: string[];
   type: 'sbahn' | 'ubahn' | 'tram' | 'bus' | 'train';
+  tph?: [number, number, number, number, number]; // Trips/h in [peak, day, evening, night, weekend]
+}
+
+export interface TransitFootpath {
+  from: string;
+  to: string;
+  minutes: number;
 }
 
 export interface TransitRegionMetadata {
   id: string;
   name: string;
   version: string;
-  lastUpdated: string;
-  source: string;
-  bbox: [number, number, number, number]; // [minLng, minLat, maxLng, maxLat]
+  lastUpdated?: string;
+  source?: string;
+  bbox?: [number, number, number, number]; // [minLng, minLat, maxLng, maxLat]
   stationCount: number;
   connectionCount: number;
+  footpathCount?: number;
   downloadSizeApprox?: string;
   downloadUrl?: string;
   isBuiltIn?: boolean;
+  schemaVersion?: 1 | 2;
+  directed?: boolean;
+  attribution?: string;
+  feedVersion?: string;
+  feedSourceUrl?: string;
+  serviceDates?: { weekday: string; weekend: string };
 }
 
 export interface TransitRegion extends TransitRegionMetadata {
   stations: TransitStation[];
   connections: TransitConnection[];
+  footpaths?: TransitFootpath[];
 }
 
 export interface HeatmapSettings {
@@ -285,6 +302,7 @@ export interface RoutingParameters {
   cyclingSpeedKmh?: number; // Standard: 16.5 km/h (Bereich: 10.0 - 25.0)
   drivingParkingBufferMin?: number; // Standard: 3.0 min (Bereich: 0.0 - 10.0)
   stationCatchmentMode?: StationCatchmentMode; // 'heuristic' (standard circle) | 'walkshed' (precomputed pedestrian network)
+  initialDepartureWaitCapMin?: number; // Standard: 10.0 min (Bereich: 2.0 - 30.0)
 }
 
 export const DEFAULT_ROUTING_PARAMETERS: Required<RoutingParameters> = {
@@ -296,6 +314,7 @@ export const DEFAULT_ROUTING_PARAMETERS: Required<RoutingParameters> = {
   cyclingSpeedKmh: 16.5,
   drivingParkingBufferMin: 3.0,
   stationCatchmentMode: 'heuristic',
+  initialDepartureWaitCapMin: 10.0,
 };
 
 export interface IsochroneOptions {
@@ -317,6 +336,7 @@ export interface IsochroneOptions {
   cyclingSpeedKmh?: number;
   drivingParkingBufferMin?: number;
   stationCatchmentMode?: StationCatchmentMode;
+  initialDepartureWaitCapMin?: number;
 }
 
 export interface CommuteSchedule {

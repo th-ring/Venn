@@ -21,7 +21,7 @@ import {
   samplePolygonPoints,
 } from '../services/geometry';
 import { maskByResidentialAreas } from '../data/residentialZones';
-import { setTransitRegion } from '../services/mvvMatrixService';
+import { activateRegionInMemory } from '../services/mvvMatrixService';
 import { generatePriorityHeatmapZones, getPriorityTargets } from '../services/priorityHeatmapEngine';
 import { getHighwayRamps } from '../services/highwayService';
 import { extractIntersectionSubAreas, getPortalSearchLinks } from '../services/apartmentService';
@@ -88,6 +88,16 @@ export type CommuteWorkerOutgoingMessage =
   | CommuteWorkerInspectionResponse;
 
 let latestRequestId = '';
+let currentWorkerRegionKey = '';
+
+function syncRegion(region?: TransitRegion) {
+  if (!region) return;
+  const key = `${region.id}@${region.version}`;
+  if (currentWorkerRegionKey !== key) {
+    activateRegionInMemory(region);
+    currentWorkerRegionKey = key;
+  }
+}
 
 self.addEventListener('message', async (event: MessageEvent<CommuteWorkerIncomingMessage>) => {
   const data = event.data;
@@ -113,9 +123,7 @@ self.addEventListener('message', async (event: MessageEvent<CommuteWorkerIncomin
   } = data;
 
   try {
-    if (activeTransitRegion) {
-      setTransitRegion(activeTransitRegion);
-    }
+    syncRegion(activeTransitRegion);
 
     const active = profiles.filter((p) => p.visible);
     if (active.length === 0) {
@@ -307,9 +315,7 @@ async function handleInspectPoint(data: CommuteWorkerInspectionRequest) {
   } = data;
 
   try {
-    if (activeTransitRegion) {
-      setTransitRegion(activeTransitRegion);
-    }
+    syncRegion(activeTransitRegion);
 
     const active = profiles.filter((p) => p.visible);
     const isInIntersection = intersectionFeature

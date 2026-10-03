@@ -7,6 +7,7 @@ import {
   FallbackSuggestion,
   BasemapProvider,
   PresetScenario,
+  TransitRegion,
   DEFAULT_TRANSIT_SUBMODES,
   IsochroneFallbackAlert,
   LayerId,
@@ -363,6 +364,7 @@ export function useCommuteFinder() {
   onlyResidentialRef.current = onlyResidential;
 
   const workerRef = useRef<Worker | null>(null);
+  const lastWorkerSyncedRegionKeyRef = useRef<string>('');
   const workerWatchdogTimerRef = useRef<NodeJS.Timeout | null>(null);
   const activeRequestIdRef = useRef<string | null>(null);
   const activeInspectionRequestIdRef = useRef<string | null>(null);
@@ -551,6 +553,7 @@ export function useCommuteFinder() {
             worker?.terminate();
           } catch {}
           workerRef.current = null;
+          lastWorkerSyncedRegionKeyRef.current = '';
           runMainThreadCalculationRef.current();
         };
         workerRef.current = worker;
@@ -568,6 +571,7 @@ export function useCommuteFinder() {
         worker.terminate();
       }
       workerRef.current = null;
+      lastWorkerSyncedRegionKeyRef.current = '';
     };
   }, []);
 
@@ -607,16 +611,25 @@ export function useCommuteFinder() {
             workerRef.current?.terminate();
           } catch {}
           workerRef.current = null;
+          lastWorkerSyncedRegionKeyRef.current = '';
           runMainThreadCalculationRef.current(currentProfiles, currentSchedule, residentialFilter);
         }, 7000);
 
         try {
+          const transitRegion = getTransitRegion();
+          const regionKey = `${transitRegion.id}@${transitRegion.version}`;
+          let regionToSend: TransitRegion | undefined = undefined;
+          if (lastWorkerSyncedRegionKeyRef.current !== regionKey) {
+            regionToSend = transitRegion;
+            lastWorkerSyncedRegionKeyRef.current = regionKey;
+          }
+
           const workerPayload: CommuteWorkerRequest = {
             requestId,
             profiles: currentProfiles,
             schedule: currentSchedule,
             onlyResidential: residentialFilter,
-            activeTransitRegion: getTransitRegion(),
+            activeTransitRegion: regionToSend,
             selectedProvider: getSelectedProvider(),
             googleMapsApiKey: getGoogleMapsApiKey(),
             orsApiKey: getOrsApiKey(),
@@ -631,6 +644,7 @@ export function useCommuteFinder() {
           }
           try { workerRef.current?.terminate(); } catch {}
           workerRef.current = null;
+          lastWorkerSyncedRegionKeyRef.current = '';
         }
       }
 
@@ -860,6 +874,14 @@ export function useCommuteFinder() {
         const currentSchedule = scheduleRef.current;
         const intersectionFeature = currentResult?.intersection || currentResult?.rawIntersection || null;
 
+        const transitRegion = getTransitRegion();
+        const regionKey = `${transitRegion.id}@${transitRegion.version}`;
+        let regionToSend: TransitRegion | undefined = undefined;
+        if (lastWorkerSyncedRegionKeyRef.current !== regionKey) {
+          regionToSend = transitRegion;
+          lastWorkerSyncedRegionKeyRef.current = regionKey;
+        }
+
         const req: CommuteWorkerInspectionRequest = {
           type: 'INSPECT_POINT',
           requestId: inspectRequestId,
@@ -869,7 +891,7 @@ export function useCommuteFinder() {
           profiles: profilesRef.current,
           schedule: currentSchedule,
           isochronesMap: currentResult?.isochrones,
-          activeTransitRegion: getTransitRegion(),
+          activeTransitRegion: regionToSend,
           apartments: apartmentsRef.current,
         };
 

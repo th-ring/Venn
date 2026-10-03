@@ -14,8 +14,6 @@
  */
 
 import * as turf from '@turf/turf';
-import type { MvvDataset, MvvStation, MvvConnection } from '../data/mvvDataset.ts';
-import { DEFAULT_MVV_DATASET } from '../data/mvvDataset.ts';
 import type {
   PersonProfile,
   TransitSubMode,
@@ -45,6 +43,30 @@ import { AVAILABLE_REGIONS_CATALOG } from '../data/availableRegions.ts';
 import { resolveAssetUrl } from '../utils/assetUrl.ts';
 import { getStationWalkshedPolygon } from './stationWalkshedService.ts';
 
+export type MvvStation = TransitStation;
+export type MvvConnection = TransitConnection;
+export type MvvDataset = TransitRegion;
+
+export const DEFAULT_MVV_DATASET: TransitRegion = {
+  id: 'munich-mvv',
+  name: 'München & Metropolregion (MVV Gesamt)',
+  version: '2026.10-GTFS-v2',
+  lastUpdated: '2026-10-03',
+  source: 'MVV Münchner Verkehrs- und Tarifverbund GmbH (Open Data GTFS)',
+  attribution: 'Fahrplandaten: © MVV GmbH (CC BY 4.0)',
+  bbox: [11.03, 47.88, 12.02, 48.41],
+  stationCount: 4195,
+  connectionCount: 11142,
+  footpathCount: 7412,
+  downloadSizeApprox: '280 KB (gzip)',
+  downloadUrl: resolveAssetUrl('transit-packages/munich.json'),
+  isBuiltIn: true,
+  schemaVersion: 2,
+  directed: true,
+  stations: [],
+  connections: [],
+};
+
 const MVV_STORAGE_KEY = 'mvv_transit_dataset_v1';
 const MVV_LAST_SYNC_KEY = 'mvv_last_sync_timestamp';
 
@@ -62,10 +84,16 @@ export function fastDistanceKm(lat1: number, lng1: number, lat2: number, lng2: n
   return Math.sqrt(dLat * dLat + dLng * dLng);
 }
 
-export type TransitAdjacencyGraph = Map<
-  string,
-  { to: string; minutes: number; lines: string[]; type: string }[]
->;
+export interface TransitGraphEdge {
+  to: string;
+  minutes: number;
+  lines: string[];
+  type: string;
+  tph?: [number, number, number, number, number];
+  isFootpath?: boolean;
+}
+
+export type TransitAdjacencyGraph = Map<string, TransitGraphEdge[]>;
 
 const cachedGraphs = new Map<string, TransitAdjacencyGraph>();
 
@@ -75,30 +103,88 @@ export function clearTransitGraphCache(): void {
 
 /**
  * Returns a cached adjacency graph for the dataset and active submodes.
- * Eliminates thousands of object allocations per inspection click.
+ * Supports forward search, reverse search for 'to_work' directed GTFS queries,
+ * and inter-station footpaths.
  */
 export function getOrCreateTransitGraph(
   dataset: TransitRegion,
-  allowedModes: Set<TransitSubMode>
+  allowedModes: Set<TransitSubMode>,
+  isReverse: boolean = false
 ): TransitAdjacencyGraph {
-  const modesKey = `${dataset.id}_${dataset.version}_${Array.from(allowedModes).sort().join(',')}`;
+  const modesKey = `${dataset.id}_${dataset.version}_${isReverse ? 'rev' : 'fwd'}_${Array.from(allowedModes).sort().join(',')}`;
   const existing = cachedGraphs.get(modesKey);
   if (existing) return existing;
 
   const graph: TransitAdjacencyGraph = new Map();
-  for (const conn of dataset.connections) {
-    if (!isConnectionAllowed(conn, allowedModes)) continue;
-    let list = graph.get(conn.from);
+
+  function addEdge(fromId: string, edge: TransitGraphEdge) {
+    let list = graph.get(fromId);
     if (!list) {
       list = [];
-      graph.set(conn.from, list);
+      graph.set(fromId, list);
     }
-    list.push({
-      to: conn.to,
-      minutes: conn.minutes,
-      lines: conn.lines,
-      type: conn.type,
-    });
+    list.push(edge);
+  }
+
+  for (const conn of dataset.connections) {
+    if (!isConnectionAllowed(conn, allowedModes)) continue;
+
+    if (!isReverse) {
+      addEdge(conn.from, {
+        to: conn.to,
+        minutes: conn.minutes,
+        lines: conn.lines,
+        type: conn.type,
+        tph: conn.tph,
+      });
+      if (!dataset.directed) {
+        addEdge(conn.to, {
+          to: conn.from,
+          minutes: conn.minutes,
+          lines: conn.lines,
+          type: conn.type,
+          tph: conn.tph,
+        });
+      }
+    } else {
+      // Reverse graph: reverse the edge direction
+      addEdge(conn.to, {
+        to: conn.from,
+        minutes: conn.minutes,
+        lines: conn.lines,
+        type: conn.type,
+        tph: conn.tph,
+      });
+      if (!dataset.directed) {
+        addEdge(conn.from, {
+          to: conn.to,
+          minutes: conn.minutes,
+          lines: conn.lines,
+          type: conn.type,
+          tph: conn.tph,
+        });
+      }
+    }
+  }
+
+  // Inter-station footpaths (bidirectional in both forward and reverse graphs)
+  if (dataset.footpaths) {
+    for (const fp of dataset.footpaths) {
+      addEdge(fp.from, {
+        to: fp.to,
+        minutes: fp.minutes,
+        lines: [],
+        type: 'footpath',
+        isFootpath: true,
+      });
+      addEdge(fp.to, {
+        to: fp.from,
+        minutes: fp.minutes,
+        lines: [],
+        type: 'footpath',
+        isFootpath: true,
+      });
+    }
   }
 
   if (cachedGraphs.size > 20) {
@@ -116,11 +202,21 @@ export function getTransitRegion(): TransitRegion {
 }
 
 /**
+ * Activates a transit region in memory without writing to storage or clearing caches unnecessarily
+ */
+export function activateRegionInMemory(region: TransitRegion): void {
+  const isChanged = activeTransitRegion.id !== region.id || activeTransitRegion.version !== region.version;
+  activeTransitRegion = region;
+  if (isChanged) {
+    clearTransitGraphCache();
+  }
+}
+
+/**
  * Sets the active transit region in memory and IndexedDB
  */
 export function setTransitRegion(region: TransitRegion): void {
-  activeTransitRegion = region;
-  clearTransitGraphCache();
+  activateRegionInMemory(region);
   saveRegionToStorage(region).catch(() => {});
   setActiveRegionId(region.id).catch(() => {});
 }
@@ -186,37 +282,40 @@ export function saveMvvDataset(dataset: TransitRegion): void {
 export async function initializeTransitStorage(): Promise<TransitRegion> {
   try {
     const activeId = await getActiveRegionId();
+    const targetId = activeId || 'munich-mvv';
+    const catalogItem = AVAILABLE_REGIONS_CATALOG.find((r) => r.id === targetId) || AVAILABLE_REGIONS_CATALOG[0];
 
-    if (activeId && activeId !== DEFAULT_MVV_DATASET.id) {
-      const stored = await loadRegionFromStorage(activeId);
-      if (stored && stored.stations && stored.stations.length > 0) {
-        activeTransitRegion = stored;
+    // 1. Check local IndexedDB storage
+    const stored = await loadRegionFromStorage(targetId);
+    if (
+      stored &&
+      stored.stations &&
+      stored.stations.length > 0 &&
+      stored.version === catalogItem.version &&
+      (!catalogItem.stationCount || stored.stations.length >= catalogItem.stationCount * 0.8)
+    ) {
+      activateRegionInMemory(stored);
+      return activeTransitRegion;
+    }
+
+    // 2. Fetch package from public/transit-packages/<targetId>.json
+    const downloadUrl = resolveAssetUrl(catalogItem.downloadUrl || `transit-packages/${catalogItem.id}.json`);
+    const res = await fetch(downloadUrl);
+    if (res.ok) {
+      const raw = await res.json();
+      const validated = validateTransitRegion(raw);
+      if (validated) {
+        activateRegionInMemory(validated);
+        await saveRegionToStorage(validated);
+        await setActiveRegionId(validated.id);
         return activeTransitRegion;
       }
     }
-
-    if (activeId === DEFAULT_MVV_DATASET.id) {
-      const stored = await loadRegionFromStorage(activeId);
-      if (
-        stored &&
-        stored.version === DEFAULT_MVV_DATASET.version &&
-        stored.stations &&
-        stored.stations.length >= DEFAULT_MVV_DATASET.stations.length
-      ) {
-        activeTransitRegion = stored;
-        return activeTransitRegion;
-      }
-    }
-
-    // Default to built-in full Munich dataset and ensure it is saved in storage
-    activeTransitRegion = DEFAULT_MVV_DATASET;
-    await saveRegionToStorage(DEFAULT_MVV_DATASET);
-    await setActiveRegionId(DEFAULT_MVV_DATASET.id);
-    return activeTransitRegion;
-  } catch {
-    activeTransitRegion = DEFAULT_MVV_DATASET;
-    return activeTransitRegion;
+  } catch (err) {
+    console.warn('[TransitStorage] Initialization error:', err);
   }
+
+  return activeTransitRegion;
 }
 
 /**
@@ -260,6 +359,7 @@ export async function switchTransitRegion(regionId: string): Promise<TransitRegi
  */
 export function detectRegionForCoordinate(lat: number, lng: number): CatalogRegion | null {
   for (const region of AVAILABLE_REGIONS_CATALOG) {
+    if (!region.bbox) continue;
     const [minLng, minLat, maxLng, maxLat] = region.bbox;
     if (lng >= minLng && lng <= maxLng && lat >= minLat && lat <= maxLat) {
       return region;
@@ -282,15 +382,15 @@ export function getMvvDatasetMetadata(): {
 } {
   const ds = getTransitRegion();
   const lastUpdated =
-    (typeof localStorage !== 'undefined' ? localStorage.getItem(MVV_LAST_SYNC_KEY) : null) || ds.lastUpdated;
+    (typeof localStorage !== 'undefined' ? localStorage.getItem(MVV_LAST_SYNC_KEY) : null) || ds.lastUpdated || '';
   return {
     id: ds.id,
     name: ds.name,
     version: ds.version,
     lastUpdated,
-    source: ds.source,
-    stationCount: ds.stations.length,
-    connectionCount: ds.connections.length,
+    source: ds.source || '',
+    stationCount: ds.stations ? ds.stations.length : (ds.stationCount || 0),
+    connectionCount: ds.connections ? ds.connections.length : (ds.connectionCount || 0),
   };
 }
 
@@ -350,6 +450,65 @@ export async function syncMvvDatasetFromEndpoint(): Promise<{
       stationCount: getTransitRegion().stations.length,
     };
   }
+}
+
+export type TimeBand = 'peak' | 'day' | 'evening' | 'night' | 'weekend';
+
+export const TIME_BAND_INDEX: Record<TimeBand, number> = {
+  peak: 0,
+  day: 1,
+  evening: 2,
+  night: 3,
+  weekend: 4,
+};
+
+/**
+ * Resolves the standardized transit time band for GTFS frequency lookups.
+ * Peak: 06:30-09:00, 15:30-19:00 (Mo-Fr)
+ * Day:  09:00-15:30 (and 05:30-06:30) (Mo-Fr)
+ * Evening: 19:00-00:30 (Mo-Fr)
+ * Night: 00:30-05:30 (Mo-Fr)
+ * Weekend: 09:00-20:00 (Sa/Su)
+ */
+export function resolveTimeBand(schedule?: ScheduleContext | CommuteSchedule): TimeBand {
+  const time = schedule?.time || '08:00';
+  const isWeekend = schedule?.dayOfWeek === 'weekend';
+
+  if (isWeekend) {
+    return 'weekend';
+  }
+  if (time >= '00:30' && time < '05:30') {
+    return 'night';
+  }
+  if ((time >= '06:30' && time <= '09:00') || (time >= '15:30' && time <= '19:00')) {
+    return 'peak';
+  }
+  if (time >= '19:00' || time < '00:30') {
+    return 'evening';
+  }
+  return 'day';
+}
+
+/**
+ * Resolves headway for a transit graph edge based on empirical GTFS trips per hour (tph),
+ * falling back gracefully to heuristic estimates for legacy v1 datasets.
+ */
+export function getEdgeHeadwayMinutes(
+  edge: { type: string; lines: string[]; tph?: [number, number, number, number, number]; isFootpath?: boolean },
+  schedule?: ScheduleContext | CommuteSchedule
+): number {
+  if (edge.isFootpath) return 0;
+  if (edge.tph && Array.isArray(edge.tph)) {
+    const band = resolveTimeBand(schedule);
+    const bandIdx = TIME_BAND_INDEX[band];
+    const tphVal = edge.tph[bandIdx];
+    if (typeof tphVal === 'number' && tphVal > 0) {
+      return 60 / tphVal;
+    }
+    // No trips running in this time band
+    return Infinity;
+  }
+  return estimateHeadwayMinutes(edge.type, edge.lines, schedule);
 }
 
 /**
@@ -441,13 +600,15 @@ export function estimateHeadwayMinutes(
 
 /**
  * Calculates initial departure waiting time based on available modes at entry station.
- * Models half of the headway (Headway / 2) as realistic average wait time.
+ * Models half of the headway (Headway / 2) as realistic average wait time,
+ * bounded by initialDepartureWaitCapMin.
  */
 export function getInitialDepartureWaitMinutes(
   station: TransitStation,
   allowedModes: Set<TransitSubMode>,
   enableHeadwayPenalty: boolean = DEFAULT_ROUTING_PARAMETERS.enableHeadwayPenalty,
-  schedule?: ScheduleContext | CommuteSchedule
+  schedule?: ScheduleContext | CommuteSchedule,
+  initialWaitCapMin: number = DEFAULT_ROUTING_PARAMETERS.initialDepartureWaitCapMin
 ): number {
   if (!enableHeadwayPenalty) {
     return 1.0;
@@ -462,7 +623,8 @@ export function getInitialDepartureWaitMinutes(
     else if (t === 'bus' && (allowedModes.has('bus') || allowedModes.has('expressbus'))) minWait = Math.min(minWait, halfHeadway);
     else if (t === 'train' && allowedModes.has('train')) minWait = Math.min(minWait, halfHeadway);
   }
-  return Number.isFinite(minWait) ? minWait : 4.0;
+  const rawWait = Number.isFinite(minWait) ? minWait : 4.0;
+  return Math.min(rawWait, initialWaitCapMin);
 }
 
 /**
@@ -480,14 +642,23 @@ export function calculateTransferPenalty(
   minTransferBufferMin: number = DEFAULT_ROUTING_PARAMETERS.minTransferBufferMin,
   transferRiskBufferMin: number = DEFAULT_ROUTING_PARAMETERS.transferRiskBufferMin,
   enableHeadwayPenalty: boolean = DEFAULT_ROUTING_PARAMETERS.enableHeadwayPenalty,
-  schedule?: ScheduleContext | CommuteSchedule
+  schedule?: ScheduleContext | CommuteSchedule,
+  targetEdge?: TransitGraphEdge
 ): number {
-  const headway = estimateHeadwayMinutes(targetType, targetLines, schedule);
+  if (targetEdge?.isFootpath) {
+    return 0; // Footpath transfer walking time is already modeled on the edge
+  }
+
+  const headway = targetEdge
+    ? getEdgeHeadwayMinutes(targetEdge, schedule)
+    : estimateHeadwayMinutes(targetType, targetLines, schedule);
+
+  if (!Number.isFinite(headway)) {
+    return Infinity;
+  }
+
   const averageWait = enableHeadwayPenalty ? headway / 2 : 1.0;
 
-  // Feasibility check: If user specified a maximum acceptable transfer wait,
-  // connections whose scheduled wait exceeds this threshold are disallowed.
-  // A strict preference must NEVER make an infrequent connection cheaper.
   if (enableHeadwayPenalty && maxTransferWaitMin !== undefined && averageWait > maxTransferWaitMin) {
     return Infinity;
   }
@@ -495,7 +666,7 @@ export function calculateTransferPenalty(
   const effectiveWait = averageWait;
   const baseWalkBuffer = targetType === 'ubahn' || targetType === 'sbahn' ? minTransferBufferMin - 0.5 : minTransferBufferMin + 0.5;
   const walkBuffer = Math.max(1.0, baseWalkBuffer);
-  const riskBuffer = transferRiskBufferMin; // Deliberate risk penalty against fragile connections
+  const riskBuffer = transferRiskBufferMin;
   return walkBuffer + effectiveWait + riskBuffer;
 }
 
@@ -534,6 +705,7 @@ export function calculateReachableStations(
   const minTransferBuffer = options?.minTransferBufferMin ?? DEFAULT_ROUTING_PARAMETERS.minTransferBufferMin;
   const transferRiskBuffer = options?.transferRiskBufferMin ?? DEFAULT_ROUTING_PARAMETERS.transferRiskBufferMin;
   const enableHeadway = options?.enableHeadwayPenalty ?? DEFAULT_ROUTING_PARAMETERS.enableHeadwayPenalty;
+  const initialWaitCap = options?.initialDepartureWaitCapMin ?? DEFAULT_ROUTING_PARAMETERS.initialDepartureWaitCapMin;
 
   const allowedModes = new Set<TransitSubMode>(
     transitModes && transitModes.length > 0
@@ -544,6 +716,14 @@ export function calculateReachableStations(
   );
 
   const dataset = getTransitRegion();
+
+  // Determine direction:
+  // For 'to_work' (default), the anchor is work, and we want all origin stations that can reach work.
+  // In a directed GTFS network, this requires a REVERSE search on inverted edges.
+  const isFromLocation =
+    (schedule?.direction as string) === 'from_location' ||
+    schedule?.direction === 'from_work';
+  const isReverse = !isFromLocation;
 
   // 1. Find entry stations accessible from workplace/destination anchor (lat, lng)
   const effectiveMaxWalkMin = Math.max(maxWalkFromStationMin, 1);
@@ -582,8 +762,8 @@ export function calculateReachableStations(
     }
   }
 
-  // 2. Resolve Adjacency Graph (cached to avoid object reallocations)
-  const graph = getOrCreateTransitGraph(dataset, allowedModes);
+  // 2. Resolve Adjacency Graph (cached, directional)
+  const graph = getOrCreateTransitGraph(dataset, allowedModes, isReverse);
 
   // 3. Multi-Label Pareto Dijkstra Search
   interface State {
@@ -591,6 +771,8 @@ export function calculateReachableStations(
     totalTime: number;
     transfers: number;
     activeLines: string[] | null;
+    onFoot: boolean;
+    boardHeadway: number;
   }
 
   function getLineKey(lines: string[] | null): string {
@@ -604,21 +786,20 @@ export function calculateReachableStations(
   const bestByLine = new Map<string, Map<string, Array<{ time: number; transfers: number }>>>();
   const bestStationTimes = new Map<string, { time: number; transfers: number }>();
 
-  const isFromLocation =
-    (schedule?.direction as string) === 'from_location' ||
-    schedule?.direction === 'from_work';
-
   for (const entry of entryStations) {
-    const departureWait = isFromLocation
-      ? getInitialDepartureWaitMinutes(entry.station, allowedModes, enableHeadway, schedule)
+    const departureWait = !isReverse
+      ? getInitialDepartureWaitMinutes(entry.station, allowedModes, enableHeadway, schedule, initialWaitCap)
       : 0;
     const startTime = entry.walkTimeMin + departureWait;
+
     if (startTime <= travelTimeMinutes) {
       pq.push({
         stationId: entry.station.id,
         totalTime: startTime,
         transfers: 0,
         activeLines: null,
+        onFoot: false,
+        boardHeadway: 0,
       });
       bestStationTimes.set(entry.station.id, { time: startTime, transfers: 0 });
     }
@@ -673,46 +854,105 @@ export function calculateReachableStations(
     kept.push({ time: curr.totalTime, transfers: curr.transfers });
     stMap.set(lineKey, kept);
 
-    const prevBest = bestStationTimes.get(curr.stationId);
-    if (!prevBest || curr.totalTime < prevBest.time || (curr.totalTime === prevBest.time && curr.transfers < prevBest.transfers)) {
-      bestStationTimes.set(curr.stationId, { time: curr.totalTime, transfers: curr.transfers });
+    // Record best effective arrival time at station
+    let effectiveStationTime = curr.totalTime;
+    if (isReverse && curr.activeLines !== null) {
+      const wait = enableHeadway && curr.boardHeadway > 0 ? Math.min(curr.boardHeadway / 2, initialWaitCap) : 0;
+      effectiveStationTime += wait;
+    }
+
+    if (effectiveStationTime <= travelTimeMinutes) {
+      const prevBest = bestStationTimes.get(curr.stationId);
+      if (
+        !prevBest ||
+        effectiveStationTime < prevBest.time ||
+        (effectiveStationTime === prevBest.time && curr.transfers < prevBest.transfers)
+      ) {
+        bestStationTimes.set(curr.stationId, { time: effectiveStationTime, transfers: curr.transfers });
+      }
     }
 
     const neighbors = graph.get(curr.stationId) || [];
     for (const edge of neighbors) {
-      let isLineChange = false;
-      let nextActiveLines: string[] = edge.lines;
-
-      if (curr.activeLines !== null) {
-        const commonLines = edge.lines.filter((l) => curr.activeLines!.includes(l));
-        if (commonLines.length > 0) {
-          isLineChange = false;
-          nextActiveLines = commonLines;
-        } else {
-          isLineChange = true;
-          nextActiveLines = edge.lines;
+      // Inter-station footpaths: only allowed between transit legs, not back-to-back
+      if (edge.isFootpath) {
+        if (curr.activeLines !== null && !curr.onFoot) {
+          const nextTime = curr.totalTime + edge.minutes;
+          if (nextTime <= travelTimeMinutes) {
+            pq.push({
+              stationId: edge.to,
+              totalTime: nextTime,
+              transfers: curr.transfers,
+              activeLines: null,
+              onFoot: true,
+              boardHeadway: 0,
+            });
+          }
         }
-      }
-
-      const nextTransfers = curr.transfers + (isLineChange ? 1 : 0);
-
-      if (maxTransfers !== undefined && nextTransfers > maxTransfers) {
         continue;
       }
 
-      const transferPenalty = isLineChange
-        ? calculateTransferPenalty(
+      // Transit ride edge
+      const edgeHeadway = getEdgeHeadwayMinutes(edge, schedule);
+      if (!Number.isFinite(edgeHeadway)) {
+        continue; // No scheduled trips in this time band
+      }
+
+      let isTransfer = false;
+      let nextActiveLines: string[] = edge.lines;
+      let transferPenalty = 0;
+
+      if (curr.onFoot) {
+        // Boarding next transit leg after inter-station footpath
+        isTransfer = true;
+        nextActiveLines = edge.lines;
+        const avgWait = enableHeadway ? edgeHeadway / 2 : 1.0;
+        if (enableHeadway && maxTransferWaitMin !== undefined && avgWait > maxTransferWaitMin) {
+          continue;
+        }
+        // Footpath already accounts for physical walking time
+        transferPenalty = avgWait + transferRiskBuffer;
+      } else if (curr.activeLines === null) {
+        // Initial transit boarding
+        isTransfer = false;
+        nextActiveLines = edge.lines;
+        if (!isReverse) {
+          // Forward search: initial departure wait applied upon boarding
+          transferPenalty = enableHeadway ? Math.min(edgeHeadway / 2, initialWaitCap) : 0;
+        } else {
+          // Reverse search: initial wait is applied when exiting at origin
+          transferPenalty = 0;
+        }
+      } else {
+        // Check continuation on same line
+        const commonLines = edge.lines.filter((l) => curr.activeLines!.includes(l));
+        if (commonLines.length > 0) {
+          isTransfer = false;
+          nextActiveLines = commonLines;
+          transferPenalty = 0;
+        } else {
+          // Line transfer at same station
+          isTransfer = true;
+          nextActiveLines = edge.lines;
+          const penalty = calculateTransferPenalty(
             edge.type,
             edge.lines,
             maxTransferWaitMin,
             minTransferBuffer,
             transferRiskBuffer,
             enableHeadway,
-            schedule
-          )
-        : 0;
+            schedule,
+            edge
+          );
+          if (!Number.isFinite(penalty)) {
+            continue;
+          }
+          transferPenalty = penalty;
+        }
+      }
 
-      if (!Number.isFinite(transferPenalty)) {
+      const nextTransfers = curr.transfers + (isTransfer ? 1 : 0);
+      if (maxTransfers !== undefined && nextTransfers > maxTransfers) {
         continue;
       }
 
@@ -740,6 +980,8 @@ export function calculateReachableStations(
             totalTime: nextTime,
             transfers: nextTransfers,
             activeLines: nextActiveLines,
+            onFoot: false,
+            boardHeadway: edgeHeadway,
           });
         }
       }
@@ -754,16 +996,11 @@ export function calculateReachableStations(
     const station = stationsMap.get(stId);
     if (!station) continue;
 
-    const departureWait = !isFromLocation
-      ? getInitialDepartureWaitMinutes(station, allowedModes, enableHeadway, schedule)
-      : 0;
-    const totalTime = info.time + departureWait;
-
-    if (totalTime <= travelTimeMinutes) {
+    if (info.time <= travelTimeMinutes) {
       reachable.push({
         station,
-        totalTimeMin: Math.round(totalTime * 10) / 10,
-        remainingTimeMin: Math.max(0, travelTimeMinutes - totalTime),
+        totalTimeMin: Math.round(info.time * 10) / 10,
+        remainingTimeMin: Math.max(0, travelTimeMinutes - info.time),
         transfersUsed: info.transfers,
       });
     }
@@ -815,6 +1052,7 @@ export function findShortestTransitTrip(
   const minTransferBuffer = options?.minTransferBufferMin ?? DEFAULT_ROUTING_PARAMETERS.minTransferBufferMin;
   const transferRiskBuffer = options?.transferRiskBufferMin ?? DEFAULT_ROUTING_PARAMETERS.transferRiskBufferMin;
   const enableHeadway = options?.enableHeadwayPenalty ?? DEFAULT_ROUTING_PARAMETERS.enableHeadwayPenalty;
+  const initialWaitCap = options?.initialDepartureWaitCapMin ?? DEFAULT_ROUTING_PARAMETERS.initialDepartureWaitCapMin;
 
   const dataset = getTransitRegion();
   const directDistanceKm = fastDistanceKm(origin.lat, origin.lng, destination.lat, destination.lng);
@@ -891,8 +1129,8 @@ export function findShortestTransitTrip(
     return null;
   }
 
-  // Resolve Adjacency Graph (cached)
-  const graph = getOrCreateTransitGraph(dataset, allowedModes);
+  // Resolve Adjacency Graph (cached forward search)
+  const graph = getOrCreateTransitGraph(dataset, allowedModes, false);
 
   interface AStarState {
     stationId: string;
@@ -904,6 +1142,7 @@ export function findShortestTransitTrip(
     entryStationName: string;
     entryWalkTime: number;
     entryWaitTime: number;
+    onFoot: boolean;
   }
 
   function getLineKey(lines: string[] | null): string {
@@ -913,10 +1152,9 @@ export function findShortestTransitTrip(
 
   const pq = new PriorityQueue<AStarState>((a, b) => a.fScore - b.fScore);
   const bestGByLine = new Map<string, Map<string, Array<{ gTime: number; transfers: number }>>>();
-  const stationsMap = new Map(dataset.stations.map((s) => [s.id, s]));
 
   for (const entry of entryStations) {
-    const initialWait = getInitialDepartureWaitMinutes(entry.station, allowedModes, enableHeadway, schedule);
+    const initialWait = getInitialDepartureWaitMinutes(entry.station, allowedModes, enableHeadway, schedule, initialWaitCap);
     const gTime = entry.walkTime + initialWait;
 
     pq.push({
@@ -929,6 +1167,7 @@ export function findShortestTransitTrip(
       entryStationName: entry.station.name,
       entryWalkTime: entry.walkTime,
       entryWaitTime: initialWait,
+      onFoot: false,
     });
   }
 
@@ -1020,17 +1259,68 @@ export function findShortestTransitTrip(
 
     const neighbors = graph.get(curr.stationId) || [];
     for (const edge of neighbors) {
+      // Footpaths
+      if (edge.isFootpath) {
+        if (curr.activeLines !== null && !curr.onFoot) {
+          const nextGTime = curr.gTime + edge.minutes;
+          if (nextGTime < maxSearchBudget) {
+            pq.push({
+              stationId: edge.to,
+              gTime: nextGTime,
+              fScore: nextGTime,
+              transfers: curr.transfers,
+              activeLines: null,
+              allLinesUsed: curr.allLinesUsed,
+              entryStationName: curr.entryStationName,
+              entryWalkTime: curr.entryWalkTime,
+              entryWaitTime: curr.entryWaitTime,
+              onFoot: true,
+            });
+          }
+        }
+        continue;
+      }
+
+      const edgeHeadway = getEdgeHeadwayMinutes(edge, schedule);
+      if (!Number.isFinite(edgeHeadway)) {
+        continue;
+      }
+
       let isLineChange = false;
       let nextActiveLines: string[] = edge.lines;
+      let transferPenalty = 0;
 
-      if (curr.activeLines !== null) {
+      if (curr.onFoot) {
+        isLineChange = true;
+        nextActiveLines = edge.lines;
+        const avgWait = enableHeadway ? edgeHeadway / 2 : 1.0;
+        if (enableHeadway && profile.maxTransferWaitMin !== undefined && avgWait > profile.maxTransferWaitMin) {
+          continue;
+        }
+        transferPenalty = avgWait + transferRiskBuffer;
+      } else if (curr.activeLines !== null) {
         const commonLines = edge.lines.filter((l) => curr.activeLines!.includes(l));
         if (commonLines.length > 0) {
           isLineChange = false;
           nextActiveLines = commonLines;
+          transferPenalty = 0;
         } else {
           isLineChange = true;
           nextActiveLines = edge.lines;
+          const penalty = calculateTransferPenalty(
+            edge.type,
+            edge.lines,
+            profile.maxTransferWaitMin,
+            minTransferBuffer,
+            transferRiskBuffer,
+            enableHeadway,
+            schedule,
+            edge
+          );
+          if (!Number.isFinite(penalty)) {
+            continue;
+          }
+          transferPenalty = penalty;
         }
       }
 
@@ -1039,24 +1329,7 @@ export function findShortestTransitTrip(
         continue;
       }
 
-      const transferPenalty = isLineChange
-        ? calculateTransferPenalty(
-            edge.type,
-            edge.lines,
-            profile.maxTransferWaitMin,
-            minTransferBuffer,
-            transferRiskBuffer,
-            enableHeadway,
-            schedule
-          )
-        : 0;
-
-      if (!Number.isFinite(transferPenalty)) {
-        continue;
-      }
-
       const nextGTime = curr.gTime + edge.minutes + transferPenalty;
-
       const nextFScore = nextGTime;
 
       let nextStMap = bestGByLine.get(edge.to);
@@ -1090,6 +1363,7 @@ export function findShortestTransitTrip(
           entryStationName: curr.entryStationName,
           entryWalkTime: curr.entryWalkTime,
           entryWaitTime: curr.entryWaitTime,
+          onFoot: false,
         });
       }
     }
@@ -1146,6 +1420,56 @@ export function generateMvvTransitIsochrone(
   const catchmentMode = options?.stationCatchmentMode ?? 'heuristic';
   const currentRegionId = getTransitRegion().id;
 
+interface CircleSpec {
+  lat: number;
+  lng: number;
+  radiusKm: number;
+}
+
+function pruneContainedCircles(circles: CircleSpec[]): CircleSpec[] {
+  if (circles.length <= 1) return circles;
+
+  // Sort descending by radius so largest circles come first
+  const sorted = [...circles].sort((a, b) => b.radiusKm - a.radiusKm);
+  const cellSizeKm = 1.0;
+  const grid = new Map<string, CircleSpec[]>();
+  const kept: CircleSpec[] = [];
+
+  for (const c of sorted) {
+    const latCell = Math.floor(c.lat / (cellSizeKm / 111.0));
+    const lngCell = Math.floor(c.lng / (cellSizeKm / (111.0 * Math.cos((c.lat * Math.PI) / 180))));
+
+    let isContained = false;
+    for (let dx = -1; dx <= 1; dx++) {
+      for (let dy = -1; dy <= 1; dy++) {
+        const key = `${latCell + dx}_${lngCell + dy}`;
+        const cellItems = grid.get(key);
+        if (!cellItems) continue;
+        for (const larger of cellItems) {
+          const d = fastDistanceKm(c.lat, c.lng, larger.lat, larger.lng);
+          if (d + c.radiusKm <= larger.radiusKm + 0.01) {
+            isContained = true;
+            break;
+          }
+        }
+        if (isContained) break;
+      }
+      if (isContained) break;
+    }
+
+    if (!isContained) {
+      kept.push(c);
+      const key = `${latCell}_${lngCell}`;
+      if (!grid.has(key)) grid.set(key, []);
+      grid.get(key)!.push(c);
+    }
+  }
+
+  return kept;
+}
+
+  const circleCandidates: CircleSpec[] = [];
+
   for (const item of reachableStations) {
     // Walking dispersal around reached station into residential area (Station ➔ Wohnort)
     const dispersalMinutes = Math.min(Math.max(0, item.remainingTimeMin), effectiveMaxDispersalMin);
@@ -1164,83 +1488,135 @@ export function generateMvvTransitIsochrone(
       );
     }
 
-    if (!stationBuffer) {
+    if (stationBuffer) {
+      polygonsToUnion.push(stationBuffer);
+    } else {
       // Strictly limit radius to what can be walked in the remaining time and walk budget
       const radiusKm = (dispersalMinutes * walkSpeedKmPerMin) / detourFactor;
-      if (radiusKm < 0.05) continue;
-
-      const stPoint = turf.point([item.station.lng, item.station.lat]);
-      stationBuffer = turf.circle(stPoint, radiusKm, {
-        steps: 20,
-        units: 'kilometers',
-      });
+      if (radiusKm >= 0.05) {
+        circleCandidates.push({
+          lat: item.station.lat,
+          lng: item.station.lng,
+          radiusKm,
+        });
+      }
     }
-
-    polygonsToUnion.push(stationBuffer);
   }
 
-  // 3. Hierarchical union of origin walk area and station catchment bubbles
-  let merged: GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon> = originWalkCircle;
+  // Include direct walk circle from origin in candidates for unified spatial clustering
+  circleCandidates.push({
+    lat,
+    lng,
+    radiusKm: directWalkRadiusKm,
+  });
 
-  if (polygonsToUnion.length === 1) {
-    merged = polygonsToUnion[0];
-  } else if (polygonsToUnion.length > 1) {
-    let united: GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon> | null = null;
-    try {
-      const fc = turf.featureCollection(polygonsToUnion as any);
-      const res = (turf.union as any)(fc);
-      if (res && res.geometry) {
-        united = res as GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon>;
-      }
-    } catch {}
+  // Prune strictly contained circular buffers
+  const prunedCircles = pruneContainedCircles(circleCandidates);
 
-    if (united) {
-      merged = united;
-    } else {
-      // Pairwise reduction with bounded iterations
-      let currentList = [...polygonsToUnion];
-      let maxRounds = 8;
-      while (currentList.length > 1 && maxRounds > 0) {
-        maxRounds--;
-        const nextList: GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon>[] = [];
-        let mergedAny = false;
-        for (let i = 0; i < currentList.length; i += 2) {
-          if (i + 1 < currentList.length) {
-            try {
-              const fc = turf.featureCollection([currentList[i] as any, currentList[i + 1] as any]);
-              const u = (turf.union as any)(fc);
-              if (u && u.geometry) {
-                nextList.push(u as GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon>);
-                mergedAny = true;
-              } else {
-                nextList.push(currentList[i], currentList[i + 1]);
-              }
-            } catch {
-              nextList.push(currentList[i], currentList[i + 1]);
+  // Spatial connected components with Disjoint-Set (Union-Find)
+  const parent = new Int32Array(prunedCircles.length);
+  for (let i = 0; i < prunedCircles.length; i++) parent[i] = i;
+  function findRoot(i: number): number {
+    let root = i;
+    while (root !== parent[root]) root = parent[root];
+    let curr = i;
+    while (curr !== root) { const nxt = parent[curr]; parent[curr] = root; curr = nxt; }
+    return root;
+  }
+  function unionSets(i: number, j: number) {
+    const rootI = findRoot(i);
+    const rootJ = findRoot(j);
+    if (rootI !== rootJ) parent[rootI] = rootJ;
+  }
+
+  const cellSizeLat = 0.5 / 111.0;
+  const cellSizeLng = 0.5 / 74.0;
+  const spatialGrid = new Map<string, number[]>();
+
+  for (let i = 0; i < prunedCircles.length; i++) {
+    const c = prunedCircles[i];
+    const gy = Math.floor(c.lat / cellSizeLat);
+    const gx = Math.floor(c.lng / cellSizeLng);
+    for (let dy = -1; dy <= 1; dy++) {
+      for (let dx = -1; dx <= 1; dx++) {
+        const items = spatialGrid.get(`${gy + dy}_${gx + dx}`);
+        if (items) {
+          for (const j of items) {
+            const c2 = prunedCircles[j];
+            const dLat = (c.lat - c2.lat) * 111.0;
+            const dLng = (c.lng - c2.lng) * 74.0;
+            if (Math.sqrt(dLat * dLat + dLng * dLng) <= c.radiusKm + c2.radiusKm) {
+              unionSets(i, j);
             }
-          } else {
-            nextList.push(currentList[i]);
           }
         }
-        currentList = nextList;
-        if (!mergedAny) break;
-      }
-
-      if (currentList.length === 1) {
-        merged = currentList[0];
-      } else {
-        // Collect disjoint polygons into a MultiPolygon
-        const allPolys: GeoJSON.Position[][][] = [];
-        for (const item of currentList) {
-          if (item.geometry.type === 'Polygon') {
-            allPolys.push(item.geometry.coordinates);
-          } else if (item.geometry.type === 'MultiPolygon') {
-            allPolys.push(...item.geometry.coordinates);
-          }
-        }
-        merged = turf.multiPolygon(allPolys);
       }
     }
+    const key = `${gy}_${gx}`;
+    let cellList = spatialGrid.get(key);
+    if (!cellList) {
+      cellList = [];
+      spatialGrid.set(key, cellList);
+    }
+    cellList.push(i);
+  }
+
+  const comps = new Map<number, number[]>();
+  for (let i = 0; i < prunedCircles.length; i++) {
+    const r = findRoot(i);
+    let compList = comps.get(r);
+    if (!compList) {
+      compList = [];
+      comps.set(r, compList);
+    }
+    compList.push(i);
+  }
+
+  const allPolysCoordinates: GeoJSON.Position[][][] = [];
+
+  for (const indices of comps.values()) {
+    if (indices.length === 1) {
+      const c = prunedCircles[indices[0]];
+      const circlePoly = turf.circle([c.lng, c.lat], c.radiusKm, { steps: 16, units: 'kilometers' });
+      allPolysCoordinates.push(circlePoly.geometry.coordinates);
+    } else {
+      const polys = indices.map((idx) => {
+        const c = prunedCircles[idx];
+        return turf.circle([c.lng, c.lat], c.radiusKm, { steps: 16, units: 'kilometers' });
+      });
+      try {
+        const u = (turf.union as any)(turf.featureCollection(polys));
+        if (u && u.geometry) {
+          if (u.geometry.type === 'Polygon') {
+            allPolysCoordinates.push(u.geometry.coordinates);
+          } else if (u.geometry.type === 'MultiPolygon') {
+            allPolysCoordinates.push(...u.geometry.coordinates);
+          }
+        } else {
+          for (const p of polys) allPolysCoordinates.push(p.geometry.coordinates);
+        }
+      } catch {
+        for (const p of polys) allPolysCoordinates.push(p.geometry.coordinates);
+      }
+    }
+  }
+
+  // Include any precomputed walkshed polygons that were collected
+  for (const extra of polygonsToUnion) {
+    if (extra.geometry.type === 'Polygon') {
+      allPolysCoordinates.push(extra.geometry.coordinates);
+    } else if (extra.geometry.type === 'MultiPolygon') {
+      allPolysCoordinates.push(...extra.geometry.coordinates);
+    }
+  }
+
+  let merged: GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon>;
+  if (allPolysCoordinates.length === 1) {
+    merged = turf.polygon(allPolysCoordinates[0]);
+  } else if (allPolysCoordinates.length > 1) {
+    merged = turf.multiPolygon(allPolysCoordinates);
+  } else {
+    merged = originWalkCircle;
   }
 
   const dataset = getTransitRegion();

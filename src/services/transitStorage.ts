@@ -77,13 +77,44 @@ export function validateTransitRegion(raw: any): TransitRegion | null {
     ) {
       continue;
     }
+    let tph: [number, number, number, number, number] | undefined = undefined;
+    if (Array.isArray(c.tph) && c.tph.length === 5) {
+      const allValid = c.tph.every((n: any) => typeof n === 'number' && !isNaN(n) && n >= 0);
+      if (allValid) {
+        tph = c.tph as [number, number, number, number, number];
+      }
+    }
+
     validConnections.push({
       from: c.from,
       to: c.to,
       minutes: Math.max(0.2, c.minutes),
       lines: Array.isArray(c.lines) ? c.lines.filter((l: any) => typeof l === 'string') : [],
       type: typeof c.type === 'string' ? c.type : 'ubahn',
+      tph,
     });
+  }
+
+  const validFootpaths: any[] = [];
+  if (Array.isArray(raw.footpaths)) {
+    for (const f of raw.footpaths) {
+      if (
+        f &&
+        typeof f.from === 'string' &&
+        typeof f.to === 'string' &&
+        typeof f.minutes === 'number' &&
+        !isNaN(f.minutes) &&
+        f.minutes > 0 &&
+        stationIdSet.has(f.from) &&
+        stationIdSet.has(f.to)
+      ) {
+        validFootpaths.push({
+          from: f.from,
+          to: f.to,
+          minutes: Math.max(0.1, f.minutes),
+        });
+      }
+    }
   }
 
   if (validStations.length === 0 || validConnections.length === 0) {
@@ -99,11 +130,19 @@ export function validateTransitRegion(raw: any): TransitRegion | null {
     bbox: raw.bbox as [number, number, number, number],
     stationCount: validStations.length,
     connectionCount: validConnections.length,
+    footpathCount: validFootpaths.length > 0 ? validFootpaths.length : (typeof raw.footpathCount === 'number' ? raw.footpathCount : undefined),
     downloadSizeApprox: typeof raw.downloadSizeApprox === 'string' ? raw.downloadSizeApprox : undefined,
     downloadUrl: typeof raw.downloadUrl === 'string' ? raw.downloadUrl : undefined,
     isBuiltIn: !!raw.isBuiltIn,
+    schemaVersion: raw.schemaVersion === 2 ? 2 : 1,
+    directed: !!raw.directed,
+    attribution: typeof raw.attribution === 'string' ? raw.attribution : undefined,
+    feedVersion: typeof raw.feedVersion === 'string' ? raw.feedVersion : undefined,
+    feedSourceUrl: typeof raw.feedSourceUrl === 'string' ? raw.feedSourceUrl : undefined,
+    serviceDates: raw.serviceDates && typeof raw.serviceDates === 'object' ? raw.serviceDates : undefined,
     stations: validStations,
     connections: validConnections,
+    footpaths: validFootpaths.length > 0 ? validFootpaths : undefined,
   };
 }
 
@@ -123,9 +162,13 @@ async function checkStorageQuota(): Promise<boolean> {
   return true;
 }
 
+export function isStorageAvailable(): boolean {
+  return typeof indexedDB !== 'undefined';
+}
+
 function openDatabase(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
-    if (typeof indexedDB === 'undefined') {
+    if (!isStorageAvailable()) {
       return reject(new Error('IndexedDB is not available in this environment.'));
     }
 
@@ -150,6 +193,8 @@ function openDatabase(): Promise<IDBDatabase> {
  * Saves or updates a transit region package in IndexedDB with quota check and LRU eviction
  */
 export async function saveRegionToStorage(region: TransitRegion): Promise<void> {
+  if (!isStorageAvailable()) return;
+
   const validated = validateTransitRegion(region);
   if (!validated) {
     console.warn('[TransitStorage] Rejected malformed transit region:', region?.id);
@@ -186,6 +231,7 @@ export async function saveRegionToStorage(region: TransitRegion): Promise<void> 
  * Loads a transit region package by id with runtime schema validation
  */
 export async function loadRegionFromStorage(regionId: string): Promise<TransitRegion | null> {
+  if (!isStorageAvailable()) return null;
   try {
     const db = await openDatabase();
     return new Promise((resolve, reject) => {
@@ -220,6 +266,7 @@ export async function loadRegionFromStorage(regionId: string): Promise<TransitRe
  * Deletes a transit region package by id
  */
 export async function deleteRegionFromStorage(regionId: string): Promise<void> {
+  if (!isStorageAvailable()) return;
   try {
     const db = await openDatabase();
     return new Promise((resolve, reject) => {
@@ -240,6 +287,7 @@ export async function deleteRegionFromStorage(regionId: string): Promise<void> {
  * Lists metadata of all locally installed regions
  */
 export async function listInstalledRegions(): Promise<TransitRegionMetadata[]> {
+  if (!isStorageAvailable()) return [];
   try {
     const db = await openDatabase();
     return new Promise((resolve, reject) => {
@@ -260,6 +308,9 @@ export async function listInstalledRegions(): Promise<TransitRegionMetadata[]> {
           connectionCount: r.connections ? r.connections.length : r.connectionCount,
           downloadSizeApprox: r.downloadSizeApprox,
           isBuiltIn: r.isBuiltIn,
+          schemaVersion: r.schemaVersion,
+          directed: r.directed,
+          attribution: r.attribution,
         }));
         resolve(metaList);
       };
@@ -282,6 +333,7 @@ export async function getActiveRegionId(): Promise<string | null> {
       if (stored) return stored;
     }
 
+    if (!isStorageAvailable()) return null;
     const db = await openDatabase();
     return new Promise((resolve, reject) => {
       const tx = db.transaction([STORE_SETTINGS], 'readonly');
@@ -306,6 +358,7 @@ export async function setActiveRegionId(regionId: string): Promise<void> {
       localStorage.setItem('living_area_active_region_id', regionId);
     }
 
+    if (!isStorageAvailable()) return;
     const db = await openDatabase();
     return new Promise((resolve, reject) => {
       const tx = db.transaction([STORE_SETTINGS], 'readwrite');

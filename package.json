@@ -9,6 +9,9 @@
     "preview": "vite preview",
     "lint": "tsc --noEmit",
     "test": "node scripts/testEssential.mjs",
+    "transit:compile": "node scripts/processGtfsRegion.mjs --region munich-mvv --feed data/gtfs/mvv-gesamt.zip",
+    "transit:validate": "node scripts/validateTransitPackage.mjs --region munich-mvv --feed data/gtfs/mvv-gesamt.zip",
+    "transit:bench": "node scripts/benchTransitEngine.mjs",
     "update:highways": "node scripts/updateHighways.mjs"
   },
   "dependencies": {
@@ -27,6 +30,7 @@
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^5.0.4",
+    "fflate": "^0.8.3",
     "tailwindcss": "^4.1.14",
     "typescript": "~5.8.2",
     "vite": "^8.3.1"

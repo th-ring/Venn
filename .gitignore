@@ -11,3 +11,7 @@ bun.lock*
 # Local apartment search / scraped data (ephemeral session research)
 public/data/apartments.json
 !public/data/apartments.example.json
+
+# Local GTFS raw feeds and extraction reports
+data/gtfs/
+

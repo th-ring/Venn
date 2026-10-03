@@ -33,13 +33,21 @@ import {
   isSwapOffer,
   extractPortalExposeId,
 } from '../src/services/apartmentService.ts';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { PriorityQueue } from '../src/services/priorityQueue.ts';
 import {
   calculateReachableStations,
   findShortestTransitTrip,
   getTransitRegion,
+  setTransitRegion,
   generateMvvTransitIsochrone,
 } from '../src/services/mvvMatrixService.ts';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const ROOT_DIR = path.resolve(__dirname, '..');
 import {
   validateStationWalkshedDataset,
   setStationWalkshedDataset,
@@ -698,6 +706,10 @@ test('stress test: maintains min-heap property over 200 pseudo-random numbers', 
   assert.equal(popCount, 200);
   assert.equal(pq.isEmpty(), true);
 });
+
+// Load full compiled Munich package into transit engine for integration tests
+const munichPackage = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'public', 'transit-packages', 'munich.json'), 'utf8'));
+setTransitRegion(munichPackage);
 
 // Group 9: Transit Graph Routing & Schema Validation
 console.log('\n9. Transit Graph Routing & Schema Validation:');
