@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.13.0] - 2026-10-03
+
+### Added
+- **API-Only Straßen-Isochronen**: Pkw-, Fahrrad- und Fußweg-Erreichbarkeiten basieren ausnahmslos auf echten Routing-APIs (Google Maps Isochrones API oder OpenRouteService). Künstliche Raycasting-Näherungen wurden vollständig eliminiert.
+- **Interaktive Provider- und Schlüssel-Auswahl im Onboarding**: Neuer Schritt *2. Routing-Dienst & API-Schlüssel* im Einführungswalkthrough ermöglicht die direkte Auswahl des Routingdienstes, Eingabe von API-Keys sowie den 1-Klick-Abruf eines kostenfreien Google Maps Demo-Keys.
+- **Gezielte Hinweisführung bei fehlendem Schlüssel**: Bei fehlendem API-Schlüssel für Straßenmodi warnt ein klares Hinweisfeld mit Direktlinks zur Schlüssel-Konfiguration und zum kostenlosen Demo-Key.
+
+### Changed
+- **Bereinigte Isochronen-Engine-Einstellungen**: Der Einstellungs-Tab bietet fokussiert die beiden echten Routing-Dienste (Google Maps und ORS) mit Statusanzeige und direkter Absprungmöglichkeit zur Schlüsselkonfiguration.
+- **Konsistente Schnittmengenprüfung**: Ein gemeinsamer Treffbereich wird strikt nur dann gebildet, wenn für alle aktiven Personen gültige, reale Isochronen-Polygone berechnet werden konnten.
+
 ## [1.12.0] - 2026-10-03
 
 ### Added
