@@ -1,10 +1,11 @@
 import React from 'react';
-import { IsochroneOptions, DEFAULT_ROUTING_PARAMETERS } from '../../../types';
+import { IsochroneOptions, DEFAULT_ROUTING_PARAMETERS, StationCatchmentMode } from '../../../types';
 import { Footprints, Train, Bike, RotateCcw } from 'lucide-react';
 import { SettingsCard } from '../ui/SettingsCard';
 import { SettingsRow } from '../ui/SettingsRow';
 import { SettingsSwitch } from '../ui/SettingsSwitch';
 import { SettingsSlider } from '../ui/SettingsSlider';
+import { SettingsSegmentedControl } from '../ui/SettingsSegmentedControl';
 
 interface RoutingParametersTabProps {
   options: IsochroneOptions;
@@ -22,6 +23,7 @@ export const RoutingParametersTab: React.FC<RoutingParametersTabProps> = ({
   const enableHeadway = options.enableHeadwayPenalty ?? DEFAULT_ROUTING_PARAMETERS.enableHeadwayPenalty;
   const cyclingSpeed = options.cyclingSpeedKmh ?? DEFAULT_ROUTING_PARAMETERS.cyclingSpeedKmh;
   const parkingBuffer = options.drivingParkingBufferMin ?? DEFAULT_ROUTING_PARAMETERS.drivingParkingBufferMin;
+  const catchmentMode = options.stationCatchmentMode ?? DEFAULT_ROUTING_PARAMETERS.stationCatchmentMode;
 
   const handleResetDefaults = () => {
     onUpdateOptions({
@@ -32,6 +34,7 @@ export const RoutingParametersTab: React.FC<RoutingParametersTabProps> = ({
       enableHeadwayPenalty: DEFAULT_ROUTING_PARAMETERS.enableHeadwayPenalty,
       cyclingSpeedKmh: DEFAULT_ROUTING_PARAMETERS.cyclingSpeedKmh,
       drivingParkingBufferMin: DEFAULT_ROUTING_PARAMETERS.drivingParkingBufferMin,
+      stationCatchmentMode: DEFAULT_ROUTING_PARAMETERS.stationCatchmentMode,
     });
   };
 
@@ -42,7 +45,8 @@ export const RoutingParametersTab: React.FC<RoutingParametersTabProps> = ({
     transferRiskBuffer !== DEFAULT_ROUTING_PARAMETERS.transferRiskBufferMin ||
     enableHeadway !== DEFAULT_ROUTING_PARAMETERS.enableHeadwayPenalty ||
     cyclingSpeed !== DEFAULT_ROUTING_PARAMETERS.cyclingSpeedKmh ||
-    parkingBuffer !== DEFAULT_ROUTING_PARAMETERS.drivingParkingBufferMin;
+    parkingBuffer !== DEFAULT_ROUTING_PARAMETERS.drivingParkingBufferMin ||
+    catchmentMode !== DEFAULT_ROUTING_PARAMETERS.stationCatchmentMode;
 
   return (
     <div className="space-y-6">
@@ -124,6 +128,37 @@ export const RoutingParametersTab: React.FC<RoutingParametersTabProps> = ({
               checked={enableHeadway}
               onChange={(checked) => onUpdateOptions({ enableHeadwayPenalty: checked })}
               ariaLabel="Taktzeit-Malus umschalten"
+            />
+          }
+        />
+
+        <SettingsRow
+          icon={Footprints}
+          iconColor="text-emerald-600 dark:text-emerald-400"
+          iconBg="bg-emerald-50 dark:bg-emerald-950/40"
+          title="Haltestellen-Einzugsbereich"
+          description="Legt fest, wie der fußläufige Wohnbereich um erreichbare ÖPNV-Stationen berechnet wird. Fußweg-Isochronen nutzen das reale Wegenetz inklusive Brücken und Querungen (0 ms Latenz, offline)."
+          badge={
+            catchmentMode === 'walkshed' ? (
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
+                Echtes Wegenetz
+              </span>
+            ) : undefined
+          }
+          control={
+            <SettingsSegmentedControl<StationCatchmentMode>
+              value={catchmentMode}
+              onChange={(mode) => onUpdateOptions({ stationCatchmentMode: mode })}
+              options={[
+                {
+                  value: 'heuristic',
+                  label: 'Heuristisch',
+                },
+                {
+                  value: 'walkshed',
+                  label: 'Fußweg-Isochronen',
+                },
+              ]}
             />
           }
         />

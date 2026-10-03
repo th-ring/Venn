@@ -43,6 +43,7 @@ import {
 import type { CatalogRegion } from '../data/availableRegions.ts';
 import { AVAILABLE_REGIONS_CATALOG } from '../data/availableRegions.ts';
 import { resolveAssetUrl } from '../utils/assetUrl.ts';
+import { getStationWalkshedPolygon } from './stationWalkshedService.ts';
 
 const MVV_STORAGE_KEY = 'mvv_transit_dataset_v1';
 const MVV_LAST_SYNC_KEY = 'mvv_last_sync_timestamp';
@@ -1142,22 +1143,39 @@ export function generateMvvTransitIsochrone(
   const reachableStations = calculateReachableStations(profile, transitModes, options, schedule);
 
   const effectiveMaxDispersalMin = Math.max(maxWalkToStationMin, 1);
+  const catchmentMode = options?.stationCatchmentMode ?? 'heuristic';
+  const currentRegionId = getTransitRegion().id;
 
   for (const item of reachableStations) {
-    const stPoint = turf.point([item.station.lng, item.station.lat]);
-
     // Walking dispersal around reached station into residential area (Station ➔ Wohnort)
     const dispersalMinutes = Math.min(Math.max(0, item.remainingTimeMin), effectiveMaxDispersalMin);
     if (dispersalMinutes <= 0.1) continue;
 
-    // Strictly limit radius to what can be walked in the remaining time and walk budget
-    const radiusKm = (dispersalMinutes * walkSpeedKmPerMin) / detourFactor;
-    if (radiusKm < 0.05) continue;
+    let stationBuffer: GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon> | null = null;
 
-    const stationBuffer = turf.circle(stPoint, radiusKm, {
-      steps: 20,
-      units: 'kilometers',
-    });
+    if (catchmentMode === 'walkshed') {
+      stationBuffer = getStationWalkshedPolygon(
+        item.station.id,
+        dispersalMinutes,
+        walkingSpeedKmh,
+        item.station.lat,
+        item.station.lng,
+        currentRegionId
+      );
+    }
+
+    if (!stationBuffer) {
+      // Strictly limit radius to what can be walked in the remaining time and walk budget
+      const radiusKm = (dispersalMinutes * walkSpeedKmPerMin) / detourFactor;
+      if (radiusKm < 0.05) continue;
+
+      const stPoint = turf.point([item.station.lng, item.station.lat]);
+      stationBuffer = turf.circle(stPoint, radiusKm, {
+        steps: 20,
+        units: 'kilometers',
+      });
+    }
+
     polygonsToUnion.push(stationBuffer);
   }
 
@@ -1237,6 +1255,7 @@ export function generateMvvTransitIsochrone(
     scheduleTime: schedule?.time || '08:00',
     scheduleDay: schedule?.dayOfWeek || 'workday',
     scheduleDirection: schedule?.direction || 'to_work',
+    stationCatchmentMode: catchmentMode,
   };
 
   return merged;

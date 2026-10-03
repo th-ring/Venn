@@ -38,7 +38,14 @@ import {
   calculateReachableStations,
   findShortestTransitTrip,
   getTransitRegion,
+  generateMvvTransitIsochrone,
 } from '../src/services/mvvMatrixService.ts';
+import {
+  validateStationWalkshedDataset,
+  setStationWalkshedDataset,
+  getStationWalkshedPolygon,
+  clearWalkshedCache,
+} from '../src/services/stationWalkshedService.ts';
 import { validateTransitRegion } from '../src/services/transitStorage.ts';
 import {
   getSecureRandom,
@@ -942,6 +949,114 @@ test('decryptSensitiveValue handles legacy cleartext gracefully (backward compat
   const result = decryptSensitiveValue(legacyClearText);
   assert.equal(result, legacyClearText, 'Legacy cleartext must be returned without modification');
   assert.equal(decryptSensitiveValue(''), '');
+});
+
+// Group 12: Precomputed Station Walksheds & Network Routing
+console.log('\n12. Precomputed Station Walksheds & Network Routing:');
+
+test('validateStationWalkshedDataset validates structure and rejects malformed datasets', () => {
+  const valid = {
+    regionId: 'test-region',
+    version: '2026.1',
+    baseWalkingSpeedKmh: 4.0,
+    stationCount: 1,
+    stations: {
+      st_1: {
+        5: [[11.5, 48.1], [11.51, 48.1], [11.51, 48.11], [11.5, 48.1]],
+      },
+    },
+  };
+  assert.ok(validateStationWalkshedDataset(valid));
+  assert.equal(validateStationWalkshedDataset(null), null);
+  assert.equal(validateStationWalkshedDataset({}), null);
+  assert.equal(validateStationWalkshedDataset({ regionId: 123 }), null);
+});
+
+test('getStationWalkshedPolygon retrieves, scales, and handles missing stations gracefully', () => {
+  clearWalkshedCache();
+  const testDataset = {
+    regionId: 'munich-mvv',
+    version: '2026.1',
+    baseWalkingSpeedKmh: 4.0,
+    stationCount: 2,
+    stations: {
+      st_marienplatz: {
+        5: [
+          [11.575, 48.137],
+          [11.578, 48.138],
+          [11.579, 48.136],
+          [11.576, 48.135],
+          [11.575, 48.137],
+        ],
+        10: [
+          [11.572, 48.137],
+          [11.582, 48.139],
+          [11.583, 48.134],
+          [11.573, 48.133],
+          [11.572, 48.137],
+        ],
+      },
+    },
+  };
+
+  setStationWalkshedDataset('munich-mvv', testDataset);
+
+  // 1. Missing station returns null
+  const missing = getStationWalkshedPolygon('unknown_st', 5, 4.0, 48.137, 11.575, 'munich-mvv');
+  assert.equal(missing, null);
+
+  // 2. Existing station at 5 min
+  const poly5 = getStationWalkshedPolygon('st_marienplatz', 5, 4.0, 48.137, 11.575, 'munich-mvv');
+  assert.ok(poly5);
+  assert.equal(poly5.geometry.type, 'Polygon');
+  assert.equal(poly5.properties.source, 'precomputed_walkshed');
+  const area5 = turf.area(poly5);
+  assert.ok(area5 > 0);
+
+  // 3. Existing station at 10 min has larger area than at 5 min
+  const poly10 = getStationWalkshedPolygon('st_marienplatz', 10, 4.0, 48.137, 11.575, 'munich-mvv');
+  assert.ok(poly10);
+  const area10 = turf.area(poly10);
+  assert.ok(area10 > area5);
+
+  // 4. Scaling by walking speed: faster walking speed results in proportionally larger polygon area
+  const polyFast = getStationWalkshedPolygon('st_marienplatz', 5, 6.0, 48.137, 11.575, 'munich-mvv');
+  assert.ok(polyFast);
+  const areaFast = turf.area(polyFast);
+  assert.ok(areaFast > area5);
+});
+
+test('generateMvvTransitIsochrone supports both heuristic and walkshed catchment modes', () => {
+  const profile = {
+    id: 'p1',
+    name: 'Test Person',
+    address: 'Marienplatz',
+    lat: 48.1375,
+    lng: 11.5755,
+    travelTimeMinutes: 20,
+    mode: 'transit',
+    color: '#3b82f6',
+    visible: true,
+    maxWalkToStationMin: 5,
+    maxWalkFromStationMin: 5,
+  };
+
+  // 1. Heuristic mode
+  const heuristicPoly = generateMvvTransitIsochrone(profile, ['ubahn', 'sbahn'], {
+    stationCatchmentMode: 'heuristic',
+  });
+  assert.ok(heuristicPoly);
+  assert.ok(heuristicPoly.geometry);
+  assert.equal(heuristicPoly.properties.stationCatchmentMode, 'heuristic');
+
+  // 2. Walkshed mode
+  const walkshedPoly = generateMvvTransitIsochrone(profile, ['ubahn', 'sbahn'], {
+    stationCatchmentMode: 'walkshed',
+  });
+  assert.ok(walkshedPoly);
+  assert.ok(walkshedPoly.geometry);
+  assert.equal(walkshedPoly.properties.stationCatchmentMode, 'walkshed');
+  assert.ok(turf.area(walkshedPoly) > 0);
 });
 
 console.log(`\n========================================`);

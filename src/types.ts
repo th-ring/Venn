@@ -260,6 +260,22 @@ export const DEFAULT_POI_ICON_SETTINGS: PoiIconSettings = {
   onlyWithinIntersection: true,
 };
 
+export type StationCatchmentMode = 'heuristic' | 'walkshed';
+
+export interface StationWalkshedContours {
+  5?: [number, number][];
+  10?: [number, number][];
+  15?: [number, number][];
+}
+
+export interface StationWalkshedDataset {
+  regionId: string;
+  version: string;
+  baseWalkingSpeedKmh: number;
+  stationCount: number;
+  stations: Record<string, StationWalkshedContours>;
+}
+
 export interface RoutingParameters {
   walkingSpeedKmh?: number; // Standard: 4.0 km/h (Bereich: 2.5 - 6.5)
   urbanDetourFactor?: number; // Standard: 1.35 (Bereich: 1.10 - 1.60)
@@ -268,6 +284,7 @@ export interface RoutingParameters {
   enableHeadwayPenalty?: boolean; // Standard: true (Halbe Taktzeit Headway/2 als Puffer)
   cyclingSpeedKmh?: number; // Standard: 16.5 km/h (Bereich: 10.0 - 25.0)
   drivingParkingBufferMin?: number; // Standard: 3.0 min (Bereich: 0.0 - 10.0)
+  stationCatchmentMode?: StationCatchmentMode; // 'heuristic' (standard circle) | 'walkshed' (precomputed pedestrian network)
 }
 
 export const DEFAULT_ROUTING_PARAMETERS: Required<RoutingParameters> = {
@@ -278,6 +295,7 @@ export const DEFAULT_ROUTING_PARAMETERS: Required<RoutingParameters> = {
   enableHeadwayPenalty: true,
   cyclingSpeedKmh: 16.5,
   drivingParkingBufferMin: 3.0,
+  stationCatchmentMode: 'heuristic',
 };
 
 export interface IsochroneOptions {
@@ -298,6 +316,7 @@ export interface IsochroneOptions {
   enableHeadwayPenalty?: boolean;
   cyclingSpeedKmh?: number;
   drivingParkingBufferMin?: number;
+  stationCatchmentMode?: StationCatchmentMode;
 }
 
 export interface CommuteSchedule {

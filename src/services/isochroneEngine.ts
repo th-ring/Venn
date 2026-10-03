@@ -14,6 +14,7 @@ import {
 import { generateMvvTransitIsochrone, calculateReachableStations, findShortestTransitTrip, getTransitRegion } from './mvvMatrixService';
 import { fillPolygonHoles } from './geometry';
 import { encryptSensitiveValue, decryptSensitiveValue } from '../utils/crypto';
+import { loadStationWalksheds } from './stationWalkshedService.ts';
 
 interface IsochroneCacheKey {
   lat: number;
@@ -37,6 +38,7 @@ interface IsochroneCacheKey {
   enableHeadwayPenalty?: boolean;
   cyclingSpeedKmh?: number;
   drivingParkingBufferMin?: number;
+  stationCatchmentMode?: string;
 }
 
 const isochroneCache = new Map<string, GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon>>();
@@ -59,7 +61,7 @@ export function clearIsochroneCache(): void {
 
 function makeCacheKey(k: IsochroneCacheKey): string {
   const currentRegion = getTransitRegion();
-  return `${currentRegion.id}_${currentRegion.version}_${k.lat.toFixed(4)}_${k.lng.toFixed(4)}_${k.time}_${k.mode}_${k.direction}_${k.transfers ?? 'any'}_wTo:${k.walkToStation ?? 5}_wFrom:${k.walkFromStation ?? 5}_${k.transferWait ?? 'any'}_lt:${k.liveTraffic ? 1 : 0}_sm:${k.smoothing ? 1 : 0}_fi:${k.fidelity ?? 'auto'}_fh:${k.fillHoles !== false ? 1 : 0}_tm:${k.transitModes ?? 'all'}_wsk:${k.walkingSpeedKmh ?? 'd'}_udf:${k.urbanDetourFactor ?? 'd'}_mtb:${k.minTransferBufferMin ?? 'd'}_trb:${k.transferRiskBufferMin ?? 'd'}_ehp:${k.enableHeadwayPenalty !== false ? 1 : 0}_csk:${k.cyclingSpeedKmh ?? 'd'}_dpb:${k.drivingParkingBufferMin ?? 'd'}`;
+  return `${currentRegion.id}_${currentRegion.version}_${k.lat.toFixed(4)}_${k.lng.toFixed(4)}_${k.time}_${k.mode}_${k.direction}_${k.transfers ?? 'any'}_wTo:${k.walkToStation ?? 5}_wFrom:${k.walkFromStation ?? 5}_${k.transferWait ?? 'any'}_lt:${k.liveTraffic ? 1 : 0}_sm:${k.smoothing ? 1 : 0}_fi:${k.fidelity ?? 'auto'}_fh:${k.fillHoles !== false ? 1 : 0}_tm:${k.transitModes ?? 'all'}_wsk:${k.walkingSpeedKmh ?? 'd'}_udf:${k.urbanDetourFactor ?? 'd'}_mtb:${k.minTransferBufferMin ?? 'd'}_trb:${k.transferRiskBufferMin ?? 'd'}_ehp:${k.enableHeadwayPenalty !== false ? 1 : 0}_csk:${k.cyclingSpeedKmh ?? 'd'}_dpb:${k.drivingParkingBufferMin ?? 'd'}_scm:${k.stationCatchmentMode ?? 'h'}`;
 }
 
 export type IsochroneProvider = 'calibrated' | 'google' | 'ors';
@@ -531,6 +533,7 @@ export async function generateIsochrone(
     enableHeadwayPenalty: opts.enableHeadwayPenalty,
     cyclingSpeedKmh: opts.cyclingSpeedKmh,
     drivingParkingBufferMin: opts.drivingParkingBufferMin,
+    stationCatchmentMode: opts.stationCatchmentMode,
   }) + `_${provider}_${googleKey ? 'g' : ''}_${orsKey ? 'o' : ''}`;
 
   if (isochroneCache.has(cacheKey)) {
@@ -540,6 +543,10 @@ export async function generateIsochrone(
   // 1. For Transit: Use official MVV/MVG Haltestellen- & Fahrzeitmatrix
   if (profile.mode === 'transit') {
     try {
+      if (opts.stationCatchmentMode === 'walkshed') {
+        const currentRegion = getTransitRegion();
+        await loadStationWalksheds(currentRegion.id);
+      }
       const mvvPolygon = generateMvvTransitIsochrone(profile, effectiveTransitModes, opts, schedule);
       if (mvvPolygon && mvvPolygon.geometry) {
         mvvPolygon.properties = {
