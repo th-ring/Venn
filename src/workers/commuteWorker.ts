@@ -159,25 +159,34 @@ self.addEventListener('message', async (event: MessageEvent<CommuteWorkerIncomin
 
     generated.forEach(({ id, poly }) => {
       isochronesMap[id] = poly;
-      polygonList.push(poly);
+      const hasCoords = Boolean(
+        poly.geometry &&
+        poly.geometry.coordinates &&
+        poly.geometry.coordinates.length > 0
+      );
+      if (hasCoords) {
+        polygonList.push(poly);
+      }
       if (poly.properties?.isFallback && poly.properties?.fallbackReason) {
         const p = active.find((person) => person.id === id);
         fallbackAlerts.push({
           personId: id,
           personName: p?.name || p?.address || 'Referenzort',
           mode: p?.mode || 'driving',
-          requestedProvider: poly.properties.requestedProvider || 'calibrated',
+          requestedProvider: poly.properties.requestedProvider || 'google',
           reason: poly.properties.fallbackReason,
           statusCode: poly.properties.statusCode,
+          requiresKey: Boolean(poly.properties.requiresApiKey),
         });
       }
     });
 
-    const rawIntersection = calculateMultiIntersection(polygonList);
+    const allHaveIsochrones = polygonList.length === active.length;
+    const rawIntersection = allHaveIsochrones ? calculateMultiIntersection(polygonList) : null;
     // Cooperative cancellation check
     if (currentRequestId !== latestRequestId) return;
 
-    const rawAreaKm2 = calculateAreaKm2(rawIntersection);
+    const rawAreaKm2 = rawIntersection ? calculateAreaKm2(rawIntersection) : 0;
 
     let finalIntersection = rawIntersection;
     let finalAreaKm2 = rawAreaKm2;

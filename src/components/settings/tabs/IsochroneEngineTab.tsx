@@ -5,7 +5,7 @@ import {
   hasGoogleMapsApiKey,
   hasOrsApiKey,
 } from '../../../services/isochroneEngine';
-import { Globe, Cpu, Route, Sparkles, SlidersHorizontal, ExternalLink, Check } from 'lucide-react';
+import { Globe, Route, Sparkles, SlidersHorizontal, ExternalLink, Check, KeyRound, Info } from 'lucide-react';
 import { SettingsCard } from '../ui/SettingsCard';
 import { SettingsRow } from '../ui/SettingsRow';
 import { SettingsSwitch } from '../ui/SettingsSwitch';
@@ -20,6 +20,7 @@ interface IsochroneEngineTabProps {
   showOnlyIntersection?: boolean;
   onToggleOnlyIntersection?: () => void;
   onOpenRoutingTab?: () => void;
+  onOpenKeysTab?: () => void;
 }
 
 interface ProviderItem {
@@ -43,27 +44,18 @@ export const IsochroneEngineTab: React.FC<IsochroneEngineTabProps> = ({
   showOnlyIntersection,
   onToggleOnlyIntersection,
   onOpenRoutingTab,
+  onOpenKeysTab,
 }) => {
   const providers: ProviderItem[] = [
     {
-      id: 'calibrated',
-      name: 'Integrierte Multimodale Engine',
-      badge: 'Lokal • Ohne API-Key',
-      badgeColor: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300',
-      description:
-        'Kalibriertes physikalisches Modell mit schnellen radialen Transit-Fingern (S-Bahn/U-Bahn), Autobahnkorridoren und Berufsverkehrs-Faktoren.',
-      icon: Cpu,
-      isConfigured: true,
-    },
-    {
       id: 'google',
       name: 'Google Maps Isochrones API',
-      badge: hasGoogleMapsApiKey() ? 'Aktiv' : 'Key nötig',
+      badge: hasGoogleMapsApiKey() ? 'Aktiviert' : 'API-Key erforderlich',
       badgeColor: hasGoogleMapsApiKey()
         ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/60 dark:text-blue-300'
-        : 'bg-slate-100 text-slate-600 dark:bg-[#282a2c] dark:text-[#9aa0a6]',
+        : 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300',
       description:
-        'Offizielle Google Maps Erreichbarkeits-Polygone für Pkw, Fahrrad und Fußwege. (ÖPNV nutzt nahtlos die MVV/MVG-Haltestellenmatrix).',
+        'Offizielle Google Maps Erreichbarkeits-Polygone für Pkw, Fahrrad und Fußwege mit Live-Verkehrsdaten. (ÖPNV nutzt nahtlos die lokale MVV/MVG-Haltestellenmatrix).',
       icon: Globe,
       isConfigured: hasGoogleMapsApiKey(),
       docUrl: 'https://developers.google.com/maps/documentation/isochrones',
@@ -72,10 +64,10 @@ export const IsochroneEngineTab: React.FC<IsochroneEngineTabProps> = ({
     {
       id: 'ors',
       name: 'OpenRouteService (ORS)',
-      badge: hasOrsApiKey() ? 'Aktiv' : 'Key nötig',
+      badge: hasOrsApiKey() ? 'Aktiviert' : 'API-Key erforderlich',
       badgeColor: hasOrsApiKey()
         ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/60 dark:text-blue-300'
-        : 'bg-slate-100 text-slate-600 dark:bg-[#282a2c] dark:text-[#9aa0a6]',
+        : 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300',
       description:
         'OpenStreetMap-basierte Erreichbarkeitszonen für Pkw, Rad und Fußgänger via HeiGIT OpenRouteService API.',
       icon: Route,
@@ -93,8 +85,17 @@ export const IsochroneEngineTab: React.FC<IsochroneEngineTabProps> = ({
           Isochronen-Engine & Berechnungsqualität
         </h3>
         <p className="text-xs text-slate-500 dark:text-[#9aa0a6] mt-0.5 leading-relaxed">
-          Wähle die Berechnungs-Engine und passe Qualität, Kantenglättung und Darstellungsoptionen an.
+          Wähle deinen Standard-Routingdienst für Pkw, Rad und Fußwege. Alle Straßenberechnungen erfolgen ausschließlich über echte APIs.
         </p>
+      </div>
+
+      {/* Info Callout */}
+      <div className="p-3.5 rounded-2xl bg-blue-50/60 dark:bg-blue-950/30 border border-blue-200/70 dark:border-blue-900/50 text-xs text-slate-600 dark:text-[#c4c7c5] flex items-start gap-3">
+        <Info className="w-4 h-4 text-blue-600 dark:text-[#8ab4f8] shrink-0 mt-0.5" />
+        <div className="leading-relaxed">
+          <span className="font-semibold text-slate-900 dark:text-white">API-Standard: </span>
+          Straßen-Isochronen erfordern einen hinterlegten API-Key für exakte Verkehrszeiten ohne künstliche Näherungen. ÖPNV-Fahrzeiten basieren lokal auf der GTFS-Fahrplanmatrix und benötigen keinen Key.
+        </div>
       </div>
 
       {/* Engine Selection Cards */}
@@ -142,6 +143,20 @@ export const IsochroneEngineTab: React.FC<IsochroneEngineTabProps> = ({
                       <p className="text-xs text-slate-500 dark:text-[#9aa0a6] leading-relaxed mt-1">
                         {p.description}
                       </p>
+
+                      {!p.isConfigured && onOpenKeysTab && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onOpenKeysTab();
+                          }}
+                          className="mt-2 text-xs font-semibold text-blue-600 dark:text-[#8ab4f8] hover:underline flex items-center gap-1.5 cursor-pointer"
+                        >
+                          <KeyRound className="w-3 h-3" />
+                          <span>Jetzt API-Key in den Einstellungen hinterlegen</span>
+                        </button>
+                      )}
                     </div>
                   </div>
 

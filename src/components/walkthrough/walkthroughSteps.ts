@@ -8,7 +8,7 @@ export interface WalkthroughStep {
   mobileTargetId?: string; // HTML ID specifically on mobile screens (< 768px)
   targetView?: 'sidebar' | 'map' | 'any'; // Recommended view on mobile
   position?: 'bottom' | 'top' | 'left' | 'right' | 'center';
-  iconName: 'Sparkles' | 'Users' | 'Clock' | 'Focus' | 'MapPin' | 'Building2' | 'CheckCircle';
+  iconName: 'Sparkles' | 'Users' | 'Clock' | 'Focus' | 'MapPin' | 'Building2' | 'CheckCircle' | 'Globe';
 }
 
 export const WALKTHROUGH_STEPS: WalkthroughStep[] = [
@@ -36,8 +36,19 @@ export const WALKTHROUGH_STEPS: WalkthroughStep[] = [
     iconName: 'Users',
   },
   {
+    id: 'routing_provider',
+    title: '2. Routing-Dienst & API-Schlüssel',
+    badge: 'Berechnungs-Engine',
+    description:
+      'Für hochpräzise Pkw-, Fahrrad- und Fußweg-Isochronen setzt Venn auf echte Routing-APIs. Wähle deinen Standard-Dienst und aktiviere deinen Schlüssel:',
+    tip: 'Google Maps bietet einen dauerhaft kostenfreien Demo-Key ohne Kreditkarte. Für reinen ÖPNV (München) ist kein API-Key erforderlich.',
+    position: 'center',
+    targetView: 'any',
+    iconName: 'Globe',
+  },
+  {
     id: 'schedule',
-    title: '2. Pendelzeit & Fahrplan',
+    title: '3. Pendelzeit & Fahrplan',
     badge: 'Fahrzeiten & Modi',
     description:
       'Passe Ankunfts- oder Abfahrtszeiten sowie Wochentage an. Venn analysiert Takte von U-Bahn, S-Bahn, Tram, Bus und Regio oder kalkuliert Stoßzeiten im Straßenverkehr.',
@@ -49,7 +60,7 @@ export const WALKTHROUGH_STEPS: WalkthroughStep[] = [
   },
   {
     id: 'intersection',
-    title: '3. Der gemeinsame Treffbereich',
+    title: '4. Der gemeinsame Treffbereich',
     badge: 'Karten-Schnittmenge',
     description:
       'Der grüne Bereich auf der Karte ist euer gemeinsamer Treffbereich: Wer hier wohnt, erreicht alle hinterlegten Ziele garantiert innerhalb des Zeitlimits.',
@@ -62,7 +73,7 @@ export const WALKTHROUGH_STEPS: WalkthroughStep[] = [
   },
   {
     id: 'inspection',
-    title: '4. Interaktive Klick-Inspektion',
+    title: '5. Interaktive Klick-Inspektion',
     badge: 'Karten-Analyse',
     description:
       'Klicke auf einen beliebigen Punkt auf der Karte: Venn berechnet sofort die minutengenaue Pendelzeit und Route jeder Person zu diesem Standort.',
@@ -74,7 +85,7 @@ export const WALKTHROUGH_STEPS: WalkthroughStep[] = [
   },
   {
     id: 'apartments',
-    title: '5. Passende Wohnungsangebote',
+    title: '6. Passende Wohnungsangebote',
     badge: 'Wohnungs-Manager',
     description:
       'Keine mühsame Suche auf verschiedenen Portalen: Venn filtert Mietangebote (ImmoScout24, Immowelt, WG-Gesucht, Kleinanzeigen) direkt passend für euren Treffbereich.',

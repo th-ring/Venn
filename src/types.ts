@@ -356,13 +356,16 @@ export interface FallbackSuggestion {
   suggestedMode?: TransportMode;
 }
 
+export type IsochroneProvider = 'google' | 'ors' | 'calibrated';
+
 export interface IsochroneFallbackAlert {
   personId: string;
   personName: string;
   mode: TransportMode;
-  requestedProvider: 'google' | 'ors' | 'calibrated';
+  requestedProvider: 'google' | 'ors' | 'calibrated' | 'transit_metro_matrix';
   reason: string;
   statusCode?: number;
+  requiresKey?: boolean;
 }
 
 export interface HeatmapZoneFeature {

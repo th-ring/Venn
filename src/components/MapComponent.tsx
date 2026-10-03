@@ -684,7 +684,7 @@ export const MapComponent: React.FC<MapComponentProps> = React.memo<MapComponent
     profilesRef.current.forEach((profile, profileIdx) => {
       if (!profile.visible) return;
       const poly = result.isochrones[profile.id];
-      if (!poly) return;
+      if (!poly || !poly.geometry || !poly.geometry.coordinates || (poly.geometry.coordinates as any).length === 0) return;
 
       const signature = getProfileLineSignature(profileIdx, isDark);
 

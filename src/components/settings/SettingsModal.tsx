@@ -535,6 +535,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   showOnlyIntersection={showOnlyIntersection}
                   onToggleOnlyIntersection={onToggleOnlyIntersection}
                   onOpenRoutingTab={() => setModalTab('routing')}
+                  onOpenKeysTab={() => setModalTab('keys')}
                 />
               )}
 

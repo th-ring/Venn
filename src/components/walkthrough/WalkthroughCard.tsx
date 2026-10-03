@@ -1,4 +1,4 @@
-import React, { useMemo, useRef } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { WalkthroughStep } from './walkthroughSteps';
 import {
   Sparkles,
@@ -13,7 +13,23 @@ import {
   ChevronRight,
   ArrowRight,
   Lightbulb,
+  Globe,
+  Route,
+  KeyRound,
+  ExternalLink,
+  Check,
 } from 'lucide-react';
+import {
+  IsochroneProvider,
+  getSelectedProvider,
+  setSelectedProvider,
+  getGoogleMapsApiKey,
+  setGoogleMapsApiKey,
+  getOrsApiKey,
+  setOrsApiKey,
+  hasGoogleMapsApiKey,
+  hasOrsApiKey,
+} from '../../services/isochroneEngine';
 
 interface WalkthroughCardProps {
   step: WalkthroughStep;
@@ -38,6 +54,35 @@ export const WalkthroughCard: React.FC<WalkthroughCardProps> = ({
 }) => {
   const isFirst = currentIndex === 0;
   const isLast = currentIndex === totalSteps - 1;
+
+  // Provider and API key state for onboarding selection
+  const [activeProvider, setActiveProvider] = useState<IsochroneProvider>(() => getSelectedProvider());
+  const [googleKeyInput, setGoogleKeyInput] = useState(() => getGoogleMapsApiKey());
+  const [orsKeyInput, setOrsKeyInput] = useState(() => getOrsApiKey());
+  const [hasGoogleKey, setHasGoogleKey] = useState(() => hasGoogleMapsApiKey());
+  const [hasOrsKey, setHasOrsKey] = useState(() => hasOrsApiKey());
+  const [keySavedFeedback, setKeySavedFeedback] = useState<string | null>(null);
+
+  const handleSelectProvider = (p: IsochroneProvider) => {
+    setActiveProvider(p);
+    setSelectedProvider(p);
+  };
+
+  const handleSaveGoogleKey = () => {
+    const val = googleKeyInput.trim();
+    setGoogleMapsApiKey(val);
+    setHasGoogleKey(Boolean(val));
+    setKeySavedFeedback('Gespeichert!');
+    setTimeout(() => setKeySavedFeedback(null), 2500);
+  };
+
+  const handleSaveOrsKey = () => {
+    const val = orsKeyInput.trim();
+    setOrsApiKey(val);
+    setHasOrsKey(Boolean(val));
+    setKeySavedFeedback('Gespeichert!');
+    setTimeout(() => setKeySavedFeedback(null), 2500);
+  };
 
   // Touch gesture state for mobile swiping between steps
   const touchStartXRef = useRef<number | null>(null);
@@ -84,6 +129,8 @@ export const WalkthroughCard: React.FC<WalkthroughCardProps> = ({
         return <Building2 className="w-4 h-4 sm:w-5 sm:h-5 text-rose-600 dark:text-rose-400 shrink-0" />;
       case 'CheckCircle':
         return <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />;
+      case 'Globe':
+        return <Globe className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 dark:text-[#8ab4f8] shrink-0" />;
       default:
         return <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 dark:text-[#8ab4f8] shrink-0" />;
     }
@@ -211,6 +258,166 @@ export const WalkthroughCard: React.FC<WalkthroughCardProps> = ({
         <p className="text-xs sm:text-sm text-slate-600 dark:text-[#c4c7c5] leading-relaxed mb-2.5 sm:mb-3">
           {step.description}
         </p>
+
+        {/* Interactive Provider Selection on Step 'routing_provider' */}
+        {step.id === 'routing_provider' && (
+          <div className="space-y-2.5 mb-3 bg-slate-50/80 dark:bg-[#1e1f20]/90 p-2.5 sm:p-3 rounded-2xl border border-slate-200/80 dark:border-[#3c4043] text-xs">
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => handleSelectProvider('google')}
+                className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-1.5 ${
+                  activeProvider === 'google'
+                    ? 'bg-blue-50/80 dark:bg-blue-950/40 border-2 border-blue-600 dark:border-[#8ab4f8]'
+                    : 'bg-white dark:bg-[#282a2c] border-slate-200 dark:border-[#3c4043] hover:border-slate-300'
+                }`}
+              >
+                <div className="flex items-center justify-between gap-1">
+                  <div className="flex items-center gap-1.5 font-semibold text-slate-900 dark:text-white">
+                    <Globe className="w-3.5 h-3.5 text-blue-600 dark:text-[#8ab4f8]" />
+                    <span className="truncate">Google Maps</span>
+                  </div>
+                  {activeProvider === 'google' && <Check className="w-3.5 h-3.5 text-blue-600 dark:text-[#8ab4f8] stroke-[3]" />}
+                </div>
+                <span className={`text-[10px] px-1.5 py-0.5 rounded-md self-start font-medium ${
+                  hasGoogleKey
+                    ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300'
+                    : 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300'
+                }`}>
+                  {hasGoogleKey ? 'Key aktiv' : 'Demo-Key gratis'}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleSelectProvider('ors')}
+                className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-1.5 ${
+                  activeProvider === 'ors'
+                    ? 'bg-blue-50/80 dark:bg-blue-950/40 border-2 border-blue-600 dark:border-[#8ab4f8]'
+                    : 'bg-white dark:bg-[#282a2c] border-slate-200 dark:border-[#3c4043] hover:border-slate-300'
+                }`}
+              >
+                <div className="flex items-center justify-between gap-1">
+                  <div className="flex items-center gap-1.5 font-semibold text-slate-900 dark:text-white">
+                    <Route className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                    <span className="truncate">OpenRouteService</span>
+                  </div>
+                  {activeProvider === 'ors' && <Check className="w-3.5 h-3.5 text-blue-600 dark:text-[#8ab4f8] stroke-[3]" />}
+                </div>
+                <span className={`text-[10px] px-1.5 py-0.5 rounded-md self-start font-medium ${
+                  hasOrsKey
+                    ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300'
+                    : 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300'
+                }`}>
+                  {hasOrsKey ? 'Key aktiv' : 'Key nötig'}
+                </span>
+              </button>
+            </div>
+
+            {/* Provider Key Setup Controls */}
+            {activeProvider === 'google' && (
+              <div className="space-y-2 pt-1 border-t border-slate-200/60 dark:border-[#3c4043]">
+                {hasGoogleKey ? (
+                  <div className="flex items-center justify-between gap-2 text-emerald-700 dark:text-emerald-300">
+                    <div className="flex items-center gap-1.5 text-[11px]">
+                      <Check className="w-3.5 h-3.5 stroke-[2.5]" />
+                      <span>Google Maps API-Key ist gespeichert & einsatzbereit.</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setHasGoogleKey(false)}
+                      className="text-[10px] text-slate-500 hover:text-slate-700 dark:text-[#9aa0a6] hover:underline cursor-pointer"
+                    >
+                      Ändern
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-1.5">
+                    <div className="flex gap-1.5">
+                      <input
+                        type="password"
+                        placeholder="Google Maps API-Key (AIzaSy...)"
+                        value={googleKeyInput}
+                        onChange={(e) => setGoogleKeyInput(e.target.value)}
+                        className="flex-1 min-w-0 bg-white dark:bg-[#282a2c] border border-slate-300 dark:border-[#5f6368] rounded-xl px-2.5 py-1 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleSaveGoogleKey}
+                        disabled={!googleKeyInput.trim()}
+                        className="px-3 py-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-xl text-xs font-semibold cursor-pointer shrink-0 transition-colors"
+                      >
+                        {keySavedFeedback || 'Speichern'}
+                      </button>
+                    </div>
+                    <div className="flex items-center justify-between gap-2 text-[11px]">
+                      <a
+                        href="https://mapsplatform.google.com/maps-demo-key?utm_campaign=gmp_git_agentskills_v1"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 dark:text-[#8ab4f8] hover:underline flex items-center gap-1 font-medium"
+                      >
+                        <span>Kostenlosen Demo-Key anfordern (ohne Abrechnungskonto)</span>
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeProvider === 'ors' && (
+              <div className="space-y-2 pt-1 border-t border-slate-200/60 dark:border-[#3c4043]">
+                {hasOrsKey ? (
+                  <div className="flex items-center justify-between gap-2 text-emerald-700 dark:text-emerald-300">
+                    <div className="flex items-center gap-1.5 text-[11px]">
+                      <Check className="w-3.5 h-3.5 stroke-[2.5]" />
+                      <span>OpenRouteService Token ist gespeichert & einsatzbereit.</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setHasOrsKey(false)}
+                      className="text-[10px] text-slate-500 hover:text-slate-700 dark:text-[#9aa0a6] hover:underline cursor-pointer"
+                    >
+                      Ändern
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-1.5">
+                    <div className="flex gap-1.5">
+                      <input
+                        type="password"
+                        placeholder="OpenRouteService Token (5b3ce...)"
+                        value={orsKeyInput}
+                        onChange={(e) => setOrsKeyInput(e.target.value)}
+                        className="flex-1 min-w-0 bg-white dark:bg-[#282a2c] border border-slate-300 dark:border-[#5f6368] rounded-xl px-2.5 py-1 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleSaveOrsKey}
+                        disabled={!orsKeyInput.trim()}
+                        className="px-3 py-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-xl text-xs font-semibold cursor-pointer shrink-0 transition-colors"
+                      >
+                        {keySavedFeedback || 'Speichern'}
+                      </button>
+                    </div>
+                    <div className="flex items-center justify-between gap-2 text-[11px]">
+                      <a
+                        href="https://openrouteservice.org"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 dark:text-[#8ab4f8] hover:underline flex items-center gap-1 font-medium"
+                      >
+                        <span>Kostenlosen Account auf openrouteservice.org erstellen</span>
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Optional Tip Box */}
         {step.tip && (

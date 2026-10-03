@@ -64,11 +64,13 @@ function makeCacheKey(k: IsochroneCacheKey): string {
   return `${currentRegion.id}_${currentRegion.version}_${k.lat.toFixed(4)}_${k.lng.toFixed(4)}_${k.time}_${k.mode}_${k.direction}_${k.transfers ?? 'any'}_wTo:${k.walkToStation ?? 5}_wFrom:${k.walkFromStation ?? 5}_${k.transferWait ?? 'any'}_lt:${k.liveTraffic ? 1 : 0}_sm:${k.smoothing ? 1 : 0}_fi:${k.fidelity ?? 'auto'}_fh:${k.fillHoles !== false ? 1 : 0}_tm:${k.transitModes ?? 'all'}_wsk:${k.walkingSpeedKmh ?? 'd'}_udf:${k.urbanDetourFactor ?? 'd'}_mtb:${k.minTransferBufferMin ?? 'd'}_trb:${k.transferRiskBufferMin ?? 'd'}_ehp:${k.enableHeadwayPenalty !== false ? 1 : 0}_csk:${k.cyclingSpeedKmh ?? 'd'}_dpb:${k.drivingParkingBufferMin ?? 'd'}_scm:${k.stationCatchmentMode ?? 'h'}`;
 }
 
-export type IsochroneProvider = 'calibrated' | 'google' | 'ors';
+export type IsochroneProvider = 'google' | 'ors' | 'calibrated';
 
 export function getSelectedProvider(): IsochroneProvider {
-  if (typeof localStorage === 'undefined') return 'calibrated';
-  return (localStorage.getItem('isochrone_provider') as IsochroneProvider) || 'calibrated';
+  if (typeof localStorage === 'undefined') return 'google';
+  const stored = localStorage.getItem('isochrone_provider') as IsochroneProvider;
+  if (stored === 'google' || stored === 'ors') return stored;
+  return 'google';
 }
 
 export function setSelectedProvider(provider: IsochroneProvider): void {
@@ -559,35 +561,44 @@ export async function generateIsochrone(
         return mvvPolygon;
       }
     } catch (err: any) {
-      console.warn('MVV transit calculation failed, falling back to calibrated model:', err);
-      const fallbackPoly = generateCalibratedIsochrone(profile, schedule);
-      fallbackPoly.properties = {
-        ...fallbackPoly.properties,
-        source: 'calibrated',
-        provider: 'transit_metro_matrix',
-        requestedProvider: 'calibrated',
-        isFallback: true,
-        fallbackReason: `ÖPNV-Fahrzeitmatrix fehlgeschlagen (${err?.message || 'Unerwarteter Fehler'})`,
+      console.warn('MVV transit calculation failed:', err);
+      const errorPoly: GeoJSON.Feature<GeoJSON.Polygon> = {
+        type: 'Feature',
+        geometry: {
+          type: 'Polygon',
+          coordinates: [],
+        },
+        properties: {
+          source: 'transit_metro_matrix_error',
+          provider: 'transit_metro_matrix',
+          requestedProvider: 'transit_metro_matrix',
+          isFallback: true,
+          fallbackReason: `ÖPNV-Fahrzeitmatrix fehlgeschlagen (${err?.message || 'Unerwarteter Fehler'})`,
+        },
       };
-      setIsochroneCache(cacheKey, fallbackPoly);
-      return fallbackPoly;
+      return errorPoly;
     }
   }
 
   // 2. Google Maps requested (for driving, cycling, walking)
   if (provider === 'google') {
     if (!googleKey) {
-      const fallbackPoly = generateCalibratedIsochrone(profile, schedule);
-      fallbackPoly.properties = {
-        ...fallbackPoly.properties,
-        source: 'calibrated',
-        provider: 'calibrated',
-        requestedProvider: 'google',
-        isFallback: true,
-        fallbackReason: 'Google Maps gewählt, aber kein API-Key in den Einstellungen hinterlegt.',
+      const emptyPoly: GeoJSON.Feature<GeoJSON.Polygon> = {
+        type: 'Feature',
+        geometry: {
+          type: 'Polygon',
+          coordinates: [],
+        },
+        properties: {
+          source: 'api_key_required',
+          provider: 'google',
+          requestedProvider: 'google',
+          isFallback: true,
+          requiresApiKey: true,
+          fallbackReason: 'Google Maps gewählt, aber kein API-Key in den Einstellungen hinterlegt.',
+        },
       };
-      setIsochroneCache(cacheKey, fallbackPoly);
-      return fallbackPoly;
+      return emptyPoly;
     }
 
     const res = await fetchGoogleIsochrone(profile, schedule, googleKey);
@@ -596,35 +607,45 @@ export async function generateIsochrone(
       return res.feature;
     }
 
-    // Google failed -> fallback to calibrated with reason
-    const fallbackPoly = generateCalibratedIsochrone(profile, schedule);
-    fallbackPoly.properties = {
-      ...fallbackPoly.properties,
-      source: 'calibrated',
-      provider: 'calibrated',
-      requestedProvider: 'google',
-      isFallback: true,
-      fallbackReason: res.error || 'Google Maps Isochronen API fehlgeschlagen',
-      statusCode: res.statusCode,
+    // Google failed -> return empty feature with actual API error (no synthetic fallback)
+    const errorPoly: GeoJSON.Feature<GeoJSON.Polygon> = {
+      type: 'Feature',
+      geometry: {
+        type: 'Polygon',
+        coordinates: [],
+      },
+      properties: {
+        source: 'api_error',
+        provider: 'google',
+        requestedProvider: 'google',
+        isFallback: true,
+        requiresApiKey: res.statusCode === 403,
+        fallbackReason: res.error || 'Google Maps Isochronen API fehlgeschlagen',
+        statusCode: res.statusCode,
+      },
     };
-    setIsochroneCache(cacheKey, fallbackPoly);
-    return fallbackPoly;
+    return errorPoly;
   }
 
   // 3. OpenRouteService requested (for driving, cycling, walking)
   if (provider === 'ors') {
     if (!orsKey) {
-      const fallbackPoly = generateCalibratedIsochrone(profile, schedule);
-      fallbackPoly.properties = {
-        ...fallbackPoly.properties,
-        source: 'calibrated',
-        provider: 'calibrated',
-        requestedProvider: 'ors',
-        isFallback: true,
-        fallbackReason: 'OpenRouteService gewählt, aber kein API-Key in den Einstellungen hinterlegt.',
+      const emptyPoly: GeoJSON.Feature<GeoJSON.Polygon> = {
+        type: 'Feature',
+        geometry: {
+          type: 'Polygon',
+          coordinates: [],
+        },
+        properties: {
+          source: 'api_key_required',
+          provider: 'ors',
+          requestedProvider: 'ors',
+          isFallback: true,
+          requiresApiKey: true,
+          fallbackReason: 'OpenRouteService gewählt, aber kein API-Key in den Einstellungen hinterlegt.',
+        },
       };
-      setIsochroneCache(cacheKey, fallbackPoly);
-      return fallbackPoly;
+      return emptyPoly;
     }
 
     const res = await fetchOrsIsochrone(profile, schedule, orsKey);
@@ -633,31 +654,76 @@ export async function generateIsochrone(
       return res.feature;
     }
 
-    // ORS failed -> fallback to calibrated with reason
-    const fallbackPoly = generateCalibratedIsochrone(profile, schedule);
-    fallbackPoly.properties = {
-      ...fallbackPoly.properties,
-      source: 'calibrated',
-      provider: 'calibrated',
-      requestedProvider: 'ors',
-      isFallback: true,
-      fallbackReason: res.error || 'OpenRouteService API fehlgeschlagen',
-      statusCode: res.statusCode,
+    // ORS failed -> return empty feature with actual API error (no synthetic fallback)
+    const errorPoly: GeoJSON.Feature<GeoJSON.Polygon> = {
+      type: 'Feature',
+      geometry: {
+        type: 'Polygon',
+        coordinates: [],
+      },
+      properties: {
+        source: 'api_error',
+        provider: 'ors',
+        requestedProvider: 'ors',
+        isFallback: true,
+        requiresApiKey: res.statusCode === 403 || res.statusCode === 401,
+        fallbackReason: res.error || 'OpenRouteService API fehlgeschlagen',
+        statusCode: res.statusCode,
+      },
     };
-    setIsochroneCache(cacheKey, fallbackPoly);
-    return fallbackPoly;
+    return errorPoly;
   }
 
-  // 4. Default / Intentional Offline Simulation (provider === 'calibrated')
-  const polygon = generateCalibratedIsochrone(profile, schedule);
-  polygon.properties = {
-    ...polygon.properties,
-    source: 'calibrated',
-    provider: 'calibrated',
-    isFallback: false,
+  // 4. Default / Fallback: Enforce API routing (default to Google Maps)
+  if (!googleKey && !orsKey) {
+    return {
+      type: 'Feature',
+      geometry: {
+        type: 'Polygon',
+        coordinates: [],
+      },
+      properties: {
+        source: 'api_key_required',
+        provider: 'google',
+        requestedProvider: 'google',
+        isFallback: true,
+        requiresApiKey: true,
+        fallbackReason: 'Routing-API-Key erforderlich (Google Maps oder OpenRouteService).',
+      },
+    };
+  }
+
+  if (googleKey) {
+    const res = await fetchGoogleIsochrone(profile, schedule, googleKey);
+    if (res.feature) {
+      setIsochroneCache(cacheKey, res.feature);
+      return res.feature;
+    }
+  }
+
+  if (orsKey) {
+    const res = await fetchOrsIsochrone(profile, schedule, orsKey);
+    if (res.feature) {
+      setIsochroneCache(cacheKey, res.feature);
+      return res.feature;
+    }
+  }
+
+  return {
+    type: 'Feature',
+    geometry: {
+      type: 'Polygon',
+      coordinates: [],
+    },
+    properties: {
+      source: 'api_error',
+      provider: 'google',
+      requestedProvider: 'google',
+      isFallback: true,
+      requiresApiKey: true,
+      fallbackReason: 'Keine funktionierende Routing-API verfügbar.',
+    },
   };
-  setIsochroneCache(cacheKey, polygon);
-  return polygon;
 }
 
 /**
