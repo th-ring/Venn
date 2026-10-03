@@ -726,10 +726,10 @@ function generateCalibratedIsochrone(
       const effectiveDrivingTime = Math.max(1, travelTimeMinutes - parkingBuffer);
       const trafficMultiplier = isRushHour ? 0.74 : (opts.liveTraffic ? 0.88 : 1.0);
       let effectiveSpeedKmh = 38;
-      if (effectiveDrivingTime > 20) {
-        // Longer travel time taps into autobahns/expressways (speeds up to 80 km/h)
-        const highwayPortion = Math.min((effectiveDrivingTime - 20) / 40, 1.0);
-        effectiveSpeedKmh = 38 + highwayPortion * 42; // Up to 80 km/h
+      if (effectiveDrivingTime > 10) {
+        // Longer travel time taps into autobahns/expressways (speeds up to 76 km/h)
+        const highwayPortion = Math.min((effectiveDrivingTime - 10) / 25, 1.0);
+        effectiveSpeedKmh = 38 + highwayPortion * 38; // Up to 76 km/h
       }
       detourFactor = 1.28;
       baseRadiusKm = ((effectiveDrivingTime / 60) * effectiveSpeedKmh * trafficMultiplier) / detourFactor;
