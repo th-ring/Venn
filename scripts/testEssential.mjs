@@ -1060,6 +1060,23 @@ test('generateMvvTransitIsochrone supports both heuristic and walkshed catchment
   assert.ok(heuristicPoly);
   assert.ok(heuristicPoly.geometry);
   assert.equal(heuristicPoly.properties.stationCatchmentMode, 'heuristic');
+  const originPt = turf.point([profile.lng, profile.lat]);
+  assert.ok(
+    turf.booleanPointInPolygon(originPt, heuristicPoly),
+    'Origin location must be contained within heuristic transit isochrone'
+  );
+
+  // Verify no duplicate/overlapping parts in MultiPolygon (preventing SVG evenodd holes)
+  if (heuristicPoly.geometry.type === 'MultiPolygon') {
+    let containingParts = 0;
+    for (const coords of heuristicPoly.geometry.coordinates) {
+      const partPoly = turf.polygon(coords);
+      if (turf.booleanPointInPolygon(originPt, partPoly)) {
+        containingParts++;
+      }
+    }
+    assert.equal(containingParts, 1, 'Origin point must be covered by exactly 1 disjoint polygon part');
+  }
 
   // 2. Walkshed mode
   const walkshedPoly = generateMvvTransitIsochrone(profile, ['ubahn', 'sbahn'], {
@@ -1069,6 +1086,20 @@ test('generateMvvTransitIsochrone supports both heuristic and walkshed catchment
   assert.ok(walkshedPoly.geometry);
   assert.equal(walkshedPoly.properties.stationCatchmentMode, 'walkshed');
   assert.ok(turf.area(walkshedPoly) > 0);
+  assert.ok(
+    turf.booleanPointInPolygon(originPt, walkshedPoly),
+    'Origin location must be contained within walkshed transit isochrone'
+  );
+  if (walkshedPoly.geometry.type === 'MultiPolygon') {
+    let containingParts = 0;
+    for (const coords of walkshedPoly.geometry.coordinates) {
+      const partPoly = turf.polygon(coords);
+      if (turf.booleanPointInPolygon(originPt, partPoly)) {
+        containingParts++;
+      }
+    }
+    assert.equal(containingParts, 1, 'Origin point in walkshed mode must be covered by exactly 1 disjoint polygon part');
+  }
 });
 
 console.log(`\n========================================`);

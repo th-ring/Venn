@@ -489,7 +489,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <div className="flex items-center gap-2">
                 <MapPin className="w-4 h-4 text-blue-600 dark:text-[#8ab4f8]" />
                 <h2 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-[#c4c7c5]">
-                  Referenzorte ({activeProfilesCount})
+                  Referenzorte ({activeProfilesCount === profiles.length ? profiles.length : `${activeProfilesCount}/${profiles.length} aktiv`})
                 </h2>
               </div>
               {profiles.length < 6 && (

@@ -1402,16 +1402,13 @@ export function generateMvvTransitIsochrone(
   const detourFactor = options?.urbanDetourFactor ?? DEFAULT_ROUTING_PARAMETERS.urbanDetourFactor;
   const walkSpeedKmPerMin = walkingSpeedKmh / 60;
 
-  const polygonsToUnion: GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon>[] = [];
-
-  // 1. Direct Walking Polygon from origin (workplace) without transit
+  // 1. Direct Walking Radius from origin (workplace) without transit
   const maxDirectWalkMin = Math.min(travelTimeMinutes, Math.max(maxWalkToStationMin, maxWalkFromStationMin) * 2);
   const directWalkRadiusKm = Math.max(0.20, (maxDirectWalkMin * walkSpeedKmPerMin) / detourFactor);
   const originWalkCircle = turf.circle(origin, directWalkRadiusKm, {
     steps: 24,
     units: 'kilometers',
   });
-  polygonsToUnion.push(originWalkCircle);
 
   // 2. Solve Reachable Stations via Multi-Label Transit matrix
   const reachableStations = calculateReachableStations(profile, transitModes, options, schedule);
@@ -1420,22 +1417,28 @@ export function generateMvvTransitIsochrone(
   const catchmentMode = options?.stationCatchmentMode ?? 'heuristic';
   const currentRegionId = getTransitRegion().id;
 
-interface CircleSpec {
+interface CatchmentCandidate {
   lat: number;
   lng: number;
   radiusKm: number;
+  polygon?: GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon>;
 }
 
-function pruneContainedCircles(circles: CircleSpec[]): CircleSpec[] {
-  if (circles.length <= 1) return circles;
+function pruneContainedCircles(candidates: CatchmentCandidate[]): CatchmentCandidate[] {
+  if (candidates.length <= 1) return candidates;
 
   // Sort descending by radius so largest circles come first
-  const sorted = [...circles].sort((a, b) => b.radiusKm - a.radiusKm);
+  const sorted = [...candidates].sort((a, b) => b.radiusKm - a.radiusKm);
   const cellSizeKm = 1.0;
-  const grid = new Map<string, CircleSpec[]>();
-  const kept: CircleSpec[] = [];
+  const grid = new Map<string, CatchmentCandidate[]>();
+  const kept: CatchmentCandidate[] = [];
 
   for (const c of sorted) {
+    if (c.polygon) {
+      kept.push(c);
+      continue;
+    }
+
     const latCell = Math.floor(c.lat / (cellSizeKm / 111.0));
     const lngCell = Math.floor(c.lng / (cellSizeKm / (111.0 * Math.cos((c.lat * Math.PI) / 180))));
 
@@ -1446,6 +1449,7 @@ function pruneContainedCircles(circles: CircleSpec[]): CircleSpec[] {
         const cellItems = grid.get(key);
         if (!cellItems) continue;
         for (const larger of cellItems) {
+          if (larger.polygon) continue;
           const d = fastDistanceKm(c.lat, c.lng, larger.lat, larger.lng);
           if (d + c.radiusKm <= larger.radiusKm + 0.01) {
             isContained = true;
@@ -1468,7 +1472,7 @@ function pruneContainedCircles(circles: CircleSpec[]): CircleSpec[] {
   return kept;
 }
 
-  const circleCandidates: CircleSpec[] = [];
+  const rawCandidates: CatchmentCandidate[] = [];
 
   for (const item of reachableStations) {
     // Walking dispersal around reached station into residential area (Station ➔ Wohnort)
@@ -1488,34 +1492,31 @@ function pruneContainedCircles(circles: CircleSpec[]): CircleSpec[] {
       );
     }
 
-    if (stationBuffer) {
-      polygonsToUnion.push(stationBuffer);
-    } else {
-      // Strictly limit radius to what can be walked in the remaining time and walk budget
-      const radiusKm = (dispersalMinutes * walkSpeedKmPerMin) / detourFactor;
-      if (radiusKm >= 0.05) {
-        circleCandidates.push({
-          lat: item.station.lat,
-          lng: item.station.lng,
-          radiusKm,
-        });
-      }
+    // Strictly limit radius to what can be walked in the remaining time and walk budget
+    const radiusKm = (dispersalMinutes * walkSpeedKmPerMin) / detourFactor;
+    if (radiusKm >= 0.05 || stationBuffer) {
+      rawCandidates.push({
+        lat: item.station.lat,
+        lng: item.station.lng,
+        radiusKm: Math.max(radiusKm, 0.05),
+        polygon: stationBuffer ?? undefined,
+      });
     }
   }
 
   // Include direct walk circle from origin in candidates for unified spatial clustering
-  circleCandidates.push({
+  rawCandidates.push({
     lat,
     lng,
     radiusKm: directWalkRadiusKm,
   });
 
   // Prune strictly contained circular buffers
-  const prunedCircles = pruneContainedCircles(circleCandidates);
+  const prunedCandidates = pruneContainedCircles(rawCandidates);
 
   // Spatial connected components with Disjoint-Set (Union-Find)
-  const parent = new Int32Array(prunedCircles.length);
-  for (let i = 0; i < prunedCircles.length; i++) parent[i] = i;
+  const parent = new Int32Array(prunedCandidates.length);
+  for (let i = 0; i < prunedCandidates.length; i++) parent[i] = i;
   function findRoot(i: number): number {
     let root = i;
     while (root !== parent[root]) root = parent[root];
@@ -1533,8 +1534,8 @@ function pruneContainedCircles(circles: CircleSpec[]): CircleSpec[] {
   const cellSizeLng = 0.5 / 74.0;
   const spatialGrid = new Map<string, number[]>();
 
-  for (let i = 0; i < prunedCircles.length; i++) {
-    const c = prunedCircles[i];
+  for (let i = 0; i < prunedCandidates.length; i++) {
+    const c = prunedCandidates[i];
     const gy = Math.floor(c.lat / cellSizeLat);
     const gx = Math.floor(c.lng / cellSizeLng);
     for (let dy = -1; dy <= 1; dy++) {
@@ -1542,7 +1543,7 @@ function pruneContainedCircles(circles: CircleSpec[]): CircleSpec[] {
         const items = spatialGrid.get(`${gy + dy}_${gx + dx}`);
         if (items) {
           for (const j of items) {
-            const c2 = prunedCircles[j];
+            const c2 = prunedCandidates[j];
             const dLat = (c.lat - c2.lat) * 111.0;
             const dLng = (c.lng - c2.lng) * 74.0;
             if (Math.sqrt(dLat * dLat + dLng * dLng) <= c.radiusKm + c2.radiusKm) {
@@ -1562,7 +1563,7 @@ function pruneContainedCircles(circles: CircleSpec[]): CircleSpec[] {
   }
 
   const comps = new Map<number, number[]>();
-  for (let i = 0; i < prunedCircles.length; i++) {
+  for (let i = 0; i < prunedCandidates.length; i++) {
     const r = findRoot(i);
     let compList = comps.get(r);
     if (!compList) {
@@ -1576,13 +1577,17 @@ function pruneContainedCircles(circles: CircleSpec[]): CircleSpec[] {
 
   for (const indices of comps.values()) {
     if (indices.length === 1) {
-      const c = prunedCircles[indices[0]];
-      const circlePoly = turf.circle([c.lng, c.lat], c.radiusKm, { steps: 16, units: 'kilometers' });
-      allPolysCoordinates.push(circlePoly.geometry.coordinates);
+      const c = prunedCandidates[indices[0]];
+      const poly = c.polygon || turf.circle([c.lng, c.lat], c.radiusKm, { steps: 16, units: 'kilometers' });
+      if (poly.geometry.type === 'Polygon') {
+        allPolysCoordinates.push(poly.geometry.coordinates);
+      } else if (poly.geometry.type === 'MultiPolygon') {
+        allPolysCoordinates.push(...poly.geometry.coordinates);
+      }
     } else {
       const polys = indices.map((idx) => {
-        const c = prunedCircles[idx];
-        return turf.circle([c.lng, c.lat], c.radiusKm, { steps: 16, units: 'kilometers' });
+        const c = prunedCandidates[idx];
+        return c.polygon || turf.circle([c.lng, c.lat], c.radiusKm, { steps: 16, units: 'kilometers' });
       });
       try {
         const u = (turf.union as any)(turf.featureCollection(polys));
@@ -1593,20 +1598,17 @@ function pruneContainedCircles(circles: CircleSpec[]): CircleSpec[] {
             allPolysCoordinates.push(...u.geometry.coordinates);
           }
         } else {
-          for (const p of polys) allPolysCoordinates.push(p.geometry.coordinates);
+          for (const p of polys) {
+            if (p.geometry.type === 'Polygon') allPolysCoordinates.push(p.geometry.coordinates);
+            else if (p.geometry.type === 'MultiPolygon') allPolysCoordinates.push(...p.geometry.coordinates);
+          }
         }
       } catch {
-        for (const p of polys) allPolysCoordinates.push(p.geometry.coordinates);
+        for (const p of polys) {
+          if (p.geometry.type === 'Polygon') allPolysCoordinates.push(p.geometry.coordinates);
+          else if (p.geometry.type === 'MultiPolygon') allPolysCoordinates.push(...p.geometry.coordinates);
+        }
       }
-    }
-  }
-
-  // Include any precomputed walkshed polygons that were collected
-  for (const extra of polygonsToUnion) {
-    if (extra.geometry.type === 'Polygon') {
-      allPolysCoordinates.push(extra.geometry.coordinates);
-    } else if (extra.geometry.type === 'MultiPolygon') {
-      allPolysCoordinates.push(...extra.geometry.coordinates);
     }
   }
 
