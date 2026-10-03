@@ -50,7 +50,7 @@ export const ApartmentManagerModal: React.FC<ApartmentManagerModalProps> = ({
   const [copiedBbox, setCopiedBbox] = useState(false);
   const [copiedCommand, setCopiedCommand] = useState(false);
   const [copiedAgentPrompt, setCopiedAgentPrompt] = useState(false);
-  const [selectedPortalKey, setSelectedPortalKey] = useState<string>('immoscout24');
+  const [selectedPortalKeys, setSelectedPortalKeys] = useState<string[]>(['immoscout24']);
   const [selectedSubAreaId, setSelectedSubAreaId] = useState<string | null>(null);
   const [importStatus, setImportStatus] = useState<{
     success?: boolean;
@@ -352,7 +352,19 @@ export const ApartmentManagerModal: React.FC<ApartmentManagerModalProps> = ({
                 <Compass className="w-3.5 h-3.5 text-orange-500" />
                 <span>Portal-Direktsuche ({activeSubArea ? activeSubArea.label.split('(')[0].trim() : 'Gesamter Treffbereich'})</span>
               </h4>
-              <span className="text-[10px] text-slate-400">1-Klick Live-Suche</span>
+              <button
+                type="button"
+                onClick={() => {
+                  portalLinks.forEach((link) => {
+                    window.open(link.url, '_blank', 'noopener,noreferrer');
+                  });
+                }}
+                className="text-[10px] font-semibold text-orange-600 dark:text-orange-400 hover:underline cursor-pointer flex items-center gap-1"
+                title="Öffnet alle Portale gleichzeitig in separaten Browser-Tabs"
+              >
+                <span>Alle {portalLinks.length} Portale im Browser öffnen</span>
+                <ExternalLink className="w-3 h-3" />
+              </button>
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -546,27 +558,68 @@ export const ApartmentManagerModal: React.FC<ApartmentManagerModalProps> = ({
               </p>
 
               {/* Portal Selector for Browser Search */}
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="text-[10px] font-semibold text-slate-500 dark:text-[#9aa0a6]">Ziel-Portal:</span>
-                {portalLinks.map((link) => (
-                  <button
-                    key={link.portal}
-                    type="button"
-                    onClick={() => setSelectedPortalKey(link.portal)}
-                    className={`text-[10px] px-2.5 py-1 rounded-lg border font-semibold transition-colors cursor-pointer ${
-                      selectedPortalKey === link.portal
-                        ? 'bg-purple-600 text-white border-purple-600 dark:bg-purple-500'
-                        : 'bg-white dark:bg-[#1e1f20] text-slate-700 dark:text-[#c4c7c5] border-slate-200 dark:border-[#3c4043] hover:bg-slate-100'
-                    }`}
-                  >
-                    {link.name}
-                  </button>
-                ))}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-semibold text-slate-500 dark:text-[#9aa0a6]">
+                    Ziel-Portale (Mehrfachauswahl möglich):
+                  </span>
+                  <div className="flex items-center gap-1.5 text-[10px]">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedPortalKeys(portalLinks.map((l) => l.portal))}
+                      className="text-purple-600 dark:text-purple-400 hover:underline cursor-pointer font-medium"
+                    >
+                      Alle auswählen
+                    </button>
+                    <span className="text-slate-300 dark:text-slate-600">•</span>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedPortalKeys(['immoscout24'])}
+                      className="text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 cursor-pointer"
+                    >
+                      Standard (IS24)
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {portalLinks.map((link) => {
+                    const isSelected = selectedPortalKeys.includes(link.portal);
+                    const handleToggle = () => {
+                      if (isSelected) {
+                        // Keep at least one portal selected
+                        if (selectedPortalKeys.length > 1) {
+                          setSelectedPortalKeys(selectedPortalKeys.filter((k) => k !== link.portal));
+                        }
+                      } else {
+                        setSelectedPortalKeys([...selectedPortalKeys, link.portal]);
+                      }
+                    };
+
+                    return (
+                      <button
+                        key={link.portal}
+                        type="button"
+                        onClick={handleToggle}
+                        className={`text-[10px] px-2.5 py-1 rounded-lg border font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${
+                          isSelected
+                            ? 'bg-purple-600 text-white border-purple-600 dark:bg-purple-500'
+                            : 'bg-white dark:bg-[#1e1f20] text-slate-700 dark:text-[#c4c7c5] border-slate-200 dark:border-[#3c4043] hover:bg-slate-100'
+                        }`}
+                        title={isSelected ? 'Klicken zum Abwählen' : 'Klicken zum Hinzufügen'}
+                      >
+                        {isSelected && <Check className="w-3 h-3 stroke-[2.5]" />}
+                        <span>{link.name}</span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
               {/* Generated Agent Prompt Box */}
               {(() => {
-                const chosenLink = portalLinks.find((l) => l.portal === selectedPortalKey) || portalLinks[0];
+                const chosenPortals = portalLinks.filter((l) => selectedPortalKeys.includes(l.portal));
+                const activePortalsList = chosenPortals.length > 0 ? chosenPortals : [portalLinks[0]];
                 const areaLabel = activeSubArea ? activeSubArea.label.split('(')[0].trim() : 'Gemeinsamer Treffbereich';
                 const areaKm2 = activeSubArea ? activeSubArea.areaKm2 : intersectionStats?.areaKm2;
                 const rawBboxParts = bboxString.split(',').map((n) => parseFloat(n.trim()));
@@ -576,9 +629,11 @@ export const ApartmentManagerModal: React.FC<ApartmentManagerModalProps> = ({
                     : [11.535, 48.140, 11.595, 48.175];
 
                 const promptString = buildAgenticBrowserSearchPrompt({
-                  portalName: chosenLink?.name || 'ImmoScout24',
-                  portalUrl: chosenLink?.url || 'https://www.immobilienscout24.de',
-                  portalKey: chosenLink?.portal || selectedPortalKey,
+                  portals: activePortalsList.map((p) => ({
+                    name: p.name,
+                    url: p.url,
+                    portal: p.portal,
+                  })),
                   areaLabel,
                   areaKm2,
                   center: activeCenter,
@@ -600,7 +655,7 @@ export const ApartmentManagerModal: React.FC<ApartmentManagerModalProps> = ({
                     <div className="flex items-center justify-between text-slate-400 text-[11px] border-b border-slate-800 pb-1.5">
                       <span className="flex items-center gap-1.5">
                         <Terminal className="w-3.5 h-3.5 text-purple-400" />
-                        <span>Prompt für deinen KI-Agenten (vollständiger Kontext & Schema):</span>
+                        <span>Prompt für deinen KI-Agenten ({activePortalsList.length} {activePortalsList.length === 1 ? 'Portal' : 'Portale'} ausgewählt):</span>
                       </span>
                       <button
                         type="button"

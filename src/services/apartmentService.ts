@@ -825,9 +825,10 @@ export function saveApartmentFilters(filters: ApartmentFilterSettings): void {
 }
 
 export interface GenerateAgenticPromptOptions {
-  portalName: string;
-  portalUrl: string;
+  portalName?: string;
+  portalUrl?: string;
   portalKey?: string;
+  portals?: Array<{ name: string; url: string; portal?: string }>;
   areaLabel: string;
   areaKm2?: number;
   center: { lat: number; lng: number };
@@ -848,7 +849,7 @@ export interface GenerateAgenticPromptOptions {
  * via the integrated browser (/browser, Antigravity, Codex, Cloud Code).
  *
  * Provides:
- * 1. Target portal name and pre-configured URL deep-link
+ * 1. Target portal names and pre-configured URL deep-links
  * 2. Complete geographical constraints (area label, size, center coordinates, radius, BBOX)
  * 3. Relevant search filters (max rent, min rooms, min sqm)
  * 4. Strict geo-filtering rules (reject out-of-bounds listings)
@@ -857,9 +858,10 @@ export interface GenerateAgenticPromptOptions {
  */
 export function buildAgenticBrowserSearchPrompt(options: GenerateAgenticPromptOptions): string {
   const {
-    portalName,
-    portalUrl,
+    portalName = 'ImmoScout24',
+    portalUrl = 'https://www.immobilienscout24.de',
     portalKey,
+    portals,
     areaLabel,
     areaKm2,
     center,
@@ -871,6 +873,11 @@ export function buildAgenticBrowserSearchPrompt(options: GenerateAgenticPromptOp
     filters,
   } = options;
 
+  const targetPortals: Array<{ name: string; url: string; portal?: string }> =
+    portals && portals.length > 0
+      ? portals
+      : [{ name: portalName, url: portalUrl, portal: portalKey }];
+
   const minLng = bbox[0].toFixed(4);
   const minLat = bbox[1].toFixed(4);
   const maxLng = bbox[2].toFixed(4);
@@ -881,7 +888,7 @@ export function buildAgenticBrowserSearchPrompt(options: GenerateAgenticPromptOp
   const areaDesc = typeof areaKm2 === 'number' && areaKm2 > 0 ? ` (ca. ${areaKm2.toFixed(2)} km²)` : '';
   const locDesc = addressOrDistrict ? ` / Lage: ${addressOrDistrict}` : '';
 
-  const portalKeyLower = (portalKey || portalName).toLowerCase();
+  const portalKeyLower = ((targetPortals[0]?.portal) || (targetPortals[0]?.name) || '').toLowerCase();
   let sourceKey = 'custom';
   let sourcePrefix = 'apt';
   if (portalKeyLower.includes('immoscout') || portalKeyLower.includes('is24')) {
@@ -913,7 +920,13 @@ export function buildAgenticBrowserSearchPrompt(options: GenerateAgenticPromptOp
     ? `\nSuchkriterien aus Venn:\n${filterLines.join('\n')}\n`
     : '';
 
-  return `/browser Öffne ${portalName} (${portalUrl}) und nutze den agentic-apartment-browser Skill, um passende Mietwohnungen im gemeinsamen Pendelbereich zu recherchieren und strukturiert in public/data/apartments.json zu speichern.
+  const portalNamesList = targetPortals.map((p) => p.name).join(', ');
+  const portalLinksFormatted = targetPortals.map((p, i) => `  ${i + 1}. ${p.name}: ${p.url}`).join('\n');
+
+  return `/browser Öffne nacheinander die folgenden Portale (${portalNamesList}) und nutze den agentic-apartment-browser Skill, um passende Mietwohnungen im gemeinsamen Pendelbereich zu recherchieren und strukturiert in public/data/apartments.json zu speichern.
+
+Ziel-Portale & Suchlinks:
+${portalLinksFormatted}
 
 === 1. GEOGRAFISCHER ZIELBEREICH (TREFFBEREICH) ===
 - Bereich: ${areaLabel}${areaDesc}
