@@ -7,7 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.12.0] - 2026-10-03
+
+### Added
+- **On-Demand Routenberechnung & Visualisierung**: Reale Wegeführung und Fahrzeiten können für Inspektionspunkte und Wohnungen per Klick berechnet und als farbige Polylinien auf der Karte dargestellt werden.
+- **Zweistufiger Routing-Standard**: Standardmäßig vollkommen Open-Source-basiert (OpenRouteService / OSRM und lokale ÖPNV-Haltestellenmatrix), mit optionalem Upgrade auf die Google Routes API für weltweite Live-Verkehrsdaten und Transit-Fahrpläne.
+- **Direkte Google Maps & Street View Verlinkungen**: Direkter Absprung zu Google Maps, 360°-Street-View-Panoramen und Navigationsrouten ohne API-Kontingent oder Performance-Overhead.
+
+### Fixed
+- **Fahrzeit-Kurve für Pkw-Isochronen**: Dynamische Geschwindigkeitskurve im Straßennetz harmonisiert; beseitigt Abweichungen zwischen Punkt-zu-Punkt-Schätzung und Isochronen-Fläche.
+- **Titelanzeige im Inspektionspanel**: Wenn ein Klickpunkt innerhalb des Zeitbudgets aller Personen liegt, wird korrekt „Gemeinsamer Treffbereich“ angezeigt.
+- **Vermeidung von Hohlgeometrien bei ÖPNV-Isochronen**: Beseitigung redundanter Startpunktgeometrien, die zu künstlichen Aussparungen in der Isochronenmitte führten.
+
 ## [1.11.0] - 2026-10-03
+
 
 ### Added
 - **Amtliche GTFS-Fahrplan-Pipeline**: Vollständige Integration des offiziellen MVV-Soll-Fahrplans mit 4.195 verkehrlichen Haltestellen-Knoten, 11.142 gerichteten Kanten und 7.412 Fußwegen.
