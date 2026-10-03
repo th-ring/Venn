@@ -173,8 +173,10 @@ export const InspectionPanel: React.FC<InspectionPanelProps> = ({
               >
                 {selectedApt
                   ? 'Wohnungs-Fahrzeiten'
-                  : inspection.isIntersectionInspection
-                  ? 'Gemeinsamer Treffbereich'
+                  : isIdealLocation
+                  ? inspection.isIntersectionInspection
+                    ? 'Gemeinsamer Treffbereich'
+                    : 'Gemeinsamer Treffpunkt'
                   : 'Außerhalb der Schnittmenge'}
               </h4>
               <span
