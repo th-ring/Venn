@@ -55,7 +55,7 @@ export const ApiKeysTab: React.FC<ApiKeysTabProps> = ({
       {/* 1. Google Maps Platform Card */}
       <SettingsCard
         title="Google Maps Platform API-Key"
-        subtitle="Aktiviert die Google Maps Hintergrundkarte und die Google Maps Isochronen API"
+        subtitle="Aktiviert die Google Maps Hintergrundkarte, Google Isochronen und die Google Routes API"
         headerAction={
           <div className="flex items-center gap-2">
             <a

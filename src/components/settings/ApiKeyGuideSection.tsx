@@ -122,9 +122,9 @@ export const ApiKeyGuideSection: React.FC<ApiKeyGuideSectionProps> = ({
                   </div>
                   <p className="text-slate-600 dark:text-[#9aa0a6] mt-0.5">
                     Aktiviere unter <em>„APIs & Dienste“ → „Bibliothek“</em> zwingend
-                    diese <strong>zwei APIs</strong>:
+                    diese <strong>APIs</strong>:
                   </p>
-                  <div className="mt-1.5 grid sm:grid-cols-2 gap-1.5">
+                  <div className="mt-1.5 grid sm:grid-cols-3 gap-1.5">
                     <div className="flex items-start gap-1.5 bg-slate-50 dark:bg-[#282a2c] p-2 rounded-lg border border-slate-200/80 dark:border-[#3c4043]">
                       <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
                       <div>
@@ -143,9 +143,18 @@ export const ApiKeyGuideSection: React.FC<ApiKeyGuideSectionProps> = ({
                         </span>
                       </div>
                     </div>
+                    <div className="flex items-start gap-1.5 bg-slate-50 dark:bg-[#282a2c] p-2 rounded-lg border border-slate-200/80 dark:border-[#3c4043]">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+                      <div>
+                        <strong className="text-slate-900 dark:text-[#e3e3e3] block">Routes API</strong>
+                        <span className="text-[10px] text-slate-500 dark:text-[#9aa0a6]">
+                          Für on-demand Live-Verkehr, ÖPNV-Fahrpläne & Routen-Polylinien.
+                        </span>
+                      </div>
+                    </div>
                   </div>
                   <div className="text-[10px] text-amber-700 dark:text-amber-300 mt-1.5 bg-amber-50/70 dark:bg-amber-950/40 border border-amber-200/60 dark:border-amber-800/60 p-1.5 rounded-md">
-                    ℹ <strong>ÖPNV-Hinweis:</strong> Google Isochrones unterstützt prinzipbedingt keinen ÖPNV. Venn nutzt für Bus & Bahn automatisch die integrierte MVV/MVG-Haltestellenmatrix.
+                    ℹ <strong>ÖPNV-Hinweis:</strong> Google Isochrones unterstützt nur Pkw/Rad/Fußwege. Für ÖPNV nutzt Venn lokal die MVV/MVG-Haltestellenmatrix oder on-demand die Google Routes API für weltweite Transit-Verbindungen.
                   </div>
                 </div>
               </div>
@@ -180,11 +189,13 @@ export const ApiKeyGuideSection: React.FC<ApiKeyGuideSectionProps> = ({
                         </a>
                       </div>
                       <p className="text-slate-600 dark:text-[#9aa0a6] mt-0.5">
-                        Wähle <em>„Schlüssel einschränken“</em> und hake ausschließlich{' '}
-                        <strong>Maps JavaScript API</strong> und{' '}
-                        <strong>Google Maps Isochrones API</strong> an.
+                        Wähle <em>„Schlüssel einschränken“</em> und hake{' '}
+                        <strong>Maps JavaScript API</strong>,{' '}
+                        <strong>Google Maps Isochrones API</strong> und{' '}
+                        <strong>Routes API</strong> an.
                       </p>
                     </div>
+
                     <div className="bg-slate-50 dark:bg-[#282a2c] p-2 rounded-lg border border-slate-200/80 dark:border-[#3c4043]">
                       <span className="font-semibold text-slate-800 dark:text-[#e3e3e3]">Anwendungseinschränkungen:</span>
                       <p className="text-slate-600 dark:text-[#9aa0a6] mt-0.5">

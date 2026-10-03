@@ -17,7 +17,9 @@ import {
   ApartmentListing,
   ApartmentFilterSettings,
   DEFAULT_APARTMENT_FILTER,
+  CalculatedRoute,
 } from '../types';
+
 import { filterApartmentsInPolygon } from '../services/apartmentService';
 import { Loader2, AlertCircle, Key } from 'lucide-react';
 import { getPriorityTargets } from '../services/priorityHeatmapEngine';
@@ -99,6 +101,7 @@ interface MapComponentProps {
   apartmentFilterSettings?: ApartmentFilterSettings;
   onUpdateApartmentFilter?: (settings: Partial<ApartmentFilterSettings>) => void;
   isInspectionActive?: boolean;
+  activeRoutes?: CalculatedRoute[];
 }
 
 export const MapComponent: React.FC<MapComponentProps> = React.memo<MapComponentProps>(({
@@ -139,7 +142,9 @@ export const MapComponent: React.FC<MapComponentProps> = React.memo<MapComponent
   apartmentFilterSettings: propApartmentFilter,
   onUpdateApartmentFilter: propOnUpdateApartmentFilter,
   isInspectionActive = false,
+  activeRoutes = [],
 }) => {
+
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const { isDark } = useTheme();
@@ -225,6 +230,7 @@ export const MapComponent: React.FC<MapComponentProps> = React.memo<MapComponent
   const apartmentsLayerRef = useRef<L.LayerGroup | null>(null);
   const poiIconsLayerRef = useRef<L.LayerGroup | null>(null);
   const personsLayerRef = useRef<L.LayerGroup | null>(null);
+  const routesLayerRef = useRef<L.LayerGroup | null>(null);
   const inspectionMarkerRef = useRef<L.Marker | null>(null);
 
   // Initialize map once with custom panes for deterministic layer ordering & hover hierarchy
@@ -272,6 +278,11 @@ export const MapComponent: React.FC<MapComponentProps> = React.memo<MapComponent
     map.createPane('pane-isochrones');
     map.createPane('pane-heatmap');
     map.createPane('pane-intersection');
+    map.createPane('pane-routes');
+    const routesPane = map.getPane('pane-routes');
+    if (routesPane) {
+      routesPane.style.zIndex = '450';
+    }
     map.createPane('pane-apartments');
     map.createPane('pane-poi_icons');
     map.createPane('pane-persons');
@@ -282,6 +293,7 @@ export const MapComponent: React.FC<MapComponentProps> = React.memo<MapComponent
     const isochronesGroup = L.layerGroup().addTo(map);
     const heatmapGroup = L.layerGroup().addTo(map);
     const intersectionGroup = L.layerGroup().addTo(map);
+    const routesGroup = L.layerGroup().addTo(map);
     const apartmentsGroup = L.layerGroup().addTo(map);
     const poiIconsGroup = L.layerGroup().addTo(map);
     const personsGroup = L.layerGroup().addTo(map);
@@ -290,10 +302,12 @@ export const MapComponent: React.FC<MapComponentProps> = React.memo<MapComponent
     isochronesLayerRef.current = isochronesGroup;
     heatmapLayerRef.current = heatmapGroup;
     intersectionLayerRef.current = intersectionGroup;
+    routesLayerRef.current = routesGroup;
     apartmentsLayerRef.current = apartmentsGroup;
     poiIconsLayerRef.current = poiIconsGroup;
     personsLayerRef.current = personsGroup;
     mapRef.current = map;
+
 
     // Handle map clicks for inspection
     map.on('click', (e: L.LeafletMouseEvent) => {
@@ -601,7 +615,60 @@ export const MapComponent: React.FC<MapComponentProps> = React.memo<MapComponent
     }
   }, [inspectionPoint, hiddenLayers]);
 
+  // 2b. Render On-Demand Active Routes (Pane: pane-routes)
+  useEffect(() => {
+    const routesGroup = routesLayerRef.current;
+    if (!routesGroup || !mapRef.current) return;
+
+    routesGroup.clearLayers();
+
+    if (!activeRoutes || activeRoutes.length === 0) return;
+
+    activeRoutes.forEach((route) => {
+      if (!route.coordinates || route.coordinates.length < 2) return;
+
+      // Glow outline for contrast against light or dark basemaps
+      const glowLine = L.polyline(route.coordinates, {
+        color: isDark ? '#000000' : '#ffffff',
+        weight: 6.5,
+        opacity: isDark ? 0.6 : 0.85,
+        pane: 'pane-routes',
+        lineCap: 'round',
+        lineJoin: 'round',
+      });
+      glowLine.addTo(routesGroup);
+
+      const isTransit = route.mode === 'transit';
+      const isWalking = route.mode === 'walking';
+      const isCycling = route.mode === 'cycling';
+
+      // Main route polyline with distinct line style per mode
+      const mainLine = L.polyline(route.coordinates, {
+        color: route.personColor,
+        weight: isTransit ? 4.5 : 4,
+        opacity: 0.95,
+        pane: 'pane-routes',
+        dashArray: isTransit ? '8, 8' : isWalking ? '3, 6' : isCycling ? '10, 5' : undefined,
+        lineCap: 'round',
+        lineJoin: 'round',
+      });
+
+      const providerBadge = route.isTrafficAware ? 'Live-Verkehr' : route.providerLabel;
+      mainLine.bindTooltip(
+        `<div style="font-family: inherit; font-size: 11px; padding: 2px 4px;">
+          <div style="font-weight: 700; color: ${route.personColor};">${route.personName}</div>
+          <div>${route.durationMinutes} Min · ${route.distanceKm} km</div>
+          <div style="font-size: 9.5px; opacity: 0.75; margin-top: 1px;">${providerBadge}</div>
+        </div>`,
+        { sticky: true, opacity: 0.95 }
+      );
+
+      mainLine.addTo(routesGroup);
+    });
+  }, [activeRoutes, isDark]);
+
   // 3. Render Individual Person Isochrones (Pane: pane-isochrones)
+
   useEffect(() => {
     const isochronesGroup = isochronesLayerRef.current;
     if (!isochronesGroup || !mapRef.current) return;

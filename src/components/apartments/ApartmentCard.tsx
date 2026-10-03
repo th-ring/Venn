@@ -15,6 +15,11 @@ import {
   Layers,
   ArrowRight,
 } from 'lucide-react';
+import {
+  getGoogleMapsSearchUrl,
+  getGoogleMapsStreetViewUrl,
+} from '../../services/routeService';
+
 
 interface ApartmentCardProps {
   listing: ApartmentListing;
@@ -210,6 +215,28 @@ export const ApartmentCard: React.FC<ApartmentCardProps> = ({
             </span>
 
             <div className="flex items-center gap-2">
+              <a
+                href={getGoogleMapsStreetViewUrl(listing.lat, listing.lng)}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="inline-flex items-center gap-0.5 text-[10.5px] text-amber-700 dark:text-amber-300 hover:underline font-medium"
+                title="360° Street View öffnen"
+              >
+                <span>Street View</span>
+                <ExternalLink className="w-2.5 h-2.5" />
+              </a>
+              <a
+                href={getGoogleMapsSearchUrl(listing.lat, listing.lng)}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="inline-flex items-center gap-0.5 text-[10.5px] text-slate-600 dark:text-[#9aa0a6] hover:text-blue-600 dark:hover:text-[#8ab4f8] hover:underline font-medium"
+                title="Auf Google Maps öffnen"
+              >
+                <span>Maps</span>
+                <ExternalLink className="w-2.5 h-2.5" />
+              </a>
               {listing.url && (
                 <a
                   href={listing.url}
@@ -224,6 +251,7 @@ export const ApartmentCard: React.FC<ApartmentCardProps> = ({
                 </a>
               )}
             </div>
+
           </div>
         </div>
       </div>

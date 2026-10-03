@@ -18,6 +18,8 @@ import {
   CommuteEstimate,
   IntersectionSubArea,
   PortalSearchLink,
+  CalculatedRoute,
+  RouteProviderPreference,
 } from '../types';
 import * as turf from '@turf/turf';
 import {
@@ -27,6 +29,11 @@ import {
   extractIntersectionSubAreas,
   getPortalSearchLinks,
 } from '../services/apartmentService';
+import {
+  calculatePersonRoute,
+  calculateAllRoutes,
+} from '../services/routeService';
+
 import { DEFAULT_MUNICH_PROFILES } from '../data/presets';
 import {
   generateIsochrone,
@@ -145,6 +152,69 @@ export function useCommuteFinder() {
   const apartmentsRef = useRef<ApartmentListing[]>([]);
   apartmentsRef.current = apartments;
   const [selectedApartmentId, setSelectedApartmentId] = useState<string | null>(null);
+
+  // On-Demand Route Calculation State
+  const [activeRoutes, setActiveRoutes] = useState<CalculatedRoute[]>([]);
+  const [isCalculatingRoutes, setIsCalculatingRoutes] = useState(false);
+  const [routeCalculationError, setRouteCalculationError] = useState<string | null>(null);
+
+  const handleClearRoutes = useCallback(() => {
+    setActiveRoutes([]);
+    setRouteCalculationError(null);
+  }, []);
+
+  const handleCalculateRoutes = useCallback(
+    async (
+      personId?: string,
+      providerPref: RouteProviderPreference = 'auto'
+    ) => {
+      const currentPoint = inspectionPointRef.current;
+      if (!currentPoint) return;
+
+      const origin = { lat: currentPoint.lat, lng: currentPoint.lng };
+      setIsCalculatingRoutes(true);
+      setRouteCalculationError(null);
+
+      try {
+        if (personId) {
+          const profile = profilesRef.current.find((p) => p.id === personId);
+          if (!profile) return;
+          const route = await calculatePersonRoute(
+            origin,
+            profile,
+            scheduleRef.current,
+            providerPref
+          );
+          if (route.error && route.coordinates.length === 0) {
+            setRouteCalculationError(route.error);
+          }
+          setActiveRoutes((prev) => {
+            const filtered = prev.filter((r) => r.personId !== personId);
+            return route.coordinates.length > 0 ? [...filtered, route] : filtered;
+          });
+        } else {
+          const routes = await calculateAllRoutes(
+            origin,
+            profilesRef.current,
+            scheduleRef.current,
+            providerPref
+          );
+          const validRoutes = routes.filter((r) => r.coordinates.length > 0);
+          const errorRoute = routes.find((r) => r.error);
+          if (errorRoute?.error && validRoutes.length === 0) {
+            setRouteCalculationError(errorRoute.error);
+          }
+          setActiveRoutes(validRoutes);
+        }
+      } catch (err: any) {
+        setRouteCalculationError(err?.message || 'Fehler bei der Routenberechnung');
+      } finally {
+        setIsCalculatingRoutes(false);
+      }
+    },
+    []
+  );
+
 
   useEffect(() => {
     loadApartmentCatalog().then((loaded) => {
@@ -716,9 +786,13 @@ export function useCommuteFinder() {
         scheduleRef.current.options?.rentalOverlay?.selectedRegionId || 'munich-mvv'
       );
 
+      setActiveRoutes([]);
+      setRouteCalculationError(null);
+
       setInspectionPoint({
         lat: data.lat,
         lng: data.lng,
+
         address: matchedApartment?.title || 'Lade Adresse...',
         estimates: data.estimates,
         allWithinLimit: data.allWithinLimit,
@@ -1197,5 +1271,11 @@ export function useCommuteFinder() {
     selectedApartmentId,
     handleSelectApartment,
     handleReloadApartments,
+    activeRoutes,
+    isCalculatingRoutes,
+    routeCalculationError,
+    handleCalculateRoutes,
+    handleClearRoutes,
   };
 }
+

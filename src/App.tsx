@@ -85,7 +85,13 @@ export default function App() {
     selectedApartmentId,
     handleSelectApartment,
     handleReloadApartments,
+    activeRoutes,
+    isCalculatingRoutes,
+    routeCalculationError,
+    handleCalculateRoutes,
+    handleClearRoutes,
   } = useCommuteFinder();
+
 
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
@@ -387,6 +393,7 @@ export default function App() {
             onSelectApartment={handleSelectApartment}
             onOpenApartmentManager={() => setIsApartmentManagerOpen(true)}
             isInspectionActive={Boolean(inspectionPoint)}
+            activeRoutes={activeRoutes}
           />
         </MapErrorBoundary>
 
@@ -406,10 +413,16 @@ export default function App() {
                 schedule={schedule}
                 onSelectApartment={handleSelectApartment}
                 onOpenApartmentManager={() => setIsApartmentManagerOpen(true)}
+                activeRoutes={activeRoutes}
+                onRequestCalculateRoute={handleCalculateRoutes}
+                onClearRoutes={handleClearRoutes}
+                isCalculatingRoute={isCalculatingRoutes}
+                routeError={routeCalculationError}
               />
             </div>
           </div>
         )}
+
       </main>
 
       {/* Share Modal */}

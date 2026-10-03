@@ -1,5 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { InspectionPoint, TransportMode, CommuteEstimate, PersonProfile, CommuteSchedule, ApartmentListing } from '../types';
+import {
+  InspectionPoint,
+  TransportMode,
+  CommuteEstimate,
+  PersonProfile,
+  CommuteSchedule,
+  ApartmentListing,
+  CalculatedRoute,
+  RouteProviderPreference,
+} from '../types';
 import { ApartmentListSection } from './apartments/ApartmentListSection';
 import {
   MapPin,
@@ -23,8 +32,20 @@ import {
   ExternalLink,
   ChevronLeft,
   SlidersHorizontal,
+  Compass,
+  Route as RouteIcon,
+  Loader2,
 } from 'lucide-react';
 import { getRentalChoroplethColor } from '../services/rentalService';
+import {
+  getGoogleMapsSearchUrl,
+  getGoogleMapsStreetViewUrl,
+  getGoogleMapsDirectionsUrl,
+} from '../services/routeService';
+import {
+  hasGoogleMapsApiKey,
+  hasOrsApiKey,
+} from '../services/isochroneEngine';
 
 interface InspectionPanelProps {
   inspection: InspectionPoint | null;
@@ -36,6 +57,11 @@ interface InspectionPanelProps {
   schedule?: CommuteSchedule;
   onSelectApartment?: (apartment: ApartmentListing | null) => void;
   onOpenApartmentManager?: () => void;
+  activeRoutes?: CalculatedRoute[];
+  onRequestCalculateRoute?: (personId?: string, providerPref?: RouteProviderPreference) => Promise<void>;
+  onClearRoutes?: () => void;
+  isCalculatingRoute?: boolean;
+  routeError?: string | null;
 }
 
 const MODE_ICONS: Record<TransportMode, React.ComponentType<{ className?: string }>> = {
@@ -62,7 +88,16 @@ export const InspectionPanel: React.FC<InspectionPanelProps> = ({
   schedule,
   onSelectApartment,
   onOpenApartmentManager,
+  activeRoutes = [],
+  onRequestCalculateRoute,
+  onClearRoutes,
+  isCalculatingRoute = false,
+  routeError = null,
 }) => {
+  const [providerPreference, setProviderPreference] = useState<RouteProviderPreference>('auto');
+  const hasGoogleKey = hasGoogleMapsApiKey();
+  const hasOrsKey = hasOrsApiKey();
+
   const [expandedPersonIds, setExpandedPersonIds] = useState<Record<string, boolean>>({});
   const [activeTab, setActiveTab] = useState<'apartments' | 'commute'>('commute');
   const [imageError, setImageError] = useState(false);
@@ -163,8 +198,33 @@ export const InspectionPanel: React.FC<InspectionPanelProps> = ({
                   : inspection.address || `${inspection.lat.toFixed(4)}, ${inspection.lng.toFixed(4)}`}
               </span>
             </p>
+
+            {/* Quick External Links (Google Maps & 360° Street View) */}
+            <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+              <a
+                href={getGoogleMapsSearchUrl(inspection.lat, inspection.lng)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-[10px] font-semibold text-blue-700 dark:text-[#8ab4f8] bg-blue-100/70 dark:bg-blue-950/60 hover:bg-blue-200/70 dark:hover:bg-blue-900/60 px-2 py-0.5 rounded-md border border-blue-300/60 dark:border-blue-800/60 transition-colors"
+                title="Diesen Ort in Google Maps im neuen Tab öffnen"
+              >
+                <span>Google Maps</span>
+                <ExternalLink className="w-2.5 h-2.5" />
+              </a>
+              <a
+                href={getGoogleMapsStreetViewUrl(inspection.lat, inspection.lng)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-800 dark:text-amber-300 bg-amber-100/70 dark:bg-amber-950/60 hover:bg-amber-200/70 dark:hover:bg-amber-900/60 px-2 py-0.5 rounded-md border border-amber-300/60 dark:border-amber-800/60 transition-colors"
+                title="360° Street View Panorama an diesem Punkt im neuen Tab öffnen"
+              >
+                <span>360° Street View</span>
+                <ExternalLink className="w-2.5 h-2.5" />
+              </a>
+            </div>
           </div>
         </div>
+
 
         <button
           id="btn-close-inspector"
@@ -388,7 +448,7 @@ export const InspectionPanel: React.FC<InspectionPanelProps> = ({
           )}
 
           {/* Commute Estimates List */}
-          <div className="p-3 max-h-[360px] overflow-y-auto space-y-2.5 touch-scroll-y">
+          <div className="p-3 max-h-[420px] overflow-y-auto space-y-2.5 touch-scroll-y">
             <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-[#9aa0a6] px-1 flex items-center justify-between">
               <span>Fahrzeiten der Profile</span>
               <span className="font-normal text-[10px]">
@@ -396,11 +456,96 @@ export const InspectionPanel: React.FC<InspectionPanelProps> = ({
               </span>
             </div>
 
+            {/* On-Demand Route Calculation Bar */}
+            <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-[#282a2c]/60 border border-slate-200/90 dark:border-[#3c4043] flex flex-col gap-2 shadow-2xs">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-800 dark:text-[#e3e3e3]">
+                  <RouteIcon className="w-3.5 h-3.5 text-blue-600 dark:text-[#8ab4f8]" />
+                  <span>Echte Routenführung</span>
+                </div>
+
+                {/* Provider Selector */}
+                <div className="flex items-center gap-1.5 text-[11px]">
+                  <span className="text-[10px] text-slate-500 dark:text-[#9aa0a6]">Routing-Dienst:</span>
+                  <select
+                    value={providerPreference}
+                    onChange={(e) => setProviderPreference(e.target.value as RouteProviderPreference)}
+                    disabled={isCalculatingRoute}
+                    className="bg-white dark:bg-[#1e1f20] border border-slate-200 dark:border-[#3c4043] text-slate-700 dark:text-[#c4c7c5] text-[11px] rounded-lg px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
+                  >
+                    <option value="auto">Auto (Smart)</option>
+                    <option value="opensource">Open Source (ORS / OSM)</option>
+                    <option value="google" disabled={!hasGoogleKey}>
+                      Google Routes {hasGoogleKey ? '(Live-Traffic)' : '(Key fehlt)'}
+                    </option>
+                  </select>
+                </div>
+              </div>
+
+              {routeError && (
+                <div className="p-2 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 text-amber-800 dark:text-amber-300 text-[10.5px] flex items-start gap-1.5">
+                  <AlertCircle className="w-3.5 h-3.5 text-amber-600 shrink-0 mt-0.5" />
+                  <span>{routeError}</span>
+                </div>
+              )}
+
+              <div className="flex items-center justify-between gap-2 pt-0.5">
+                {activeRoutes.length > 0 ? (
+                  <div className="flex items-center justify-between w-full gap-2">
+                    <span className="text-[11px] text-emerald-700 dark:text-emerald-400 font-semibold flex items-center gap-1">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                      <span>{activeRoutes.length} Route{activeRoutes.length > 1 ? 'n' : ''} auf Karte aktiv</span>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={onClearRoutes}
+                      className="text-[11px] text-slate-600 dark:text-[#9aa0a6] hover:text-slate-900 dark:hover:text-white px-2 py-1 rounded-md hover:bg-slate-200/60 dark:hover:bg-[#3c4043] transition-colors cursor-pointer"
+                    >
+                      Routen ausblenden
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between w-full gap-2">
+                    <span className="text-[10px] text-slate-500 dark:text-[#9aa0a6]">
+                      Berechnet auf Klick reale Wege &amp; Polylinien
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => onRequestCalculateRoute?.(undefined, providerPreference)}
+                      disabled={isCalculatingRoute}
+                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500 transition-colors shadow-xs disabled:opacity-50 cursor-pointer"
+                    >
+                      {isCalculatingRoute ? (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          <span>Berechne...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Compass className="w-3.5 h-3.5" />
+                          <span>Alle Routen berechnen</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+
             <div className="space-y-2">
               {inspection.estimates.map((est) => {
                 const Icon = MODE_ICONS[est.mode] || Train;
                 const bufferMinutes = est.limitMinutes - (est.centerMinutes ?? est.travelTimeMinutes);
                 const isExpanded = expandedPersonIds[est.personId];
+                const targetProfile = profiles.find((p) => p.id === est.personId);
+                const personRoute = activeRoutes.find((r) => r.personId === est.personId);
+                const mapsDirUrl = targetProfile
+                  ? getGoogleMapsDirectionsUrl(
+                      { lat: inspection.lat, lng: inspection.lng },
+                      { lat: targetProfile.lat, lng: targetProfile.lng },
+                      est.mode
+                    )
+                  : null;
 
                 return (
                   <div
@@ -425,7 +570,9 @@ export const InspectionPanel: React.FC<InspectionPanelProps> = ({
                             <span>{MODE_NAMES[est.mode]}</span>
                             <span>•</span>
                             <span>
-                              {inspection.isIntersectionInspection && est.centerDistanceKm !== undefined
+                              {personRoute
+                                ? `${personRoute.distanceKm} km`
+                                : inspection.isIntersectionInspection && est.centerDistanceKm !== undefined
                                 ? `Ø ${est.centerDistanceKm} km`
                                 : `${est.distanceKm} km`}
                             </span>
@@ -437,10 +584,14 @@ export const InspectionPanel: React.FC<InspectionPanelProps> = ({
                         <div className="flex items-baseline justify-end gap-1">
                           <span
                             className={`text-sm font-bold ${
-                              est.isWithinLimit ? 'text-slate-900 dark:text-white' : 'text-rose-600 dark:text-rose-400'
+                              (personRoute ? personRoute.durationMinutes <= est.limitMinutes : est.isWithinLimit)
+                                ? 'text-slate-900 dark:text-white'
+                                : 'text-rose-600 dark:text-rose-400'
                             }`}
                           >
-                            {inspection.isIntersectionInspection && est.centerMinutes !== undefined
+                            {personRoute
+                              ? `${personRoute.durationMinutes}`
+                              : inspection.isIntersectionInspection && est.centerMinutes !== undefined
                               ? `${est.centerMinutes}${est.spanPlusMinus ? ` ± ${est.spanPlusMinus}` : ''}`
                               : est.travelTimeMinutes}{' '}
                             Min
@@ -451,61 +602,135 @@ export const InspectionPanel: React.FC<InspectionPanelProps> = ({
                         </div>
                         <div
                           className={`text-[10px] font-medium ${
-                            est.isWithinLimit ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
+                            (personRoute ? personRoute.durationMinutes <= est.limitMinutes : est.isWithinLimit)
+                              ? 'text-emerald-600 dark:text-emerald-400'
+                              : 'text-rose-600 dark:text-rose-400'
                           }`}
                         >
-                          {inspection.isIntersectionInspection && est.minMinutes !== undefined && est.maxMinutes !== undefined
-                            ? `Spanne: ${est.minMinutes} – ${est.maxMinutes} Min`
-                            : bufferMinutes >= 0
-                            ? `${bufferMinutes} Min Puffer`
-                            : `+${Math.abs(bufferMinutes)} Min über Limit`}
+                          {personRoute ? (
+                            personRoute.durationMinutes <= est.limitMinutes
+                              ? `${est.limitMinutes - personRoute.durationMinutes} Min Puffer`
+                              : `+${personRoute.durationMinutes - est.limitMinutes} Min über Limit`
+                          ) : inspection.isIntersectionInspection && est.minMinutes !== undefined && est.maxMinutes !== undefined ? (
+                            `Spanne: ${est.minMinutes} – ${est.maxMinutes} Min`
+                          ) : bufferMinutes >= 0 ? (
+                            `${bufferMinutes} Min Puffer`
+                          ) : (
+                            `+${Math.abs(bufferMinutes)} Min über Limit`
+                          )}
                         </div>
                       </div>
                     </div>
 
                     {/* Unserviced Fallback Warning Badge */}
-                    {est.details?.isFallback && (
+                    {est.details?.isFallback && !personRoute && (
                       <div className="mx-2.5 mb-2 px-2 py-1 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 flex items-center gap-1.5 text-[11px] text-amber-800 dark:text-amber-300">
                         <AlertCircle className="w-3.5 h-3.5 shrink-0" />
                         <span>Näherungsberechnung (keine Haltestelle im Einzugsbereich)</span>
                       </div>
                     )}
 
-                    {/* Step by step stages */}
+                    {/* Step by step stages & Exact route details */}
                     {isExpanded && (
-                      <div className="px-3 pb-3 pt-1 border-t border-slate-100 dark:border-[#3c4043] bg-slate-50/80 dark:bg-[#131314] text-xs space-y-2 animate-in fade-in duration-150">
-                        {est.details?.isFallback && est.details.fallbackReason && (
-                          <div className="p-2 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 text-amber-800 dark:text-amber-300 text-[11px] flex items-start gap-1.5">
-                            <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-                            <span>{est.details.fallbackReason}</span>
-                          </div>
-                        )}
+                      <div className="px-3 pb-3 pt-1 border-t border-slate-100 dark:border-[#3c4043] bg-slate-50/80 dark:bg-[#131314] text-xs space-y-2.5 animate-in fade-in duration-150">
+                        {personRoute ? (
+                          /* Real Calculated Route Presentation */
+                          <div className="p-2.5 rounded-lg bg-blue-50/80 dark:bg-blue-950/40 border border-blue-200/70 dark:border-blue-800/60 space-y-2">
+                            <div className="flex items-center justify-between gap-1 flex-wrap font-semibold text-slate-800 dark:text-[#e3e3e3]">
+                              <span className="flex items-center gap-1.5 text-xs text-blue-900 dark:text-blue-200">
+                                <RouteIcon className="w-3.5 h-3.5 text-blue-600 dark:text-[#8ab4f8]" />
+                                <span>Genaue Route: {personRoute.durationMinutes} Min ({personRoute.distanceKm} km)</span>
+                              </span>
+                              <span className="text-[10px] px-1.5 py-0.5 rounded font-medium bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-300">
+                                {personRoute.providerLabel}
+                              </span>
+                            </div>
 
-                        <div className="text-[11px] font-medium text-slate-600 dark:text-[#9aa0a6] flex items-center gap-1">
-                          <Navigation className="w-3 h-3 text-blue-600 dark:text-[#8ab4f8]" />
-                          <span>
-                            {inspection.isIntersectionInspection
-                              ? 'Routen-Etappen & Zeitaufteilung ab Mittelpunkt:'
-                              : 'Routen-Etappen & Zeitaufteilung:'}
-                          </span>
-                        </div>
-
-                        {est.details?.steps && est.details.steps.length > 0 ? (
-                          <div className="space-y-1.5 pl-1">
-                            {est.details.steps.map((step, idx) => (
-                              <div
-                                key={idx}
-                                className="flex items-start gap-2 text-[11px] text-slate-700 dark:text-[#c4c7c5]"
-                              >
-                                <CornerDownRight className="w-3 h-3 text-slate-400 shrink-0 mt-0.5" />
-                                <span>{step}</span>
+                            {personRoute.steps && personRoute.steps.length > 0 && (
+                              <div className="space-y-1.5 pl-1 max-h-36 overflow-y-auto pt-1 border-t border-blue-100 dark:border-blue-900/40 text-[11px]">
+                                {personRoute.steps.map((st, sIdx) => (
+                                  <div key={sIdx} className="flex items-start gap-1.5 text-slate-700 dark:text-[#c4c7c5]">
+                                    <CornerDownRight className="w-3 h-3 text-blue-500 shrink-0 mt-0.5" />
+                                    <span>{st}</span>
+                                  </div>
+                                ))}
                               </div>
-                            ))}
+                            )}
+
+                            {mapsDirUrl && (
+                              <div className="pt-1.5 flex items-center justify-end border-t border-blue-100 dark:border-blue-900/40">
+                                <a
+                                  href={mapsDirUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1 text-[11px] font-semibold text-blue-600 dark:text-[#8ab4f8] hover:underline"
+                                >
+                                  <span>In Google Maps navigieren</span>
+                                  <ExternalLink className="w-3 h-3" />
+                                </a>
+                              </div>
+                            )}
                           </div>
                         ) : (
-                          <div className="text-[11px] text-slate-500 italic">
-                            Direktverbindung ohne Zwischenhalte.
-                          </div>
+                          /* Standard Heuristic Estimates & On-Demand Trigger */
+                          <>
+                            {est.details?.isFallback && est.details.fallbackReason && (
+                              <div className="p-2 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 text-amber-800 dark:text-amber-300 text-[11px] flex items-start gap-1.5">
+                                <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                                <span>{est.details.fallbackReason}</span>
+                              </div>
+                            )}
+
+                            <div className="text-[11px] font-medium text-slate-600 dark:text-[#9aa0a6] flex items-center gap-1">
+                              <Navigation className="w-3 h-3 text-blue-600 dark:text-[#8ab4f8]" />
+                              <span>
+                                {inspection.isIntersectionInspection
+                                  ? 'Routen-Etappen & Zeitaufteilung ab Mittelpunkt:'
+                                  : 'Routen-Etappen & Zeitaufteilung:'}
+                              </span>
+                            </div>
+
+                            {est.details?.steps && est.details.steps.length > 0 ? (
+                              <div className="space-y-1.5 pl-1">
+                                {est.details.steps.map((step, idx) => (
+                                  <div
+                                    key={idx}
+                                    className="flex items-start gap-2 text-[11px] text-slate-700 dark:text-[#c4c7c5]"
+                                  >
+                                    <CornerDownRight className="w-3 h-3 text-slate-400 shrink-0 mt-0.5" />
+                                    <span>{step}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <div className="text-[11px] text-slate-500 italic">
+                                Direktverbindung ohne Zwischenhalte.
+                              </div>
+                            )}
+
+                            <div className="pt-2 border-t border-slate-200/80 dark:border-[#3c4043] flex items-center justify-between gap-2">
+                              <button
+                                type="button"
+                                onClick={() => onRequestCalculateRoute?.(est.personId, providerPreference)}
+                                disabled={isCalculatingRoute}
+                                className="inline-flex items-center gap-1 text-[11px] text-blue-600 dark:text-[#8ab4f8] hover:underline font-semibold cursor-pointer disabled:opacity-50"
+                              >
+                                <Compass className="w-3 h-3" />
+                                <span>Genaue Route für {est.personName} berechnen</span>
+                              </button>
+                              {mapsDirUrl && (
+                                <a
+                                  href={mapsDirUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1 text-[10.5px] text-slate-500 dark:text-[#9aa0a6] hover:text-blue-600 dark:hover:text-[#8ab4f8] hover:underline font-medium"
+                                  title="Route direkt in Google Maps öffnen"
+                                >
+                                  <span>Maps ↗</span>
+                                </a>
+                              )}
+                            </div>
+                          </>
                         )}
                       </div>
                     )}
@@ -514,6 +739,7 @@ export const InspectionPanel: React.FC<InspectionPanelProps> = ({
               })}
             </div>
           </div>
+
         </>
       )}
       </div>

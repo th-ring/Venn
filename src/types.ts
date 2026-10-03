@@ -577,3 +577,28 @@ export interface CityDataPackage {
   artifacts: CityPackageArtifact[];
 }
 
+// --------------------------------------------------------
+// On-Demand Routing & Visualization
+// --------------------------------------------------------
+export type RouteProvider = 'ors' | 'osrm' | 'google' | 'mvv';
+export type RouteProviderPreference = 'auto' | 'opensource' | 'google';
+
+export interface CalculatedRoute {
+  personId: string;
+  personName: string;
+  personColor: string;
+  mode: TransportMode;
+  origin: { lat: number; lng: number };
+  destination: { lat: number; lng: number };
+  coordinates: [number, number][]; // Leaflet format: [lat, lng][]
+  distanceKm: number;
+  durationMinutes: number;
+  provider: RouteProvider;
+  providerLabel: string;
+  summary?: string;
+  steps?: string[];
+  isTrafficAware?: boolean;
+  error?: string;
+}
+
+
