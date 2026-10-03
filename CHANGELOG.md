@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.9.0] - 2026-10-03
+
+### Added
+- **Google Maps Demo Key Quickstart**: Schnellzugriff und Anleitung zum Anfordern von kostenlosen Google Maps Demo-Schlüsseln für schnelles Prototyping ohne GCP-Rechnungskonto.
+- **Google Maps Platform Compliance & Lizenzhinweise**: Transparente Aufschlüsselung der genutzten Schnittstellen, Kosten- und EWR-Dienstbedingungen direkt in den API-Einstellungen.
+- **Strikte ID-Extraktion & Preflight-Checks**: Schutz vor Pseudo-IDs und Verifizierung von Live-Angeboten bei der Wohnungssuche.
+
+### Changed
+- **Attribution ID Standardisierung**: Aktualisierung der Google Maps Platform Nutzungs-Attribution auf die offizielle Vorgabe `gmp_git_agentskills_v1`.
+- **UI & Controls Harmonization**: Verfeinerte Eckenradien und Kapsel-Affordances in den Einstellungs- und Steuerungs-Elementen.
+
 ## [1.8.1] - 2026-09-29
 
 ### Fixed
