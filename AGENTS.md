@@ -48,22 +48,36 @@ Guidelines and best practices for agents in this repository (`Venn`).
 
 ---
 
-## 3. Release Management & Versioning Standard
+## 3. Delivery, Release Management & Versioning Standard
 
-### 3.1 Proactive Agent-Driven Release Responsibility
-Release decisions are actively guided and proposed by the agent, not left to chance:
-- At the conclusion of any feature, bugfix, or milestone, the agent evaluates the changes since the last git release tag.
-- If the threshold for a release is met (see below), the agent **must proactively propose a release** to the user.
-- The proposal must include:
-  1. The recommended SemVer bump type (`patch`, `minor`, `major`) and target version number (e.g. `v1.1.0`).
-  2. Curated draft of the Release Notes (categorized for `CHANGELOG.md`).
-  3. A prompt requesting the user's confirmation before cutting the release.
+### 3.1 Delivery-Klassifizierung am Ende jeder Umsetzung (Build vs. Release)
+Am Abschluss jeder Implementierung oder Bearbeitung muss der Agent das Ergebnis zwingend in einen von zwei Bereitstellungspfaden einordnen:
+
+#### Pfad A: Build (Einfaches Deployment)
+- **Wann**: Inkrementelle Updates, Style-Harmonisierungen, UI-Feinschliff, Refactorings, interne Verbesserungen oder Vorarbeiten, die keinen formalen Versionssprung erfordern.
+- **Workflow & Pipeline**:
+  1. Validierung via Quality Gate (`npm run lint` & `npm run build`).
+  2. Targeted Staging & Lean Commit.
+  3. Push auf `main` (`git push origin main`).
+  4. Die GitHub Actions Pipeline (`.github/workflows/deploy.yml`) triggert auf `push: branches: [main]` und aktualisiert GitHub Pages automatisch ("einfaches Deployment").
+  5. Keine Versionsänderung in `package.json`, keine Git-Tags, kein GitHub Release.
+
+#### Pfad B: Release (Klassifiziert nach Major, Minor oder Patch)
+- **Wann**: Erreichen eines inhaltlichen Meilensteins, Fertigstellung eines substanziellen neuen Features (`feat`) oder Ansammlung mehrerer getesteter Bugfixes/Optimierungen, die als offizielle Version publiziert werden sollen.
+- **Klassifizierung nach SemVer**:
+  - **PATCH (`x.y.Z`)**: Abwärtskompatible Fehlerbehebungen (`fix`), kleinere UX-Korrekturen, Performance-Verbesserungen (`perf`). Proaktiv vorschlagen nach 2–4 kleineren Fixes oder bei kritischen Hotfixes.
+  - **MINOR (`x.Y.0`)**: Neue abwärtskompatible Features (`feat`), signifikante UI/UX-Erweiterungen oder Workflows. Proaktiv vorschlagen unmittelbar nach Fertigstellung und Prüfung des Features.
+  - **MAJOR (`X.0.0`)**: Breaking Changes, inkompatible Schnittstellen- oder Datenstruktur-Migrationen, grundlegende Architekturwechsel. Erfordert zwingend explizite Abstimmung vor Ausführung.
+- **Workflow & Pipeline**:
+  - Der Agent schlägt das Release proaktiv dem Nutzer vor (inkl. SemVer-Kategorie, Versionsnummer und kuratierten Release Notes).
+  - Nach Bestätigung durch den Nutzer greift das **Release Execution Protocol** (siehe 3.4): Aktualisierung von `CHANGELOG.md` & `package.json`, annotierter Tag, Push inkl. Tags und Publikation via `gh release create`.
+  - Das GitHub Release triggert die offizielle Produktions-Bereitstellung auf GitHub Pages.
 
 ### 3.2 Semantic Versioning (SemVer) Policy
 Versions strictly follow `MAJOR.MINOR.PATCH` (`vX.Y.Z`):
 - **PATCH (`x.y.Z`)**:
   - *When*: Backward-compatible bug fixes (`fix`), minor UX edge-case patches, accessibility tweaks, or non-breaking performance optimizations (`perf`).
-  - *Trigger*: Cut immediately for critical hotfixes, or propose after accumulating 2–4 smaller fixes/optimizations.
+  - *Trigger*: Propose after accumulating 2–4 smaller fixes/optimizations or cut immediately for critical hotfixes.
 - **MINOR (`x.Y.0`)**:
   - *When*: Backward-compatible new user-facing features (`feat`), significant UI capabilities, or major workflow expansions.
   - *Trigger*: Propose immediately upon completing and verifying any substantial new feature or UX enhancement.
