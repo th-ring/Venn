@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.10.0] - 2026-10-03
+
+### Added
+- **Echte Fußweg-Isochronen für ÖPNV-Haltestellen**: Ersetzt den bisherigen heuristischen Kreispuffer auf Wunsch durch vorberechnete, aus dem realen Straßen- und Wegenetz (OpenStreetMap) abgeleitete Einzugsbereiche für alle 237 Stationen des MVV-Netzes.
+- **Topologische Barrierenberücksichtigung**: Exakte Abbildung von natürlichen und baulichen Barrieren (z. B. Isarquerungen mit Brücken sowie Bahnkörper-Querungen mit Unterführungen); verhindert das fälschliche Überspringen unzugänglicher Barrieren.
+- **Dynamische Geometrieskalierung**: Stufenlose Anpassung vorberechneter Konturen an die individuelle Restgehzeit und das konfigurierte Gehtempo über Turf-Skalierung mit 0 ms Latenz und 100 % Offline-Fähigkeit im Web Worker.
+- **Steuerung in den Routing-Parametern**: Neuer Schalter im Bereich *ÖPNV-Puffer & Taktzeiten* zum nahtlosen Wechsel zwischen schnellem Kreispuffer und präzisem Fußwegenetz.
+
 ## [1.9.0] - 2026-10-03
 
 ### Added
