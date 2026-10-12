@@ -923,7 +923,11 @@ export function buildAgenticBrowserSearchPrompt(options: GenerateAgenticPromptOp
   const portalNamesList = targetPortals.map((p) => p.name).join(', ');
   const portalLinksFormatted = targetPortals.map((p, i) => `  ${i + 1}. ${p.name}: ${p.url}`).join('\n');
 
-  return `/browser Öffne nacheinander die folgenden Portale (${portalNamesList}) und nutze den agentic-apartment-browser Skill, um passende Mietwohnungen im gemeinsamen Pendelbereich zu recherchieren und strukturiert in public/data/apartments.json zu speichern.
+  const introLine = (!portals && targetPortals.length === 1)
+    ? `/browser Öffne ${targetPortals[0].name} (${targetPortals[0].url}) und nutze den agentic-apartment-browser Skill, um passende Mietwohnungen im gemeinsamen Pendelbereich zu recherchieren und strukturiert in public/data/apartments.json zu speichern.`
+    : `/browser Öffne nacheinander die folgenden Portale (${portalNamesList}) und nutze den agentic-apartment-browser Skill, um passende Mietwohnungen im gemeinsamen Pendelbereich zu recherchieren und strukturiert in public/data/apartments.json zu speichern.`;
+
+  return `${introLine}
 
 Ziel-Portale & Suchlinks:
 ${portalLinksFormatted}
