@@ -21,7 +21,7 @@
     "leaflet": "^1.9.4",
     "leaflet.gridlayer.googlemutant": "^0.16.0",
     "lucide-react": "^1.48.0",
-    "react": "^19.0.1",
+    "react": "^19.3.1",
     "react-dom": "^19.0.1"
   },
   "devDependencies": {
